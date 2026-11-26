@@ -1,12 +1,17 @@
 //! R437 copied-memory controls. Queued commands are never consumed by the engine.
 use crate::shadow::Mode;
 use borg_rs::decision_api::{
+    borg_cave::{BorgGrid, AUTO_MAX_Y},
     borg_headers::borg_h::{
         BORG_MONEY_SCUM_AMOUNT, BORG_SELF_SCUM, BORG_TOWN_NO_STORES, BORG_TOWN_PLAN,
     },
     borg_io::{ESCAPE, KC_ENTER},
     borg_store::{BORG_HOME, SHOP_MENU_ITEMS},
-    headers::list_tvals_h::*,
+    engine, equipment_fixture,
+    headers::{
+        list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE},
+        list_tvals_h::*,
+    },
 };
 use borg_rs::decisions::{Decision, ItemSnapshot, ReadDecision, Value};
 use borg_rs::memory::{traits::*, BorgState};
@@ -119,7 +124,7 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
                 ("no-selected-sale", Decision::StoreSell, Value::Acted(false)),
                 (
                     "no-selected-single-sale",
-                    Decision::StoreSellOne,
+                    Decision::StoreSellQuantity { quantity: 1 },
                     Value::Acted(false),
                 ),
                 (
@@ -355,6 +360,8 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
                 item: ItemSnapshot::new(wand),
                 shop: 5,
                 keep: true,
+                qty: 2,
+                paid: 40,
             };
             wand.pval = 19; // The request owns the original charge count.
             let state = case(
@@ -637,8 +644,130 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
             );
             out.flush().unwrap();
             eprintln!("R4 store constructed fixture complete");
+            receiving_controls(&base, mode, provider);
         })
     });
+}
+
+fn receiving_controls(base: &BorgState, mode: Mode, provider: &impl Shadow) {
+    let path = std::path::PathBuf::from(std::env::var_os("BORG_RUN_DIR").unwrap())
+        .join("r45-constructed.jsonl");
+    let mut out = File::create(path).unwrap();
+    let mut record = |case, value, queued: &[u32], rng_draws: Option<u64>| {
+        let row = serde_json::json!({
+            "schema": "borg-reborn-rs/r45-constructed@1",
+            "case": case,
+            "mode": mode,
+            "synthetic": true,
+            "engine_consumption": false,
+            "value": value,
+            "queued": queued,
+            "rng_draws": rng_draws,
+        });
+        writeln!(out, "{row}").unwrap();
+    };
+
+    let mut state = base.clone();
+    state.borg.trait_[BI_ATELEPORT as usize] = 0;
+    state.borg.trait_[BI_AESCAPE as usize] = 0;
+    let before = queued_keys(&state);
+    let value = provider.decision(
+        &mut state,
+        Decision::CautionTeleport {
+            emergency: 0,
+            turns: 1,
+        },
+    );
+    assert_eq!(value, Value::Acted(false));
+    assert_eq!(queued_keys(&state), before);
+    record("teleport-missing-escape-supply", value, &[], None);
+
+    // The pinned 66-by-22 town gives 89 floor landings and 11 exhausted
+    // searches at seed 1, origin (1, 1), and the default 100 x 100 budget.
+    // Make the same sampled floors dangerous without changing the search.
+    let mut landing = base.clone();
+    landing.borg.c.x = 1;
+    landing.borg.c.y = 1;
+    landing.borg.antibounce_count = 0;
+    landing.borg.trait_[BI_ATELEPORT as usize] = 1;
+    landing.borg.trait_[BI_AESCAPE as usize] = 1;
+    landing.borg.trait_[BI_CURHP as usize] = 50;
+    landing.borg.trait_[BI_MAXHP as usize] = 50;
+    landing.borg.breeder_block.fill(false);
+    landing.kills.nxt = 1;
+    landing.danger = Default::default();
+    assert_eq!(param(Param::escape_landing_samples), 100);
+    assert_eq!(param(Param::escape_landing_trials), 100);
+    let town = engine::z_info();
+    assert_eq!((town.town_wid, town.town_hgt), (66, 22));
+    let wall = BorgGrid {
+        feat: FEAT_GRANITE as u8,
+        ..Default::default()
+    };
+    let floor = BorgGrid {
+        feat: FEAT_FLOOR as u8,
+        ..Default::default()
+    };
+    for y in 0..AUTO_MAX_Y {
+        let row = landing.cave.row_mut(y);
+        row.fill(wall);
+        if (1..i32::from(town.town_hgt) - 1).contains(&y) {
+            row[1..usize::from(town.town_wid) - 1].fill(floor);
+        }
+    }
+    for (case, fear, expected) in [
+        ("teleport-accepts-sampled-landings", 0, true),
+        ("teleport-rejects-dangerous-landings", 100, false),
+    ] {
+        landing
+            .danger
+            .fear_monsters
+            .iter_mut()
+            .for_each(|row| row.fill(fear));
+        let before = queued_keys(&landing);
+        let saved_rng = engine::rand_state();
+        engine::set_rand_state(true, 1);
+        let initial_draws = equipment_fixture::rng_draws();
+        let value = provider.decision(
+            &mut landing,
+            Decision::CautionTeleport {
+                emergency: 11,
+                turns: 1,
+            },
+        );
+        let draws = equipment_fixture::rng_draws() - initial_draws;
+        let rng = engine::rand_state();
+        engine::set_rand_state(saved_rng.0, saved_rng.1);
+        assert_eq!(value, Value::Acted(expected), "{case}");
+        assert_eq!(draws, 16_698, "{case}");
+        assert_eq!(rng, (true, 1_234_900_399), "{case}");
+        assert_eq!(queued_keys(&landing), before, "{case}");
+        record(case, value, &[], Some(draws));
+    }
+
+    let mut state = base.clone();
+    state.borg.trait_[BI_LIGHT as usize] = 0;
+    state.borg.trait_[BI_ISPOISONED as usize] = 1;
+    let potion = &mut state.items.items[0];
+    potion.tval = TV_POTION as u8;
+    potion.sval = state.item_val.sv_potion_cure_poison as u8;
+    potion.iqty = 1;
+    potion.aware = true;
+    potion.ident = true;
+
+    let before = queued_keys(&state);
+    let value = provider.decision(&mut state, Decision::LightlessSelfCare { danger: 0 });
+    assert_eq!(value, Value::Acted(true));
+    let after = queued_keys(&state);
+    assert!(after.starts_with(&before));
+    assert_eq!(&after[before.len()..], &[u32::from(b'q'), u32::from(b'a')]);
+    assert_eq!(state.items.items[0].iqty, 1);
+    record(
+        "lightless-cures-poison",
+        value,
+        &after[before.len()..],
+        None,
+    );
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -694,5 +823,5 @@ fn record(
 }
 
 fn context(mode: Mode, label: &str, readonly: bool) -> serde_json::Value {
-    serde_json::json!({"schema":"borg-reborn-rs/shadow@8","mode":mode,"point":format!("fixture.store.{label}"),"readonly":readonly,"synthetic":true})
+    serde_json::json!({"schema":"borg-reborn-rs/shadow@9","mode":mode,"point":format!("fixture.store.{label}"),"readonly":readonly,"synthetic":true})
 }

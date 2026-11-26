@@ -1,0 +1,8 @@
+{
+  "schema": "borg-reborn-rs/cemetery-evidence-reference@1",
+  "repository": "diegoami/borg-cemetery",
+  "commit": "161ad0681e16d265243478670e77dc993e1f100e",
+  "path": "docs/reviews/M2/REVIEW-FIXES.md",
+  "sha256": "5fa155943a169f0e26dcc89a255eb9ad393544160fb1fc9152daf03d7f87148c",
+  "note": "Review response and refreshed P1 gameplay evidence are canonical in Cemetery; this is not milestone acceptance."
+}

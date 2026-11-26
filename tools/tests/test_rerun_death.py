@@ -45,15 +45,16 @@ class PlanTest(unittest.TestCase):
         self.assertEqual(p['env'], {'BORG_CORE': 'borg-rs', 'BORG_ERRAND': '/dive 3; /walk-back',
                                     'BORG_STOPSCARED': '50'})
         with tempfile.TemporaryDirectory() as t:
-            self.assertEqual(rd.plan(dossier(t))['env'], {}, 'a run without settings has none')
+            self.assertEqual(rd.plan(dossier(t))['env'], {'BORG_CORE': 'reborn'},
+                             'a historical unset controller must not inherit the modern native default')
         with tempfile.TemporaryDirectory() as t:
             p = rd.plan(dossier(t, config_extra='borg_errand=\n'))
-        self.assertEqual(p['env'], {'BORG_ERRAND': ''}, 'set but empty stays set')
+        self.assertEqual(p['env'], {'BORG_CORE': 'reborn', 'BORG_ERRAND': ''}, 'set but empty stays set')
 
     def test_shadow_mode_is_replayed_and_does_not_leak_from_the_environment(self):
         with tempfile.TemporaryDirectory() as t:
-            p = rd.plan(dossier(t, config_extra='borg_shadow=switch\n'))
-        self.assertEqual(p['env'], {'BORG_SHADOW': 'switch'})
+            p = rd.plan(dossier(t, config_extra='borg_core=borg-rs\nborg_shadow=switch\n'))
+        self.assertEqual(p['env'], {'BORG_CORE': 'borg-rs', 'BORG_SHADOW': 'switch'})
         self.assertIn('BORG_SHADOW', rd.SETTINGS)
 
     def test_a_changed_ladders_file_is_refused(self):

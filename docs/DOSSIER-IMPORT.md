@@ -5,17 +5,46 @@ use its `tools/export-death.py` compatibility command and the documented
 `BORG_DEATH_RECORDS_DIR` override for isolated CI or local validation runs.
 Normal canonical exports still go through the cemetery's own registrar.
 
-Numeric `D####` IDs from an isolated registry are provisional. They must not
-be committed as new historical archive IDs: another track, task branch or CI
-runner can independently allocate the same number. Per-track ranges alone do
-not solve concurrent branches of the same track.
+Since #628 (the death-tools pin at borg-cemetery `a4c76ac5`), the exporter
+names a dossier `D-<SHA-256>`, the Cemetery's canonical ID (`death-id@1`:
+encounter family and original key stream), and writes `death-id.json`
+beside it. Older isolated registries hold numeric `D####` IDs. Neither kind
+is committed as a new historical archive ID here: numeric IDs collide
+between tracks, branches and CI runners, and the archive keeps its
+`D0000-q` namespace below. Per-track ranges alone do not solve concurrent
+branches of the same track.
+
+## When a new package is needed
+
+Only when CI reports `UNRECORDED` (owner, 2026-11-16, #464). The reconcile
+step matches a death on its start (implementation, seed, race, class,
+save) and its key stream, not on the build, borg.txt or flags: a control game
+that plays the same keys under a new source hash is `KNOWN`, and needs
+neither a package nor a pin move. Another key stream, or the same keys from
+another start, is a new death and is retained as below. `reconcile-deaths.py
+--exact` restores the build-qualified match for audits.
+
+## Reference receipts decision (#375)
+
+Keep qualified packages self-contained under the current import/native-tool
+contracts. [The reference-receipt assessment](REFERENCE-RECEIPTS.md) explains
+why identical results do not permit dropping distinct source/build/config
+provenance, and records requirements for any future Cemetery-owned resolver.
+No reference-only package, symlink payload or alternate registrar is introduced.
+A routine `KNOWN` control needs no new record/package or additional receipt
+retention/publication step beyond the existing CI workflow (#464). Only when a
+specific validation/investigation claim depends on retaining a run do its
+actual receipt and required differing payloads belong with that case's Cemetery
+evidence bundle; the assessment links an existing example. A link to an older
+case never substitutes its metadata for that run. Existing packages, maps and
+legacy inventory stay immutable.
 
 ## Retain a completed validation package
 
 Import each completed native dossier with:
 
 ```sh
-python3 tools/import-deaths.py /path/to/isolated/D0001-rust-seed1011
+python3 tools/import-deaths.py /path/to/isolated/D-<SHA-256>
 python3 tools/import-deaths.py --check
 ```
 
@@ -26,7 +55,10 @@ The namespace is deterministic: identical evidence gives identical IDs;
 different payloads or provenance produce different IDs. No branch label,
 clock, random number or caller-supplied counter is used.
 
-The original `record.json` is retained byte for byte in `.source-record.json`.
+The original `record.json` is retained byte for byte in `.source-record.json`,
+and the exporter's `death-id.json`, if any, in `.source-death-id.json` (it
+describes the original record, which the working record no longer is; the
+receipt's `original_id` is the same canonical ID).
 The working record differs only in its display/storage `id`; source/build,
 encounter family, attempts and file hashes remain unchanged. All other files,
 including the original report and assessment, retain their exact bytes.
@@ -34,7 +66,20 @@ including the original report and assessment, retain their exact bytes.
 already imported package can be imported again without adding an attempt.
 Concurrent import processes use the cemetery-owned registry lock, publish
 complete directories atomically, and delegate index generation to that same
-owned toolkit. Existing differing data is never overwritten.
+owned toolkit. Existing differing data is never overwritten. Staging stays
+private until all files are written. At publication, a new directory keeps
+only the source directory's ordinary access bits allowed by directory creation
+under the importing process's umask (no special permission bits). For example,
+a 0755 source publishes as 0700 under umask 077; a 0777 source under umask
+022 publishes as 0755. An explicitly permissive umask 000 still permits 0777
+from a 0777 source. Files are also limited by source permissions and umask.
+Generated metadata uses the source record's access limits. Re-import leaves
+existing package permissions unchanged. This does not grant access to a private source.
+If publication fails, this importer restores owner access on its own unpublished
+staging directory before cleanup. If cleanup also fails, the original error
+remains primary with a cleanup diagnostic. Published packages and other
+processes' staging directories are untouched. A killed process can leave a `.import-*` directory; Git ignores historical
+staging paths. Do not remove another process's active staging directory.
 
 These are immutable **historical validation packages**, not a new death
 export implementation or a replacement for cemetery investigations. Do not
@@ -52,18 +97,20 @@ and result hash. The tests check this explicitly.
 
 `docs/deaths/legacy-cases.json` freezes the pre-adoption archive from the
 accepted #307 head. Those IDs and source identities are not rewritten.
-The inventory protects identity fields, first result hashes and recorded
-file-hash declarations, and CI verifies the record's declared payload file bytes too. Legacy analysis
-files such as assessment.json/report.md are generally not declared hashes;
-this gate does not freeze those undeclared files or extra legacy files.
-Qualified packages, in contrast, are immutable in every file.
+The inventory protects the complete record, including identity fields, first
+result hashes and file-hash declarations. CI verifies the record's declared
+payload files. Legacy analysis files such as `assessment.json` and `report.md`
+are generally not declared: editing/deleting those files or adding extra
+files is outside that legacy guarantee. Qualified packages, by contrast,
+are immutable in every file. Keep new investigations in the cemetery-owned
+workflow rather than treating undeclared legacy files as verified evidence.
 New evidence must have a verified qualified ID and receipt. CI rejects
 unknown numeric IDs, missing legacy cases, identity/hash changes or damaged
 qualified packages. A deliberate historical migration requires an explicit
 reviewed inventory/map change, never a silent overwrite.
 
 The ten #317 validation dossiers are qualified at adoption; their original
-IDs and full qualified paths are listed in `P318-DOSSIER-MAP.json`. No legacy
+IDs and full qualified paths are listed in `docs/validation/P318-DOSSIER-MAP.json`. No legacy
 P dossier or R implementation is imported or renamed. The same command can
 qualify isolated R validation evidence when that track integrates it; the
 current overlapping R numbers do not need a special range.
@@ -72,32 +119,3 @@ This tool refuses the canonical cemetery root. It is the local historical/CI
 import boundary only. Any change to canonical allocation or delivery belongs
 to the cemetery owner and its API, not to another exporter in this repository.
 No external repository write or historical bulk migration is part of #318.
-
-
-Track R recovery is pinned and mapped in R334-DOSSIER-MAP.json and
-R334-RECOVERY.md. It retains every packet from the actual R registry pin,
-restores the accepted legacy packets and does not broaden/rebaseline the
-accepted legacy inventory. Read the source-qualified map for old R numeric
-references; do not resolve them against newly restored legacy slots.
-
-## Track R current evidence in borg-cemetery (owner, 2026-11-16)
-
-New Track R validation reports and original dossiers belong in borg-cemetery.
-Keep already published historical packets unchanged. A namespaced validation
-bundle preserves the original qualified packages, provenance and manifests;
-its containing cemetery commit is the registry qualifier. No guessed final
-numeric ID or central acceptance is implied while #344 remains open.
-
-The source keeps short validation summaries and R*-CEMETERY-RECEIPT.json
-references. The validation-evidence action checks out the exact pinned cemetery
-commit. tools/prepare-validation-evidence.py verifies its complete manifest,
-every file hash and original qualified-package identity, then combines the
-verified packages with the unchanged local archive in a disposable directory.
-CI passes that directory to the existing cemetery-owned reconciler; its
-encounter-family/key checks and no-unexported-natural-death requirement remain
-unchanged. The frozen legacy inventory is still checked before and after
-materialization. A missing, damaged or wrong-commit bundle fails the job.
-
-This is an evidence-location change for current Track R, not a bulk migration
-or deletion of the historical source archive. Private working runs, executable
-binaries and unrelated session history are not part of these bundles.

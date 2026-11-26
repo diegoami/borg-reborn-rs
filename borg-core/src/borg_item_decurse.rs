@@ -31,6 +31,8 @@ use crate::borg_headers::borg_trait_h::{BI_FIRST_CURSED, BI_WHERE_CURSED, BORG_E
 use crate::headers::list_tvals_h::TV_SCROLL;
 use crate::headers::ui_event_h::keycode_t;
 use crate::state::BorgState;
+// borg-reborn-rs (#680): preserve resource order and spell semantics.
+use crate::params::{value as param, Param};
 
 /// `all_letters_nohjkl[i]` as a key (a C `char`, sign-extended to
 /// `keycode_t`). `i` is -1 only for a swap index of 0 (a decurse flag
@@ -52,7 +54,7 @@ fn key(c: u8) -> keycode_t {
 
 /// The "Ability for curses" test: false when the Borg has no scroll,
 /// staff, spell or activation that removes a curse.
-fn can_decurse(st: &mut BorgState) -> bool {
+pub(crate) fn can_decurse(st: &mut BorgState) -> bool {
     let sv_scroll = st.item_val.sv_scroll_remove_curse;
     let sv_staff = st.item_val.sv_staff_remove_curse;
     let sv_star = st.item_val.sv_scroll_star_remove_curse;
@@ -60,7 +62,7 @@ fn can_decurse(st: &mut BorgState) -> bool {
 
     !(-1 == borg_slot(st, TV_SCROLL as i32, sv_scroll)
         && !borg_equips_staff_fail(st, sv_staff)
-        && !borg_spell_okay_fail(st, REMOVE_CURSE, 40)
+        && !borg_spell_okay_fail(st, REMOVE_CURSE, param(Param::decurse_spell_fail))
         && -1 == borg_slot(st, TV_SCROLL as i32, sv_star)
         && !borg_equips_item(st, act1, true)
         && !borg_equips_item(st, act2, true))
@@ -89,10 +91,15 @@ fn decurse_swap(st: &mut BorgState, swap: fn(&BorgState) -> i32) -> bool {
         return false;
     }
 
+    /* borg-reborn-rs (#830): not for an item the scroll costs more than */
+    let i = swap(st) - 1;
+    if i >= 0 && !crate::borg_cursed::worth_a_scroll(st, i) {
+        return false;
+    }
+
     /* remove the curse */
     if start_decurse(st) {
         /* pick the item */
-        let i = swap(st) - 1;
         borg_keypress(st, letter(i));
         /* pick first curse */
         borg_keypress(st, KC_ENTER);

@@ -6,14 +6,24 @@ use std::collections::BTreeMap;
 use std::io::Read;
 use std::sync::{Mutex, OnceLock};
 
+/// What a phase asks of the core (owner, 2026-11-16: an additional check,
+/// not a forced behaviour).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Command {
+    /// `max-depth N`: no errand; the core plays as itself and is not
+    /// prepared for any level below N (`borg_no_deeper`).
+    MaxDepth(i32),
+}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Phase {
     pub low: i32,
     pub high: i32,
-    pub first: i32,
-    pub last: i32,
+    pub command: Command,
     pub line: usize,
 }
+/// The deepest level a `max-depth` phase may name (`borg_no_deeper` is a
+/// level the core is never prepared for; 127 is the game's maximum).
+const MAX_DEPTH: i32 = 127;
 #[derive(Clone, Debug)]
 pub struct Plan {
     sections: BTreeMap<String, Vec<Phase>>,
@@ -96,18 +106,27 @@ impl Plan {
             } else if indent == 4 {
                 let (low, high, header) = pending
                     .take()
-                    .ok_or_else(|| error("one loop-levels command is required per phase".into()))?;
-                if s.split_whitespace().next() != Some("loop-levels") {
-                    return Err(error(
-                        "POC supports only loop-levels A B; no aliases".into(),
-                    ));
-                }
-                let command =
-                    shell::Command::parse(s).ok_or_else(|| error("invalid errand".into()))?;
-                let shell::Command::Errand(shell::Errand::LoopLevels(first, last)) = command else {
-                    return Err(error(
-                        "POC supports only loop-levels A B; no ladder/trips aliases".into(),
-                    ));
+                    .ok_or_else(|| error("one command is required per phase".into()))?;
+                let command = match s.split_whitespace().collect::<Vec<_>>().as_slice() {
+                    ["max-depth", n] => {
+                        let n = n
+                            .parse::<i32>()
+                            .ok()
+                            .filter(|n| (1..MAX_DEPTH).contains(n))
+                            .ok_or_else(|| error(format!("max-depth needs a level from 1 to {}", MAX_DEPTH - 1)))?;
+                        Command::MaxDepth(n)
+                    }
+                    ["max-depth", ..] => return Err(error("max-depth takes one level".into())),
+                    ["loop-levels", ..] => {
+                        return Err(error(
+                            "loop-levels was removed (owner, 2026-11-16); use max-depth N".into(),
+                        ))
+                    }
+                    _ => {
+                        return Err(error(
+                            "a phase is max-depth N; no aliases".into(),
+                        ))
+                    }
                 };
                 let entries = sections.get_mut(section.as_ref().unwrap()).unwrap();
                 if entries.iter().any(|p| low <= p.high && high >= p.low) {
@@ -118,8 +137,7 @@ impl Plan {
                 entries.push(Phase {
                     low,
                     high,
-                    first,
-                    last,
+                    command,
                     line: header,
                 });
                 phases += 1;
@@ -128,7 +146,7 @@ impl Plan {
                 }
             } else {
                 return Err(error(
-                    "expected [class], two-space range or four-space loop-levels".into(),
+                    "expected [class], two-space range or four-space command".into(),
                 ));
             }
         }
@@ -164,6 +182,8 @@ struct Runtime {
     path: String,
     owner: Option<(u32, u64, i64)>,
     phase: Option<usize>,
+    /// Active phase threshold, separate from the live configuration (#447).
+    plan_cap: Option<i32>,
     cancelled: bool,
 }
 #[derive(Debug, PartialEq, Eq)]
@@ -185,6 +205,7 @@ impl Runtime {
         {
             self.phase = None;
             self.cancelled = false;
+            self.plan_cap = None;
         }
         self.owner = Some(me);
         if self.cancelled {
@@ -193,15 +214,36 @@ impl Runtime {
         match self.plan.phase(class, level)?.cloned() {
             Some(p) if self.phase != Some(p.line) => {
                 self.phase = Some(p.line);
+                self.plan_cap = Some(match p.command { Command::MaxDepth(n) => n + 1 });
                 Ok(Transition::Install(p))
             }
             Some(_) => Ok(Transition::Keep),
             None => {
-                self.cancelled = true;
+                self.cancel();
                 Ok(Transition::Stop)
             }
         }
     }
+    fn reinitialize(&mut self, me: (u32, u64, i64), class: &str, level: i32) -> Result<(), String> {
+        if self.owner.is_some_and(|(c, b, t)| (c, b) != (me.0, me.1) || me.2 < t) {
+            self.phase = None;
+            self.cancelled = false;
+        }
+        self.owner = Some(me);
+        self.plan_cap = if self.cancelled { None } else {
+            self.plan.phase(class, level)?.map(|p| match p.command { Command::MaxDepth(n) => n + 1 })
+        };
+        Ok(())
+    }
+    fn cancel(&mut self) {
+        self.cancelled = true;
+        self.plan_cap = None;
+    }
+
+    fn effective_no_deeper(&self, configured: i32) -> i32 {
+        self.plan_cap.map_or(configured, |cap| configured.min(cap))
+    }
+
 }
 static RUNTIME: OnceLock<Mutex<Option<Runtime>>> = OnceLock::new();
 fn fatal(error: impl std::fmt::Display) -> ! {
@@ -227,8 +269,26 @@ fn decode_plan(bytes: &[u8]) -> Result<&str, String> {
     }
     std::str::from_utf8(bytes).map_err(|e| format!("plan is not UTF-8: {e}"))
 }
+/// borg-reborn-rs (#704, review of #740): whether a `borg_world` value
+/// reached the Borg unconsumed. `harness/run.sh` replaces the key with a
+/// comment when it generates the world, so a value other than `none` here
+/// means nothing loaded that world's data: the game would play upstream's
+/// data under the world's name.
+fn world_unloaded(value: Option<&str>) -> bool {
+    value.is_some_and(|v| !matches!(v.trim(), "" | "none"))
+}
+
 /// Called before core initialization; absent configuration is inert.
 pub(crate) fn initialize() {
+    // Lenient: an unreadable borg.txt is the parameter loader's to report.
+    let world = shell::borg_txt_setting_lenient("borg_world");
+    if world_unloaded(world.as_deref()) {
+        eprintln!(
+            "borg_world: '{}' was not generated (run through harness/run.sh, or a zoo adapter that loads worlds); refusing to play the game's own data under its name",
+            world.unwrap_or_default().trim()
+        );
+        std::process::exit(2);
+    }
     RUNTIME.get_or_init(|| {
         let file = std::env::var_os("BORG_ERRANDS_PLAN")
             .map(|p| {
@@ -287,25 +347,47 @@ pub(crate) fn initialize() {
             path,
             owner: None,
             phase: None,
+            plan_cap: None,
             cancelled: false,
         }))
     });
-    // Reinitialization/reincarnation must validate the new class as well.
+    refresh();
+}
+
+/// Refresh at both Borg initialization and completed reincarnation, before
+/// store or Recall paths can query a previous character's cap (#447).
+pub(crate) fn refresh() {
+    let Some(runtime) = RUNTIME.get() else { return; };
+    let mut guard = runtime.lock().unwrap();
+    let Some(r) = guard.as_mut() else { return; };
     let class_id = engine::class_cidx();
-    let class = shell::CLASSES
-        .get(class_id as usize)
+    let class = shell::CLASSES.get(class_id as usize)
         .unwrap_or_else(|| fatal("unknown player class"));
-    if let Some(r) = RUNTIME.get().unwrap().lock().unwrap().as_ref() {
-        r.plan.validate_class(class).unwrap_or_else(|e| fatal(e));
-    }
+    r.plan.validate_class(class).unwrap_or_else(|e| fatal(e));
+    r.reinitialize((class_id, engine::player_birth_key(), i64::from(engine::game_turn())),
+        class, i32::from(engine::player_notice().lev)).unwrap_or_else(|e| fatal(e));
+}
+
+/// The plan alone guards preparedness before dynamic/static dispatch; the
+/// configured threshold keeps its original static-mode semantics (#447).
+pub(crate) fn plan_cap() -> Option<i32> {
+    RUNTIME.get().and_then(|runtime| runtime.lock().unwrap().as_ref().and_then(|r| r.plan_cap))
 }
 pub(crate) fn cancel() {
     if let Some(runtime) = RUNTIME.get() {
         if let Some(r) = runtime.lock().unwrap().as_mut() {
-            r.cancelled = true;
+            r.cancel();
         }
     }
 }
+/// Effective depth threshold always combines the active plan with the current
+/// configuration. Reload/reinitialization never overwrites or loses either
+/// value; cancellation takes effect without waiting for tick/Recall (#447).
+pub(crate) fn effective_no_deeper(configured: i32) -> i32 {
+    RUNTIME.get().and_then(|runtime| runtime.lock().unwrap().as_ref()
+        .map(|r| r.effective_no_deeper(configured))).unwrap_or(configured)
+}
+
 pub(crate) fn tick(st: &mut BorgState) -> bool {
     let Some(runtime) = RUNTIME.get() else {
         return false;
@@ -332,19 +414,20 @@ pub(crate) fn tick(st: &mut BorgState) -> bool {
     };
     match event {
         (Transition::Install(p), path) => {
+            let what = match p.command {
+                Command::MaxDepth(n) => {
+                    // No errand: the core plays as itself, never prepared
+                    // for a level below N (borg_prepared, "No deeper").
+                    format!("max-depth {n}")
+                }
+            };
             crate::borg_io::borg_note(
                 st,
-                &format!(
-                    "# Plan: {path} class={class} level={level} line={} loop-levels {} {}",
-                    p.line, p.first, p.last
-                ),
+                &format!("# Plan: {path} class={class} level={level} line={} {what}", p.line),
             );
-            shell::install_plan_loop(p.first, p.last);
-            st.borg.goal.type_0 = 0;
             false
         }
         (Transition::Stop, _) => {
-            shell::install_plan_stop();
             crate::borg_think::borg_oops(
                 st,
                 &format!("plan has no phase for {class} level {level}"),
@@ -357,8 +440,20 @@ pub(crate) fn tick(st: &mut BorgState) -> bool {
 
 #[cfg(test)]
 mod tests {
+
+    /// #704 (review of #740): a world the harness did not consume stops
+    /// the game; `none`, empty or no key plays the game's data.
+    #[test]
+    fn an_unloaded_world_is_refused() {
+        assert!(world_unloaded(Some("breeders-x4")));
+        assert!(!world_unloaded(Some("none")));
+        assert!(!world_unloaded(Some(" none ")));
+        assert!(!world_unloaded(Some("")));
+        assert!(!world_unloaded(None));
+    }
+
     use super::*;
-    const EXAMPLE: &str = "[default]\n  level <= 5\n    loop-levels 0 2\n  5 < level <= 10\n    loop-levels 0 4\n[mage]\n  level <= 5\n    loop-levels 0 1\n  5 < level <= 10\n    loop-levels 1 3\n";
+    const EXAMPLE: &str = "[default]\n  level <= 5\n    max-depth 2\n  5 < level <= 10\n    max-depth 4\n[mage]\n  level <= 5\n    max-depth 1\n  5 < level <= 10\n    max-depth 3\n";
     #[test]
     fn shipped_file_is_parsed_and_covers_all_classes_until_50() {
         let text = include_str!("../../harness/plans/errands_plan.txt");
@@ -383,10 +478,12 @@ mod tests {
     }
     #[test]
     fn canonical_commands_and_precise_input_errors() {
-        for command in ["/loop-levels 0 2", "LOOP-LEVELS 0 2", "loop-levels:0 2"] {
+        for command in ["/max-depth 2", "MAX-DEPTH 2", "max-depth:2", "loop-levels 0 2"] {
             assert!(Plan::parse(&format!("[default]\n  level <= 5\n    {command}")).is_err());
         }
-        assert!(Plan::parse("[default]\n  level <= 5\n    loop-levels 5 3").is_ok());
+        assert!(Plan::parse("[default]\n  level <= 5\n    loop-levels 5 3")
+            .unwrap_err()
+            .contains("loop-levels was removed"));
         let mut large = vec![b'a'; 65536];
         large.push(0xff);
         assert_eq!(decode_plan(&large).unwrap_err(), "plan exceeds 64 KiB");
@@ -438,58 +535,144 @@ mod tests {
             path: "test".into(),
             owner: None,
             phase: None,
+            plan_cap: None,
             cancelled: false,
         };
         assert!(matches!(
             r.select((1, 1, 1), "mage", 5).unwrap(),
-            Transition::Install(Phase { last: 1, .. })
+            Transition::Install(Phase { command: Command::MaxDepth(1), .. })
         ));
         assert_eq!(r.select((1, 1, 2), "mage", 5).unwrap(), Transition::Keep);
         assert!(matches!(
             r.select((1, 1, 3), "mage", 6).unwrap(),
-            Transition::Install(Phase { last: 3, .. })
+            Transition::Install(Phase { command: Command::MaxDepth(3), .. })
         ));
         assert!(matches!(
             r.select((1, 1, 4), "mage", 5).unwrap(),
-            Transition::Install(Phase { last: 1, .. })
+            Transition::Install(Phase { command: Command::MaxDepth(1), .. })
         ));
         assert_eq!(r.select((1, 1, 5), "mage", 11).unwrap(), Transition::Stop);
         assert_eq!(r.select((1, 1, 6), "mage", 5).unwrap(), Transition::Keep);
         assert!(matches!(
             r.select((0, 2, 1), "warrior", 5).unwrap(),
-            Transition::Install(Phase { last: 2, .. })
+            Transition::Install(Phase { command: Command::MaxDepth(2), .. })
         ));
+    }
+    #[test]
+    fn cap_overlay_survives_reload_and_releases_current_configuration() {
+        let mut r = Runtime { plan: Plan::parse(EXAMPLE).unwrap(), path: "test".into(),
+            owner: None, phase: None, plan_cap: None, cancelled: false };
+        assert_eq!(r.effective_no_deeper(127), 127);
+        r.select((1, 1, 1), "mage", 5).unwrap();
+        assert_eq!(r.effective_no_deeper(127), 2);
+        // Reload/reinit may replace cfg, while the same phase returns Keep.
+        assert_eq!(r.select((1, 1, 2), "mage", 5).unwrap(), Transition::Keep);
+        assert_eq!(r.effective_no_deeper(20), 2);
+        assert_eq!(r.effective_no_deeper(1), 1, "respect a stricter new cfg");
+        r.select((1, 1, 3), "mage", 6).unwrap();
+        assert_eq!(r.effective_no_deeper(20), 4);
+        assert_eq!(r.select((1, 1, 4), "mage", 11).unwrap(), Transition::Stop);
+        assert_eq!(r.effective_no_deeper(20), 20, "never restore stale 127");
+        assert_eq!(r.effective_no_deeper(60), 60);
+        r.select((0, 2, 1), "warrior", 2).unwrap();
+        assert_eq!(r.effective_no_deeper(60), 3, "new character installs own cap");
+        r.cancel(); // No tick is required, including while Recall delays tick.
+        assert_eq!(r.effective_no_deeper(40), 40);
+        assert_eq!(r.select((0, 2, 2), "warrior", 2).unwrap(), Transition::Keep);
+        assert_eq!(r.effective_no_deeper(40), 40);
+    }
+    #[test]
+    fn initialization_refreshes_cap_before_store_or_recall_tick() {
+        let mut r = Runtime { plan: Plan::parse(EXAMPLE).unwrap(), path: "test".into(),
+            owner: None, phase: None, plan_cap: None, cancelled: false };
+        r.select((1, 10, 100), "mage", 8).unwrap();
+        assert_eq!(r.effective_no_deeper(127), 4);
+        r.reinitialize((1, 10, 50), "mage", 2).unwrap(); // older save
+        assert_eq!(r.effective_no_deeper(127), 2);
+        r.reinitialize((0, 11, 1), "warrior", 1).unwrap(); // new character
+        assert_eq!(r.effective_no_deeper(127), 3);
+        r.cancel();
+        r.reinitialize((0, 11, 1), "warrior", 1).unwrap(); // same run retains cancellation
+        assert_eq!(r.effective_no_deeper(20), 20);
+        r.reinitialize((1, 12, 1), "mage", 1).unwrap();
+        assert_eq!(r.effective_no_deeper(20), 2);
+    }
+    #[test]
+    fn manual_cancel_releases_overlay_without_waiting_for_tick() {
+        const CHILD: &str = "BORG_PLAN_CAP_CANCEL_CHILD";
+        if std::env::var_os(CHILD).is_some() {
+            let mut r = Runtime { plan: Plan::parse(EXAMPLE).unwrap(), path: "test".into(),
+                owner: None, phase: None, plan_cap: None, cancelled: false };
+            r.select((1, 1, 1), "mage", 5).unwrap();
+            assert!(RUNTIME.set(Mutex::new(Some(r))).is_ok());
+            assert_eq!(effective_no_deeper(20), 2);
+            // The production guard runs before dispatch to either mode.
+            for mode in ["static", "dynamic"] {
+                let reason = crate::borg_prepared::prepared_with_limit(2, plan_cap(),
+                    || panic!("{mode} calculations must not bypass the cap"));
+                assert_eq!(reason.unwrap().requirement.name, "plan_depth_limit");
+                assert!(crate::borg_prepared::prepared_with_limit(1, plan_cap(), || None).is_none());
+            }
+            // Without a plan, dispatch retains both a successful dynamic
+            // result and an earlier static-mode refusal unchanged.
+            assert!(crate::borg_prepared::prepared_with_limit(25, None, || None).is_none());
+            let restock = crate::borg_prepared::Reason::fixed("restock first", "food", 0, 1);
+            assert_eq!(crate::borg_prepared::prepared_with_limit(25, None, || Some(restock.clone())),
+                Some(restock));
+            // Manual cancellation is visible to preparedness immediately;
+            // no tick/phase installation or Recall completion is needed.
+            cancel();
+            assert_eq!(effective_no_deeper(20), 20);
+            assert_eq!(effective_no_deeper(1), 1);
+            return;
+        }
+        let result = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", "errands_plan::tests::manual_cancel_releases_overlay_without_waiting_for_tick"])
+            .env(CHILD, "1").output().unwrap();
+        let output = String::from_utf8_lossy(&result.stdout);
+        assert!(result.status.success(), "{output}");
+        assert!(output.contains("1 passed;"), "child must run exactly one test: {output}");
+    }
+    #[test]
+    fn max_depth_phases_parse_and_reject_bad_levels() {
+        let p = Plan::parse("[default]\n  level <= 5\n    max-depth 2\n  level > 5\n    max-depth 3\n").unwrap();
+        assert_eq!(p.phase("mage", 3).unwrap().unwrap().command, Command::MaxDepth(2));
+        assert_eq!(p.phase("mage", 6).unwrap().unwrap().command, Command::MaxDepth(3));
+        for bad in ["max-depth", "max-depth 0", "max-depth -1", "max-depth 127", "max-depth 2 3", "max-depth x", "MAX-DEPTH 2", "/max-depth 2"] {
+            assert!(Plan::parse(&format!("[default]\n  level <= 5\n    {bad}\n")).is_err(), "{bad}");
+        }
+        assert!(Plan::parse("[default]\n  level <= 5\n    max-depth 126\n").is_ok());
     }
     #[test]
     fn selects_class_and_boundaries_including_drain() {
         let p = Plan::parse(EXAMPLE).unwrap();
         for (level, last) in [(1, 1), (5, 1), (6, 3), (10, 3), (5, 1)] {
-            assert_eq!(p.phase("mage", level).unwrap().unwrap().last, last);
+            assert_eq!(p.phase("mage", level).unwrap().unwrap().command, Command::MaxDepth(last));
         }
-        assert_eq!(p.phase("warrior", 5).unwrap().unwrap().last, 2);
+        assert_eq!(p.phase("warrior", 5).unwrap().unwrap().command, Command::MaxDepth(2));
         assert!(p.phase("mage", 11).unwrap().is_none());
     }
     #[test]
     fn rejects_overlaps_aliases_and_malformed_files() {
         for text in [
             "",
-            "[wizzard]\n  level <= 5\n    loop-levels 0 1",
+            "[wizzard]\n  level <= 5\n    max-depth 1",
             "[mage]\n",
             "[default]\n  level <= 5",
             "[default]\n  level <= 5\n    ladder",
             "[default]\n  level <= 5\n    loop-level 0 1",
-            "[default]\n  level <= 5\n    loop-levels 0 0",
-            "[default]\n  level <= 5\n    loop-levels 0 1\n  5 <= level <= 10\n    loop-levels 0 2",
-            "[default]\n\tlevel <= 5\n    loop-levels 0 1",
+            "[default]\n  level <= 5\n    max-depth 0",
+            "[default]\n  level <= 5\n    max-depth 1\n  5 <= level <= 10\n    max-depth 2",
+            "[default]\n\tlevel <= 5\n    max-depth 1",
         ] {
             assert!(Plan::parse(text).is_err(), "{text}");
         }
     }
     #[test]
     fn class_gaps_do_not_fall_back_and_missing_class_is_an_error() {
-        let p = Plan::parse("[default]\n  level > 1\n    loop-levels 0 2\n[mage]\n  level == 1\n    loop-levels 0 1").unwrap();
+        let p = Plan::parse("[default]\n  level > 1\n    max-depth 2\n[mage]\n  level == 1\n    max-depth 1").unwrap();
         assert!(p.phase("mage", 2).unwrap().is_none());
-        let p = Plan::parse("[mage]\n  level == 1\n    loop-levels 0 1").unwrap();
+        let p = Plan::parse("[mage]\n  level == 1\n    max-depth 1").unwrap();
         assert!(p.phase("warrior", 1).is_err());
     }
 }

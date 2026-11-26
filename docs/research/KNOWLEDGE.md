@@ -112,6 +112,24 @@ including the faster-monster retreat correction (#523), as future refresh
 work. They must not be mixed into a default-preserving parameter extraction.
 The named source locations are pinned to reborn `726e04fa` in CALIBRATION.md.
 
+## 2026-11-18: P5 all-source refresh inventory (#554)
+
+The milestone-start report covered **all six sources** at accepted main
+`c9e58ca0`, before the isolated borg-rs reference update. The exact observed
+heads, deltas and retained-pin reasons are recorded in
+[P5-SOURCE-REFRESH.md](P5-SOURCE-REFRESH.md). This records the report review;
+it does not claim that all changed source code or catalogues were adopted.
+
+The report's new better-borg-c cases are the same D0020–D0030 collected,
+unassessed dossiers already read in the startup audit above. No new case
+identifier was reported beyond that set. Preserve their existing source
+qualification and do not turn collected cases into a tuning conclusion.
+The new donor corrections/adoption text is reflected in the borg-rs row.
+Engine, C/reference-model, tracker and newer zoo reference updates are
+explicitly deferred from this receipt-only milestone; borg-runner is unchanged.
+The already accepted zoo pin from main is preserved. No bulk pin advance,
+engine upgrade, gameplay-policy carry or new control baseline is implied.
+
 ## Reading state
 
 | Source | Last read | What was covered | Re-read when |
@@ -119,9 +137,9 @@ The named source locations are pinned to reborn `726e04fa` in CALIBRATION.md.
 | borg-runner (S15) | 2026-11-13, pin `e55ac6f` | everything we copy through `ACCUMULATED_KNOWLEDGE.md` **edition 7** (editions 5–7: their changelog paragraphs and the diff from edition 4), including the new `mmf-mage.3` (crow death), `mmx-pri-1`/`mmx-pri-1.2` (Dwarf Priest, two lives) and `mmx-ran-1` (first Ranger) knowledge and reports, `records/characters/`, and the `INSTRUCTIONS.md` diff ("Experience is the objective, not depth") | the report's copy lines: a changed `ACCUMULATED_KNOWLEDGE.md` means a new edition (read its own changelog paragraph, then the diff); new runs arrive as `knowledge/` + `records/` additions |
 | better-borg-c deaths (S4, S9, S11) | 2026-11-13, pin `4603703` | every copied dossier D0001–D0019, `REDESIGN-LESSONS.md`; no new or changed dossiers between `a4cc2d4` and `4603703` (INDEX.md's additions are our own cases) | new death cases; a changed `REDESIGN-LESSONS.md` |
 | better-borg-c issues (S8) | 2026-11-13 (commits only: the issue list is not reachable from cloud sessions) | the earlier analysis set and the M4 carries; the 10 commits `a4cc2d4..4603703`: M11 review corrections F1–F5 (`e8942e44`, docs and a patch file, no `src/` change), the v11 tag record (`368efd4e`), the newkill-95 carry (`d4175367`, `borg-flow-kill.c:borg_new_kill`, neo-angband-tracker#95); tag `4.2.6-impact-v9.1` (`618f1554`, release packaging) | the report's `issues updated since` list; any commit touching a `borg-*.c` function we cite |
-| neo-angband-tracker (S2, S14) | 2026-11-13, pin `c2ddf2c` (no copied path changed since `777eea1`) | the C Borg spec and the Tunable Plan at their pins; the strategy manual's chapters and appendices, and the official user manual (`reference/c-manual/`, `user-manual/`), as tasks need them (ch. 15 for M3) | when the pin moves (`--update`); otherwise per task, at the chapter or manual page the task cites. The strategy manual is the first reference for game behaviour; every number is checked against `engine/angband/` |
+| neo-angband-tracker (S2, S14) | 2026-11-13, pin `c2ddf2c` (no copied path changed since `777eea1`) | the C Borg spec and the Tunable Plan at their pins; the strategy manual's chapters and appendices, and the official user manual (`docs/strategy/`, `user-manual/`), as tasks need them (ch. 15 for M3) | when the pin moves (`--update`); otherwise per task, at the chapter or manual page the task cites. The strategy manual is the first reference for game behaviour; every number is checked against `engine/angband/` |
 | borg-zoo (S6) | 2026-11-13, pin `c5f1b04` | the DESIGN and catalogue diff: two dashboard tabs with one mode policy each (plain = `normal` post-cutoff, a build's own `default` pre-cutoff; a point needs a full class run, `DASHBOARD_MIN_CELLS = 1500`); new specimens `4.2.6-reborn-rust-e` (ours, tag `e`), `4.2.6-bbc-m11`, `4.2.6-rs-m11`, `rs-family-buying`, `rs-town`, `angband-42cd156-original`, `neo-765-original`; buying, switch-screen and town-negative profiles; the adapter's `clevel` stop mapping (`2416bb9`, borg-zoo#48) | changed catalogue/DESIGN copies; our specimens' issues; any `classes-1800` control rerun |
-| borg-rs | 2026-11-13, pin `4ed3263` | the v11R carry (PR #30, 18 units of better-borg-c M11, owner-accepted 2026-11-11, no cohort or benefit claim); buying family #26/#28 merged (opt-in, no tag); defaults audit: `borg_munchkin_by_class` built-in default back to FALSE (TRUE only via borg.txt), FORK-CORRECTIONS amendment | family changes that affect control interpretation; buying-strategy measurements |
+| borg-rs | 2026-11-18, pin `8c5d000a` | refreshed FORK-CORRECTIONS and adoption/status against `4ed3263b`: v12R acceptance/provenance updates; proposed `store_buy_direct` is explicitly unaccepted and off by default; empty-light-slot Recall correction requires a real light item before expiry handling; read-only town affordance queries and feature-gated learning-key bridge. These are donor source notes, not new engine/policy adoption here. Earlier v11R/default-audit reading remains historical. | family/control interpretation changes; any proposed donor feature requires its own accepted implementation contract |
 | angband | 2026-11-10, pin `42cd156` | the 12-commit log since our engine pin: rest interruption/completion, command flushing and Borg reaction changes noted for M4's executor work; our engine remains `e473720` byte for byte | only when a lifted executor or combat rule needs its citation re-checked |
 
 ## Distilled for the tasks ahead

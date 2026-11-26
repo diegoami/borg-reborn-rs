@@ -1,0 +1,25 @@
+# borg-reborn-rs (#520): the warrior's own settings. Each line overrides the
+# common harness/borg.txt for a warrior only. After editing, run
+# scripts/borg-class-files.py fold (it writes them into harness/borg.txt,
+# the one file a run reads).
+borg_param_attack_preference_melee_permille = 1800
+borg_param_attack_preference_projectile_permille = 1200
+borg_param_attack_preference_thrown_permille = 1200
+borg_param_town_heal_curve_scale_percent = 50
+borg_param_town_heal_reserve_hp_percent = 100
+# #666 (owner): devices by device skill (class.txt; 24 = 100).
+borg_param_town_devices_percent = 75
+# #682 (owner, 2026-11-19): Phase Door and flask-of-oil curves for the warrior.
+borg_param_town_phase_curve_scale_percent = 75
+borg_param_town_oil_curve_scale_percent = 100
+# Owner, 2026-11-20: breeders hunted while at most this many are known (common 4).
+borg_param_caution_breeder_hunt_max_count = 7
+# #768: C Borg preparedness gates for this class.
+borg_param_prepared_dl34_min_hp = 50
+borg_param_prepared_dl34_min_clevel = 4
+borg_param_prepared_dl59_min_hp = 60
+borg_param_prepared_dl59_min_clevel = 6
+borg_param_prepared_mid_clevel_offset = -4
+borg_param_prepared_deep_clevel_offset = 5
+borg_param_prepared_deep_min_clevel = 0
+borg_param_prepared_deep_max_clevel = 38

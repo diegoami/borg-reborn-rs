@@ -25,7 +25,7 @@ use crate::borg_cave_light::AUTO_LIGHT_MAX;
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid};
 use crate::borg_cave_view::BORG_VIEW;
 use crate::borg_danger::{borg_danger, borg_danger_one_kill};
-use crate::borg_escape::{borg_allow_teleport, borg_caution_phase, borg_shadow_shift};
+use crate::borg_escape::{borg_allow_teleport, borg_shadow_shift, phase_door, PhaseCheck, PhaseSite};
 use crate::borg_flow::{
     borg_can_dig, borg_flow_clear, borg_flow_commit, borg_flow_enqueue_grid, borg_flow_old,
     borg_flow_spread, flow_commit,
@@ -190,20 +190,32 @@ pub fn borg_flow_reverse(
 /// returning to the stairs and trying to explore in anohter direction.
 /// The leash is different for exploring vs trying to get something.
 pub fn borg_get_leash(st: &BorgState, pick_up: bool) -> i32 {
-    let mut leash = 250;
+    // borg-reborn-rs (#732): C's numbers are parameters (`c_leash`).
+    let c = crate::borg_flow::c_leash();
+    let twitch = i32::from(st.borg.times_twitch);
+    let base = leash_with(c, st.borg.tr(BI_CLEVEL), st.borg.tr(BI_CDEPTH), twitch, pick_up);
+    // borg-reborn-rs (#840): the leash follows the kit while it is short
+    // (`kit_leash`); the bored growth is C's.
+    let growth = if twitch > c.twitch_after { twitch } else { 0 };
+    crate::borg_kit::leash(st, base, st.borg.tr(BI_CLEVEL) * c.per_level + c.base, growth)
+}
 
-    if pick_up && st.borg.tr(BI_CLEVEL) < 20 {
-        leash = st.borg.tr(BI_CLEVEL) * 3 + 9;
+/// `borg_get_leash` with the parameters and the facts given (unit-tested).
+fn leash_with(c: crate::borg_flow::CLeash, clevel: i32, depth: i32, twitch: i32, pick_up: bool) -> i32 {
+    let mut leash = c.unbounded;
+
+    if pick_up && clevel < c.pickup_max_level {
+        leash = clevel * c.per_level + c.base;
     }
 
-    if !pick_up && st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - 5 {
-        leash = st.borg.tr(BI_CLEVEL) * 3 + 9;
+    if !pick_up && depth >= clevel - c.depth_margin {
+        leash = clevel * c.per_level + c.base;
     }
 
     /* if the borg has run out of things to do, allow him to go a */
     /* little further afield */
-    if st.borg.times_twitch > 21 {
-        leash += i32::from(st.borg.times_twitch);
+    if twitch > c.twitch_after {
+        leash += twitch;
     }
 
     leash
@@ -1042,14 +1054,16 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
     borg_note(st, "# Twitchy!");
 
     /* try to phase out of it */
+    // borg-reborn-rs (#584): through the one Phase Door decision.
     if borg_allow_teleport(st)
-        && borg_caution_phase(st, 15, 2)
-        && (borg_spell_fail(st, PHASE_DOOR, 40)
-            || borg_spell_fail(st, PORTAL, 40)
-            || borg_shadow_shift(st, 40)
-            || borg_activate_item(st, st.act.tele_phase)
-            || borg_activate_item(st, st.act.tele_long)
-            || borg_read_scroll(st, st.item_val.sv_scroll_phase_door))
+        && phase_door(st, PhaseSite::TwitchyMove, PhaseCheck::Landing { tolerance: 15, horizon: 2 }, None, |st| {
+            borg_spell_fail(st, PHASE_DOOR, 40)
+                || borg_spell_fail(st, PORTAL, 40)
+                || borg_shadow_shift(st, 40)
+                || borg_activate_item(st, st.act.tele_phase)
+                || borg_activate_item(st, st.act.tele_long)
+                || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+        })
     {
         /* We did something */
         return true;
@@ -1086,8 +1100,18 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
             continue;
         }
 
+        // borg-reborn-rs (#597): nor into lava without fire immunity.
+        if crate::borg_caution::twitch_refuses(st, &grid) {
+            continue;
+        }
+
         /* monsters count as walls if afraid */
         if grid.kill != 0 && afraid(st) {
+            continue;
+        }
+
+        // borg-reborn-rs (#621 review): and an ignored monster always does.
+        if grid.kill != 0 && crate::borg_fight_attack::ignored(st, usize::from(st.kills.kills[usize::from(grid.kill)].r_idx)) {
             continue;
         }
 
@@ -1123,6 +1147,12 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
                 continue;
             }
 
+            // borg-reborn-rs (#597): nor into lava without fire immunity.
+            if crate::borg_caution::twitch_refuses(st, &grid) {
+                dir += 1;
+                continue;
+            }
+
             /* monsters count as walls if afraid */
             if grid.kill != 0 && afraid(st) {
                 dir += 1;
@@ -1146,6 +1176,11 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
 
     /* Normally move */
 
+    // #781: reject before queueing even an alter prefix.
+    let x = st.borg.c.x + i32::from(engine::ddx(dir as usize));
+    let y = st.borg.c.y + i32::from(engine::ddy(dir as usize));
+    if crate::borg_caution::unseen_bump_blocked(st, x, y) { return false; }
+
     /* if afraid, we need to try to dig. We have tried everything else */
     /* digging will at least take an action so maybe give time to not be */
     /* afraid */
@@ -1154,6 +1189,9 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
     }
 
     /* Send direction */
+    // borg-reborn-rs (#781 review): an unimpaired twitch can also bump an
+    // unseen occupant. Do not re-enter a remembered occupied grid.
+    crate::borg_caution::unseen_bump_step(st, x, y);
     borg_keypress(st, i2d(dir));
 
     /* We did something */
@@ -1486,7 +1524,11 @@ pub fn borg_flow_far_from_stairs_dist(
     b_stair: i32,
     distance: i32,
 ) -> bool {
-    if st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - 5 && st.borg.tr(BI_CLEVEL) < 20 {
+    let c = crate::borg_flow::c_leash(); // borg-reborn-rs (#732)
+    // borg-reborn-rs (#840): a short kit puts the stair check on at any depth.
+    if (st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - c.depth_margin && st.borg.tr(BI_CLEVEL) < c.stairs_max_level)
+        || crate::borg_kit::leash_active(st)
+    {
         /* obtain the number of steps from this take to the stairs */
         let cost = borg_flow_cost_stair(st, y, x, b_stair);
 
@@ -1521,6 +1563,39 @@ pub fn borg_free_flow_misc(st: &mut BorgState) {
 
 #[cfg(test)]
 mod tests {
+    use crate::borg_flow::CLeash;
+
+    /// C's numbers, the compiled defaults (#732).
+    const C: CLeash = CLeash {
+        per_level: 3,
+        base: 9,
+        unbounded: 250,
+        pickup_max_level: 20,
+        depth_margin: 5,
+        twitch_after: 21,
+        stairs_max_level: 20,
+        take_near_max_level: 10,
+        take_nearness: 5,
+        take_max_level: 20,
+    };
+
+    /// #732 (owner): C's leash with its numbers as parameters; the defaults
+    /// give C's values, and each parameter moves the leash as it says.
+    #[test]
+    fn the_leash_follows_its_parameters() {
+        assert_eq!(super::leash_with(C, 10, 1, 0, true), 39, "pick up below CL20: 10 x 3 + 9");
+        assert_eq!(super::leash_with(C, 10, 1, 0, false), 250, "exploring well above the depth: none");
+        assert_eq!(super::leash_with(C, 10, 5, 0, false), 39, "exploring at depth >= CL - 5");
+        assert_eq!(super::leash_with(C, 10, 5, 22, false), 61, "bored: + the twitches");
+        assert_eq!(super::leash_with(C, 20, 5, 0, true), 250, "pick up at CL20: none");
+        let wider = CLeash { per_level: 5, base: 20, ..C };
+        assert_eq!(super::leash_with(wider, 4, 1, 0, false), 40, "4 x 5 + 20");
+        let deeper = CLeash { depth_margin: 20, ..C };
+        assert_eq!(super::leash_with(deeper, 10, 1, 0, false), 39, "the margin keeps the leash on");
+        let open = CLeash { unbounded: 120, pickup_max_level: 0, ..C };
+        assert_eq!(super::leash_with(open, 10, 1, 0, true), 120, "no pick-up leash: the unbounded value");
+    }
+
     use super::*;
 
     #[test]

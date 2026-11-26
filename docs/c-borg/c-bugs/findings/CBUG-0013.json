@@ -1,0 +1,215 @@
+{
+  "id": "CBUG-0013",
+  "source_groups": [
+    33,
+    34
+  ],
+  "title": "Latest purchase/sale is outside the history reader range",
+  "site": "src/borg/borg-store-buy.c / borg-store-sell.c transaction counters",
+  "priority": "med",
+  "checked": "2026-11-05",
+  "c": "present-at-pin",
+  "neo": "shared",
+  "mandos": "shared",
+  "impact": {
+    "level": "predicted-or-unproven",
+    "description": "Immediate buy-back/resale suppression can miss the newest record; full transaction scenario pending."
+  },
+  "notes": "Writers store a last index, readers scan p<num. Group34's purchase half shares the cause already reported in33; one catalogue entry.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 20
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-store-buy.c",
+      "start": 1226,
+      "end": 1233,
+      "description": "bought_item_nxt++;"
+    },
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-store-sell.c",
+      "start": 1128,
+      "end": 1135,
+      "description": "sold_item_nxt++;"
+    },
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-store-buy.c",
+      "start": 171,
+      "end": 176,
+      "description": "p < sold_item_num"
+    },
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-store-sell.c",
+      "start": 349,
+      "end": 354,
+      "description": "p < bought_item_num"
+    },
+    {
+      "role": "neo",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568",
+      "path": "src/store/store.ts",
+      "start": 151,
+      "end": 154,
+      "description": "mem.boughtNum ="
+    },
+    {
+      "role": "mandos",
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f",
+      "path": "src/store/store.ts",
+      "start": 154,
+      "end": 157,
+      "description": "mem.boughtNum ="
+    },
+    {
+      "role": "neo",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568",
+      "path": "src/store/store.ts",
+      "start": 136,
+      "end": 139,
+      "description": "mem.soldNum ="
+    },
+    {
+      "role": "mandos",
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f",
+      "path": "src/store/store.ts",
+      "start": 139,
+      "end": 142,
+      "description": "mem.soldNum ="
+    },
+    {
+      "role": "neo",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568",
+      "path": "src/store/sell.ts",
+      "start": 410,
+      "end": 414,
+      "description": "i < mem.boughtNum"
+    },
+    {
+      "role": "mandos",
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f",
+      "path": "src/store/sell.ts",
+      "start": 410,
+      "end": 414,
+      "description": "i < mem.boughtNum"
+    },
+    {
+      "role": "neo",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568",
+      "path": "src/store/buy.ts",
+      "start": 362,
+      "end": 366,
+      "description": "i < mem.soldNum"
+    },
+    {
+      "role": "mandos",
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f",
+      "path": "src/store/buy.ts",
+      "start": 362,
+      "end": 366,
+      "description": "i < mem.soldNum"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 582,
+      "end": 610,
+      "description": "discovery group 33"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 611,
+      "end": 645,
+      "description": "discovery group 34"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 599,
+      "end": 603,
+      "description": "reported C observation; not an independent validation"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 639,
+      "end": 643,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "origin": "upstream-c",
+  "reported_sources": [
+    {
+      "group": 33,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 599,
+        "end": 603,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "The sale list: `borg_think_shop_sell()` sets `sold_item_num` to the\n  index just written (not a count), and every reader (here and in\n  borg-store-buy.c) scans `p < sold_item_num`, so the most recent sale is\n  never seen. `sold_item_nxt` wraps at 9, so slot 9 is never used.\n  borg-store-buy.c does the same with its `bought_item_*` list."
+    },
+    {
+      "group": 34,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 639,
+        "end": 643,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`bought_item_num` is the index of the last entry written, but the\n  readers (`borg_store_sell`) loop `p < bought_item_num`, so the latest\n  purchase is never checked; `bought_item_nxt` wraps at 9, so entry 9 is\n  never used. (`sold_item_*` in borg-store-sell.c work the same way and are\n  read the same way here.)"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        33,
+        34
+      ]
+    }
+  ],
+  "evidence_at_import": "source-checked",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Retain a legal/reachable normal-rule scenario, initialization/pins, actual before/after commands/outcomes and negative controls before marking a fix validated.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

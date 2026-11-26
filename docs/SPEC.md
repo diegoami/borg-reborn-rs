@@ -9,7 +9,7 @@ comparison, and this repository delivers only our Borg (§6, §11).*
 ## 1. What it is
 
 borg-reborn-rs is an automatic player (a Borg) for **Angband 4.2.6**,
-upstream commit `42cd156ac9f95ddf4311e88dd7ad462292d6d1d6`, written in Rust
+upstream commit `574b618c3bfec595f3503a58f8e488b1c4ae3a46`, written in Rust
 and designed from the ground up in how it plays. **borg-zoo measures it and
 compares it with other Borgs**: the comparisons, the controls and the
 statistics are borg-zoo's (owner, 2026-11-09). This repository delivers one
@@ -21,7 +21,8 @@ the build, the harness, the evidence tools and the Borg itself. No part
 depends on, follows, or is limited by any other Borg project, borg-rs in
 particular, with one exception made on purpose: borg-rs's decision core,
 vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`
-(§2 amendment, 2026-11-14).
+(§2 amendment, 2026-11-14); since #606 it is also the core a run with no
+`BORG_CORE` plays (updated 2026-11-21, #816).
 
 ## 2. Independence
 
@@ -30,8 +31,13 @@ vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`
 > milestone the owner picks. **The decision core:** borg-rs's crate is
 > vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`.
 > Our changes to it are one patch: `src/shell.rs` (the errands) and the
-> hooks marked `borg-reborn-rs (#207)` and `(#208)`. The engine is
-> upstream `42cd156ac`, the commit borg-rs v12 plays (#215); borg-rs's one
+> hooks marked `borg-reborn-rs (#207)` and `(#208)`. *(Updated 2026-11-21,
+> #816: the core is the default since #606, and the patch has grown with
+> track P and the errands; `scripts/borg-core-vendor.py` lists it, our own
+> files as `OURS`, `PIN`, `ladders.txt` and eight modules, and the borg-rs
+> files carrying our hooks as `HOOKED`, 53 of them.)* The engine is
+> upstream `574b618c` (#724; `42cd156ac`, the commit borg-rs v12 plays, until
+> 2026-11-20, #215); borg-rs's one
 > fork correction (`cmd-wizard.c`, debug mode) is not carried. §2.1's "no
 > dependency" and §2.2's "no copy kept in sync" hold for everything else,
 > and our own core still needs nothing from borg-rs.
@@ -47,7 +53,7 @@ vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`
    we changed). No copy is kept "in sync".
 3. **References stay references.** Other projects' documents, specifications
    and results may be read and cited like any source (docs/SOURCES.md). The C
-   Borg specification (`reference/c-borg/BORG_SPEC.md`), the strategy manual
+   Borg specification (`docs/c-borg/BORG_SPEC.md`), the strategy manual
    (S14) and the death registries remain inputs to design. A citation is not
    a dependency.
 4. **Truth is the game.** Where a check needs ground truth (perception,
@@ -58,7 +64,7 @@ vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`
 
 ### 3.1 The game
 
-- Upstream Angband at `42cd156ac` (re-pinned from `e473720` on 2026-11-14, #215: the commit borg-rs v12 plays), vendored **byte for byte** as
+- Upstream Angband at `574b618c` (re-pinned from `42cd156ac` on 2026-11-20, #724, owner: "update engine"; `42cd156ac` was the pin from 2026-11-14, #215, the commit borg-rs v12 plays), vendored **byte for byte** as
   `engine/angband/`, next to the patch series and our build (TE.1). A test
   checks that the tree equals upstream's tree at that commit.
 - The game rules are never changed. The only differences from upstream are
@@ -214,7 +220,10 @@ frontend's flags and outputs, and `harness/borg.txt` (§3.5, §3.6, below).
     three keys of ours that select the decision core (`borg_reborn_core`),
     an errand (`borg_reborn_errand`) and the fear stop
     (`borg_reborn_stopscared`). Our own core still reads nothing else in
-    it. Until 2026-11-14 it was inert here, and its `borg_self_scum = TRUE`
+    it. *(Updated 2026-11-21, #816: it now also carries its own shipped
+    values for borg-rs's settings, #479, the track P parameters as
+    `borg_param_*` lines, and further keys of ours such as `borg_scary_list`
+    and `borg_world`.)* Until 2026-11-14 it was inert here, and its `borg_self_scum = TRUE`
     (upstream's default) let the C Borgs money-scum in the zoo's
     `4.2.6-reborn-c-*` specimens; the zoo was told (RULES 7).
 - **Environment:** `TZ=UTC`, `LANG=C.UTF-8` and `LC_ALL=C.UTF-8` for every
@@ -365,7 +374,7 @@ Unchanged in intent from docs/ARCHITECTURE.md, re-founded on §3–§5:
 | `docs/deaths/` (D0001–D0525) | ours, on borg-rs's tree | **Keep** as history, a generation of its own; the canonical registry now lives in [borg-cemetery](https://github.com/diegoami/borg-cemetery) | §4 |
 | `pins.json`: borg-rs | build source, `engine_tree` record, `borg_dir` | **Reference only**: `engine_tree` and borg-rs's `borg_dir` removed; the refresh report's watch of cited C Borg functions uses the angband pin's `src/borg` | §2 |
 | `reference/borg-rs/` | copies of borg-rs docs | **Keep** as reference | §2.3 |
-| `reference/c-borg/`, `reference/c-manual/`, `reference/deaths/`, `reference/zoo/`, `docs/research/` | sources and digests | **Keep** | |
+| `docs/c-borg/`, `docs/strategy/`, `reference/deaths/`, `reference/zoo/`, `docs/research/` | sources and digests | **Keep** | |
 | S12 (`reference/strategy/`) | draft manual | **Retired** in TE.8 (owner, 2026-11-09) | S14 supersedes it |
 | `docs/ZOO-CHANGE-REQUEST.md` | the request done by borg-zoo#32 | **Superseded** by `docs/ZOO-INTERFACE.md`; kept as history | §4 |
 | borg-zoo specimens `4.2.6-reborn-*` | at `2dd11fd`, through the zoo's borg-rs adapter | **Re-specify** `4.2.6-reborn-rust` after the new integration; the `-c-*` specimens are the zoo's to keep or retire | §4, §6 |

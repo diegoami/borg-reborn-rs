@@ -5,6 +5,7 @@
 #include "ui-event.h"
 #include "ui-term.h"
 #include "recorder.h"
+void record_early_init(void);
 void record_init(void);
 void record_frame(const char *phase, long decisions);
 bool record_input_replay(ui_event *event, bool wait, bool take, int *result);

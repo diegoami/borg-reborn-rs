@@ -2,6 +2,8 @@
 //! No danger policy, mutable state, RNG, keys or engine effects are exposed.
 use crate::state::BorgState;
 pub use crate::params::{value as param, Param};
+
+pub fn resolved_param(param: Param) -> (i32, &'static str) { crate::params::resolved(param) }
 pub use crate::engine::{adj_dex_safe, ddx_ddd, ddy_ddd, extract_energy,
     game_turn, race_flag_has, square_in_bounds, square_in_bounds_fully, z_info};
 pub use crate::borg_cave_util::{borg_cave_floor_grid as floor_grid,
@@ -34,10 +36,15 @@ pub fn blow(index: usize, slot: usize) -> Option<Blow> {
         effect: crate::borg_fight_attack::borg_mon_blow_effect(b.effect_name.to_bytes()) as u32 })
 }
 pub fn spell_stat() -> i32 { crate::borg_magic::borg_spell_stat() }
+pub fn player_is_fox() -> bool {
+    crate::engine::player_is_shapechanged() && crate::engine::player_shape_name() == b"fox"
+}
 /// Borrowed context, valid only until the next mutation of the native state.
 pub struct Facts<'a>(&'a BorgState);
 impl<'a> Facts<'a> {
     pub fn new(state: &'a BorgState) -> Self { Self(state) }
+    // #856: shared read-only caution policy until the breeder hunt is carried.
+    pub fn breeder_engaged(&self) -> bool { crate::borg_caution::breeder_engaged(self.0) }
     pub fn is_vault(&self, x: i32, y: i32) -> bool { crate::engine::square_isvault(x,y) }
     pub fn floor(&self, y:i32, x:i32) -> bool { crate::borg_cave_util::borg_cave_floor_bold(self.0,y,x) }
     pub fn projectable(&self, y:i32,x:i32, yy:i32,xx:i32) -> bool { crate::borg_projection::borg_projectable(self.0,y,x,yy,xx) }

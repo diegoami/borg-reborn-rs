@@ -1,11 +1,9 @@
-//! The trip policy (borg-rs#60): how deep a trip into the dungeon goes and
-//! when it comes back to town.
+//! Additional reasons to return to town (borg-rs#60).
 //!
-//! The munchkin and lunal modes were removed: there is one play mode. What
-//! remains to decide is one question, asked whenever the Borg considers
-//! leaving its level: **continue** on this level, **descend**, **ascend**
-//! one level, or **return** to town - with the reasons. This module is that
-//! decision and nothing else:
+//! The munchkin and lunal modes were removed: there is one play mode. The
+//! inherited Borg keeps its depth, shopping and combat decisions. Only
+//! a **return** recommendation may add a town-return goal. Other action
+//! recommendations are diagnostic and do not change movement.
 //!
 //! * [`TripInputs`] - the player-known state the decision reads, in the
 //!   game's own units (levels, gold, pack slots per distinct stack, stacks);
@@ -13,8 +11,6 @@
 //! * [`decide`] - a pure function from the two to a [`Decision`]: the
 //!   action, the route a return or a move would take, the planned depth,
 //!   and every [`Reason`] that fired, in priority order;
-//! * [`plan_trip`] - the planned trip (depth target, levels, Recall scrolls)
-//!   the town plan prices its purchases for.
 //!
 //! **Deciding is not moving.** Walking to a staircase, reading Word of
 //! Recall, or searching for a way out is `borg_leave_level`'s and the flow
@@ -28,7 +24,7 @@
 //! **Off by default.** `borg_trip_policy = 0` keeps today's behaviour,
 //! byte for byte (the C/Rust parity of the default config); the policy is
 //! then consulted only to write `BORG_TRIP_RECORD`, which observes and
-//! never acts. `borg_trip_policy = 1` lets the decision act. No formula,
+//! never acts. `borg_trip_policy = 1` adds return requests. No formula,
 //! weight or threshold here is accepted yet: the values are the provisional
 //! proposal of docs/TRIP-POLICY.md, to be fitted on runs and confirmed on
 //! others.
@@ -406,11 +402,9 @@ impl Decision {
     }
 }
 
-/// One current trip forecast for town supplies and tactical reserves.
-pub fn forecast(st: &mut BorgState) -> Option<PlannedTrip> {
-    if !acting(st) { return None; }
-    let inputs = observe(st, -1);
-    Some(plan_trip(&inputs, &TripParams::of(&st.core.cfg)))
+/// Add a town-return request without changing the inherited depth decisions.
+pub fn apply_return(action: Action, before: (i32, bool)) -> (i32, bool) {
+    if action == Action::Return { (before.0.min(-1), true) } else { before }
 }
 
 /// The planned depth: the deepest prepared level less the margin, never
@@ -499,12 +493,8 @@ pub fn decide(i: &TripInputs, p: &TripParams) -> Decision {
     }
 }
 
-/// The trip the town plan should supply (borg-rs#60 with #36): where it
-/// aims, how many levels it crosses from the recall depth, and how many
-/// Word of Recall scrolls it consumes.
-///
-/// The town evaluator reads the target and levels when the policy acts.
-/// Recall utility remains the town model's marginal travel valuation.
+/// Historical forecast shape retained for compatibility and arithmetic tests.
+/// Live shopping and combat do not obtain this from the return policy.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PlannedTrip {
     pub depth_target: i32,
@@ -523,7 +513,8 @@ pub struct PlannedTrip {
     pub recall_carry: i32,
 }
 
-/// The planned trip from the inputs (in town or in the dungeon).
+/// Historical forecast arithmetic retained only as a test fixture.
+#[cfg(test)]
 pub fn plan_trip(i: &TripInputs, p: &TripParams) -> PlannedTrip {
     let depth_target = planned_depth(i, p);
     let start = if i.max_depth >= RECALL_MIN_DEPTH { i.max_depth.min(depth_target) } else { 1 };
@@ -540,10 +531,11 @@ pub fn plan_trip(i: &TripInputs, p: &TripParams) -> PlannedTrip {
 
 /// `borg_prepared(depth)` without its side effects: it sets
 /// `ready_morgoth` and, deep down, re-notices the Home; both are put back.
+#[track_caller]
 fn prepared_probe(st: &mut BorgState, depth: i32) -> bool {
     let ready = st.borg.ready_morgoth;
     let home = st.home.clone();
-    let ok = crate::borg_prepared::borg_prepared(st, depth).is_none();
+    let ok = crate::borg_prepared::prepared_for_decision(st, depth).is_none();
     st.borg.ready_morgoth = ready;
     st.home = home;
     ok
@@ -1124,6 +1116,19 @@ mod tests {
         assert!(existing.contains("\"requested_return\":true"));
         assert!(existing.contains("\"direction_changed\":false"));
         assert!(!fresh.contains('\n'));
+    }
+
+    #[test]
+    fn only_a_return_request_changes_the_inherited_decision() {
+        for direction in [-1, 0, 1] {
+            for rising in [false, true] {
+                let before = (direction, rising);
+                for action in [Action::Continue, Action::Descend, Action::Ascend] {
+                    assert_eq!(apply_return(action, before), before);
+                }
+                assert_eq!(apply_return(Action::Return, before), (-1, true));
+            }
+        }
     }
 
     /// With the policy off, the legacy sale hold is the C condition; the

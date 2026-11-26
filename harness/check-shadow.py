@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Require non-vacuous, internally consistent shadow evidence and zero mismatches.
 
+The pinned receiving policy uses @9 with --r45, including its new public roots.
 R4 item-use uses @5 with --r4-item-use; --legacy-r4-item-use reads immutable @4. The immutable r3-attack-defence reader is @3. --legacy-r3-attack reads @2. --legacy-r2 explicitly reads immutable
 @1 evidence: its dependency_requests field means total tape events. Returned
 legacy totals derive the marker/request split without changing any raw file.
@@ -28,6 +29,14 @@ ENTRY_POINTS = ATTACK_SURFACE + ('defence.borg_defend',)
 ITEM_USE_ENTRY_POINTS = ('item_use.borg_quaff_crit', 'item_use.borg_quaff_potion', 'item_use.borg_quaff_unknown', 'item_use.borg_read_scroll', 'item_use.borg_read_unknown', 'item_use.borg_eat', 'item_use.borg_eat_unknown', 'item_use.borg_eat_food_any', 'item_use.borg_equips_rod', 'item_use.borg_zap_rod', 'item_use.borg_use_staff', 'item_use.borg_use_unknown', 'item_use.borg_use_staff_fail', 'item_use.borg_equips_staff_fail', 'item_use.borg_aim_wand', 'item_use.borg_equips_ring', 'item_use.borg_activate_ring', 'item_use.borg_equips_dragon', 'item_use.borg_activate_dragon', 'item_use.borg_activate_item', 'item_use.borg_equips_item', 'item_use.borg_activate_failure', 'item_use.borg_use_things', 'item_use.borg_recharging')
 R4_ENTRY_POINTS = ENTRY_POINTS + ITEM_USE_ENTRY_POINTS
 STORE_ENTRY_POINTS = ('store.borg_power_home', 'store.borg_think_shop_buy_useful', 'store.borg_think_home_buy_useful', 'store.borg_think_shop_grab_interesting', 'store.borg_think_home_grab_useless', 'store.borg_think_home_buy_swap_weapon', 'store.borg_think_home_buy_swap_armour', 'store.borg_think_shop_buy', 'store.take_selected_for_sale', 'store.confirm_purchase', 'store.borg_min_item_quantity', 'store.borg_think_home_sell_useful', 'store.borg_think_shop_sell_useless', 'store.borg_think_shop_sell', 'store.sell_one_selected', 'store.borg_count_sell', 'store.borg_choose_shop', 'store.borg_think_store', 'store.town_strategy_disabled')
+R45_RETIRED = frozenset((
+    'escape.borg_caution_phase', 'item_use.borg_quaff_unknown', 'item_use.borg_read_unknown',
+    'item_use.borg_eat_unknown', 'item_use.borg_use_unknown', 'store.sell_one_selected',
+))
+R45_ADDED = (
+    'caution.fight_before_flight', 'caution.recall_wait_no_explore', 'caution.lightless_self_care',
+    'attack.attack_on_sight', 'recovery.holding_for_monster', 'store.sell_selected_quantity',
+)
 R2_PORTED = ['danger.wall_like', 'danger', 'danger.one_monster', 'caution', 'escape', 'recovery']
 NUMERIC = ('comparisons', 'danger_calls', 'danger_comparisons',
            'monster_comparisons', 'wall_comparisons', 'stateful_comparisons',
@@ -41,14 +50,14 @@ def checked_map(value, allowed, path):
     return value
 
 
-def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False, expected_mode=None, r4_item_use=False, legacy_item_use=False, r4_power=False, r4_equipment=False, r4_store=False, constructed_roots=()):
+def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False, expected_mode=None, r4_item_use=False, legacy_item_use=False, r4_power=False, r4_equipment=False, r4_store=False, constructed_roots=(), r45=False):
     if expected_mode not in (None, 'check', 'switch'):
         raise ValueError('expected mode must be check or switch')
     if legacy_r2 and legacy_attack:
         raise ValueError('select only one legacy surface')
-    if sum(map(bool, (legacy_r2, legacy_attack, r4_item_use, legacy_item_use, r4_power, r4_equipment, r4_store))) > 1:
+    if sum(map(bool, (legacy_r2, legacy_attack, r4_item_use, legacy_item_use, r4_power, r4_equipment, r4_store, r45))) > 1:
         raise ValueError("select only one shadow surface")
-    store_surface = r4_store
+    store_surface = r4_store or r45
     equipment_surface = r4_equipment or store_surface
     power_surface = r4_power or equipment_surface
     r4_item_use = r4_item_use or power_surface
@@ -63,12 +72,14 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
     if constructed_roots and (not declared_constructed or not declared_constructed <= {p.resolve() for p in files}):
         raise ValueError('constructed roots must contain statistics included in the checked roots')
     run_coverage = {}
-    schema = 'borg-reborn-rs/shadow-stats@' + ('8' if store_surface else '7' if equipment_surface else '6' if power_surface else '5' if r4_item_use else '4' if legacy_item_use else '1' if legacy_r2 else '2' if legacy_attack else '3')
+    schema = 'borg-reborn-rs/shadow-stats@' + ('9' if r45 else '8' if store_surface else '7' if equipment_surface else '6' if power_surface else '5' if r4_item_use else '4' if legacy_item_use else '1' if legacy_r2 else '2' if legacy_attack else '3')
     allowed = R4_ENTRY_POINTS + ('power.borg_power', 'power.borg_power_equipment') if power_surface else R4_ENTRY_POINTS if item_surface else R2_ENTRY_POINTS if legacy_r2 else ENTRY_POINTS if complete else ATTACK_SURFACE
     if equipment_surface:
         allowed = allowed + ('equipment.borg_test_stuff', 'equipment.borg_swap_rings', 'equipment.borg_wear_rings', 'equipment.borg_backup_swap', 'equipment.borg_wear_stuff', 'equipment.borg_best_stuff', 'equipment.borg_clear_best', 'equipment.borg_wear_recharge', 'equipment.borg_object_fully_id')
     if store_surface:
         allowed = allowed + STORE_ENTRY_POINTS
+    if r45:
+        allowed = tuple(name for name in allowed if name not in R45_RETIRED) + R45_ADDED
     fields = NUMERIC + (() if legacy_r2 else ('attack_calls', 'pure_attack_comparisons')) + (('defence_calls',) if complete else ()) + (('item_use_calls',) if item_surface else ()) + (('readonly_comparisons',) if r4_item_use else ()) + (('power_calls',) if power_surface else ()) + (('equipment_calls',) if equipment_surface else ()) + (('store_calls',) if store_surface else ())
     totals = dict.fromkeys((*fields, 'tape_events', 'policy_markers', 'dependency_requests'), 0)
     entries = dict.fromkeys(allowed, 0)
@@ -94,7 +105,7 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
             previous, last = row['counts']['thinks'], row
         if last is None:
             raise ValueError(f'{path}: empty statistics')
-        if not legacy_r2 and last.get('surface') != ('r4-store' if store_surface else 'r4-equipment' if equipment_surface else 'r4-power' if power_surface else 'r4-item-use-readonly' if r4_item_use else 'r4-item-use' if legacy_item_use else 'r3-attack-defence' if complete else 'r3-attack'):
+        if not legacy_r2 and last.get('surface') != ('r45' if r45 else 'r4-store' if store_surface else 'r4-equipment' if equipment_surface else 'r4-power' if power_surface else 'r4-item-use-readonly' if r4_item_use else 'r4-item-use' if legacy_item_use else 'r3-attack-defence' if complete else 'r3-attack'):
             raise ValueError(f'{path}: unexpected entry surface')
         if last.get('ported_points') != R2_PORTED + ([] if legacy_r2 else ['attack', 'defence'] if complete else ['attack']) + (['item_use'] if item_surface else []) + (['power'] if power_surface else []) + (['equipment'] if equipment_surface else []) + (['store'] if store_surface else []):
             raise ValueError(f'{path}: unexpected port coverage')
@@ -208,6 +219,7 @@ def main():
                         help='explicit @2 attack reader; cannot satisfy complete defence coverage')
     parser.add_argument('--legacy-r4-item-use', action='store_true', help='explicit historical @4 all-stateful item-use reader')
     parser.add_argument('--r4-store', action='store_true', help='require complete @8 store/home surface')
+    parser.add_argument('--r45', action='store_true', help='require the @9 receiving policy surface')
     parser.add_argument('--r4-equipment', action='store_true', help='require complete @7 equipment surface')
     parser.add_argument('--r4-power', action='store_true', help='require complete @6 power and item-use surface')
     parser.add_argument('--r4-item-use', action='store_true', help='require complete @5 read-only/mutable item-use surface; historical readers cannot satisfy it')
@@ -218,13 +230,13 @@ def main():
     parser.add_argument('--report', type=Path, help='write a new JSON gate report; refuses to overwrite an existing report')
     args = parser.parse_args()
     try:
-        count, totals = check(args.roots, args.require_all_entries, args.legacy_r2, args.legacy_r3_attack, args.expect_mode, args.r4_item_use, args.legacy_r4_item_use, args.r4_power, args.r4_equipment, args.r4_store, args.constructed_root)
+        count, totals = check(args.roots, args.require_all_entries, args.legacy_r2, args.legacy_r3_attack, args.expect_mode, args.r4_item_use, args.legacy_r4_item_use, args.r4_power, args.r4_equipment, args.r4_store, args.constructed_root, r45=args.r45)
         if args.report:
             args.report.parent.mkdir(parents=True, exist_ok=True)
             with args.report.open('x') as output:
                 json.dump({'schema': 'borg-reborn-rs/shadow-gate-report@1',
                            'require_all_entries': args.require_all_entries, 'expected_mode': args.expect_mode,
-                           'surface': 'r4-store' if args.r4_store else 'other-explicit-reader',
+                           'surface': 'r45' if args.r45 else 'r4-store' if args.r4_store else 'other-explicit-reader',
                            'constructed_root_count': len(args.constructed_root), 'runs': count,
                            'counts': totals, 'mismatches': 0}, output, indent=2)
                 output.write('\n')

@@ -10,7 +10,7 @@ The initial engine adapter targets vanilla **Angband 4.2.6,
 option is **off by default**. The crate owns capture, replay, ordered input
 streams, time wrapping, file preservation, frame encoding and verification.
 C translates Angband structures and provides a forked save callback. See
-[the comparison](docs/COMPARISON.md), [format](spec/streams-v1.md) and
+[the comparison](docs/COMPARISON.md), [format](spec/streams-v2.md) and
 [credits](CREDITS.md).
 
 ```sh
@@ -24,6 +24,10 @@ builds with the C Borg disabled, creates a Human Warrior through the stock test
 frontend, plays eight turns, saves and quits, and verifies streams and final
 save bytes. It also rejects a changed RNG observation. Scratch stays outside
 Git; heavy work takes `/tmp/angband-validation.lock`.
+
+Build requirements: Rust/Cargo, a C compiler, CMake, Python 3.12+, patch and
+libX11 development headers. Vanilla CMake enables X11 as a fallback even when
+the test frontend was explicitly selected; the round trip itself uses no GUI.
 
 To build manually, apply `patches/angband-4.2.6-42cd156.patch` to that exact
 engine, then configure:
@@ -69,4 +73,25 @@ The owner handover's next features are a single file with a branch tree,
 rolling save points, an in-game menu/scrubbing and restart-based branching,
 portability, size reduction and human GUI qualification. These are not
 claimed by the initial stream extraction. Curated recordings belong in
-`diegoami/borg-cemetery`, with release assets only when needed for size.
+`diegoami/player-cemetery`, with release assets only when needed for size.
+
+The delivered extraction and recorded-play workflow is now **M1, awaiting
+independent review**. See [milestone state](MILESTONES.md), the
+[pinned package](docs/milestones/M1.md) and the
+[reviewer prompt](docs/review/M1-PROMPT.md). Publication of v0.1.0 is not an
+independent acceptance verdict.
+
+## Optional native save retention
+
+[Rolling save points and fast inspection](docs/ROLLING-SAVES.md) retain recent
+command-boundary saves plus periodic older points. Set ANGBAND_SAVE_WINDOW
+and/or ANGBAND_SAVE_EVERY before recording. Use `view SOURCE --turn TURN` to
+inspect recorded screens without executing the game. Native saves start a
+new process; they do not serialize the bot's in-memory state.
+
+## Recording borg-reborn-rs games locally
+
+[docs/borg-reborn-rs-recording](docs/borg-reborn-rs-recording/README.md) is the
+owner's local workflow for recording a borg-reborn-rs game with this recorder,
+replaying it, opening its saves and watching its screens, with the scripts it
+uses. It builds in a separate worktree and does not change the consumer or its pin.

@@ -32,7 +32,7 @@ use crate::decision_api::borg_buy_strategy::{
 use crate::decision_api::borg_home_notice::borg_notice_home;
 use crate::decision_api::borg_home_power::borg_power_home;
 use crate::decision_api::borg_inventory::{borg_first_empty_inventory_slot, borg_slot, borg_wield_slot};
-use crate::decision_api::borg_io::{borg_keypress, borg_note, borg_note_bytes, ESCAPE, KC_ENTER};
+use crate::decision_api::borg_io::{borg_keypress, borg_keypresses, borg_note, borg_note_bytes, ESCAPE, KC_ENTER};
 use crate::decision_api::borg_item::inven_wield;
 use crate::decision_api::borg_magic::{borg_get_book_num, borg_is_dungeon_book, borg_primarily_caster};
 use crate::decision_api::borg_power::borg_power;
@@ -360,6 +360,15 @@ fn borg_good_buy(st: &mut BorgState, who: i32, ware_n: i32) -> bool {
 
     /* Okay */
     true
+}
+
+pub(crate) fn recall_purchase_floor() -> i32 {
+    param(Param::buy_recall_from_gold)
+}
+
+/// Gold available for Word of Recall after reserving the required balance.
+pub(crate) fn recall_purchase_budget(gold: i64, minimum_remaining: i32) -> i64 {
+    gold.saturating_sub(i64::from(minimum_remaining)).max(0)
 }
 
 /// Point the Borg at one shop ware for purchase. A pending pack-sale goal
@@ -1429,12 +1438,14 @@ fn remember_purchase(st: &mut BorgState, item: &borg_item, shop: i32) {
 }
 
 /// Live mode calls this only after observing the native transaction.
-pub(crate) fn confirm_purchase_native(st: &mut BorgState, item: &borg_item, shop: i32, keep: bool) {
-if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.confirm_purchase",format!("{:?}",(item,shop,keep,)));}
-
-    note_desc(st, "# Buying ", item, ".");
+/// borg-reborn-rs (#507): `qty` is the copies the transaction bought and
+/// `paid` the gold it took.
+pub(crate) fn confirm_purchase_native(st: &mut BorgState, item: &borg_item, shop: i32, keep: bool, qty: i32, paid: i32) {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.confirm_purchase",format!("{:?}",(item,shop,keep,qty,paid,)));}
+    let qty = qty.max(1);
+    note_desc(st, &if qty > 1 { format!("# Buying {qty} x ") } else { "# Buying ".to_string() }, item, ".");
     let shop_name = String::from_utf8_lossy(&crate::decision_api::engine::store_feat_name(shop as usize)).to_string();
-    crate::decision_api::borg_object_log::log_buy(st, item, &shop_name, item.cost, shop == BORG_HOME as i32);
+    crate::decision_api::borg_object_log::log_buy(st, item, &shop_name, paid, shop == BORG_HOME as i32, qty as u32);
     crate::decision_api::borg_town_dump::dump_purchase(st, shop, item);
     if keep { remember_purchase(st, item, shop); }
     if crate::decision_api::borg_town_live::active(st) { reset_money_scum(st, item); }
@@ -1475,12 +1486,18 @@ fn buy_selected(st: &mut BorgState, keep_purchase: bool) -> bool {
             return false;
         }
 
-        if !crate::decision_api::borg_town_live::active(st) { confirm_purchase(st, &item, shop, false); }
+        if !crate::decision_api::borg_town_live::active(st) { confirm_purchase(st, &item, shop, false, 1, item.cost); }
 
         /* Buy the desired item */
         borg_keypress(st, purchase_target);
         if !crate::decision_api::engine::player_opt(crate::headers::list_options_h::OPT_store_buy_direct) {
             borg_keypress(st, keycode_t::from(b'p'));
+
+            // A planned purchase of several copies types its quantity over
+            // the prompt's default of 1 (borg-reborn-rs (#507); ui-store.c `store_purchase`,
+            // ui-input.c `askfor_aux`: the first key replaces the default).
+            let qty = crate::decision_api::borg_town_live::buy_quantity(st);
+            if qty > 1 { borg_keypresses(st, qty.to_string().as_bytes()); }
 
             /* Mega-Hack -- Accept the purchase */
             borg_keypress(st, KC_ENTER);
@@ -1545,9 +1562,9 @@ pub fn take_selected_for_sale(st: &mut BorgState) -> bool {
 if crate::decision_tape::active() {return take_selected_for_sale_native(st);}
 match crate::shadow::decision(st,crate::decisions::Decision::StoreTakeForSale) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
 }
-pub fn confirm_purchase(st: &mut BorgState, item: &borg_item, shop: i32, keep: bool) {
-if !crate::shadow::registered() || crate::decision_tape::active() {return confirm_purchase_native(st,item,shop,keep);}
-match crate::shadow::decision(st,crate::decisions::Decision::StoreConfirmPurchase {item:crate::decisions::ItemSnapshot::new(*item),shop,keep}) {crate::decisions::Value::Unit=>(),_=>unreachable!("typed store result")}
+pub fn confirm_purchase(st: &mut BorgState, item: &borg_item, shop: i32, keep: bool, qty: i32, paid: i32) {
+if !crate::shadow::registered() || crate::decision_tape::active() {return confirm_purchase_native(st,item,shop,keep,qty,paid);}
+match crate::shadow::decision(st,crate::decisions::Decision::StoreConfirmPurchase {item:crate::decisions::ItemSnapshot::new(*item),shop,keep,qty,paid}) {crate::decisions::Value::Unit=>(),_=>unreachable!("typed store result")}
 }
 
 #[cfg(test)]

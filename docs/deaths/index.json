@@ -1,6 +1,6 @@
 {
   "actions": [],
-  "cases": 2696,
+  "cases": 2721,
   "causes_by_distinct_start": {
     "Fang, Farmer Maggot's Dog": 184,
     "Grip, Farmer Maggot's Dog": 156,
@@ -72,7 +72,7 @@
     "03a7b8e2f5cf569953774a512dc291099f74c2df": 46,
     "0734559b8d6f473c3abe97add1dd6208bbde22f9": 8,
     "09bf83dece65d52cf55950089c3f4787ea35c83a": 1,
-    "0a0c23a1d52ad9da4923844b7fd899a83241e8f0": 14,
+    "0a0c23a1d52ad9da4923844b7fd899a83241e8f0": 6,
     "0d7048053d6f888d97d16c3739e82b9b938fb64b": 1,
     "1137bfee88c77a66f1eafcfd36015243d0d44b76": 46,
     "132aeb26a54a7988ca013256f752fce19f24afc9": 10,
@@ -85,6 +85,7 @@
     "2545f8416dad1b0eaa2e8d34c69745473a37a08c": 10,
     "25a6805bb5c71594cbb9f09044e755b44b312b08": 11,
     "2d8673b766c3f2d9fb513edb6a57ea9661daea62": 15,
+    "2f74e1c5d57ce2b41ded1b5b694174b91b51f265": 8,
     "2f969dfbddf5fa2ff6decd2b4b5697372931b229": 11,
     "3075dae917583b86aad04dfeceab61b91e0e7735": 12,
     "30ab9d664403ecf4b9e43317c2aacd33f979d946": 35,

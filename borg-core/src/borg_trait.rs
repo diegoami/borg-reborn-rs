@@ -84,6 +84,10 @@ const BORG_DIG: i32 = 10;
 pub struct TraitState {
     /// `borg_simulate`: simulation flag (attacks are only rated)
     pub simulate: bool,
+    /// borg-reborn-rs (#584): `borg_attack` only rates the attacks and stores
+    /// the winner's true damage in `estimate` (`borg_attack_estimate`).
+    pub estimate_only: bool,
+    pub estimate: Option<i32>,
     /// `borg_attacking`: simulation flag
     pub attacking: bool,
     /// `borg_on_glyph`: the Borg is standing on a glyph of warding
@@ -922,17 +926,22 @@ fn borg_notice_equipment(st: &mut BorgState) {
         t[BI_ADEX] += m(OBJ_MOD_DEX) * known(OBJ_MOD_DEX);
         t[BI_ACON] += m(OBJ_MOD_CON) * known(OBJ_MOD_CON);
 
-        /* various slays: accumulate across slots.  Assigning them per
-         * slot made the last occupied slot (usually the light or boots,
-         * with no slays) erase the wielded weapon's slays. */
-        t[BI_WS_ANIMAL] |= item.slays[RF_ANIMAL as usize];
-        t[BI_WS_EVIL] |= item.slays[RF_EVIL as usize];
-        t[BI_WS_UNDEAD] |= item.slays[RF_UNDEAD as usize];
-        t[BI_WS_DEMON] |= item.slays[RF_DEMON as usize];
-        t[BI_WS_ORC] |= item.slays[RF_ORC as usize];
-        t[BI_WS_TROLL] |= item.slays[RF_TROLL as usize];
-        t[BI_WS_GIANT] |= item.slays[RF_GIANT as usize];
-        t[BI_WS_DRAGON] |= item.slays[RF_DRAGON as usize];
+        /* various slays: keep the largest multiplier across slots, as
+         * the combat code does.  Assigning them per slot made the last
+         * occupied slot (usually the light or boots, with no slays) erase
+         * the wielded weapon's slays.
+         * borg-reborn-rs (#724): upstream Angband 007bea95 keeps the
+         * largest; borg-rs accumulated with `|=`, which is the same
+         * wherever a slay trait is read as on or off (every read today) but
+         * gives 7 for slays of 3 and 5. */
+        t[BI_WS_ANIMAL] = t[BI_WS_ANIMAL].max(item.slays[RF_ANIMAL as usize]);
+        t[BI_WS_EVIL] = t[BI_WS_EVIL].max(item.slays[RF_EVIL as usize]);
+        t[BI_WS_UNDEAD] = t[BI_WS_UNDEAD].max(item.slays[RF_UNDEAD as usize]);
+        t[BI_WS_DEMON] = t[BI_WS_DEMON].max(item.slays[RF_DEMON as usize]);
+        t[BI_WS_ORC] = t[BI_WS_ORC].max(item.slays[RF_ORC as usize]);
+        t[BI_WS_TROLL] = t[BI_WS_TROLL].max(item.slays[RF_TROLL as usize]);
+        t[BI_WS_GIANT] = t[BI_WS_GIANT].max(item.slays[RF_GIANT as usize]);
+        t[BI_WS_DRAGON] = t[BI_WS_DRAGON].max(item.slays[RF_DRAGON as usize]);
 
         /* the greater, race-destroying slays are stored under the same
          * race flag with the largest multiplier */
@@ -2189,6 +2198,7 @@ fn borg_notice_inventory(st: &mut BorgState) {
 
         {
             let needs_id = borg_item_note_needs_id(st, &item);
+            let worth_a_scroll = item.uncursable && crate::borg_cursed::worth_a_scroll(st, slot);
             let mut t = tr(st);
 
             /* total up the weight of the items */
@@ -2200,9 +2210,18 @@ fn borg_notice_inventory(st: &mut BorgState) {
             }
 
             /* track first uncursable item */
-            if item.uncursable {
+            /* borg-reborn-rs (#830): the inventory bit stays set for every
+             * uncursable pack item, as it mirrors the game's own "Uncurse
+             * which item?" prompt (it opens on the pack while any pack item
+             * qualifies, and `borg_decurse_any` presses `/` to reach a worn
+             * one). Only the demand depends on the worth: a pack item is the
+             * first cursed item only when it is worth a Remove Curse scroll
+             * (the read, the purchase and the town's CURSE capability all key
+             * on `BI_FIRST_CURSED`). */
+            let (marks_pack, may_be_first) = crate::borg_cursed::pack_curse(item.uncursable, worth_a_scroll);
+            if marks_pack {
                 t[BI_WHERE_CURSED] |= BORG_INVEN as i32;
-                if t[BI_FIRST_CURSED] == 0 {
+                if may_be_first && t[BI_FIRST_CURSED] == 0 {
                     t[BI_FIRST_CURSED] = slot + 1;
                 }
             }
@@ -2498,6 +2517,8 @@ fn borg_notice_inventory(st: &mut BorgState) {
         }
     }
 
+    // borg-reborn-rs (#451): see with_remove_hunger
+    let capability_mode = st.cfg(crate::borg_headers::borg_h::BORG_TOWN_PLAN) == 1;
     let mut t = tr(st);
 
     /* No need for experience repair */
@@ -2510,13 +2531,29 @@ fn borg_notice_inventory(st: &mut BorgState) {
     t[BI_FOOD] += t[BI_FOOD_LO];
 
     /* With no other food, Remove Hunger scrolls are the food supply */
-    if t[BI_FOOD] == 0 {
-        t[BI_FOOD] = remove_hunger;
-    }
+    t[BI_FOOD] = with_remove_hunger(t[BI_FOOD], remove_hunger, capability_mode);
 
     /* If weak, do not count food spells */
     if t[BI_ISWEAK] != 0 && t[BI_FOOD] >= 1000 {
         t[BI_FOOD] -= 1000;
+    }
+}
+
+/// `BI_FOOD` with the Remove Hunger scrolls (`remove_hunger` of them) in it.
+///
+/// borg-reborn-rs (#451): under the town plan every scroll counts, one each
+/// like a ration, because the planner values it as food (it supplies
+/// nutrition, `borg_town_capability`) and the core reads it before any food
+/// (`borg_item_use`). Counted only without other food, the planner sold the
+/// rations the core then missed ("restock food < 3"). Without the plan, the
+/// scrolls are the food supply only when there is no other food.
+fn with_remove_hunger(food: i32, remove_hunger: i32, capability_mode: bool) -> i32 {
+    if capability_mode {
+        food + remove_hunger
+    } else if food == 0 {
+        remove_hunger
+    } else {
+        food
     }
 }
 
@@ -2882,6 +2919,16 @@ pub fn borg_trait_free(st: &mut BorgState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn remove_hunger_scrolls_are_food_beside_rations_under_the_plan() {
+        // the plan: each scroll counts with the rations, like a ration
+        assert_eq!(with_remove_hunger(3, 2, true), 5);
+        assert_eq!(with_remove_hunger(0, 4, true), 4);
+        // without the plan: only when there is no other food (C Borg)
+        assert_eq!(with_remove_hunger(3, 2, false), 3);
+        assert_eq!(with_remove_hunger(0, 4, false), 4);
+    }
 
     #[test]
     fn prefix_pref_matches_the_enum() {

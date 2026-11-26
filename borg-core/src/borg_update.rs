@@ -1151,6 +1151,9 @@ fn target_worked(st: &mut BorgState) {
 /// and reset the anti-bounce count.
 fn kill_found(st: &mut BorgState, k: i32, i: i32, used: i16, count: bool) {
     if count {
+        // borg-reborn-rs (#590): a scary monster's death, for the unlatch.
+        let r_idx = st.kills.kills[k as usize].r_idx;
+        crate::borg_caution::note_kill(&mut st.borg.mon, r_idx);
         borg_count_death(st, k);
     }
     borg_delete_kill(st, k);
@@ -1399,7 +1402,12 @@ pub fn borg_update(st: &mut BorgState) {
     st.borg.status.anti_summon = floor_grid == 1;
 
     // Examine changing doors while shallow
-    if st.borg.tr(BI_CLEVEL) <= 5 && st.borg.tr(BI_CDEPTH) != 0 && st.flow.track_closed.num != 0 {
+    // borg-reborn-rs (#503): only with caution_scary_named_monsters
+    if st.borg.tr(BI_CLEVEL) <= 5
+        && st.borg.tr(BI_CDEPTH) != 0
+        && st.flow.track_closed.num != 0
+        && crate::borg_caution::scary_named_monsters()
+    {
         // Scan all known closed doors
         let mut i = 0;
         while i < i32::from(st.flow.track_closed.num) {
@@ -1415,6 +1423,7 @@ pub fn borg_update(st: &mut BorgState) {
                     &format!("# Monster opened door at {y},{x}.  That's scary."),
                 );
                 st.borg.mon.scary = true;
+                st.borg.mon.scary_door = true; // borg-reborn-rs (#530)
             }
         }
     }
@@ -1424,7 +1433,7 @@ pub fn borg_update(st: &mut BorgState) {
     let x = |w: BorgWank| i32::from(w.x);
     // Pass 1 -- stationary monsters
     track_wanks(st, true, |st, w| {
-        observe_kill_move(st, y(w), x(w), 0, w.t_a, w.t_c, false)
+        observe_kill_move(st, y(w), x(w), 0, w.t_a, w.t_c as i32, false) // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
     });
     // Pass 2 -- stationary objects
     track_wanks(st, false, |st, w| {
@@ -1432,19 +1441,19 @@ pub fn borg_update(st: &mut BorgState) {
     });
     // Pass 3a -- moving monsters (distance 1)
     track_wanks(st, true, |st, w| {
-        observe_kill_move(st, y(w), x(w), 1, w.t_a, w.t_c, false)
+        observe_kill_move(st, y(w), x(w), 1, w.t_a, w.t_c as i32, false) // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
     });
     // Pass 3b -- moving monsters (distance 2)
     track_wanks(st, true, |st, w| {
-        observe_kill_move(st, y(w), x(w), 2, w.t_a, w.t_c, false)
+        observe_kill_move(st, y(w), x(w), 2, w.t_a, w.t_c as i32, false) // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
     });
     // Pass 3c -- moving monsters (distance 3)
     track_wanks(st, true, |st, w| {
-        observe_kill_move(st, y(w), x(w), 3, w.t_a, w.t_c, false)
+        observe_kill_move(st, y(w), x(w), 3, w.t_a, w.t_c as i32, false) // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
     });
     // Pass 3d -- moving monsters (distance 7, allow changes)
     track_wanks(st, true, |st, w| {
-        observe_kill_move(st, y(w), x(w), 7, w.t_a, w.t_c, true)
+        observe_kill_move(st, y(w), x(w), 7, w.t_a, w.t_c as i32, true) // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
     });
     // Pass 4 -- new objects
     track_wanks(st, false, |st, w| {
@@ -1478,6 +1487,9 @@ pub fn borg_update(st: &mut BorgState) {
     // 'regional' fear from the accumulated group of monsters (one Orc won't
     // be too dangerous, but 20 of them can be deadly); count up breeders
     spread_monster_fear(st);
+    // borg-reborn-rs (#556): remember the breeders' grids (no RNG).
+    crate::borg_caution::note_breeders(st);
+    crate::borg_caution::note_breeders_stoppable(st);
 
     // *** Notice missing objects ***
     let mut i = 1;
@@ -1539,6 +1551,8 @@ pub fn borg_update(st: &mut BorgState) {
     // *** Defaults ***
 
     // Default "goal" location
+    // borg-reborn-rs (#781): the new position confirms whether the step failed.
+    crate::borg_caution::unseen_bump_update(st);
     st.borg.goal.g = st.borg.c;
 }
 
@@ -1885,6 +1899,7 @@ fn created_traps_here(st: &mut BorgState) {
 
 /// The level changed: reset the clocks, goals, lists and the map.
 fn new_level(st: &mut BorgState) {
+    st.light.detected_entries.clear();
     let b = &mut st.borg;
     // Restart the clock
     b.time.level = b.time.now;
@@ -1903,9 +1918,19 @@ fn new_level(st: &mut BorgState) {
     b.status.vault = false;
     b.mon.unique = 0;
     b.mon.scary = false;
+    crate::borg_caution::forget_scary(&mut b.mon); // borg-reborn-rs (#530)
 
     // reset our breeder flag
     b.near.breeder = false;
+    // borg-reborn-rs (#556): a new level's breeders are not this one's
+    b.breeder_marks.clear();
+    b.breeder_block.clear();
+    b.breeder_through = None;
+    b.breeder_stuck = None;
+    b.breeders_lost = false;
+    b.breeders_lost_turn = 0;
+    b.breeders_behind = 0;
+    b.flee_path_noted = false; // borg-reborn-rs (#743)
 
     // reset our need to see inviso clock
     b.need_see_invis = 0;
@@ -2003,6 +2028,17 @@ fn new_level(st: &mut BorgState) {
 
     // Assume not leaving the level
     b.goal.leaving = false;
+    b.breeder_leaving = false; // borg-reborn-rs (#644, re-review of #656)
+    b.unseen_turn = 0; // borg-reborn-rs (#697)
+    b.unseen_bumps = Default::default(); // borg-reborn-rs (#781): new level
+    b.unseen_followed = false;
+    // borg-reborn-rs (#831): a new level ends the invisible-attacker mode.
+    b.unseen_mode = false;
+    b.unseen_detects = 0;
+    b.unseen_probes = 0;
+    b.unseen_probe = None;
+    b.unseen_empty.clear();
+    b.unseen_found = None;
 
     // Assume not fleeing the level
     b.goal.fleeing = false;
@@ -2344,6 +2380,10 @@ fn handle_late_messages(st: &mut BorgState, hit_dist: i32) {
                 // Handle "xxx dies."
                 let k = borg_locate_kill(st, args(what), c, 20);
                 if k > 0 {
+                    // borg-reborn-rs (#590, review of #592): a death in this
+                    // pass counts for the unlatch too.
+                    let r_idx = st.kills.kills[k as usize].r_idx;
+                    crate::borg_caution::note_kill(&mut st.borg.mon, r_idx);
                     borg_count_death(st, k);
                     borg_delete_kill(st, k);
                     set_msg_use(st, i, 4);
@@ -2352,6 +2392,9 @@ fn handle_late_messages(st: &mut BorgState, hit_dist: i32) {
                 // Handle "xxx screams in pain."
                 locate(st, args(what), c, 20, i, 4);
             } else if msg.starts_with(b"HIT_BY:") || msg.starts_with(b"MISS_BY:") {
+                // borg-reborn-rs (#697): remember an attack by a monster the
+                // Borg cannot see; it reads no setting and draws nothing.
+                crate::borg_recover::note_unseen_attack(st, args(what));
                 // Handle "xxx hits you." / "xxx misses you."
                 locate(st, args(what), c, hit_dist, i, 4);
             } else if msg.starts_with(b"STATE_SLEEP:") {
@@ -2416,7 +2459,15 @@ fn handle_late_messages(st: &mut BorgState, hit_dist: i32) {
 /// Spread the monsters' danger as regional fear and count the breeders
 /// (monsters probably in a vault are skipped).
 fn spread_monster_fear(st: &mut BorgState) {
+    // borg-reborn-rs (#558): counted before the spread, so every monster's
+    // danger below (`borg_danger`'s hunted breeder) sees the full count.
     st.borg.mon.breeders = 0;
+    for k in 1..i32::from(st.kills.nxt) {
+        let r_idx = usize::from(st.kills.kills[idx(k)].r_idx);
+        if r_idx != 0 && engine::race_flag_has(r_idx, RF_MULTIPLY) {
+            st.borg.mon.breeders = st.borg.mon.breeders.wrapping_add(1);
+        }
+    }
     let mut i = 1;
     while i < i32::from(st.kills.nxt) {
         let kill = st.kills.kills[idx(i)];
@@ -2431,9 +2482,6 @@ fn spread_monster_fear(st: &mut BorgState) {
         }
 
         let r_idx = usize::from(kill.r_idx);
-        if engine::race_flag_has(r_idx, RF_MULTIPLY) {
-            st.borg.mon.breeders = st.borg.mon.breeders.wrapping_add(1);
-        }
 
         // Skip monsters that dont chase
         if engine::race_flag_has(r_idx, RF_NEVER_MOVE) {

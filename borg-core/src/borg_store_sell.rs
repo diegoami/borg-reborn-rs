@@ -27,7 +27,7 @@ use crate::decision_api::borg_buy_strategy::{reserve410_unmet, retain_reserve410
 use crate::decision_api::borg_home_notice::borg_notice_home;
 use crate::decision_api::borg_home_power::borg_power_home;
 use crate::decision_api::borg_inventory::borg_item_worth_id;
-use crate::decision_api::borg_io::{borg_keypress, borg_note_bytes, ESCAPE, KC_ENTER};
+use crate::decision_api::borg_io::{borg_keypress, borg_keypresses, borg_note_bytes, ESCAPE, KC_ENTER};
 use crate::decision_api::borg_item::inven_wield;
 use crate::decision_api::borg_item_analyze::borg_ego_has_random_power;
 use crate::decision_api::borg_item_id::borg_item_note_needs_id;
@@ -864,11 +864,16 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
     let mut multiple = false;
     let tval = u32::from(item.tval);
 
+    // borg-reborn-rs (#470): an unaware potion, scroll, mushroom or device
+    // is never used, so selling one is how its kind is learnt.
+    let unaware_kind = !item.aware
+        && matches!(tval, TV_POTION | TV_SCROLL | TV_MUSHROOM | TV_ROD | TV_WAND | TV_STAFF);
+
     // Never attempt to sell worthless items, shops won't buy them
     if item.value <= 0 {
         // except unidentified potions and scrolls.  Since these can't be IDd,
         // best to sell them
-        if !((tval == TV_POTION || tval == TV_SCROLL) && !item.ident) {
+        if !((tval == TV_POTION || tval == TV_SCROLL) && !item.ident) && !unaware_kind {
             return false;
         }
     }
@@ -876,6 +881,12 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
     // make sure we are in the shop that buys this
     if !borg_store_buys(&item, who) {
         return false;
+    }
+
+    // One of an unaware kind (borg_min_item_quantity sells unaware items
+    // one at a time); the rest is judged as the known kind afterwards.
+    if unaware_kind {
+        return true;
     }
 
     // Never sell valuable non-id'd items
@@ -1133,22 +1144,22 @@ if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.bor
 pub(crate) fn borg_think_shop_sell_native(st: &mut BorgState) -> bool {
 if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_think_shop_sell",format!("{:?}",()));}
 
-    sell_selected(st, false)
+    sell_selected(st, None)
 }
 
-pub(crate) fn sell_one_selected_native(st: &mut BorgState) -> bool {
-if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.sell_one_selected",format!("{:?}",()));}
+pub(crate) fn sell_selected_quantity_native(st: &mut BorgState, quantity: i32) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.sell_selected_quantity",format!("{:?}",(quantity,)));}
 
-    sell_selected(st, true)
+    sell_selected(st, Some(quantity))
 }
 
-fn sell_selected(st: &mut BorgState, one: bool) -> bool {
+fn sell_selected(st: &mut BorgState, quantity: Option<i32>) -> bool {
     // Sell something if requested
     if st.borg.goal.shop == st.think.shop_num && st.borg.goal.item >= 0 {
         let idx = st.borg.goal.item as usize;
         let item = st.items.items[idx];
 
-        let qty = if one { 1 } else { borg_min_item_quantity(st, &item) };
+        let qty = quantity.unwrap_or_else(|| borg_min_item_quantity(st, &item));
 
         // Log
         let mut note = b"# Selling ".to_vec();
@@ -1164,17 +1175,8 @@ fn sell_selected(st: &mut BorgState, one: bool) -> bool {
 
         // Sell a single item
         if st.items.items[idx].iqty > 1 || qty >= 2 {
-            if qty == 5 {
-                borg_keypress(st, keycode_t::from(b'5'));
-            }
-            if qty == 4 {
-                borg_keypress(st, keycode_t::from(b'4'));
-            }
-            if qty == 3 {
-                borg_keypress(st, keycode_t::from(b'3'));
-            }
-            if qty == 2 {
-                borg_keypress(st, keycode_t::from(b'2'));
+            if qty > 1 && (quantity.is_some() || qty <= 5) {
+                borg_keypresses(st, qty.to_string().as_bytes());
             }
             borg_keypress(st, KC_ENTER);
         }
@@ -1383,9 +1385,9 @@ pub fn borg_think_shop_sell(st: &mut BorgState) -> bool {
 if crate::decision_tape::active() {return borg_think_shop_sell_native(st);}
 match crate::shadow::decision(st,crate::decisions::Decision::StoreSell) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
 }
-pub fn sell_one_selected(st: &mut BorgState) -> bool {
-if crate::decision_tape::active() {return sell_one_selected_native(st);}
-match crate::shadow::decision(st,crate::decisions::Decision::StoreSellOne) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
+pub fn sell_selected_quantity(st: &mut BorgState, quantity: i32) -> bool {
+if crate::decision_tape::active() {return sell_selected_quantity_native(st,quantity);}
+match crate::shadow::decision(st,crate::decisions::Decision::StoreSellQuantity {quantity}) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
 }
 pub fn borg_count_sell(st: &mut BorgState) -> i32 {
 if crate::decision_tape::active() {return borg_count_sell_native(st);}

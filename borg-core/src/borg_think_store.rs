@@ -400,6 +400,7 @@ if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.bor
 
     /* Cheat the store number */
     st.think.shop_num = engine::player_square_shopnum() as i16;
+    crate::decision_api::borg_town_dump::record_phase_observation(st, usize::try_from(st.think.shop_num).ok());
 
     /* The Borg is in the store the human asked for: the override has been
      * served, so the strategy chooses the next shop itself. */

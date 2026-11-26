@@ -1,0 +1,55 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "ff38fcd4a687ce3ed47c69cc1cf0bfbc6ac47d00010d5a9026b7212a18065c31",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p341-validation/donor-full/full-8-blackguard-4",
+      "raw_sha256": {
+        "keys.log": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
+        "messages.log": "95bf55c13bef96628468e42195246a33da2432d4574caea49ef040f64de3e98e",
+        "state.log": "cf1fa4c16c82329bae5ce3f59a0f1a4b2fa0f7063aee708f53fae0394c7f9640"
+      },
+      "result_sha256": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
+      "role": "original",
+      "source_commit": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea"
+    }
+  ],
+  "character": "Half-Elf Blackguard",
+  "core_decision_trace": null,
+  "decision_trace": null,
+  "encounter_family": "start-0909527c8065f8444a35f4f1ce4a426c9a90ce05f6cf533d240e7417eb99afd1",
+  "files_sha256": {
+    "build.json": "7bae72f640b60517c914d11487d0a5a70070f032411f9dc32505415843ed818d",
+    "config.txt": "d0a39d42200bd8a33df4c2b6912778b3825787e57c3cdf7223b81b7c5bd60301",
+    "summary.json": "784484785bd28675dbee9f826ba3092848f032cef6117c0ac8d68a532f92c54d"
+  },
+  "id": "D0000-q99e7eb2dcc031033f7b5be3b41cb644bc52e758a85af4828496d916b0ef8486e",
+  "identity": {
+    "binary_sha256": "ff38fcd4a687ce3ed47c69cc1cf0bfbc6ac47d00010d5a9026b7212a18065c31",
+    "borg_txt_sha256": "70add1785ebc8dba1f637a9a3db13a37b1570e15d4b5083749bb1f23fe9aa45c",
+    "flags": "menu",
+    "git_dirty": "no",
+    "git_rev": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": null,
+    "seed": 1084,
+    "source_sha256": "d07a8547b2c273793f163afde0a2faff1ed2e61545e3d33e1ce0dcc17c8ecf4c"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a grey mushroom patch",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a grey mushroom patch",
+    "class_idx": 8,
+    "dead": true,
+    "depth": 1,
+    "level": 2,
+    "max_depth": 3,
+    "race_idx": 1,
+    "turn": 22908
+  }
+}

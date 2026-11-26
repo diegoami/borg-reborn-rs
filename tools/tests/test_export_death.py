@@ -38,6 +38,8 @@ class ExportTest(unittest.TestCase):
         os.environ['BORG_DEATH_RECORDS_DIR'] = str(self.reg)
         self.build = self.base / 'BUILD_ID'
         self.build.write_text('impl=c\ngit_rev=1234567\ngit_dirty=no\nbinary_sha256=beef\nsource_sha256=cafe\n')
+        self.first_id = ed.death_id(ed.family_of('c', 101, 0, 0, 'cafe', 'feed'),
+                                    ed.hashlib.sha256(b'abc\n').hexdigest())
 
     def tearDown(self):
         os.environ.pop('BORG_DEATH_RECORDS_DIR', None)
@@ -51,7 +53,7 @@ class ExportTest(unittest.TestCase):
     def test_death_writes_a_dossier(self):
         run = make_run(self.base, 'dead')
         case, what = ed.export(run, 'c', self.build, 'menu')
-        self.assertEqual((case, what), ('D0001-c-seed101', 'exported'))
+        self.assertEqual((case, what), (self.first_id, 'exported'))
         d = self.reg / case
         rec = json.loads((d / 'record.json').read_text())
         self.assertEqual(rec['terminal']['cause'], 'a cave spider')
@@ -124,7 +126,7 @@ class ExportTest(unittest.TestCase):
 
     def test_repeat_is_not_a_new_case(self):
         ed.export(make_run(self.base, 'one'), 'c', self.build)
-        self.assertEqual(ed.export(make_run(self.base, 'two'), 'c', self.build), ('D0001-c-seed101', 'repeat'))
+        self.assertEqual(ed.export(make_run(self.base, 'two'), 'c', self.build), (self.first_id, 'repeat'))
         self.assertEqual(len([d for d in self.reg.iterdir() if d.is_dir()]), 1)
 
     def test_interrupted_dossier_is_repaired_not_accepted(self):
@@ -158,7 +160,7 @@ class ExportTest(unittest.TestCase):
         (self.reg / '.tmp-D0001-c-seed101').mkdir()
         (self.reg / '.tmp-D0001-c-seed101' / 'record.json').write_text('{half')
         case, what = ed.export(make_run(self.base, 'one'), 'c', self.build)
-        self.assertEqual((case, what), ('D0001-c-seed101', 'exported'))
+        self.assertEqual((case, what), (self.first_id, 'exported'))
         self.assertFalse((self.reg / '.tmp-D0001-c-seed101').exists())
 
     def test_case_without_record_fails_loudly(self):
@@ -177,14 +179,15 @@ class ExportTest(unittest.TestCase):
         changed = self.base / 'BUILD_ID2'
         changed.write_text('impl=c\ngit_rev=89abcde\ngit_dirty=no\nbinary_sha256=beef\nsource_sha256=d1ff\n')
         case, what = ed.export(make_run(self.base, 'two'), 'c', changed)
-        self.assertEqual((case, what), ('D0002-c-seed101', 'exported'))
+        self.assertEqual(what, 'exported')
+        self.assertNotEqual(case, self.first_id)
 
     def test_main_aggregates_the_registry(self):
         run = make_run(self.base, 'dead')
         self.assertEqual(ed.main([str(run), '--impl', 'c', '--build-id', str(self.build)]), 0)
         index = json.loads((self.reg / 'index.json').read_text())
         self.assertEqual((index['cases'], index['distinct_starting_conditions']), (1, 1))
-        self.assertIn('D0001-c-seed101', (self.reg / 'README.md').read_text())
+        self.assertIn(self.first_id, (self.reg / 'README.md').read_text())
 
     def test_only_natural_deaths_are_exported(self):
         for extra, flags in (({'stop_reason': 'turns'}, '-'), ({'cheat_live': True}, '-'), ({}, 'cheatlive'),
@@ -243,10 +246,11 @@ class ExportTest(unittest.TestCase):
         self.assertEqual(json.loads((self.reg / 'index.json').read_text())['cases'], 1)
         self.assertTrue((self.reg / 'README.md').exists())
 
-    def test_numbering_and_family(self):
+    def test_hash_ids_and_family(self):
         ed.export(make_run(self.base, 'one'), 'c', self.build)
         case, _ = ed.export(make_run(self.base, 'two', seed=102), 'rust', self.build)
-        self.assertEqual(case, 'D0002-rust-seed102')
+        self.assertRegex(case, r'^D-[0-9a-f]{64}$')
+        self.assertNotEqual(case, self.first_id)
         fam = {json.loads((d / 'record.json').read_text())['encounter_family']
                for d in self.reg.iterdir() if d.is_dir()}
         self.assertEqual(len(fam), 2, 'different seed and implementation: different start')
