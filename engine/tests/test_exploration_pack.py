@@ -39,6 +39,7 @@ class ExplorationPackTest(unittest.TestCase):
             messages = root / "messages.log"
             env = {key: value for key, value in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
             env.update(BORG_CORE="borg-rs", BORG_PARAM_JUNK_EXPLORATION_FIRST="1" if enabled else "0",
+                       BORG_PARAM_JUNK_GEAR_ALTERNATIVES="0",
                        BORG_PARAM_JUNK_INFERIOR_SPARES="0", BORG_PARAM_TOWN_SHOP_OVERLOADED="1",
                        BORG_PARAM_ATTACK_THROW_JUNK_POTIONS="1",
                        BORG_PARAM_ITEM_USE_IDLE="0")
@@ -65,6 +66,9 @@ class ExplorationPackTest(unittest.TestCase):
 
     def test_comparison_uses_known_properties_after_identification_and_preserves_real_swaps(self):
         self.run_case(harmful=False, fixture="gear")
+
+    def test_ranked_spares_count_worn_pack_and_home(self):
+        self.run_case(harmful=False, fixture="ranked-gear")
 
     def test_drops_known_harmful_potions_before_usable_supplies(self):
         log = self.run_case(harmful=True)
@@ -99,6 +103,7 @@ class TownSpareGearTest(unittest.TestCase):
             env.update(
                 BORG_CORE="borg-rs", BORGH_TEST_JUNK_CONSUMABLES="town",
                 BORG_PARAM_JUNK_EXPLORATION_FIRST="1" if enabled else "0",
+                BORG_PARAM_JUNK_GEAR_ALTERNATIVES="0",
                 BORG_PARAM_JUNK_INFERIOR_SPARES="0",
                 BORG_PARAM_TOWN_SHOP_OVERLOADED="2" if arrival else "1",
                 BORG_PARAM_CAUTION_TOWN_NEVER_SCARY="1",

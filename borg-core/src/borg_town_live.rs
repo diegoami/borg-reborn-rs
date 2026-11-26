@@ -524,7 +524,7 @@ fn unload_arrival_kit(st: &mut BorgState) -> Option<bool> {
     let trim = drop.is_none().then(|| enchanted_quiver_trim(st, 0)).flatten();
     if lighten || drop.is_some() || trim.is_some() {
         if let Some(drop) = drop.filter(|drop| drop.sell_first) {
-            if let Some(sale) = spare_sale(st, drop.slot, &st.items.items[drop.slot]) {
+            if let Some(sale) = spare_sale(st, drop.slot, &st.items.items[drop.slot], drop.quantity) {
                 st.think.town_live.arrival_sale_planned = true;
                 return Some(set_action(st, sale));
             }
@@ -698,21 +698,23 @@ pub fn choose(st: &mut BorgState) -> bool {
     let plan = crate::borg_town_shadow::live_plan(st);
     let a = plan.action;
     let recall_first = recall_loadout::enabled(st);
-    // #1264: offer inferior spares before other disposals.
-    if !no_sale && matches!(a.code,
+    // After urgent shopping, clear redundant gear before optional purchases
+    // can consume the rest of this town visit.
+    let cutoff = crate::borg_junk::gear_alternatives();
+    if cutoff > 0 && !no_sale && !plan.urgent_action {
+        if let Some(cleanup) = ranked_gear_cleanup(st, cutoff) { return set_action(st, cleanup); }
+    }
+    // #1264: the earlier policy offers inferior spares before other disposals.
+    if cutoff == 0 && !no_sale && matches!(a.code,
         action::LEAVE | action::DROP | action::SELL | action::STORE | action::SELL_HOME | action::DROP_HOME)
     {
-        if let Some(sale) = inferior_spare_sale(st) {
-            return set_action(st, sale);
-        }
+        if let Some(sale) = inferior_spare_sale(st) { return set_action(st, sale); }
         if a.code == action::DROP || crate::borg_inventory::borg_first_empty_inventory_slot(st) < 0 {
             let code = if crate::borg_junk::exploration_first() { DROP_SURPLUS } else { action::DROP };
             let drop = crate::borg_junk::find_inferior_spare(st, |_, slot, item| {
                 Some(TownAction { code, at: [-1, slot as i64, i64::from(item.iqty), 0] })
             });
-            if let Some(drop) = drop {
-                return set_action(st, drop);
-            }
+            if let Some(drop) = drop { return set_action(st, drop); }
         }
     }
     // borg-reborn-rs (#1239): evaluate quiver trimming after shopping.
@@ -866,7 +868,8 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         }
         let home_intent = if a.code == action::BUY_FOR_HOME {
             Some(HomeIntent::Stash)
-        } else if home_disposal && crate::borg_town_home::enabled(st) && !loadout_pending(st) {
+        } else if home_disposal && (crate::borg_town_home::enabled(st)
+            || crate::borg_junk::gear_alternatives() > 0) && !loadout_pending(st) {
             let destination = if a.code == action::DROP_HOME { -1 } else { a.at[0] as i16 };
             Some(HomeIntent::Dispose(destination))
         } else { None };
@@ -1027,19 +1030,45 @@ fn settle_quiver_trim(st: &mut BorgState) -> bool {
 
 /// Use a shop with room for the whole inferior spare stack.
 pub(crate) fn inferior_spare_sale(st: &mut BorgState) -> Option<TownAction> {
-    crate::borg_junk::find_inferior_spare(st, spare_sale)
+    crate::borg_junk::find_inferior_spare(st, |st, slot, item| spare_sale(st, slot, item, item.iqty))
 }
 
-fn spare_sale(st: &BorgState, slot: usize, item: &crate::borg_headers::borg_item_h::borg_item) -> Option<TownAction> {
+fn ranked_gear_cleanup(st: &mut BorgState, cutoff: usize) -> Option<TownAction> {
+    if loadout_pending(st) { return None; }
+    if let Some(drop) = crate::borg_junk::ranked_pack_spare(st, cutoff) {
+        return spare_sale(st, drop.slot, &st.items.items[drop.slot], drop.quantity)
+            .or(Some(TownAction { code: DROP_SURPLUS,
+                at: [-1, drop.slot as i64, i64::from(drop.quantity), 0] }));
+    }
+    for slot in 0..st.store.shops[BORG_HOME].ware.len() {
+        if buy_rejected(st, BORG_HOME as i16, slot) { continue; }
+        let item = st.store.shops[BORG_HOME].ware[slot];
+        let quantity = crate::borg_spare_gear::redundant_copies(st, crate::borg_spare_gear::GearLocation::Home(slot), cutoff);
+        if quantity <= 0 { continue; }
+        let stock = crate::engine::store_stock(&st.access, BORG_HOME);
+        let Some(offer) = stock.get(slot) else { continue; };
+        let quantity = i32::from(quantity).min(offer.carry_capacity());
+        if quantity == 0 { continue; }
+        let sale = (0..BORG_HOME).find(|&shop| crate::borg_store_sell::borg_store_buys(&item, shop as i32)
+            && !sale_rejected(st, shop as i16, &item) && offer.sale_quote(shop, quantity) > 0);
+        return Some(sale.map_or(
+            TownAction { code: action::DROP_HOME, at: [BORG_HOME as i64, slot as i64, i64::from(quantity), 0] },
+            |shop| TownAction { code: action::SELL_HOME, at: [shop as i64, slot as i64, i64::from(quantity), 0] }));
+    }
+    None
+}
+
+fn spare_sale(st: &BorgState, slot: usize, item: &borg_item, quantity: u8) -> Option<TownAction> {
     if item.value <= 0 {
         return None;
     }
     let native = crate::engine::inven_object(&st.access, slot)?;
-    let quantity = i32::from(item.iqty);
+    let quantity = i32::from(quantity);
     let shop = (0..BORG_HOME).find(|&shop| {
         !sale_rejected(st, shop as i16, item)
             && crate::borg_store_sell::borg_store_buys(item, shop as i32)
             && native.store_accepts_quantity(shop, quantity)
+            && (crate::borg_junk::gear_alternatives() == 0 || native.sale_quote(shop, quantity) > 0)
     })?;
     Some(TownAction { code: action::SELL, at: [shop as i64, slot as i64, i64::from(quantity), 0] })
 }

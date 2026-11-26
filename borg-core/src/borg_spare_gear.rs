@@ -6,7 +6,7 @@ use crate::headers::list_player_flags_h::PF_FAST_SHOT;
 use crate::headers::list_tvals_h::*;
 use crate::headers::list_object_modifiers_h::OBJ_MOD_SHOTS;
 use crate::headers::list_object_flags_h::{
-    OF_AFRAID, OF_AGGRAVATE, OF_DRAIN_EXP, OF_FRAGILE, OF_IMPAIR_HP, OF_IMPAIR_MANA, OF_NO_TELEPORT, OF_STICKY,
+    OF_AFRAID, OF_AGGRAVATE, OF_DRAIN_EXP, OF_FRAGILE, OF_IMPAIR_HP, OF_IMPAIR_MANA, OF_NO_FUEL, OF_NO_TELEPORT, OF_STICKY,
 };
 use crate::{engine, state::BorgState};
 
@@ -293,9 +293,129 @@ pub(crate) fn redundant_carried_launcher(st: &BorgState, slot: usize) -> bool {
 
 pub(crate) fn redundant_home_gear(st: &mut BorgState, slot: usize) -> bool {
     let spare = st.store.shops[crate::borg_store::BORG_HOME].ware[slot];
-    crate::borg_junk::exploration_first() && !crate::borg_town_live::retained_gear(st, &spare)
+    crate::borg_junk::gear_alternatives() == 0 && crate::borg_junk::exploration_first()
+        && !crate::borg_town_live::retained_gear(st, &spare)
         && if melee_weapon(&spare) { redundant_melee(st, slot, true) }
             else { redundant_static_gear(st, &spare, slot, true) }
+}
+
+// Stable order for equivalent gear: keep it worn if possible, then at Home
+// so it uses no pack space, then in the earliest stack at either location.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum GearLocation {
+    Worn(usize),
+    Home(usize),
+    Pack(usize),
+}
+
+fn covered_copies<T>(
+    spare: &(GearLocation, T), candidates: &[(GearLocation, T, u8)], quantity: u8, worn_capacity: u8,
+    cutoff: usize, covers: impl Fn(&T, &T) -> bool,
+) -> u8 {
+    let mut better = Vec::new();
+    let mut keep = worn_capacity;
+    for (location, candidate, copies) in candidates {
+        if !covers(candidate, &spare.1) { continue; }
+        if covers(&spare.1, candidate) {
+            if *location < spare.0 { keep = keep.saturating_sub(*copies); }
+        } else if !better.iter().any(|&other| covers(other, candidate) && covers(candidate, other)) {
+            better.push(candidate);
+            if better.len() == cutoff.max(usize::from(worn_capacity)) { return quantity; }
+        }
+    }
+    // Keep enough equivalent copies to fill the slot(s) at once. Extra
+    // copies never count toward releasing the last usable option.
+    quantity.saturating_sub(keep)
+}
+
+fn ranked_slot(item: &borg_item) -> Option<usize> {
+    match u32::from(item.tval) {
+        TV_RING | TV_AMULET | TV_DIGGING => usize::try_from(crate::borg_inventory::borg_wield_slot(item)).ok(),
+        TV_LIGHT if engine::flag_has(&item.flags, OF_NO_FUEL as i32) => Some(inven_wield() as usize + 5),
+        _ => equipment_slot(item),
+    }
+}
+
+pub(crate) fn can_rank(item: &borg_item) -> bool {
+    known_gear(item) && !item.needs_ident && ranked_slot(item).is_some()
+}
+
+pub(crate) fn redundant_copies(st: &mut BorgState, location: GearLocation, cutoff: usize) -> u8 {
+    let wield = inven_wield() as usize;
+    let home = &st.store.shops[crate::borg_store::BORG_HOME].ware;
+    let spare = match location {
+        GearLocation::Pack(index) => st.items.items[index],
+        GearLocation::Home(index) => home[index],
+        GearLocation::Worn(_) => return 0,
+    };
+    if !can_rank(&spare) || spare.art_idx != 0 || spare.activ_idx != 0
+        || spare.desc.contains(&(b'{' as core::ffi::c_char))
+        || crate::borg_town_live::retained_gear(st, &spare)
+    {
+        return 0;
+    }
+    let slot = ranked_slot(&spare).expect("ranked gear has a slot");
+    let ring = u32::from(spare.tval) == TV_RING;
+    let digger = u32::from(spare.tval) == TV_DIGGING;
+    let worn_capacity = if ring { 2 } else { 1 };
+    let covers_activation = |have: &borg_item, need: &borg_item| {
+        need.activ_idx == 0 || have.activ_idx == need.activ_idx
+    };
+    let peers: Vec<_> = (slot + 1 - usize::from(worn_capacity)..=slot)
+        .map(|i| (GearLocation::Worn(i), &st.items.items[i]))
+        .chain(home.iter().enumerate().map(|(i, item)| (GearLocation::Home(i), item)))
+        .chain(st.items.items[..wield].iter().enumerate().map(|(i, item)| (GearLocation::Pack(i), item)))
+        .filter(|(source, item)| *source != location && can_rank(item) && ranked_slot(item) == Some(slot)
+            && (u32::from(item.tval) == TV_DIGGING) == digger)
+        .map(|(source, item)| (source, *item, item.iqty)).collect();
+    if !melee_weapon(&spare) {
+        return covered_copies(&(location, spare), &peers, spare.iqty, worn_capacity, cutoff,
+            |have, need| covers_activation(have, need) && (!digger || have.pval >= need.pval)
+                && static_gear_covers(have, need, &[], true));
+    }
+    if peers.is_empty() || engine::player_opt(crate::headers::list_options_h::OPT_birth_percent_damage) {
+        return spare.iqty - 1;
+    }
+
+    // Test one weapon at a time with the same character and remaining kit.
+    // The candidate and all other weapons removed here are the pack options
+    // being compared, not weight that a particular trial has to carry.
+    let items = st.items.items.clone();
+    let borg = st.borg.clone();
+    let traits = st.traits.clone();
+    let home = st.home.clone();
+    let do_spell = std::mem::replace(&mut st.think.do_spell, false);
+    for item in &mut st.items.items[..wield] {
+        if melee_weapon(item) { item.iqty = 0; }
+    }
+    let mut evaluate = |item| {
+        st.items.items[slot] = borg_item { iqty: 1, ..item };
+        crate::borg_trait::borg_notice(st, false);
+        let melee = Melee::observe(st);
+        let free_weight = (st.borg.tr(BI_CARRY) / 2 - st.borg.tr(BI_WEIGHT)).min(0);
+        (item, melee, free_weight)
+    };
+    let sample = evaluate(spare);
+    let peers: Vec<_> = peers.into_iter().map(|(source, item, copies)| (source, evaluate(item), copies)).collect();
+    st.items.items = items;
+    st.borg = borg;
+    st.traits = traits;
+    st.home = home;
+    st.think.do_spell = do_spell;
+    covered_copies(&(location, sample), &peers, spare.iqty, worn_capacity, cutoff,
+        |(have, better, room), (need, worse, required)| {
+            covers_activation(have, need) && properties_and_attack_cover(have, need, &[])
+                && room >= required && better.speed >= worse.speed && better.armor >= worse.armor
+                && better.hit >= worse.hit && better.damage(1) >= worse.damage(1)
+                && have.slays.iter().zip(&need.slays)
+                    .all(|(&h, &n)| n <= 1 || better.damage(h) >= worse.damage(n))
+                && need.brands.iter().enumerate().all(|(index, &needed)| {
+                    if !needed { return true; }
+                    let (_, vulnerable, multiplier) = engine::brand_resist_vuln_multiplier(index);
+                    better.damage(multiplier) >= worse.damage(multiplier)
+                        && (vulnerable == 0 || better.damage(2 * multiplier) >= worse.damage(2 * multiplier))
+                })
+        })
 }
 
 /// Assess the kit after leaving the entire spare stack or the displaced
@@ -345,6 +465,38 @@ pub(crate) fn inspection_pending(st: &BorgState, item: &borg_item) -> bool {
 #[cfg(feature = "test-town-loadout")]
 pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
     let wield = inven_wield() as usize;
+    if case == "ranked-gear" {
+        use GearLocation::{Home, Pack};
+        let worn_slot = wield + 6;
+        let home = crate::borg_store::BORG_HOME;
+        let robe = borg_item { iqty: 5, aware: true, ident: true, value: 800,
+            tval: TV_SOFT_ARMOR as u8, ac: 2, weight: 20, ..crate::borg_item::blank_item() };
+        let better = borg_item { iqty: 1, to_a: 4, ..robe };
+        let best = borg_item { to_a: 6, ..better };
+        let empty = crate::borg_item::blank_item();
+        st.items.items[..wield].fill(empty);
+        st.store.shops[home].ware.fill(empty);
+        st.items.items[0] = robe;
+        st.items.items[worn_slot] = best;
+        st.store.shops[home].ware[1] = better;
+        assert_eq!(redundant_copies(st, Pack(0), 2), 5, "worn and Home clear the valuable stack");
+        assert_eq!(redundant_copies(st, Pack(0), 3), 4, "keep one copy without a third better option");
+        st.store.shops[home].ware[0] = robe;
+        st.store.shops[home].ware[1] = empty;
+        st.items.items[0] = better;
+        assert_eq!(redundant_copies(st, Home(0), 2), 5, "worn and pack clear the Home stack");
+        st.items.items[worn_slot] = empty;
+        st.store.shops[home].ware[1] = best;
+        assert_eq!(redundant_copies(st, Home(0), 2), 5, "pack and Home clear the Home stack");
+        st.store.shops[home].ware[0] = empty;
+        assert_eq!(redundant_copies(st, Pack(0), 2), 0, "the last two choices stay");
+        st.items.items[0] = borg_item { iqty: 1, ..robe };
+        st.items.items[0].el_info[0].res_level = 1;
+        st.items.items[worn_slot] = better;
+        assert_eq!(redundant_copies(st, Pack(0), 2), 0, "keep the only resistance swap");
+        println!("#1264 exploration pack passed: {case}");
+        std::process::exit(0);
+    }
     if case == "gear" {
         let slot = st.items.items[..wield].iter()
             .position(|item| item.iqty > 0 && u32::from(item.tval) == TV_POLEARM)
@@ -437,6 +589,38 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn better_options_count_across_all_three_locations() {
+        use GearLocation::{Home, Pack, Worn};
+        let covers = |have: &i32, need: &i32| have >= need;
+        for peers in [[(Worn(0), 6, 1), (Home(0), 5, 1)], [(Worn(0), 6, 1), (Pack(0), 5, 1)],
+            [(Home(0), 6, 1), (Pack(0), 5, 1)]]
+        {
+            for spare in [Pack(1), Home(1)] {
+                assert_eq!(covered_copies(&(spare, 1), &peers, 5, 1, 2, covers), 5);
+                assert_eq!(covered_copies(&(spare, 1), &peers, 5, 1, 3, covers), 4);
+            }
+        }
+    }
+
+    #[test]
+    fn cleanup_keeps_one_equivalent_option_and_preserves_distinct_roles() {
+        use GearLocation::{Home, Pack, Worn};
+        let covers = |have: &(i32, bool), need: &(i32, bool)| have.0 >= need.0 && (have.1 || !need.1);
+        let mut gear = vec![(Worn(0), (8, false), 1), (Home(0), (8, false), 1), (Home(1), (7, false), 1),
+            (Pack(0), (6, false), 1), (Pack(1), (5, true), 1)];
+        // The same value on two stacks counts as one better option.
+        assert_eq!(covered_copies(&(Pack(2), (7, false)), &gear[..2], 1, 1, 2, covers), 0);
+        assert_eq!(covered_copies(&(Home(0), (8, false)), &gear[..1], 3, 2, 2, covers), 2);
+        for i in (1..gear.len()).rev() {
+            let (source, quality, copies) = gear.remove(i);
+            if covered_copies(&(source, quality), &gear, copies, 1, 2, covers) == 0 {
+                gear.insert(i, (source, quality, copies));
+            }
+        }
+        assert_eq!(gear, [(Worn(0), (8, false), 1), (Home(1), (7, false), 1), (Pack(1), (5, true), 1)]);
+    }
 
     #[test]
     fn drawbacks_do_not_count_as_spare_advantages() {

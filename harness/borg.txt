@@ -1233,6 +1233,11 @@ borg_param_junk_inferior_spares = 1
 # Let a needed resupply exceed the ordinary town weight limit.
 borg_param_junk_exploration_first = 1
 
+# #1276: count better options across worn gear, pack and Home before
+# releasing the last copy of a spare. Ties keep one equivalent option.
+# Choose 3 for more backups, or 0 for the earlier cleanup.
+borg_param_junk_gear_alternatives = 2
+
 # #1250: idle use of expendable consumables from DL1.
 borg_param_item_use_idle = 1
 

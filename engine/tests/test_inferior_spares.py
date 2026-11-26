@@ -68,7 +68,15 @@ class TownSpareSaleTest(unittest.TestCase):
                 self.assertIn("You are wearing a Pair of Leather Sandals [1,+7]", sandals)
                 self.assertEqual(quantities, ["3"], sandals)
 
-    def run_town(self, planner):
+    def test_redundant_home_stack_is_withdrawn_and_disposed(self):
+        messages = self.run_town(1, ranked_home=True)
+        sandals = "\n".join(line for line in messages.splitlines() if "Leather Sandals" in line or "# Home reserve:" in line)
+        self.assertIn("# Home reserve: withdrawing low-priority stock", sandals)
+        self.assertRegex(sandals, r"You drop 3 Pairs of Leather Sandals \[1,\+0\] \{borg ignore\}")
+        # Angband also says "You drop" when putting gear safely in Home.
+        self.assertNotRegex(sandals, r"You (?:had|sold)[^\n]*\[1,\+4\]|You drop[^\n]*\[1,\+4\] \{borg ignore")
+
+    def run_town(self, planner, *, ranked_home=False):
         game = ROOT / "build/rust-test/game/angband"
         with tempfile.TemporaryDirectory(prefix="inferior-sandal-sale-") as directory:
             root = Path(directory)
@@ -85,11 +93,14 @@ class TownSpareSaleTest(unittest.TestCase):
             # Exercise the two selling choosers with the original town order.
             env.update(BORG_CORE="borg-rs", BORG_TEST_INFERIOR_SPARE_SALE="1",
                        BORG_PARAM_TOWN_SHOP_OVERLOADED="1", BORG_PARAM_JUNK_EXPLORATION_FIRST="0")
+            if ranked_home:
+                env.update(BORG_TEST_INFERIOR_SPARE_SALE="ranked-home", BORG_PARAM_JUNK_EXPLORATION_FIRST="1",
+                           BORG_PARAM_JUNK_GEAR_ALTERNATIVES="2", BORG_PARAM_CAUTION_TOWN_NEVER_SCARY="1")
             messages = root / "messages.log"
             run = subprocess.run(
                 [str(game), "-mborgh", "-n", *(f"-d{key}={path}" for key, path in paths.items()),
                  "--", "-seed", "101", "-race", "0", "-class", "0",
-                 "-keys", "500", "-msglog", str(messages)],
+                 "-keys", "800" if ranked_home else "500", "-msglog", str(messages)],
                 cwd=game.parent, env=env, capture_output=True, text=True, timeout=30,
             )
             self.assertEqual(run.returncode, 0, run.stdout + run.stderr)

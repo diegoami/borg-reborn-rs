@@ -53,6 +53,8 @@ def replay(binary, fixture, run, character, overrides=None):
     summary = run / "summary.json"
     env = {key: value for key, value in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
     env.update(BORG_TOWN_DUMP=str(town), BORG_CORE="borg-rs", TZ="UTC", LC_ALL="C.UTF-8")
+    # These numeric checkpoints predate the cross-location gear cutoff.
+    env["BORG_PARAM_JUNK_GEAR_ALTERNATIVES"] = "0"
     if overrides:
         env.update(overrides)
     subprocess.run(

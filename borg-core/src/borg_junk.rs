@@ -61,6 +61,15 @@ pub(crate) fn exploration_first() -> bool {
     crate::params::value(crate::params::Param::junk_exploration_first) != 0
 }
 
+pub(crate) fn gear_alternatives() -> usize {
+    use crate::params::{value, Param};
+    if exploration_first() {
+        value(Param::junk_gear_alternatives) as usize
+    } else {
+        0
+    }
+}
+
 /// `PACK_SLOTS`: the pack slots not taken by the quiver.
 fn pack_slots(st: &BorgState) -> i32 {
     i32::from(engine::z_info().pack_size) - st.borg.tr(BI_QUIVER_SLOTS)
@@ -753,6 +762,8 @@ fn town_spare_drop(st: &mut BorgState) -> Option<SurplusDrop> {
     if !shared || legacy_drop.is_some() {
         return legacy_drop;
     }
+    let cutoff = gear_alternatives();
+    if cutoff > 0 { return ranked_pack_spare(st, cutoff); }
     find_inferior_spare(st, |_, slot, item| {
         Some(SurplusDrop { slot, quantity: item.iqty, sell_first: true })
     })
@@ -851,7 +862,11 @@ pub(crate) fn drop_surplus(st: &mut BorgState, drop: SurplusDrop) -> bool {
     borg_keypress(st, key(b'd'));
     slot_keys(st, slot);
     if quantity > 1 {
-        borg_keypress(st, key(if drop.quantity == quantity { b'*' } else { b'1' }));
+        if drop.quantity == quantity {
+            borg_keypress(st, key(b'*'));
+        } else {
+            borg_keypresses(st, drop.quantity.to_string().as_bytes());
+        }
         borg_keypress(st, KC_ENTER);
     }
     true
@@ -1379,8 +1394,18 @@ pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
         if borg_discard_harmful_item(st, true) {
             return true;
         }
-        if let Some(slot) = (0..pack_size()).find(|&slot| crate::borg_spare_gear::inferior(st, slot as usize))
-        {
+        let cutoff = gear_alternatives();
+        let spare = if cutoff > 0 {
+            (0..pack_size()).find(|&slot| {
+                let slot = slot as usize;
+                let quantity = st.items.items[slot].iqty;
+                quantity > 0 && crate::borg_spare_gear::redundant_copies(
+                    st, crate::borg_spare_gear::GearLocation::Pack(slot), cutoff) == quantity
+            })
+        } else {
+            (0..pack_size()).find(|&slot| crate::borg_spare_gear::inferior(st, slot as usize))
+        };
+        if let Some(slot) = spare {
             note_desc(st, "# Dropping inferior spare to make pack room ", slot, ".");
             drop_ignored_pack_stack(st, slot);
             return true;
@@ -2266,6 +2291,16 @@ pub(crate) fn borg_drop_inferior_spare(st: &mut BorgState) -> bool {
         item.iqty > 0 && i64::from(item.value) * i64::from(item.iqty) <= i64::from(EARLY_JUNK_VALUE)
     };
     let safe_to_drop = |st: &mut BorgState| !engine::player_is_shapechanged() && danger_here(st) == 0;
+    let cutoff = gear_alternatives();
+    if cutoff > 0 {
+        if !(0..pack_size() as usize).any(|slot| crate::borg_spare_gear::can_rank(&st.items.items[slot]))
+            || !safe_to_drop(st) { return false; }
+        let Some(drop) = ranked_pack_spare(st, cutoff) else { return false; };
+        if drop.quantity < st.items.items[drop.slot].iqty { return drop_surplus(st, drop); }
+        note_desc(st, "# Dropping inferior spare ", drop.slot as i32, ".");
+        drop_ignored_pack_stack(st, drop.slot as i32);
+        return true;
+    }
     let slot = if exploration_first() {
         // Run the danger check only when a stack could qualify. Check it
         // once, before simulating any equipment changes.
@@ -2290,6 +2325,13 @@ pub(crate) fn borg_drop_inferior_spare(st: &mut BorgState) -> bool {
     note_desc(st, "# Dropping inferior spare ", slot as i32, ".");
     drop_ignored_pack_stack(st, slot as i32);
     true
+}
+
+pub(crate) fn ranked_pack_spare(st: &mut BorgState, cutoff: usize) -> Option<SurplusDrop> {
+    (0..pack_size() as usize).find_map(|slot| {
+        let quantity = crate::borg_spare_gear::redundant_copies(st, crate::borg_spare_gear::GearLocation::Pack(slot), cutoff);
+        (quantity > 0).then_some(SurplusDrop { slot, quantity, sell_first: true })
+    })
 }
 
 #[cfg(test)]

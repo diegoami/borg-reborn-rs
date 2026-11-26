@@ -2303,13 +2303,14 @@ pub(crate) fn carry_test_lanterns(st: &mut BorgState) {
 }
 
 #[cfg(feature = "test-town-review")]
-pub(crate) fn equip_test_sandal_spares(st: &mut BorgState) {
+pub(crate) fn equip_test_sandal_spares(st: &mut BorgState, ranked_home: bool) {
     use crate::headers::list_tvals_h::TV_BOOTS;
     use crate::headers::object_h::{object, object_kind, OBJ_NOTICE_ASSESSED};
     use crate::headers::player_h::player;
     use crate::headers::z_rand_h::{aspect, MINIMISE};
 
     extern "C" {
+        static player_exp: [i32; 50];
         fn lookup_kind(tval: i32, sval: i32) -> *mut object_kind;
         fn object_new() -> *mut object;
         fn object_prep(obj: *mut object, kind: *mut object_kind, level: i32, roll: aspect);
@@ -2317,6 +2318,7 @@ pub(crate) fn equip_test_sandal_spares(st: &mut BorgState) {
         fn player_know_object(p: *mut player, obj: *mut object);
         fn inven_carry(p: *mut player, obj: *mut object, absorb: bool, message: bool);
         fn inven_wield(obj: *mut object, slot: i32);
+        fn home_carry(obj: *mut object);
         fn slot_by_name(p: *mut player, name: *const c_char) -> i32;
     }
 
@@ -2329,7 +2331,17 @@ pub(crate) fn equip_test_sandal_spares(st: &mut BorgState) {
         let kind = lookup_kind(TV_BOOTS as i32, sval);
         let feet = slot_by_name(player, c"feet".as_ptr());
         assert!(!kind.is_null() && (0..i32::from((*player).body.count)).contains(&feet));
-        for (quantity, to_a) in [(1, 7), (3, 0)] {
+        if ranked_home {
+            // A level-six character can finish its visit even if its first
+            // supplies consume the starting gold.
+            (*player).au = 500;
+            (*player).lev = 6;
+            (*player).max_lev = 6;
+            (*player).exp = player_exp[4] * i32::from((*player).expfact) / 100;
+            (*player).max_exp = (*player).exp;
+        }
+        let sandals: &[(u8, i16)] = if ranked_home { &[(1, 7), (1, 4), (3, 0)] } else { &[(1, 7), (3, 0)] };
+        for &(quantity, to_a) in sandals {
             let obj = object_new();
             object_prep(obj, kind, 0, MINIMISE);
             (*obj).number = quantity;
@@ -2338,8 +2350,12 @@ pub(crate) fn equip_test_sandal_spares(st: &mut BorgState) {
             object_set_base_known(player, obj);
             (*(*obj).known).notice |= OBJ_NOTICE_ASSESSED as u8;
             player_know_object(player, obj);
+            if ranked_home && to_a == 0 {
+                home_carry(obj);
+                continue;
+            }
             inven_carry(player, obj, false, false);
-            if to_a > 0 {
+            if to_a == 7 {
                 inven_wield(obj, feet);
             }
         }
