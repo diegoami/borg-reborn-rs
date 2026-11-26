@@ -1158,8 +1158,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1316` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1318` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2523` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2523` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2570` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2570` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:839` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1275` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1256` |
@@ -1482,16 +1482,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2530` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2531` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2532` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2533` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2534` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2535` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2536` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2537` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2538` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2539` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2577` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2578` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2579` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2580` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2581` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2582` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2583` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2584` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2585` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2586` |
 
 ## Immobile monsters and blocked stairs (#736)
 
@@ -6897,6 +6897,21 @@ switches below are off by default, which reproduces today's play.
 | `town_recall_urgent_depth` | 0 | depth | 0–127 | `borg_town_utility.rs:256` |
 | `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:9669` |
 
+## Town Word of Recall destination (#1281)
+
+`town_recall_prepared_depth_percent` sets the share of Angband's resolved
+dungeon destination checked for preparedness, rounded down. Both the
+compiled and shipped defaults are 100. Use 60 to reproduce the former
+probe when the recorded maximum and Recall destination coincide. A value
+of 0 checks town preparedness. The separate DL100 restock guard uses the
+resolved destination at any percentage. The smoke games reach DL1–2, below
+the town Recall gate. The native regression exercises the departure
+decision with a constructed kit.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_recall_prepared_depth_percent` | 100 | percent | 0–100 | `borg_think_dungeon_util.rs:1221` |
+
 ## The Borg's own light radius (#877)
 
 The C Borg marks as lit by the Borg's own light every grid up to `BI_LIGHT`
@@ -7977,11 +7992,11 @@ engine's light, every step checked, the unplaced door sound).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:152` |
-| `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:159` |
-| `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:159` |
+| `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:154` |
+| `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:161` |
+| `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:161` |
 | `stair_scum_speed_ratio` | 2 | actions per player action | 1–10 | `borg_stair_scum.rs:559` |
-| `stair_scum_contact_damage` | 4 | HP per attack | 1–1000 | `borg_stair_scum.rs:539` |
+| `stair_scum_contact_damage` | 4 | HP per attack | 1–1000 | `borg_stair_scum.rs:563` |
 | `stair_scum_slack_steps` | 0 | steps | 0–50 | `borg_stair_scum.rs:541` |
 | `stair_scum_slack_per_hp_tenths` | 0 | tenths of a step per max HP | 0–100 | `borg_stair_scum.rs:542` |
 | `stair_scum_slack_per_level_percent` | 50 | percent of a step per level | 0–1000 | `borg_stair_scum.rs:544` |
@@ -8167,12 +8182,12 @@ local, a lead only, RULES 14; keys.log sha256 prefixes):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2559` |
-| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2560` |
-| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2561` |
-| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2562` |
-| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2563` |
-| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2564` |
+| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2606` |
+| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2607` |
+| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2608` |
+| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2609` |
+| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2610` |
+| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2611` |
 
 ## Deal with poison (#1140)
 
@@ -8596,7 +8611,7 @@ Checked on the build where the loop reproduces (`433457a4`, with
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1956` |
+| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1990` |
 
 ## A general movement-loop detector (#1153)
 

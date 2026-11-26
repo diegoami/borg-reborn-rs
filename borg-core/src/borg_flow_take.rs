@@ -463,7 +463,13 @@ fn nearest_up_stair(st: &mut BorgState) -> (i32, i32) {
 
 /// Enqueue the grids of `borg_temp_*` into a fresh flow and spread it (the
 /// common middle of the three flows).
-fn spread_to_temp(st: &mut BorgState, nearness: i32, optimize: bool, viewable: bool, sneak: bool) {
+fn spread_to_temp(
+    st: &mut BorgState,
+    nearness: i32,
+    viewable: bool,
+    sneak: bool,
+    stair_scum: Option<&crate::borg_stair_scum::Map>,
+) {
     /* Clear the flow codes */
     borg_flow::borg_flow_clear(st);
 
@@ -480,7 +486,11 @@ fn spread_to_temp(st: &mut BorgState, nearness: i32, optimize: bool, viewable: b
     /* if we are not flowing toward items that we can see, make sure they */
     /* are at least easily reachable.  The second flag is weather or not  */
     /* to avoid unknown squares.  This was for performance. */
-    borg_flow::borg_flow_spread(st, nearness, optimize, !viewable, false, -1, sneak);
+    if let Some(map) = stair_scum {
+        borg_flow::spread_stair_scum_loot(st, nearness, !viewable, map);
+    } else {
+        borg_flow::borg_flow_spread(st, nearness, true, !viewable, false, -1, sneak);
+    }
 }
 
 /// Prepare to "flow" towards objects to "take" (`borg_flow_take`).
@@ -731,7 +741,7 @@ fn take_is_phase(st: &BorgState, kidx: u32) -> bool {
 
 /// The flow part of `borg_flow_take`, after `take_select`.
 fn take_flow(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
-    spread_to_temp(st, nearness, true, viewable, false);
+    spread_to_temp(st, nearness, viewable, false, None);
 
     /* Attempt to Commit the flow */
     if !borg_flow::borg_flow_commit(st, c"item", i32::from(GOAL_TAKE)) {
@@ -750,33 +760,29 @@ fn take_flow(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
 /// Prepare to "flow" towards special objects to "take"
 /// (`borg_flow_take_scum`).
 pub fn borg_flow_take_scum(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
-    if !scum_select(st, viewable) {
+    if st.takes.cnt == 0 || st.items.items[(pack_slots(st) - 1) as usize].iqty != 0 {
         return false;
     }
-    scum_flow(st, viewable, nearness)
+    let stair_scum = crate::borg_stair_scum::Map::of(st);
+    if !scum_select(st, viewable, stair_scum.as_ref()) {
+        return false;
+    }
+    scum_flow(st, viewable, nearness, stair_scum.as_ref())
 }
 
 /// The object selection of `borg_flow_take_scum`: fills `borg_temp_*`; false when
 /// there is nothing to take.
-fn scum_select(st: &mut BorgState, viewable: bool) -> bool {
-    /* Efficiency -- Nothing to take */
-    if st.takes.cnt == 0 {
-        return false;
-    }
-
-    /* Require one empty slot */
-    if st.items.items[(pack_slots(st) - 1) as usize].iqty != 0 {
-        return false;
-    }
+fn scum_select(
+    st: &mut BorgState,
+    viewable: bool,
+    stair_scum: Option<&crate::borg_stair_scum::Map>,
+) -> bool {
 
     /* Nothing yet */
     st.flow.temp_n = 0;
 
     /* Check for an existing "up stairs" */
     let (b_stair, _) = nearest_up_stair(st);
-
-    // borg-reborn-rs (#1061): stair_scum takes only items inside its radius.
-    let scum = crate::borg_stair_scum::Map::of(st);
 
     /* Scan the object list -- set filter*/
     let mut i: i32 = 1;
@@ -799,7 +805,7 @@ fn scum_select(st: &mut BorgState, viewable: bool) -> bool {
         }
 
         // borg-reborn-rs (#1061): outside stair_scum's radius.
-        if scum.as_ref().is_some_and(|m| !crate::borg_stair_scum::admit(st, m, y, x)) {
+        if stair_scum.is_some_and(|m| !crate::borg_stair_scum::admit(st, m, y, x)) {
             continue;
         }
 
@@ -822,13 +828,19 @@ fn scum_select(st: &mut BorgState, viewable: bool) -> bool {
 }
 
 /// The flow part of `borg_flow_take_scum`, after `scum_select`.
-fn scum_flow(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
-    spread_to_temp(st, nearness, true, viewable, true);
+fn scum_flow(
+    st: &mut BorgState,
+    viewable: bool,
+    nearness: i32,
+    stair_scum: Option<&crate::borg_stair_scum::Map>,
+) -> bool {
+    spread_to_temp(st, nearness, viewable, true, stair_scum);
 
     /* Attempt to Commit the flow */
     if !borg_flow::borg_flow_commit(st, c"Scum item", i32::from(GOAL_TAKE)) {
         return false;
     }
+    st.flow.stair_scum_loot = stair_scum.is_some();
 
     /* Take one step */
     if !borg_flow::borg_flow_old(st, i32::from(GOAL_TAKE)) {
