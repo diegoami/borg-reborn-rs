@@ -31,8 +31,8 @@ use crate::borg_headers::borg_h::{
 use crate::borg_headers::borg_magic_h::TELEPORT_LEVEL;
 use crate::borg_headers::borg_trait_h::{
     BI_ACCW, BI_ACLW, BI_ACSW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_ALIFE, BI_APHASE,
-    BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH, BI_CLASS, BI_CON, BI_DEX, BI_DINV,
-    BI_ESP, BI_FOOD, BI_FRACT, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP,
+    BI_ASPEED, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH, BI_CLASS, BI_CON, BI_DEX, BI_DINV,
+    BI_ESP, BI_FOOD, BI_FRACT, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP,
     BI_RACID, BI_RCOLD, BI_RECALL, BI_RELEC, BI_SHLIFE, BI_SINV, BI_SPEED, BI_SRACID,
     BI_SRBLIND, BI_SRCOLD, BI_SRCONF, BI_SRDIS, BI_SRELEC, BI_SRFIRE, BI_SRKAOS, BI_SRPOIS,
     BI_STR,
@@ -446,10 +446,10 @@ fn deeper_requirements(
         }
     }
 
-    let spell_stat = if depth >= value(Param::prepared_dl21_min_depth)
-        || depth >= value(Param::prepared_dl40_min_depth)
-        || depth >= value(Param::prepared_dl46_min_depth)
-    {
+    let first_spell_stat_depth = value(Param::prepared_dl21_min_depth)
+        .min(value(Param::prepared_dl40_min_depth))
+        .min(value(Param::prepared_dl46_min_depth));
+    let spell_stat = if depth >= first_spell_stat_depth {
         spell_stat()
     } else {
         -1
@@ -771,6 +771,40 @@ fn deeper_requirements(
         }
     }
 
+    if depth >= value(Param::prepared_dl100_min_depth) && b.tr(BI_KING) == 0 {
+        let iv = &st.item_val;
+        if b.tr(BI_MAXSP) > value(Param::prepared_dl100_restore_mana_above_sp) {
+            if let Some(reason) = minimum(
+                Param::prepared_dl100_min_restore_mana,
+                b.has[iv.kv_potion_restore_mana as usize],
+                "10 restore mana", "restore_mana", &value,
+            ) {
+                return Some(reason);
+            }
+        }
+        if let Some(reason) = minimum(
+            Param::prepared_dl100_min_healing_potions,
+            b.has[iv.kv_potion_healing as usize],
+            "5 Heal", "healing_potions", &value,
+        ) {
+            return Some(reason);
+        }
+        if let Some(reason) = minimum(
+            Param::prepared_dl100_min_star_heal_or_life,
+            b.tr(BI_AEZHEAL) + b.tr(BI_ALIFE),
+            "15 *heal* or life", "star_heal_or_life", &value,
+        ) {
+            return Some(reason);
+        }
+        if let Some(reason) = minimum(
+            Param::prepared_dl100_min_speed_potions,
+            b.tr(BI_ASPEED),
+            "10 speed potions", "speed_potions", &value,
+        ) {
+            return Some(reason);
+        }
+    }
+
     None
 }
 
@@ -869,7 +903,7 @@ fn borg_prepared_calculated(st: &mut BorgState, depth: i32) -> Option<Reason> {
             return Some(Reason::new(message, "prepared_clevel_depth_margin", clevel, depth - margin, ">="));
         }
 
-        // Must meet minimal requirements
+        // The inherited static entry point only uses the auxiliary bands through DL99.
         if depth <= 99 {
             if let Some(reason) = borg_prepared_aux(st, depth) {
                 return Some(reason);
@@ -1320,6 +1354,42 @@ mod tests {
             assert_eq!(reason.requirement.name, "caster_ramp_depth");
             assert_eq!(reason.requirement.actual, 32);
         }
+    }
+
+    #[test]
+    fn morgoth_band_preserves_all_four_kit_checks() {
+        use super::*;
+        use crate::params::test_class_values;
+
+        let value = test_class_values(include_str!("../../harness/borg.txt"), CLASS_WARRIOR as usize);
+        let mut st = BorgState::default();
+        st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
+        st.borg.trait_ = vec![1; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+        for (index, actual) in [
+            (BI_KING, 0), (BI_LIGHT, 2), (BI_MAXCLEVEL, 50), (BI_MAXHP, 600),
+            (BI_MAXSP, 101), (BI_ATELEPORT, 8), (BI_SPEED, 132), (BI_STR, 118),
+            (BI_DEX, 118), (BI_CON, 118), (BI_AHEAL, 3), (BI_AEZHEAL, 2),
+        ] {
+            st.borg.trait_[index as usize] = actual;
+        }
+        st.item_val.kv_potion_restore_mana = 0;
+        st.item_val.kv_potion_healing = 1;
+        st.borg.has = vec![0; 2];
+
+        assert!(deeper_requirements(&st, 99, &value, || -1).is_none());
+        let failure = |st: &BorgState| deeper_requirements(st, 100, &value, || -1).unwrap().requirement;
+        assert_eq!(failure(&st).name, "restore_mana");
+        st.borg.has[0] = 15;
+        assert_eq!(failure(&st).name, "healing_potions");
+        st.borg.has[1] = 5;
+        assert_eq!(failure(&st).name, "star_heal_or_life");
+        st.borg.trait_[BI_ALIFE as usize] = 13;
+        assert_eq!(failure(&st).name, "speed_potions");
+        st.borg.trait_[BI_ASPEED as usize] = 10;
+        assert!(deeper_requirements(&st, 100, &value, || -1).is_none());
+        st.borg.has.fill(0);
+        st.borg.trait_[BI_KING as usize] = 1;
+        assert!(deeper_requirements(&st, 100, &value, || -1).is_none());
     }
 
     #[test]

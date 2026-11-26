@@ -14,5 +14,9 @@ enter the ramp at CL41. The shared DL34 floor is CL42. The linked
 calibration table records the kit and restock increases.
 
 The regression tests cover the live shipped Ranger and caster boundaries.
-Population effects remain unmeasured. The actual-destination town Recall
+The stricter thresholds are unmeasured hypotheses. The paired DL21+
+comparison requested in #1283 remains open. The review restored the
+auxiliary Morgoth kit checks at their inherited thresholds. The live
+static entry point still calls the auxiliary bands only through DL99.
+The actual-destination town Recall
 gate is tracked in [#1281](https://github.com/diegoami/borg-reborn-rs/issues/1281).

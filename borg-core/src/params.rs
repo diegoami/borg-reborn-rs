@@ -419,7 +419,7 @@ parameters! {
     town_recall_curve_scale_percent => (0, "percent", 0, 10_000, "borg_town_capability.rs:1040", "#859 (owner: \"a curve for word of recall starting from 1 and make it be 110 by default, so that they buy a few\"; \"use the trip weight\"): above 0, the live town planner values every Word of Recall on a diminishing curve on the trip weight (borg_town_w_trip), weight and demand scaled by this percent as town_heal_curve_scale_percent scales healing's: each scroll is worth less than the last and never nothing, so a Borg with gold and room carries spares. The town_recall_reserve requirement stays on top (its own row, as town_phase_reserve's); town_recall_value_percent (the walk a scroll saves) is then not read. 0 = #557 (the reserve alone, nothing past it; below the gold floor, the walk a scroll saves)."),
     prepared_recall_depth => (5, "depth", 0, 127, "borg_prepared.rs:240", "#557 (owner): a descent to this depth or deeper needs the prepared_early_min_recall reserve carried (C's \"1 recall\", from DL5); lower moves it shallower; 0 = never. It only gates descents: it buys nothing."),
     // #768: C Borg dive gates. Class arrays follow CLASSES (class.txt order).
-    prepared_clevel_depth_margin => (0, "levels", -50, 50, "borg_prepared.rs:862", "Before CL50, require maximum character level to reach depth minus this margin. Positive lets the Borg dive earlier."),
+    prepared_clevel_depth_margin => (0, "levels", -50, 50, "borg_prepared.rs:896", "Before CL50, require maximum character level to reach depth minus this margin. Positive lets the Borg dive earlier."),
     prepared_dl2_min_clevel => (0, "level", 0, 50, "borg_prepared.rs:277", "#1217: Minimum maximum character level for a DL2 proposal, skipped in risky play. 0 disables this gate. Shipped class values are one level above explore_mix_max_clevel."),
     prepared_dl2_min_hp => (30, "hp", 0, 10000, "borg_prepared.rs:269", "Minimum maximum HP from DL2, skipped in risky play."),
     prepared_dl34_min_hp => (50, "hp", 0, 10000, "borg_prepared.rs:293", "Minimum maximum HP from DL3, skipped in risky play.", [50, 60, 40, 40, 60, 50, 50, 50, 50]),
@@ -490,11 +490,17 @@ parameters! {
     prepared_dl60_min_depth => (60, "depth", 0, 127, "borg_prepared.rs:736", "First proposed depth for the prepared DL60 checks."),
     prepared_dl81_min_speed => (130, "speed", 0, 255, "borg_prepared.rs:766", "Minimum speed."),
     prepared_dl81_min_depth => (81, "depth", 0, 127, "borg_prepared.rs:763", "First proposed depth for the prepared DL81 checks."),
-    restock_dl1_min_light_radius => (1, "radius", 0, 99, "borg_prepared.rs:1039", "Minimum light radius."),
-    restock_dl1_min_fuel => (1, "count", 0, 999, "borg_prepared.rs:1049", "Minimum fuel."),
-    restock_dl2_min_fuel => (2, "count", 0, 999, "borg_prepared.rs:1061", "Minimum fuel."),
+    prepared_dl100_min_depth => (100, "depth", 0, 127, "borg_prepared.rs:774", "First depth for the Morgoth inventory checks in the auxiliary static bands."),
+    prepared_dl100_restore_mana_above_sp => (100, "sp", 0, 10000, "borg_prepared.rs:776", "Maximum SP above which the Restore Mana floor applies."),
+    prepared_dl100_min_restore_mana => (15, "count", 0, 999, "borg_prepared.rs:778", "Minimum number of Restore Mana potions above the maximum SP cutoff."),
+    prepared_dl100_min_healing_potions => (5, "count", 0, 999, "borg_prepared.rs:786", "Minimum number of Healing potions."),
+    prepared_dl100_min_star_heal_or_life => (15, "count", 0, 999, "borg_prepared.rs:793", "Minimum combined number of *Healing* and Life potions."),
+    prepared_dl100_min_speed_potions => (10, "count", 0, 999, "borg_prepared.rs:800", "Minimum speed potion reserve."),
+    restock_dl1_min_light_radius => (1, "radius", 0, 99, "borg_prepared.rs:1073", "Minimum light radius."),
+    restock_dl1_min_fuel => (1, "count", 0, 999, "borg_prepared.rs:1083", "Minimum fuel."),
+    restock_dl2_min_fuel => (2, "count", 0, 999, "borg_prepared.rs:1095", "Minimum fuel."),
     restock_dl2_min_food => (3, "count", 0, 999, "borg_prepared.rs:1071", "Minimum food."),
-    restock_dl2_min_depth => (2, "depth", 0, 127, "borg_prepared.rs:1057", "First checked depth for the restock DL2 checks."),
+    restock_dl2_min_depth => (2, "depth", 0, 127, "borg_prepared.rs:1091", "First checked depth for the restock DL2 checks."),
     restock_dl6_min_phase_door => (1, "count", 0, 999, "borg_prepared.rs:1083", "Minimum phase door."),
     restock_dl6_cures_until_clevel => (30, "level", 0, 50, "borg_prepared.rs:1091", "Character level at which the cures check stops."),
     restock_dl6_min_cures => (1, "count", 0, 999, "borg_prepared.rs:1093", "Minimum cures."),
@@ -3540,6 +3546,40 @@ mod tests {
             ] {
                 assert_eq!(class_value(&shipped, param, class), Some((expected, "borg.txt")), "{class}");
             }
+        }
+
+        for (param, expected) in [
+            (Param::prepared_dl10_min_teleports, 3),
+            (Param::prepared_dl20_min_depth, 19),
+            (Param::prepared_dl21_min_strength, 9),
+            (Param::prepared_dl21_min_spell_stat, 9),
+            (Param::prepared_dl21_min_dexterity, 9),
+            (Param::prepared_dl21_min_constitution, 9),
+            (Param::prepared_dl26_min_teleports, 8),
+            (Param::prepared_dl26_min_cure_serious_or_critical, 12),
+            (Param::prepared_dl40_min_depth, 39),
+            (Param::prepared_dl46_min_speed, 117),
+            (Param::prepared_dl46_min_heal, 2),
+            (Param::prepared_dl46_min_max_hp, 550),
+            (Param::prepared_dl56_min_star_heal, 2),
+            (Param::prepared_dl56_min_heal, 3),
+            (Param::prepared_dl60_min_speed, 122),
+            (Param::prepared_dl81_min_speed, 132),
+            (Param::prepared_endgame_min_home_or_pack_heals, 12),
+            (Param::prepared_endgame_min_total_heals, 35),
+            (Param::restock_dl20_min_cure_serious_or_critical, 5),
+            (Param::restock_dl20_min_teleports, 5),
+            (Param::restock_dl36_min_teleport_or_teleport_level, 3),
+            (Param::restock_dl65_min_healing, 2),
+            (Param::restock_dl100_min_star_heal, 17),
+            (Param::prepared_dl100_min_depth, 100),
+            (Param::prepared_dl100_restore_mana_above_sp, 100),
+            (Param::prepared_dl100_min_restore_mana, 15),
+            (Param::prepared_dl100_min_healing_potions, 5),
+            (Param::prepared_dl100_min_star_heal_or_life, 15),
+            (Param::prepared_dl100_min_speed_potions, 10),
+        ] {
+            assert_eq!((shipped[param as usize].value, shipped[param as usize].origin), (expected, "borg.txt"));
         }
 
         let effective = resolve(&shipped);

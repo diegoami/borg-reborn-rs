@@ -625,6 +625,15 @@ borg_param_prepared_endgame_total_heals_min_max_depth = 97
 borg_param_prepared_endgame_min_total_heals = 35
 borg_param_prepared_endgame_collect_heals_min_max_depth = 99
 
+# The auxiliary Morgoth band retains the inherited checks. The live static
+# entry point calls those bands only through DL99.
+borg_param_prepared_dl100_min_depth = 100
+borg_param_prepared_dl100_restore_mana_above_sp = 100
+borg_param_prepared_dl100_min_restore_mana = 15
+borg_param_prepared_dl100_min_healing_potions = 5
+borg_param_prepared_dl100_min_star_heal_or_life = 15
+borg_param_prepared_dl100_min_speed_potions = 10
+
 # Static restock floors, also checked when evaluating preparedness.
 borg_param_restock_dl1_min_light_radius = 1
 borg_param_restock_dl1_min_fuel = 1
