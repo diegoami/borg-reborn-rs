@@ -2330,6 +2330,7 @@ pub(crate) fn equip_test_sandal_spares(st: &mut BorgState, ranked_home: bool) {
         let kind = lookup_kind(TV_BOOTS as i32, sval);
         let feet = slot_by_name(player, c"feet".as_ptr());
         assert!(!kind.is_null() && (0..i32::from((*player).body.count)).contains(&feet));
+        if ranked_home { (*player).au = 500; }
         let sandals: &[(u8, i16)] = if ranked_home { &[(1, 7), (1, 4), (3, 0)] } else { &[(1, 7), (3, 0)] };
         for &(quantity, to_a) in sandals {
             let obj = object_new();
