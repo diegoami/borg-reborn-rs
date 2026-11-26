@@ -3490,29 +3490,34 @@ mod tests {
             (Param::prepared_cure_until_clevel, 30),
             (Param::prepared_mid_max_depth, 19),
             (Param::prepared_mid_caster_max_clevel, 28),
-            (Param::prepared_deep_caster_ramp_max_clevel, 44),
             (Param::prepared_deep_caster_ramp_base_depth, 30),
             (Param::prepared_deep_caster_ramp_depth_per_level, 2),
-            (Param::prepared_dl34_plus_min_clevel, 40),
         ] {
             assert_eq!(compiled[param as usize].value, expected);
             assert_eq!(shipped[param as usize].value, expected);
             assert_eq!(shipped[param as usize].origin, "borg.txt");
         }
-        for (param, compiled_values, retained) in [
-            (Param::prepared_dl34_min_hp, [50, 60, 40, 40, 60, 50, 50, 50, 50], false),
-            (Param::prepared_dl59_min_hp, [60, 80, 60, 60, 80, 60, 60, 60, 60], false),
-            (Param::prepared_dl34_min_clevel, [4, 11, 9, 9, 11, 4, 8, 4, 4], false),
-            (Param::prepared_dl59_min_clevel, [6, 15, 15, 15, 15, 6, 10, 6, 6], false),
-            (Param::prepared_mid_clevel_offset, [-4, 5, 0, 0, 5, 0, 0, 0, -4], true),
-            (Param::prepared_deep_clevel_offset, [5, 8, 13, 13, 8, 7, 10, 8, 5], true),
-            (Param::prepared_deep_min_clevel, [0, 0, 0, 0, 0, 0, 0, 29, 0], true),
-            (Param::prepared_deep_max_clevel, [38, 38, 46, 46, 38, 40, 43, 41, 38], true),
+        for (param, old, new) in [
+            (Param::prepared_deep_caster_ramp_max_clevel, 44, 46),
+            (Param::prepared_dl34_plus_min_clevel, 40, 42),
+        ] {
+            assert_eq!(compiled[param as usize].value, old);
+            assert_eq!((shipped[param as usize].value, shipped[param as usize].origin), (new, "borg.txt"));
+        }
+        for (param, compiled_values, shipped_values) in [
+            (Param::prepared_dl34_min_hp, [50, 60, 40, 40, 60, 50, 50, 50, 50], None),
+            (Param::prepared_dl59_min_hp, [60, 80, 60, 60, 80, 60, 60, 60, 60], None),
+            (Param::prepared_dl34_min_clevel, [4, 11, 9, 9, 11, 4, 8, 4, 4], None),
+            (Param::prepared_dl59_min_clevel, [6, 15, 15, 15, 15, 6, 10, 6, 6], None),
+            (Param::prepared_mid_clevel_offset, [-4, 5, 0, 0, 5, 0, 0, 0, -4], Some([-4, 5, 0, 0, 5, 0, 0, 0, -4])),
+            (Param::prepared_deep_clevel_offset, [5, 8, 13, 13, 8, 7, 10, 8, 5], Some([7, 10, 15, 15, 10, 9, 12, 10, 7])),
+            (Param::prepared_deep_min_clevel, [0, 0, 0, 0, 0, 0, 0, 29, 0], Some([0; 9])),
+            (Param::prepared_deep_max_clevel, [38, 38, 46, 46, 38, 40, 43, 41, 38], Some([40, 40, 48, 48, 40, 42, 45, 43, 40])),
         ] {
             for (i, class) in CLASSES.into_iter().enumerate() {
                 assert_eq!(class_value(&compiled, param, class), Some((compiled_values[i], "default")));
-                if retained {
-                    assert_eq!(class_value(&shipped, param, class), Some((compiled_values[i], "borg.txt")));
+                if let Some(shipped_values) = shipped_values {
+                    assert_eq!(class_value(&shipped, param, class), Some((shipped_values[i], "borg.txt")));
                 }
             }
         }

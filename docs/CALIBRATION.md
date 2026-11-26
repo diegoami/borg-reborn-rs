@@ -5815,26 +5815,24 @@ The offset check starts at DL10, after the light and escape checks. For
 Mage and Necromancer, it applies through CL28, including checks for depths
 past DL19. For the other classes, it applies through DL19. The DL21 class
 gate has its own offset and inclusive CL bounds. Above their DL21 upper CL
-bound, Mage and Necromancer require DL ≤ 30 + 2 × (CL − 38) through CL44.
-DL34 adds a minimum of CL40. `borg-prepared.c:borg_prepared_aux:221-253`
+bound, Mage and Necromancer require DL ≤ 30 + 2 × (CL − 40) from CL41 through CL46.
+DL34 adds a minimum of CL42. `borg-prepared.c:borg_prepared_aux:221-253`
 and `304-377` at `574b618c`.
 
 | Class | Mixed exploration cap | DL2 min CL / HP | DL3–4 min CL / HP | DL5–9 min CL / HP | DL10 offset | DL21 offset / min CL / max CL |
 |---|---:|---:|---:|---:|---:|---:|
-| Warrior | 5 | 6 / 0 | 7 / 0 | 8 / 0 | −4 | +5 / 0 / 38 |
-| Mage | 8 | 9 / 0 | 11 / 0 | 13 / 0 | +5 | +8 / 0 / 38 |
-| Druid | 7 | 8 / 0 | 10 / 0 | 12 / 0 | 0 | +13 / 0 / 46 |
-| Priest | 9 | 10 / 0 | 12 / 0 | 14 / 0 | 0 | +13 / 0 / 46 |
-| Necromancer | 9 | 10 / 0 | 13 / 0 | 14 / 0 | +5 | +8 / 0 / 38 |
-| Paladin | 8 | 9 / 0 | 10 / 0 | 12 / 0 | 0 | +7 / 0 / 40 |
-| Rogue | 6 | 7 / 0 | 8 / 0 | 10 / 0 | 0 | +10 / 0 / 43 |
-| Ranger | 7 | 8 / 0 | 9 / 0 | 11 / 0 | 0 | +8 / 29 / 41 |
-| Blackguard | 6 | 7 / 0 | 9 / 0 | 10 / 0 | −4 | +5 / 0 / 38 |
+| Warrior | 5 | 6 / 0 | 7 / 0 | 8 / 0 | −4 | +7 / 0 / 40 |
+| Mage | 8 | 9 / 0 | 11 / 0 | 13 / 0 | +5 | +10 / 0 / 40 |
+| Druid | 7 | 8 / 0 | 10 / 0 | 12 / 0 | 0 | +15 / 0 / 48 |
+| Priest | 9 | 10 / 0 | 12 / 0 | 14 / 0 | 0 | +15 / 0 / 48 |
+| Necromancer | 9 | 10 / 0 | 13 / 0 | 14 / 0 | +5 | +10 / 0 / 40 |
+| Paladin | 8 | 9 / 0 | 10 / 0 | 12 / 0 | 0 | +9 / 0 / 42 |
+| Rogue | 6 | 7 / 0 | 8 / 0 | 10 / 0 | 0 | +12 / 0 / 45 |
+| Ranger | 7 | 8 / 0 | 9 / 0 | 11 / 0 | 0 | +10 / 0 / 43 |
+| Blackguard | 6 | 7 / 0 | 9 / 0 | 10 / 0 | −4 | +7 / 0 / 40 |
 
 The compiled defaults preserve older profiles, including an off-by-default
-DL2 CL gate. The shipped cure and Recall requirements, depth margin, and
-mid- and deep-depth settings retain the existing values while the shallow
-policy is measured. The files `harness/borg_<class>.txt` supply the class
+DL2 CL gate. The shipped DL21 offsets and upper CL bounds are two levels higher than the inherited values. Ranger uses the same rule below CL29. The files `harness/borg_<class>.txt` supply the class
 values folded as `borg_param_<name>__<class>` in `harness/borg.txt`.
 Set that class-specific key to sweep a threshold in the zoo.
 The optional `borg_plan` overlay and
@@ -5869,26 +5867,26 @@ retired #693 settings load with a warning and use these checks.
 The shared values are in [`harness/borg.txt`](../harness/borg.txt).
 Append `__<class>` to a key to override it for a class. For example,
 `borg_param_prepared_dl20_min_depth__paladin = 18` moves the Paladin's
-Free Action requirement to DL18. Every other class uses DL20. A band's
+Free Action requirement to DL18. Every other class uses DL19. A band's
 `min_depth` is inclusive, and earlier bands remain in force at later depths.
 A cure or Hold Life check with an `until_clevel` applies below that level.
 
 | Check | Depth | Shipped requirement |
 |---|---:|---|
-| Preparedness | 10 | Light radius 2 (Necromancer 0), 2 teleport or staff escapes, 3 CCW below CL30, and See Invisible, Detect Invisible or telepathy |
-| Preparedness | 20 | Free Action |
-| Preparedness | 21 | Fire resistance, 2 of acid/cold/lightning resistance, STR/spell stat/DEX/CON ≥ 7, and the class-level rules above |
-| Preparedness | 26 | Swap-aware cold, lightning and acid resistance, 6 teleport or staff escapes, and 10 CSW/CCW below CL30 |
-| Preparedness | 34 | CL40 |
-| Preparedness | 40 | Poison and confusion resistance plus STR/spell stat/DEX/CON ≥ 16 |
-| Preparedness | 46 | Speed 115, 1 Healing or *Healing*, 500 max HP in ordinary play, STR 18/40, DEX and CON 18/60, spell stat 18/100, Hold Life below CL50 |
-| Preparedness | 56 | 2 Healing or 1 *Healing*, blindness resistance, and telepathy |
-| Preparedness | 60, 81 | Speed 120 and chaos/disenchantment resistance from DL60, then speed 130 from DL81 |
-| Endgame stock | 82 | 10 *Healing*/Life in either home or pack, 30 across both after visiting DL97, and collect reserves from home after visiting DL99 |
-| Restock | 20 | 4 teleport or staff escapes and 4 CSW/CCW below CL30 |
-| Restock | 36 | 2 Teleport or Teleport Level escapes |
-| Restock | 65 | 1 Healing, Rod of Healing or *Healing* |
-| Restock | 100 | 15 *Healing* during the first 10 turns |
+| Preparedness | 10 | Light radius 2 (Necromancer 0), 3 teleport or staff escapes, 3 CCW below CL30, and See Invisible, Detect Invisible or telepathy |
+| Preparedness | 19 | Free Action |
+| Preparedness | 21 | Fire resistance, 2 of acid/cold/lightning resistance, STR/spell stat/DEX/CON ≥ 9, and the class-level rules above |
+| Preparedness | 26 | Swap-aware cold, lightning and acid resistance, 8 teleport or staff escapes, and 12 CSW/CCW below CL30 |
+| Preparedness | 34 | CL42 |
+| Preparedness | 39 | Poison and confusion resistance plus STR/spell stat/DEX/CON ≥ 16 |
+| Preparedness | 46 | Speed 117, 2 Healing or 1 *Healing*, 550 max HP in ordinary play, STR 18/40, DEX and CON 18/60, spell stat 18/100, Hold Life below CL50 |
+| Preparedness | 56 | 3 Healing or 2 *Healing*, blindness resistance, and telepathy |
+| Preparedness | 60, 81 | Speed 122 and chaos/disenchantment resistance from DL60, then speed 132 from DL81 |
+| Endgame stock | 82 | 12 *Healing*/Life in either home or pack, 35 across both after visiting DL97, and collect reserves from home after visiting DL99 |
+| Restock | 20 | 5 teleport or staff escapes and 5 CSW/CCW below CL30 |
+| Restock | 36 | 3 Teleport or Teleport Level escapes |
+| Restock | 65 | 2 across Healing, Rod of Healing and *Healing* |
+| Restock | 100 | 17 *Healing* during the first 10 turns |
 
 The shallower supply floors are also configurable. The preparedness defaults
 are radius 1 and 5 food, 5 fuel at DL2+ without light, and 1 Recall where

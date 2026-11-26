@@ -1289,32 +1289,32 @@ mod tests {
         st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
         st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
         for (index, actual) in [
-            (BI_LIGHT, 2), (BI_ATELEPORT, 6), (BI_ACCW, 10), (BI_SINV, 1), (BI_FRACT, 1),
+            (BI_LIGHT, 2), (BI_ATELEPORT, 8), (BI_ACCW, 12), (BI_SINV, 1), (BI_FRACT, 1),
             (BI_SRFIRE, 1), (BI_RACID, 1), (BI_RCOLD, 1), (BI_SRCOLD, 1),
-            (BI_SRELEC, 1), (BI_SRACID, 1), (BI_STR, 7), (BI_DEX, 7), (BI_CON, 7),
+            (BI_SRELEC, 1), (BI_SRACID, 1), (BI_STR, 9), (BI_DEX, 9), (BI_CON, 9),
         ] {
             st.borg.trait_[index as usize] = actual;
         }
+        let shipped = include_str!("../../harness/borg.txt");
         let ranger = CLASSES.iter().position(|class| *class == "ranger").unwrap();
-        let ranger_value = test_class_values("", ranger);
+        let ranger_value = test_class_values(shipped, ranger);
         st.borg.trait_[BI_CLASS as usize] = ranger as i32;
         st.borg.trait_[BI_MAXCLEVEL as usize] = 28;
-        assert!(deeper_requirements(&st, 22, &ranger_value, || -1).is_none());
-        st.borg.trait_[BI_MAXCLEVEL as usize] = 29;
-        assert!(deeper_requirements(&st, 21, &ranger_value, || -1).is_none());
-        let reason = deeper_requirements(&st, 22, &ranger_value, || -1).unwrap();
+        let reason = deeper_requirements(&st, 21, &ranger_value, || -1).unwrap();
         assert_eq!(reason.requirement.name, "prepared_deep_clevel_offset");
-        assert_eq!(reason.requirement.required, 30);
+        assert_eq!(reason.requirement.required, 31);
+        st.borg.trait_[BI_MAXCLEVEL as usize] = 31;
+        assert!(deeper_requirements(&st, 21, &ranger_value, || -1).is_none());
 
         for caster in [CLASS_MAGE, CLASS_NECROMANCER] {
-            let caster_value = test_class_values("", caster as usize);
+            let caster_value = test_class_values(shipped, caster as usize);
             st.borg.trait_[BI_CLASS as usize] = caster;
-            st.borg.trait_[BI_MAXCLEVEL as usize] = 38;
+            st.borg.trait_[BI_MAXCLEVEL as usize] = 40;
             assert!(deeper_requirements(&st, 30, &caster_value, || -1).is_none());
             let reason = deeper_requirements(&st, 31, &caster_value, || -1).unwrap();
             assert_eq!(reason.requirement.name, "prepared_deep_clevel_offset");
 
-            st.borg.trait_[BI_MAXCLEVEL as usize] = 39;
+            st.borg.trait_[BI_MAXCLEVEL as usize] = 41;
             assert!(deeper_requirements(&st, 32, &caster_value, || -1).is_none());
             let reason = deeper_requirements(&st, 33, &caster_value, || -1).unwrap();
             assert_eq!(reason.requirement.name, "caster_ramp_depth");

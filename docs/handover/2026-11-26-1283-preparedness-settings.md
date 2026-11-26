@@ -7,13 +7,12 @@ remain cumulative. The DL10 light-radius overrides retain the
 Necromancer's exemption in preparedness and restock. Deep healing stock
 is configurable through the home, total and collection gates.
 
-The inherited character-level values are the control for
-[#1283](https://github.com/diegoami/borg-reborn-rs/issues/1283). The
-regressions cover a class-specific depth and restock threshold, a Recall
-reserve above and below DL5, the Ranger CL29 boundary, and the Mage and
-Necromancer ramp. The existing Ranger offset starts at CL29. The caster
-ramp starts at CL39 with a depth cap of 32.
+The owner approved the stricter DL10+ settings in #1287. The shipped
+DL21 offsets and upper bounds rise by two CL for all nine classes, and
+Ranger now checks the offset below CL29 as well. Mage and Necromancer
+enter the ramp at CL41. The shared DL34 floor is CL42. The linked
+calibration table records the kit and restock increases.
 
-Higher character-level defaults still need the paired all-class Zoo
-comparison in #1283. The actual-destination town Recall gate is tracked
-in [#1281](https://github.com/diegoami/borg-reborn-rs/issues/1281).
+The regression tests cover the live shipped Ranger and caster boundaries.
+Population effects remain unmeasured. The actual-destination town Recall
+gate is tracked in [#1281](https://github.com/diegoami/borg-reborn-rs/issues/1281).
