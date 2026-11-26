@@ -713,6 +713,7 @@ fn carried_phase_scrolls_in(st: &BorgState, pack_end: i32) -> i32 {
 }
 
 /// borg-reborn-rs (#761): the object kind is a Scroll of Phase Door.
+/// borg-reborn-rs (#1273): skip known Light scrolls for the Necromancer.
 fn unwanted_light_scroll(st: &BorgState, take: &BorgTake) -> bool {
     if st.borg.tr(crate::borg_headers::borg_trait_h::BI_CLASS) != crate::borg_light::CLASS_NECROMANCER
         || take.tval != TV_SCROLL as i32

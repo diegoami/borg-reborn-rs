@@ -613,6 +613,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
     // unchanged. Keep zero-quantity rows to preserve recorded candidate order.
     let unlight = engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT);
     let torch = st.item_val.sv_light_torch;
+    // borg-reborn-rs (#1273): Necromancer is the only PF_UNLIGHT class in class.txt.
     let light_scroll = st.item_val.sv_scroll_light;
     let unsuitable = |tval: u8, sval: u8| {
         unusable_torch(unlight, tval, sval, torch)

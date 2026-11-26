@@ -252,7 +252,7 @@ pub fn borg_discard_deep_descent(st: &mut BorgState) -> bool {
     ignore_scroll_kind(st, st.item_val.sv_scroll_deep_descent, " (Deep Descent is never read)")
 }
 
-/// Unlight characters discard the entire kind so future copies stay on the floor.
+/// borg-reborn-rs (#1273): Unlight characters discard the entire kind so future copies stay on the floor.
 pub(crate) fn borg_discard_light_scrolls(st: &mut BorgState) -> bool {
     st.borg.tr(BI_CLASS) == crate::borg_light::CLASS_NECROMANCER
         && ignore_scroll_kind(st, st.item_val.sv_scroll_light, " (Necromancer)")
@@ -424,7 +424,11 @@ fn borg_consume(st: &mut BorgState, i: i32) -> bool {
             ];
 
             /* Check the scroll */
-            if scrolls.contains(&sval) {
+            // borg-reborn-rs (#1273): quiet lighting uses the scroll first.
+            let legacy_light = sval == v.sv_scroll_light
+                && class != crate::borg_light::CLASS_NECROMANCER
+                && !crate::borg_light::light_scroll_idle_spend();
+            if legacy_light || scrolls.contains(&sval) {
                 /* Try reading the scroll */
                 return borg_read_scroll(st, sval);
             }

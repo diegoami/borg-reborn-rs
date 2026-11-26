@@ -49,7 +49,7 @@ use crate::headers::ui_event_h::keycode_t;
 use crate::state::BorgState;
 use std::collections::{BTreeMap, BTreeSet};
 
-/// `CLASS_NECROMANCER` (list-classes.h order).
+/// `CLASS_NECROMANCER` is the only class with `PF_UNLIGHT` in class.txt.
 pub(crate) const CLASS_NECROMANCER: i32 = 4;
 
 /// Grid info flag: ignore the game map for this grid (`BORG_IGNORE_MAP`).
@@ -166,7 +166,8 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
         return false;
     }
 
-    if try_read_light_scroll(st, unglowing_on_panel, |st, sval| {
+    // borg-reborn-rs (#1273): spend cheap scrolls before mana or the room heuristics.
+    if light_scroll_idle_spend() && try_read_light_scroll(st, unglowing_on_panel, |st, sval| {
         !engine::player_is_shapechanged() && borg_read_scroll(st, sval)
     }) {
         borg_note(st, "# Illuminating the dungeon with a scroll");
@@ -288,6 +289,7 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
         || borg_activate_item(st, st.act.light)
         || borg_zap_rod(st, st.item_val.sv_rod_illumination)
         || borg_use_staff(st, st.item_val.sv_staff_light)
+        || (!light_scroll_idle_spend() && borg_read_scroll(st, st.item_val.sv_scroll_light))
         || cast_room_lighting(
             st, uses_corner_test, param(Param::light_first_cast_require_dark) != 0,
             borg_spell_fail, unglowing_on_panel,
@@ -363,6 +365,10 @@ fn observed_dark_floors<'a>(
             && borg_cave_floor_grid(grid)
             && is_unglowing_on_panel(y, x)).then_some((y, x))
     })
+}
+
+pub(crate) fn light_scroll_idle_spend() -> bool {
+    param(Param::light_scroll_idle_spend) != 0
 }
 
 /// A scroll is cheap enough to light any dark square, including corridors.

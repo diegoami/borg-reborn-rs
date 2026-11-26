@@ -31,7 +31,7 @@ use crate::borg_flow_stairs::{
 use crate::borg_flow_take::borg_flow_take_scum;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, ESCAPE, KC_ENTER};
 use crate::borg_item_use::{
-    borg_activate_item, borg_activate_ring, borg_use_staff, borg_use_things,
+    borg_activate_item, borg_activate_ring, borg_read_scroll, borg_use_staff, borg_use_things,
     borg_zap_rod,
 };
 use crate::borg_item_wear::borg_wear_stuff;
@@ -365,6 +365,9 @@ pub fn borg_think_dungeon_light(st: &mut BorgState, lightless: bool) -> bool {
                         || borg_activate_item(st, act_light)
                         || borg_zap_rod(st, sv_rod)
                         || borg_use_staff(st, sv_staff)
+                        // borg-reborn-rs (#1273): keep the old chain for recorded replays.
+                        || (!crate::borg_light::light_scroll_idle_spend()
+                            && borg_read_scroll(st, st.item_val.sv_scroll_light))
                         || borg_spell(st, CALL_LIGHT)
                         || borg_spell(st, LIGHT_ROOM)
                     {
