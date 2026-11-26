@@ -1,7 +1,7 @@
 //! #1241: classify Home stock using facts already known to the player.
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_magic_h::{BLESS, HEROISM};
-use crate::borg_headers::borg_trait_h::{BI_CARRY, BI_CDEPTH, BI_CLEVEL, BI_WEIGHT};
+use crate::borg_headers::borg_trait_h::{BI_CARRY, BI_CDEPTH, BI_CLEVEL, BI_MAXSP, BI_WEIGHT};
 use crate::engine::{self, NormalStock};
 use crate::headers::list_tvals_h::*;
 use crate::params::{value as param, Param};
@@ -21,6 +21,9 @@ pub enum Role {
     Device,
     Scarce,
     LightGear,
+    SpareWeapon,
+    LatePotion,
+    Artifact,
 }
 
 // Leave low bits for utility and stay inside the integer range of JSON
@@ -37,6 +40,9 @@ impl Role {
             5 => Self::Device,
             6 => Self::Scarce,
             7 => Self::LightGear,
+            8 => Self::SpareWeapon,
+            9 => Self::LatePotion,
+            10 => Self::Artifact,
             _ => Self::Ordinary,
         }
     }
@@ -46,19 +52,24 @@ impl Role {
     }
 
     pub(crate) fn reserve(self) -> bool {
-        self.gear() || matches!(self, Self::Device | Self::Scarce)
+        self.gear() || self.reserve_supply()
+    }
+
+    pub(crate) fn reserve_supply(self) -> bool {
+        matches!(self, Self::Device | Self::Scarce | Self::LatePotion)
     }
 
     pub(crate) fn gear(self) -> bool {
-        matches!(self, Self::Gear | Self::LightGear)
+        matches!(self, Self::Gear | Self::LightGear | Self::SpareWeapon | Self::Artifact)
     }
 
     pub(crate) fn rank(self) -> u8 {
         match self {
+            Self::LatePotion => 5,
             Self::LightGear => 4,
-            Self::Gear => 3,
+            Self::Gear | Self::Artifact => 3,
             Self::Scarce | Self::Device => 2,
-            Self::Common => 1,
+            Self::Common | Self::SpareWeapon => 1,
             _ => 0,
         }
     }
@@ -66,6 +77,10 @@ impl Role {
     pub(crate) fn offer_value(self, value: i64) -> i64 {
         if value <= 0 { return 0; }
         i64::from(self.rank()) * OFFER_TIER + value.min(OFFER_TIER - 1)
+    }
+
+    pub(crate) fn supply_rank(rank: u8) -> bool {
+        rank == Self::Scarce.rank() || rank == Self::LatePotion.rank()
     }
 
     pub(crate) fn offer_rank(value: i64) -> u8 {
@@ -84,6 +99,9 @@ fn consumable(st: &BorgState, item: &borg_item) -> Role {
     let v = &st.item_val;
     let sval = i32::from(item.sval);
     let tval = u32::from(item.tval);
+    if tval == TV_POTION && item.kind != 0 && !item.cursed && late_potion(st, item) {
+        return Role::LatePotion;
+    }
     let supply = match tval {
         // The Magic Shop can roll this staff, but it is an escape reserve.
         TV_STAFF if sval == v.sv_staff_teleportation => NormalStock::Unlisted,
@@ -119,6 +137,27 @@ fn consumable(st: &BorgState, item: &borg_item) -> Role {
         false
     };
     supply_role(supply, useful, is_device)
+}
+
+fn late_potion(st: &BorgState, item: &borg_item) -> bool {
+    let v = &st.item_val;
+    let sval = i32::from(item.sval);
+    if [v.sv_potion_healing, v.sv_potion_star_healing, v.sv_potion_life,
+        v.sv_potion_speed, v.sv_potion_restore_life].contains(&sval)
+        || sval == v.sv_potion_restore_mana && st.borg.tr(BI_MAXSP) > 0
+    {
+        return true;
+    }
+    // object.txt's stat-gain potions also restore the corresponding stat.
+    // Gain-one/lose-one potions are unsuitable as a recovery reserve.
+    let effects = engine::kind_effect_values(item.kind as usize, st.borg.tr(BI_CLEVEL));
+    safe_stat_restoration(&effects)
+}
+
+fn safe_stat_restoration(effects: &[(u16, i32, i64)]) -> bool {
+    use crate::headers::list_effects_h::{EF_LOSE_RANDOM_STAT, EF_RESTORE_STAT};
+    let has = |effect| effects.iter().any(|&(id, _, _)| u32::from(id) == effect);
+    has(EF_RESTORE_STAT) && !has(EF_LOSE_RANDOM_STAT)
 }
 
 fn supply_role(supply: NormalStock, useful: bool, is_device: bool) -> Role {
@@ -161,6 +200,43 @@ fn device(st: &BorgState, item: &borg_item) -> bool {
         tval == TV_WAND && i32::from(item.sval) == st.item_val.sv_wand_confuse_monster,
     )
     .is_empty()
+}
+
+/// The original elemental daggers share melee stats and each supplies a
+/// single basic resistance, its brand and a bolt activation (artifact.txt).
+fn elemental_dagger(item: &borg_item) -> Option<u32> {
+    use crate::borg_headers::borg_trait_h::{BI_RCOLD, BI_RELEC, BI_RFIRE};
+    if item.iqty == 0 || !item.aware || !item.ident || item.cursed || item.art_idx == 0
+        || u32::from(item.tval) != TV_SWORD
+    {
+        return None;
+    }
+    match engine::artifact_name_or_empty(usize::from(item.art_idx)) {
+        b"'Narthanc'" => Some(BI_RFIRE),
+        b"'Nimthanc'" => Some(BI_RCOLD),
+        b"'Dethanc'" => Some(BI_RELEC),
+        _ => None,
+    }
+}
+
+pub(crate) fn preferred_elemental_dagger(st: &BorgState) -> Option<u8> {
+    let wield = crate::borg_item::inven_wield() as usize;
+    let worn = &st.items.items[wield];
+    if elemental_dagger(worn).is_some() { return Some(worn.art_idx); }
+    let home = &st.store.shops[crate::borg_store::BORG_HOME].ware;
+    home.iter().map(|item| (true, item)).chain(st.items.items[..wield].iter().map(|item| (false, item)))
+        .filter_map(|(at_home, item)| {
+            let resist = elemental_dagger(item)?;
+            let fills_gap = st.borg.tr(resist) == 0;
+            Some(((fills_gap, at_home, item.to_h, item.to_d, item.value, item.art_idx), item.art_idx))
+        })
+        .max_by_key(|(score, _)| *score).map(|(_, artifact)| artifact)
+}
+
+pub(crate) fn redundant_elemental_dagger(st: &BorgState, item: &borg_item, preferred: Option<u8>) -> bool {
+    preferred.is_some_and(|artifact| artifact != item.art_idx)
+        && elemental_dagger(item).is_some_and(|resist| st.borg.tr(resist) > 0)
+        && !crate::borg_town_live::retained_gear(st, item)
 }
 
 pub(crate) fn gear_slot(item: &borg_item) -> Option<usize> {
@@ -238,11 +314,16 @@ fn gear(item: &borg_item, worn: &borg_item, can_decurse: bool, gain: i64, tight_
             TV_SWORD | TV_HAFTED | TV_POLEARM | TV_BOW => damage(item) > 0 || item.to_h > 0,
             _ => armor(item) > 0,
         };
+    if item.art_idx != 0 && item.ident {
+        return Role::Artifact;
+    }
     if lighter && tight_carry && (item.ident || gain > 0) {
         return Role::LightGear;
     }
     if gain > 0 || item.ident && (special || lighter) {
-        return Role::Gear;
+        return if gain <= 0 && item.art_idx == 0 && item.activ_idx == 0
+            && crate::borg_spare_gear::melee_weapon(item)
+        { Role::SpareWeapon } else { Role::Gear };
     }
     Role::Ordinary
 }
@@ -318,6 +399,17 @@ mod tests {
     use crate::borg_item::blank_item;
 
     #[test]
+    fn restocking_prefers_safe_stat_recovery() {
+        use crate::headers::list_effects_h::{EF_LOSE_RANDOM_STAT, EF_RESTORE_STAT};
+        let restore = (EF_RESTORE_STAT as u16, 0, 0);
+        assert!(safe_stat_restoration(&[restore]));
+        assert!(!safe_stat_restoration(&[restore, (EF_LOSE_RANDOM_STAT as u16, 0, 0)]));
+        assert!(!safe_stat_restoration(&[]));
+        assert!(Role::LatePotion.rank() > Role::LightGear.rank());
+        assert!(Role::Device.rank() > Role::SpareWeapon.rank());
+    }
+
+    #[test]
     fn shops_and_usefulness_set_the_supply_tier() {
         assert_eq!(supply_role(NormalStock::Staple, true, false), Role::Renewable);
         assert_eq!(supply_role(NormalStock::Intermittent, true, false), Role::Common);
@@ -361,7 +453,7 @@ mod tests {
         let mut worn = spare;
         worn.weight = 80;
         worn.dd = 2;
-        assert_eq!(gear(&spare, &worn, false, -100, false), Role::Gear);
+        assert_eq!(gear(&spare, &worn, false, -100, false), Role::SpareWeapon);
         assert_eq!(gear(&spare, &worn, false, -100, true), Role::LightGear);
         worn.weight = spare.weight;
         assert_eq!(gear(&spare, &worn, false, -100, true), Role::Reject);

@@ -8379,7 +8379,7 @@ replay as they were):
 |---|---:|---|---|---|
 | `trait_curse_stats` | 0 | flag | 0–1 | `borg_trait.rs:1346` |
 
-## Home stock and town plan schemas 21–24 (#1241)
+## Home stock and town plan schemas 21–26 (#1241, #1269)
 
 The shipped profile sets `borg_param_town_home_reserve = 1`. Set it to
 `0` for a run using the earlier Home stock policy.
@@ -8406,6 +8406,12 @@ Plan replay uses the schema recorded in `v`.
   capped marginal utility. Older records retain their original decisions.
 - **Schema 24** uses the schema 23 layout when the Home priority rule and
   shopping while overloaded are both enabled.
+- **Schema 25** adds a fourth bit to `home_role`. Roles 8, 9 and 10 mark
+  optional melee weapons, priority potions and artifacts. About one third
+  of Home slots is a preference for scarce supplies and useful devices.
+  Full Home can replace the weakest optional gear, and the first stack of
+  a priority potion can still claim space once that share is reached.
+- **Schema 26** uses the schema 25 rules with shopping while overloaded.
 
 ## Committing to a brave stair walk (#1130)
 
@@ -8814,7 +8820,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1049` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1073` |
 
 ## Plain quiver surplus at town departure (#1168)
 
@@ -8865,7 +8871,7 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:427` |
+| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:446` |
 
 ### Recall-first trial
 

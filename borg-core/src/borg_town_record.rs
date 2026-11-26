@@ -52,7 +52,10 @@ use crate::state::BorgState;
 /// does not charge the weight of a Remove Curse read in town.
 /// borg-reborn-rs (#1241): V21 overload records have nine ware fields and
 /// V21 Home records have ten. V22–23 are Home-only. V24 combines both.
-pub const PLAN_SCHEMA: i64 = 24;
+/// V25 adds artifact, spare weapon and potion roles and balances Home stock.
+/// V26 also enables shopping while overloaded, as in V24.
+pub const PLAN_SCHEMA: i64 = 26;
+pub(crate) const HOME_BALANCE_SCHEMA: i64 = 25;
 
 /// The 24 town settings, `borg_town_plan` through
 /// `borg_town_power_scale`, contiguous; v4 stores the first 12.
@@ -637,7 +640,7 @@ impl PlanRecord {
                     match r[..11] {
                     [place, slot, kind, qty, weight, need, reduction, power, proceeds, sell_shop, flags] => Ok(KitItem {
                         home_role: if home_facts {
-                            crate::borg_town_home::Role::from_code((flags >> 9) & 7)
+                            crate::borg_town_home::Role::from_code((flags >> 9) & if schema >= HOME_BALANCE_SCHEMA { 15 } else { 7 })
                         } else { Default::default() },
                         home_room: if schema >= 15 && r[12] >= 0 {
                             Some([r[12] as i32, r[13] as i32, r[14] as i32])
@@ -1003,7 +1006,7 @@ pub fn step(input: &StepInput) -> StepOutput {
     let mut home_purchase = if input.revision >= 21 && plan.is_empty()
         && (input.home_slots > 0 || input.revision >= 23) && input.limits.pack_slots > 0
     {
-        reserve_purchase(input, &stock.candidates, limits.gold)
+        reserve_purchase(input, &stock.candidates, limits.gold, &dispositions)
     } else { None };
     if input.revision >= 23 && input.home_slots <= 0 {
         if let Some(i) = home_purchase.take().filter(|_| freed.home_slots <= 0 && input.urgent.is_empty()) {
@@ -1026,7 +1029,10 @@ pub fn step(input: &StepInput) -> StepOutput {
 
 /// Reserve purchases use the ordinary purse and Black Market cap. They are
 /// considered after supplies for this trip and require real temporary room.
-fn reserve_purchase(input: &StepInput, candidates: &[Candidate], gold: i64) -> Option<usize> {
+fn reserve_purchase(input: &StepInput, candidates: &[Candidate], gold: i64, dispositions: &[Disposition]) -> Option<usize> {
+    use crate::borg_town_home::Role;
+    let below_supply_goal = crate::borg_town_utility::home_supply_balance(input, dispositions)
+        .is_some_and(|(supplies, goal)| supplies < goal);
     candidates.iter().enumerate().filter_map(|(i, c)| {
         let price = i64::from(c.price);
         if c.shop >= 7 || c.qty == 0 || price <= 0 || price > gold
@@ -1037,7 +1043,8 @@ fn reserve_purchase(input: &StepInput, candidates: &[Candidate], gold: i64) -> O
             return None;
         }
         let fact = input.facts.iter().find(|w| w.shop == c.shop && w.slot == c.slot)?;
-        (fact.home_value > 0).then_some(((fact.home_value, -c.weight, -c.price), i))
+        let priority_supply = below_supply_goal && Role::supply_rank(Role::offer_rank(fact.home_value));
+        (fact.home_value > 0).then_some(((priority_supply, fact.home_value, -c.weight, -c.price), i))
     }).max_by_key(|&(score, i)| (score, std::cmp::Reverse(i))).map(|(_, i)| i)
 }
 
@@ -1293,7 +1300,7 @@ pub struct ReplayParts {
 impl ReplayParts {
     /// The step input over these parts and the record's facts.
     pub fn input<'a>(&'a self, rec: &'a PlanRecord) -> StepInput<'a> {
-        let shop_overloaded = rec.schema >= 24 || rec.schema == 21 && !rec.legacy_home_21;
+        let shop_overloaded = matches!(rec.schema, 24 | PLAN_SCHEMA) || rec.schema == 21 && !rec.legacy_home_21;
         StepInput {
             departure: shop_overloaded && rec.mode == 2,
             shop_overloaded,
