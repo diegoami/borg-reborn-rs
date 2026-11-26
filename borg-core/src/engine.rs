@@ -2310,6 +2310,7 @@ pub(crate) fn equip_test_sandal_spares(st: &mut BorgState, ranked_home: bool) {
     use crate::headers::z_rand_h::{aspect, MINIMISE};
 
     extern "C" {
+        static player_exp: [i32; 50];
         fn lookup_kind(tval: i32, sval: i32) -> *mut object_kind;
         fn object_new() -> *mut object;
         fn object_prep(obj: *mut object, kind: *mut object_kind, level: i32, roll: aspect);
@@ -2330,7 +2331,15 @@ pub(crate) fn equip_test_sandal_spares(st: &mut BorgState, ranked_home: bool) {
         let kind = lookup_kind(TV_BOOTS as i32, sval);
         let feet = slot_by_name(player, c"feet".as_ptr());
         assert!(!kind.is_null() && (0..i32::from((*player).body.count)).contains(&feet));
-        if ranked_home { (*player).au = 500; }
+        if ranked_home {
+            // A level-six character can finish its visit even if its first
+            // supplies consume the starting gold.
+            (*player).au = 500;
+            (*player).lev = 6;
+            (*player).max_lev = 6;
+            (*player).exp = player_exp[4] * i32::from((*player).expfact) / 100;
+            (*player).max_exp = (*player).exp;
+        }
         let sandals: &[(u8, i16)] = if ranked_home { &[(1, 7), (1, 4), (3, 0)] } else { &[(1, 7), (3, 0)] };
         for &(quantity, to_a) in sandals {
             let obj = object_new();
