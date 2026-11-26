@@ -35,7 +35,7 @@ TULWAR = "Tulwar of *Slay Dragon* (2d4) (+2,+4) <+2>"
 SHOVEL = "Shovel of Digging (1d2) (+4,+3) <+4>"
 
 
-def replay(binary, fixture, run, character):
+def replay(binary, fixture, run, character, overrides=None):
     save = f"{character}.save"
     digest, (race, player_class), loaded_turn, stop_turn = SAVES[character]
     hashes = {save: digest, **SETTINGS_HASHES}
@@ -53,6 +53,8 @@ def replay(binary, fixture, run, character):
     summary = run / "summary.json"
     env = {key: value for key, value in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
     env.update(BORG_TOWN_DUMP=str(town), BORG_CORE="borg-rs", TZ="UTC", LC_ALL="C.UTF-8")
+    if overrides:
+        env.update(overrides)
     subprocess.run(
         [str(binary), "-mborgh", *(f"-d{name}={path}" for name, path in paths.items()),
          "--", "-seed", "1", "-race", str(race), "-class", str(player_class), "-load", str(paths["save"] / save),
