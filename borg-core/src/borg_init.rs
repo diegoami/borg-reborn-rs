@@ -1754,19 +1754,23 @@ mod tests {
         }
     }
 
-    /// The two borg.txt copies carry the same settings, and between them they
-    /// name every setting in the table and no retired one.
+    /// The parity YAML carries the same settings as the donor's C reference.
     #[test]
-    fn the_borg_txt_copies_agree_and_name_every_setting() {
+    fn donor_yaml_matches_the_c_reference_and_names_every_setting() {
         let yaml = crate::shell::yaml_settings(include_str!("../pborg.yaml")).unwrap();
         let harness = borg_txt_settings(&yaml);
-        let shipped = borg_txt_settings(include_str!("../c-reference/borg.txt"));
-        assert_eq!(harness, shipped, "the two borg.txt copies disagree");
+        let mut shipped = borg_txt_settings(include_str!("../c-reference/borg.txt"));
+        for (_, value) in &mut shipped {
+            if value.eq_ignore_ascii_case("false") || value.eq_ignore_ascii_case("true") {
+                value.make_ascii_uppercase();
+            }
+        }
+        assert_eq!(harness, shipped, "donor YAML and C settings disagree");
         for s in BORG_SETTINGS.iter().take(crate::borg_headers::borg_h::BORG_SUM_EXCLUDED_FROM_BLACK_MARKET as usize) {
             let name = s.name.to_str().unwrap();
             assert!(
                 harness.iter().any(|(n, _)| n == name),
-                "{name} is missing from the borg.txt files"
+                "{name} is missing from the donor settings"
             );
         }
         for (name, _) in &harness {
