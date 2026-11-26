@@ -249,7 +249,16 @@ pub fn borg_destroy_floor(st: &mut BorgState) -> bool {
 /// engine then drops every carried copy (`ignore_drop`) and hides those on
 /// the floor, so none is picked up again. It takes no game time.
 pub fn borg_discard_deep_descent(st: &mut BorgState) -> bool {
-    let sv = st.item_val.sv_scroll_deep_descent;
+    ignore_scroll_kind(st, st.item_val.sv_scroll_deep_descent, " (Deep Descent is never read)")
+}
+
+/// borg-reborn-rs (#1273): Unlight characters discard the entire kind so future copies stay on the floor.
+pub(crate) fn borg_discard_light_scrolls(st: &mut BorgState) -> bool {
+    st.borg.tr(BI_CLASS) == crate::borg_light::CLASS_NECROMANCER
+        && ignore_scroll_kind(st, st.item_val.sv_scroll_light, " (Necromancer)")
+}
+
+fn ignore_scroll_kind(st: &mut BorgState, sv: i32, reason: &str) -> bool {
     if sv < 0 {
         return false;
     }
@@ -263,10 +272,10 @@ pub fn borg_discard_deep_descent(st: &mut BorgState) -> bool {
     if engine::kind(st.items.items[i as usize].kind as usize).ignore != 0 {
         return false;
     }
-    note_desc(st, "# Discarding ", i, " (Deep Descent is never read)");
+    note_desc(st, "# Discarding ", i, reason);
     borg_keypress(st, key(b'k'));
     slot_keys(st, i);
-    // The ignore menu: a) This item only, b) All Scrolls of Deep Descent.
+    // The ignore menu: a) This item only, b) All scrolls of this kind.
     borg_keypress(st, key(b'b'));
     true
 }
@@ -405,7 +414,6 @@ fn borg_consume(st: &mut BorgState, i: i32) -> bool {
 
         TV_SCROLL => {
             let scrolls = [
-                v.sv_scroll_light,
                 v.sv_scroll_monster_confusion,
                 v.sv_scroll_trap_door_destruction,
                 v.sv_scroll_satisfy_hunger,
@@ -416,7 +424,11 @@ fn borg_consume(st: &mut BorgState, i: i32) -> bool {
             ];
 
             /* Check the scroll */
-            if scrolls.contains(&sval) {
+            // borg-reborn-rs (#1273): quiet lighting uses the scroll first.
+            let legacy_light = sval == v.sv_scroll_light
+                && class != crate::borg_light::CLASS_NECROMANCER
+                && !crate::borg_light::light_scroll_idle_spend();
+            if legacy_light || scrolls.contains(&sval) {
                 /* Try reading the scroll */
                 return borg_read_scroll(st, sval);
             }

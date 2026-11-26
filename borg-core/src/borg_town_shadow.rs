@@ -613,6 +613,13 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
     // unchanged. Keep zero-quantity rows to preserve recorded candidate order.
     let unlight = engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT);
     let torch = st.item_val.sv_light_torch;
+    // borg-reborn-rs (#1273): Necromancer is the only PF_UNLIGHT class in class.txt.
+    let light_scroll = st.item_val.sv_scroll_light;
+    let unsuitable = |tval: u8, sval: u8| {
+        unusable_torch(unlight, tval, sval, torch)
+            || (unlight && u32::from(tval) == crate::headers::list_tvals_h::TV_SCROLL
+                && i32::from(sval) == light_scroll)
+    };
     // The zero mode is the historical shopping policy used by exact replays.
     let torch_shortfall = if live && param(Param::town_shop_overloaded) > 0
         && param(Param::town_torch_purchase_limit) != 0 && param(Param::town_light_reserve_turns) > 0 {
@@ -633,7 +640,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
     for c in &mut stock.candidates {
         // Unlight supplies sight without a carried torch. Keep this physical
         // suitability gate ahead of fuel, gear try-on and learning bonuses.
-        if unusable_torch(unlight, c.tval, c.sval, torch) { c.qty = 0; }
+        if unsuitable(c.tval, c.sval) { c.qty = 0; }
         c.qty = cap_torch(&st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)], c.qty);
         if live {
             c.qty = c.qty.min(crate::borg_town_live::acquisition_room(st, c.tval, c.kind));
@@ -648,7 +655,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
         // borg-reborn-rs (#1239): reserve saved gear for the loadout pass.
         let available = (!live || crate::borg_town_live::acquisition_room(st, item.tval, item.kind) > 0
                 && crate::borg_town_live::shopping_weight_capacity(st, item.weight) > 0)
-            && item.aware && !unusable_torch(unlight, item.tval, item.sval, torch) && !(live && crate::borg_town_live::buy_rejected(st, 7, slot))
+            && item.aware && !unsuitable(item.tval, item.sval) && !(live && crate::borg_town_live::buy_rejected(st, 7, slot))
             && !(live && (crate::borg_town_live::home_moved(st, item, true)
                 || crate::borg_town_live::retained_gear(st, item)));
         let native = engine::store_stock(&st.access, BORG_HOME);
