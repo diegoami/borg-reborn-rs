@@ -632,7 +632,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         }
     }
 
-    // Hack to recharge mana if a low level mage or priest
+    // Rest until HP and SP are full (player-util.c:1500-1501).
+    // Combat regenerators have no mana-rest floor because their SP drains.
     if mana_rest_sp_floor(st).is_some_and(|floor| st.borg.tr(BI_CURSP) < floor)
         && p < mana_rest_danger_gate(
             param(Param::recover_mana_rest_full_hp) != 0,
@@ -1347,13 +1348,17 @@ fn mana_rest_danger_gate(full_hp: bool, curhp: i32, maxhp: i32, avoidance: i32, 
 
 fn mana_rest_sp_floor(st: &BorgState) -> Option<i32> {
     let sp = st.borg.tr(BI_MAXSP);
-    (sp != 0 && (st.borg.tr(BI_CLEVEL) <= param(Param::recover_mana_rest_max_level)
-        || st.borg.tr(BI_CDEPTH) >= param(Param::recover_mana_rest_deep_depth)))
-        .then(|| sp * param(Param::recover_mana_rest_sp_tenths) / 10)
+    // Combat regeneration drains SP on world ticks (game-world.c:648,
+    // player-util.c:507). The all-points rest cannot fill that mana pool.
+    (sp != 0
+        && !engine::player_has(crate::headers::list_player_flags_h::PF_COMBAT_REGEN)
+        && (st.borg.tr(BI_CLEVEL) <= param(Param::recover_mana_rest_max_level)
+            || st.borg.tr(BI_CDEPTH) >= param(Param::recover_mana_rest_deep_depth)))
+    .then(|| sp * param(Param::recover_mana_rest_sp_tenths) / 10)
 }
 
 /// #796: a discretionary spell should not make either existing recovery
-/// branch start resting solely because of mana. No recovery decision changes.
+/// branch start resting solely because of mana.
 pub(crate) fn recovery_sp_floor(st: &BorgState) -> i32 {
     rest_sp_floor(st).max(mana_rest_sp_floor(st).unwrap_or(0))
 }
