@@ -32,6 +32,7 @@ class UnknownConsumablesTest(unittest.TestCase):
                 BORG_PARAM_ATTACK_THROW_SURPLUS="0",
                 # Keep the route to the historical identification and sale.
                 BORG_PARAM_TOWN_SHOP_OVERLOADED="1",
+                BORG_PARAM_TOWN_GEAR_HOME_BACKUPS="0",
                 BORG_PARAM_TOWN_TORCH_PURCHASE_LIMIT="0",
                 BORG_PARAM_ITEM_USE_IDLE="0",
                 BORG_PARAM_EXPLORE_MIX_DEPTH_ADJUSTED_LEVEL="0",
