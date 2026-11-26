@@ -25,3 +25,9 @@ The four default-borg smoke runs kept identical key and state streams.
 The reference refresh records the PBorg settings startup message. Native
 death tools are pinned to the Cemetery replay support in #161 so the
 harness's PBorg configuration receipt can be verified.
+
+In interactive play, P-Borg shows its full introduction once per process,
+then credits Diego Amicabile on subsequent starts and selections. C-Borg
+credits Ben Harrison and Andrew P. White. The headless frontend retains
+its replay message stream. [Harrison's Angband page](https://www.phial.com/angband/).
+[Historical Borg README](https://github.com/angband/angband/blob/3.5.1/src/borg/borgread.txt).
