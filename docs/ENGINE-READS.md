@@ -168,3 +168,5 @@ Reasons, from the C Borg specification (`docs/c-borg/BORG_SPEC.md`
 
 The harness callback `borgh_decision` and the Rust export `do_cmd_pborg`
 are part of the command and measurement interface.
+The command interface also calls `borg_switch_selection` to switch from PBorg
+help and `do_cmd_reborn_borg_help` to show the fallback core's commands.
