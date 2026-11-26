@@ -1251,7 +1251,7 @@ fn leave_town(st: &mut BorgState, bored: bool) -> bool {
 /// Check the town departure decision in a native process with a constructed kit.
 #[cfg(feature = "test-stair-handoff")]
 pub(crate) fn check_town_recall(st: &mut BorgState, case: &str) -> ! {
-    use crate::borg_headers::borg_trait_h::{BI_ACCW, BI_AESCAPE, BI_APHASE, BI_ATELEPORT, BI_DINV};
+    use crate::borg_headers::borg_trait_h::{BI_ACCW, BI_AESCAPE, BI_APHASE, BI_ATELEPORT, BI_DINV, BI_MAXHP};
 
     let (max_depth, saved, force, persist, teleports, expect_read) = match case {
         "blocked" => (16, 16, false, false, 0, false),
