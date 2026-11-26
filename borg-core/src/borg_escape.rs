@@ -3098,7 +3098,11 @@ pub(crate) fn recall_for_bravery_recovery(st: &mut BorgState) -> Result<(), &'st
     {
         return Err("the engine prevents Recall on this level");
     }
-    if st.borg.tr(crate::borg_headers::borg_trait_h::BI_RECALL) == 0 {
+    // BI_RECALL counts spell access at a stricter failure threshold than
+    // borg_recall itself. Use the same live cast gate for this fallback.
+    if st.borg.tr(crate::borg_headers::borg_trait_h::BI_RECALL) == 0
+        && !crate::borg_magic::borg_spell_okay_fail(st, WORD_OF_RECALL, param(Param::escape_recall_fail))
+    {
         return Err("no Recall source");
     }
     if st.borg.tr(BI_ISWEAK) != 0 || !crate::borg_caution::bravery_recall_survivable(st) {
