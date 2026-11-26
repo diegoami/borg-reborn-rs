@@ -2303,8 +2303,8 @@ pub(crate) fn carry_test_lanterns(st: &mut BorgState) {
 }
 
 #[cfg(feature = "test-town-review")]
-pub(crate) fn equip_test_sandal_spares(st: &mut BorgState, ranked_home: bool) {
-    use crate::headers::list_tvals_h::TV_BOOTS;
+pub(crate) fn equip_test_sandal_spares(st: &mut BorgState, case: &str) {
+    use crate::headers::list_tvals_h::{TV_ARROW, TV_BOOTS, TV_RING};
     use crate::headers::object_h::{object, object_kind, OBJ_NOTICE_ASSESSED};
     use crate::headers::player_h::player;
     use crate::headers::z_rand_h::{aspect, MINIMISE};
@@ -2315,6 +2315,7 @@ pub(crate) fn equip_test_sandal_spares(st: &mut BorgState, ranked_home: bool) {
         fn object_new() -> *mut object;
         fn object_prep(obj: *mut object, kind: *mut object_kind, level: i32, roll: aspect);
         fn object_set_base_known(p: *mut player, obj: *mut object);
+        fn object_flavor_aware(p: *mut player, obj: *mut object);
         fn player_know_object(p: *mut player, obj: *mut object);
         fn inven_carry(p: *mut player, obj: *mut object, absorb: bool, message: bool);
         fn inven_wield(obj: *mut object, slot: i32);
@@ -2322,16 +2323,19 @@ pub(crate) fn equip_test_sandal_spares(st: &mut BorgState, ranked_home: bool) {
         fn slot_by_name(p: *mut player, name: *const c_char) -> i32;
     }
 
-    let sval = lookup_sval(TV_BOOTS as i32, "Pair of Leather Sandals");
+    let rings = case == "gear-rings";
+    let tval = if rings { TV_RING } else { TV_BOOTS } as i32;
+    let sval = lookup_sval(tval, if rings { "Protection" } else { "Pair of Leather Sandals" });
+    let arrows = lookup_sval(TV_ARROW as i32, "Arrow");
     // SAFETY: the fixture runs on the engine thread in town after birth.
     // The kind and body slot belong to the live player tables, and the
     // engine owns the objects and their known copies after inven_carry.
     lend(st, || unsafe {
         assert_eq!((*player).depth, 0);
-        let kind = lookup_kind(TV_BOOTS as i32, sval);
-        let feet = slot_by_name(player, c"feet".as_ptr());
-        assert!(!kind.is_null() && (0..i32::from((*player).body.count)).contains(&feet));
-        if ranked_home {
+        let kind = lookup_kind(tval, sval);
+        let first = slot_by_name(player, if rings { c"right hand" } else { c"feet" }.as_ptr());
+        assert!(!kind.is_null() && (0..i32::from((*player).body.count)).contains(&first));
+        if case != "1" {
             // A level-six character can finish its visit even if its first
             // supplies consume the starting gold.
             (*player).au = 500;
@@ -2340,24 +2344,48 @@ pub(crate) fn equip_test_sandal_spares(st: &mut BorgState, ranked_home: bool) {
             (*player).exp = player_exp[4] * i32::from((*player).expfact) / 100;
             (*player).max_exp = (*player).exp;
         }
-        let sandals: &[(u8, i16)] = if ranked_home { &[(1, 7), (1, 4), (3, 0)] } else { &[(1, 7), (3, 0)] };
-        for &(quantity, to_a) in sandals {
+        let specs: &[(u8, i16, i16, i32)] = match case {
+            "gear-full-home" => &[(1, 7, 20, first), (1, 11, 20, -2), (1, 8, 20, -1),
+                (1, 4, 20, -2), (1, 2, 5, -1), (1, 1, 20, -2)],
+            "gear-rings" => &[(1, 4, 2, first), (1, 7, 2, first + 1), (2, 12, 2, -1),
+                (1, 3, 2, -2), (1, 1, 2, -2)],
+            "ranked-home" => &[(1, 7, 0, first), (1, 4, 0, -1), (3, 0, 0, -2)],
+            _ => &[(1, 7, 0, first), (3, 0, 0, -1)],
+        };
+        for &(quantity, to_a, weight, target) in specs {
             let obj = object_new();
             object_prep(obj, kind, 0, MINIMISE);
             (*obj).number = quantity;
             (*obj).to_a = to_a;
+            if weight > 0 { (*obj).weight = weight; }
             (*obj).known = object_new();
             object_set_base_known(player, obj);
             (*(*obj).known).notice |= OBJ_NOTICE_ASSESSED as u8;
+            if rings { object_flavor_aware(player, obj); }
             player_know_object(player, obj);
-            if ranked_home && to_a == 0 {
+            if target == -2 {
                 home_carry(obj);
                 continue;
             }
             inven_carry(player, obj, false, false);
-            if to_a == 7 {
-                inven_wield(obj, feet);
+            if target >= 0 {
+                inven_wield(obj, target);
             }
+        }
+        if case == "gear-full-home" {
+            let home = crate::headers::store_h::stores.add(crate::borg_store::BORG_HOME);
+            let arrow_kind = lookup_kind(TV_ARROW as i32, arrows);
+            assert!(!arrow_kind.is_null());
+            for bonus in i16::from((*home).stock_num)..(*home).stock_size {
+                let obj = object_new();
+                object_prep(obj, arrow_kind, 0, MINIMISE);
+                (*obj).to_h = bonus;
+                (*obj).known = object_new();
+                object_set_base_known(player, obj);
+                player_know_object(player, obj);
+                home_carry(obj);
+            }
+            assert_eq!(i16::from((*home).stock_num), (*home).stock_size);
         }
     });
 }

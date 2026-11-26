@@ -189,7 +189,7 @@ pub(crate) fn affordable(st: &BorgState, shop: usize, price: i32) -> bool {
                 ))
 }
 
-fn keeps_capabilities(before: &[i32], after: &[i32]) -> bool {
+pub(crate) fn keeps_capabilities(before: &[i32], after: &[i32]) -> bool {
     let get = |traits: &[i32], i: u32| traits[i as usize];
     let protected = [
         BI_FRACT,

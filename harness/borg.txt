@@ -1238,6 +1238,10 @@ borg_param_junk_exploration_first = 1
 # Choose 3 for more backups, or 0 for the earlier cleanup.
 borg_param_junk_gear_alternatives = 2
 
+# #1278: wear upgrades and store one regular backup per slot, plus a
+# useful lighter alternative. Keep up to two Home backups for rings.
+borg_param_town_gear_home_backups = 1
+
 # #1250: idle use of expendable consumables from DL1.
 borg_param_item_use_idle = 1
 

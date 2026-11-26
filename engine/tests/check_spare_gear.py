@@ -36,7 +36,8 @@ def replay(binary, fixture, run, cutoff):
     messages = run / "messages.log"
     summary = run / "summary.json"
     env = {key: value for key, value in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
-    env.update(BORG_CORE="borg-rs", BORG_PARAM_JUNK_GEAR_ALTERNATIVES=str(cutoff), TZ="UTC", LC_ALL="C.UTF-8")
+    env.update(BORG_CORE="borg-rs", BORG_PARAM_JUNK_GEAR_ALTERNATIVES=str(cutoff),
+               BORG_PARAM_TOWN_GEAR_HOME_BACKUPS="0", TZ="UTC", LC_ALL="C.UTF-8")
     subprocess.run(
         [str(binary), "-mborgh", *(f"-d{kind}={path}" for kind, path in paths.items()),
          "--", "-seed", "1", "-race", "6", "-class", "8", "-load", str(paths["save"] / SAVE),

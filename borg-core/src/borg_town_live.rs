@@ -193,6 +193,12 @@ impl HomeMove {
 // Keep the UI-only wear step outside the replayable purchase plan.
 const WEAR_FOR_DEPARTURE: i64 = -2;
 const DROP_SURPLUS: i64 = -4;
+const WEAR_UPGRADE: i64 = -5;
+
+pub(crate) fn gear_home_backups() -> bool {
+    crate::params::value(crate::params::Param::town_gear_home_backups) > 0
+        && crate::borg_junk::gear_alternatives() > 0
+}
 
 #[derive(Default)]
 pub struct LiveState {
@@ -368,7 +374,7 @@ fn goal(a: TownAction) -> Option<(i16, i16, i16)> {
         action::SELL if (0..7).contains(&a.at[0]) => Some((a.at[0] as i16, -1, slot)),
         action::STORE => Some((7, -1, slot)),
         action::TAKE_HOME | action::SELL_HOME | action::DROP_HOME => Some((7, slot, -1)),
-        action::DROP | WEAR_FOR_DEPARTURE | DROP_SURPLUS => Some((-1, -1, slot)),
+        action::DROP | WEAR_FOR_DEPARTURE | WEAR_UPGRADE | DROP_SURPLUS => Some((-1, -1, slot)),
         recall_loadout::WEAR => Some((a.at[0] as i16, -1, slot)),
         _ => None,
     }
@@ -690,7 +696,8 @@ pub fn choose(st: &mut BorgState) -> bool {
     if !st.borg.in_shop && st.borg.goal.shop >= 0 && st.think.town_action.is_some() {
         return true;
     }
-    if !no_sale {
+    let organize_backups = gear_home_backups();
+    if !no_sale && !organize_backups {
         if let Some(restock) = exploration_restock(st) {
             return set_action(st, restock);
         }
@@ -702,7 +709,11 @@ pub fn choose(st: &mut BorgState) -> bool {
     // can consume the rest of this town visit.
     let cutoff = crate::borg_junk::gear_alternatives();
     if cutoff > 0 && !no_sale && !plan.urgent_action {
-        if let Some(cleanup) = ranked_gear_cleanup(st, cutoff) { return set_action(st, cleanup); }
+        let cleanup = if organize_backups { organize_gear(st) } else { ranked_gear_cleanup(st, cutoff) };
+        if let Some(cleanup) = cleanup { return set_action(st, cleanup); }
+    }
+    if !no_sale && organize_backups {
+        if let Some(restock) = exploration_restock(st) { return set_action(st, restock); }
     }
     // #1264: the earlier policy offers inferior spares before other disposals.
     if cutoff == 0 && !no_sale && matches!(a.code,
@@ -937,6 +948,11 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     if !active(st) || st.borg.in_shop { return false; }
     let Some(a) = st.think.town_action else { return false; };
     let slot = a.at[1] as usize;
+    if a.code == WEAR_UPGRADE {
+        let worn = crate::borg_item_wear::wear_ranked_upgrade(st, slot, a.at[3] as usize);
+        clear(st);
+        return worn;
+    }
     if a.code == recall_loadout::WEAR {
         recall_loadout::wear(st, slot as i32);
         clear(st);
@@ -1041,21 +1057,77 @@ fn ranked_gear_cleanup(st: &mut BorgState, cutoff: usize) -> Option<TownAction> 
                 at: [-1, drop.slot as i64, i64::from(drop.quantity), 0] }));
     }
     for slot in 0..st.store.shops[BORG_HOME].ware.len() {
-        if buy_rejected(st, BORG_HOME as i16, slot) { continue; }
-        let item = st.store.shops[BORG_HOME].ware[slot];
         let quantity = crate::borg_spare_gear::redundant_copies(st, crate::borg_spare_gear::GearLocation::Home(slot), cutoff);
-        if quantity <= 0 { continue; }
-        let stock = crate::engine::store_stock(&st.access, BORG_HOME);
-        let Some(offer) = stock.get(slot) else { continue; };
-        let quantity = i32::from(quantity).min(offer.carry_capacity());
-        if quantity == 0 { continue; }
-        let sale = (0..BORG_HOME).find(|&shop| crate::borg_store_sell::borg_store_buys(&item, shop as i32)
-            && !sale_rejected(st, shop as i16, &item) && offer.sale_quote(shop, quantity) > 0);
-        return Some(sale.map_or(
-            TownAction { code: action::DROP_HOME, at: [BORG_HOME as i64, slot as i64, i64::from(quantity), 0] },
-            |shop| TownAction { code: action::SELL_HOME, at: [shop as i64, slot as i64, i64::from(quantity), 0] }));
+        if let Some(action) = release_home_gear(st, slot, quantity) { return Some(action); }
     }
     None
+}
+
+fn release_home_gear(st: &BorgState, slot: usize, quantity: u8) -> Option<TownAction> {
+    if quantity == 0 || buy_rejected(st, BORG_HOME as i16, slot) { return None; }
+    let item = &st.store.shops[BORG_HOME].ware[slot];
+    let stock = crate::engine::store_stock(&st.access, BORG_HOME);
+    let offer = stock.get(slot)?;
+    let quantity = i32::from(quantity).min(offer.carry_capacity());
+    if quantity <= 0 { return None; }
+    let sale = (0..BORG_HOME).find(|&shop| crate::borg_store_sell::borg_store_buys(item, shop as i32)
+        && !sale_rejected(st, shop as i16, item) && offer.sale_quote(shop, quantity) > 0);
+    Some(sale.map_or(
+        TownAction { code: action::DROP_HOME, at: [BORG_HOME as i64, slot as i64, i64::from(quantity), 0] },
+        |shop| TownAction { code: action::SELL_HOME, at: [shop as i64, slot as i64, i64::from(quantity), 0] }))
+}
+
+fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
+    use crate::borg_spare_gear::{gear_plan, planned_slot, GearLocation};
+    if preparing_loadout(st) || crate::engine::player_is_shapechanged() { return None; }
+    let pack = crate::borg_item::inven_wield() as usize;
+    let groups: std::collections::BTreeSet<_> = st.items.items[..pack].iter()
+        .chain(&st.store.shops[BORG_HOME].ware).filter_map(planned_slot).collect();
+    let mut release_pack = None;
+    let mut release_home = None;
+    let mut stash = None;
+    for group in groups {
+        let plan = gear_plan(st, group, true);
+        match plan.upgrade {
+            Some((GearLocation::Pack(slot), target)) if crate::borg_item_wear::ranked_wear_fits(st, slot, target) => {
+                return Some(TownAction { code: WEAR_UPGRADE, at: [-1, slot as i64, 1, target as i64] });
+            }
+            Some((GearLocation::Home(slot), _)) => {
+                let item = &st.store.shops[BORG_HOME].ware[slot];
+                if !buy_rejected(st, BORG_HOME as i16, slot) && shopping_weight_capacity(st, item.weight) > 0
+                    && crate::engine::store_stock(&st.access, BORG_HOME).get(slot).is_some_and(|o| o.carry_capacity() > 0)
+                {
+                    return Some(TownAction { code: action::TAKE_HOME, at: [BORG_HOME as i64, slot as i64, 1, 0] });
+                }
+            }
+            _ => {}
+        }
+        for entry in plan.stock {
+            match entry.source {
+                GearLocation::Pack(slot) => {
+                    let item = &st.items.items[slot];
+                    if entry.release > 0 && release_pack.is_none() {
+                        release_pack = spare_sale(st, slot, item, entry.release).or(Some(TownAction {
+                            code: DROP_SURPLUS, at: [-1, slot as i64, i64::from(entry.release), 0],
+                        }));
+                    }
+                    if entry.stash > 0 && stash.is_none() && !home_moved(st, item, false)
+                        && !sale_rejected(st, BORG_HOME as i16, item)
+                        && crate::engine::inven_object(&st.access, slot)
+                            .is_some_and(|o| o.store_accepts_quantity(BORG_HOME, i32::from(entry.stash)))
+                    {
+                        stash = Some(TownAction { code: action::STORE,
+                            at: [BORG_HOME as i64, slot as i64, i64::from(entry.stash), 0] });
+                    }
+                }
+                GearLocation::Home(slot) if release_home.is_none() => {
+                    release_home = release_home_gear(st, slot, entry.release);
+                }
+                _ => {}
+            }
+        }
+    }
+    release_pack.or(release_home).or(stash)
 }
 
 fn spare_sale(st: &BorgState, slot: usize, item: &borg_item, quantity: u8) -> Option<TownAction> {

@@ -866,6 +866,38 @@ fn prefer_wear_candidate(
         || (power == best_power && best.is_some_and(|item| shorter_torch(candidate, item)))
 }
 
+pub(crate) fn ranked_wear_fits(st: &BorgState, source: usize, target: usize) -> bool {
+    let item = &st.items.items[source];
+    let old = &st.items.items[target];
+    if item.iqty == 0 || old.one_ring || engine::flag_has(&old.flags, crate::headers::list_object_flags_h::OF_STICKY as i32)
+        || old.desc.contains(&(b'!' as core::ffi::c_char)) || item.desc.contains(&(b'!' as core::ffi::c_char))
+    {
+        return false;
+    }
+    let slot = borg_wield_slot(item);
+    let ring = slot == inven_left();
+    let both_rings = st.items.items[inven_left() as usize].iqty > 0 && st.items.items[inven_right() as usize].iqty > 0;
+    (if ring {
+        (inven_right()..=inven_left()).contains(&(target as i32)) && (old.iqty == 0 || both_rings)
+    } else { slot == target as i32 })
+        && (old.iqty == 0 || item.iqty == 1 || engine::pack_slots_free() > 0)
+}
+
+pub(crate) fn wear_ranked_upgrade(st: &mut BorgState, source: usize, target: usize) -> bool {
+    if !ranked_wear_fits(st, source, target) { return false; }
+    let item = st.items.items[source];
+    note_desc(st, "# Wearing ", &item, ".");
+    borg_keypress(st, keycode_t::from(b'w'));
+    borg_keypress(st, letter(source as i32));
+    if u32::from(item.tval) == TV_RING && st.items.items[target].iqty > 0 {
+        // cmd-obj.c:do_cmd_wield asks which equipped ring to replace
+        // when there is no open finger.
+        borg_keypress(st, letter(target as i32 - inven_wield()));
+    }
+    antibounce(st);
+    true
+}
+
 /// Wear useful equipment (`borg_wear_stuff`).
 ///
 /// Look through the inventory for equipment that is better than the
@@ -889,12 +921,6 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
         return false;
     }
 
-    /* We need an empty slot to simulate pushing equipment */
-    let hole = borg_first_empty_inventory_slot(st);
-    if hole == -1 {
-        return false;
-    }
-
     /* Forbid if been sitting on level forever */
     /*    Just come back and work through the loop later */
     if borg_timer(st, st.borg.time.level) > param(Param::wear_best_max_turns) {
@@ -903,6 +929,23 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
     if st.borg.antibounce_count > (param(Param::wear_best_max_bounces) as i16) {
         return false;
     }
+
+    let ranked = crate::borg_town_live::gear_home_backups() && !st.borg.in_shop
+        && !crate::borg_town_live::preparing_loadout(st) && !engine::player_is_shapechanged()
+        && danger_here(st) == 0;
+    if ranked {
+        use crate::borg_spare_gear::{gear_plan, planned_slot, GearLocation};
+        let groups: std::collections::BTreeSet<_> = st.items.items[..inven_wield() as usize]
+            .iter().filter_map(planned_slot).collect();
+        for group in groups {
+            if let Some((GearLocation::Pack(source), target)) = gear_plan(st, group, false).upgrade {
+                if wear_ranked_upgrade(st, source, target) { return true; }
+            }
+        }
+    }
+    /* The legacy trial needs a hole to simulate taking off equipment. */
+    let hole = borg_first_empty_inventory_slot(st);
+    if hole == -1 { return false; }
 
     /* Scan inventory */
     for i in 0..inven_wield() {
@@ -915,6 +958,7 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
         if item.iqty == 0 {
             continue;
         }
+        if ranked && crate::borg_spare_gear::planned_slot(item).is_some() { continue; }
 
         /* Require aware */
         if !item.aware {
@@ -1335,6 +1379,9 @@ fn borg_best_stuff_aux(st: &mut BorgState, n: i32, test: &mut [u16], best: &mut 
 
             /* Skip empty items */
             if item.iqty == 0 {
+                continue;
+            }
+            if crate::borg_town_live::gear_home_backups() && crate::borg_spare_gear::planned_slot(item).is_some() {
                 continue;
             }
 
