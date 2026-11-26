@@ -3253,6 +3253,45 @@ pub fn player_depth() -> i32 {
     i32::from(player_ref().depth)
 }
 
+unsafe extern "C" {
+    // Plain read-only calls from player-quest.h and player-util.h.
+    fn is_quest(p: *mut crate::headers::player_h::player, level: i32) -> bool;
+    fn dungeon_get_next_level(p: *mut crate::headers::player_h::player, level: i32, added: i32) -> i32;
+}
+
+pub(crate) fn player_on_quest_level() -> bool {
+    // SAFETY: the player and their quests are initialized before Borg entry.
+    unsafe { is_quest(crate::headers::player_h::player, player_depth()) }
+}
+
+/// Destination used by game-world.c:728-729 and player-util.c:79-93.
+/// An interactive persistent-level selection or forced quest confirmation
+/// has no automatic destination here (effect-handler-general.c:1118-1143).
+pub(crate) fn town_recall_destination() -> Option<i32> {
+    use crate::headers::list_options_h::{OPT_birth_force_descend, OPT_birth_levels_persist, OPT_birth_no_recall};
+    let player = player_ref();
+    if (player_opt(OPT_birth_no_recall) && player.total_winner == 0) || player_arena_level() {
+        return None;
+    }
+    let max_depth = i32::from(player.max_depth);
+    let saved_depth = i32::from(player.recall_depth).max(1);
+    if !player_opt(OPT_birth_force_descend) {
+        return (!player_opt(OPT_birth_levels_persist) || max_depth == 0).then_some(saved_depth);
+    }
+    // SAFETY: both helpers only read the initialized player, quests and z_info.
+    unsafe {
+        let p = crate::headers::player_h::player;
+        let next = dungeon_get_next_level(p, max_depth, 1);
+        if is_quest(p, next) {
+            None
+        } else if max_depth < i32::from(z_info().max_depth) - 1 {
+            Some(next.max(1))
+        } else {
+            Some(saved_depth)
+        }
+    }
+}
+
 /// A key for the character, from what its birth fixed: the hit points
 /// rolled for each level, height, weight, age and name (FNV-1a).
 /// borg-reborn-rs (#208, re-review #227): an errand belongs to one

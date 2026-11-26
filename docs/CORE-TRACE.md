@@ -30,6 +30,11 @@ remains valid; consumers retain support for it. Schema `@2` records:
   `positive_return`, `nonpositive_return` or `unknown_attack`, not an
   inferred immunity, mana or charge diagnosis. An empty array means no
   ranking invocation was recorded. See [ATTACK-PREFERENCES.md](ATTACK-PREFERENCES.md).
+- `bravery` (#1282), present when the stalled dungeon think tried a bravery
+  stage. Attempts appear in decision order with `stage`, `from`, `to`, the
+  current `y` and `x`, and `selected`. A null `selected` means the stage
+  failed to queue an action. Use `depth` and `keys` to identify a stair
+  command and the following observations to confirm the transition.
 
 Attack rankings capture original simulation returns without rerunning helpers.
 Repeated attempts append separate rankings; nested thinks keep their own
@@ -40,7 +45,7 @@ State is sampled after the decision and before queued keys are consumed.
 Keys describe the whole pending queue, including any already queued by an
 outer decision; they are not an engine action receipt. Store decisions use
 `borg_think_store`. Composite root checks (munchkin/lunal/bravery helpers)
-retain their root name, rather than claiming a deeper tactical reason.
+retain their root name. The `bravery` array records what each attempted stage chose.
 A false return is `borg_think_no_action`; a true return without a hook is
 `unclassified`, rejected by validation. Source line numbers refer to this
 build, while parameter source locations refer to the pre-extraction file.

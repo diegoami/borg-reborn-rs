@@ -3567,7 +3567,7 @@ mod recall_quantity_tests {
 /// no approach discount. The maximum delay is conservative, not knowledge
 /// of the engine's next random roll (effect-handler-general.c:1145).
 pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
-    recall_survivable_with(st, None)
+    recall_survivable_with(st, None, false)
 }
 
 /// borg-reborn-rs (#1140, `deal_with_poison`; third review of #1146): the
@@ -3580,7 +3580,7 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
 /// flight Recall charges the whole delay against the HP (#880), which
 /// refused a Borg at 25/25 HP with a CLW and no monster near.
 pub(crate) fn poison_recall_survivable(st: &mut BorgState, budget: i32, ticks: i32, pending: i32) -> bool {
-    recall_survivable_with(st, Some(PoisonRecall { budget, ticks, pending }))
+    recall_survivable_with(st, Some(PoisonRecall { budget, ticks, pending }), false)
 }
 
 /// The poison triage's Recall terms (`poison_recall_survivable`).
@@ -3598,8 +3598,8 @@ fn poison_recall_charge(ticks: i32, pending: i32, new: f64) -> f64 {
     (f64::from(pending.max(0)).min(ticks) + new.max(0.0)).min(ticks)
 }
 
-fn recall_survivable_with(st: &mut BorgState, poison: Option<PoisonRecall>) -> bool {
-    if p(Param::caution_recall_survival) == 0 { return true; }
+fn recall_survivable_with(st: &mut BorgState, poison: Option<PoisonRecall>, force_forecast: bool) -> bool {
+    if !force_forecast && p(Param::caution_recall_survival) == 0 { return true; }
     let ticks = poison.map_or_else(|| p(Param::caution_recall_survival_delay), |b| b.ticks);
     // #880: 1 prices POISON as damage, status blows by their dice and
     // never vetoes on a breeder; 0 is #758's rule (every blow other than
@@ -3698,7 +3698,8 @@ fn recall_survivable_with(st: &mut BorgState, poison: Option<PoisonRecall>) -> b
     }
     // #1140: the poison triage's budget is the HP plus the healing carried.
     let budget = poison.map_or_else(|| st.borg.tr(BI_CURHP), |b| b.budget);
-    let what = if poison.is_some() { "HP + healing" } else { "HP" };
+    let what = if force_forecast { "HP after bleeding reserve" }
+        else if poison.is_some() { "HP + healing" } else { "HP" };
     let allowed = recall_forecast_allows(exposure, unknown_risks, budget);
     if allowed && asleep > 0 {
         borg_note(st, &format!("# Flight Recall forecast: known {awake} awake + {asleep} asleep; {reachable} reachable among them; {exposure:.2} modelled contact HP, {what} {budget}: allowed (#758)"));
@@ -4800,7 +4801,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
             // (more_refused) to this take; a fresh selection of this very
             // call (leave_stairs_on_monster, choose_stairs — the recovering
             // Borg's escape) stays eligible. 0 keeps C.
-            let gated_refuses = p(Param::caution_standing_descent_gated) != 0
+            let gated_refuses = (p(Param::caution_standing_descent_gated) != 0
+                || crate::borg_think_dungeon::bravery_recovery_enabled())
                 && !fresh_emergency
                 && more_refused(st, false);
             if !gated_refuses {
@@ -5668,7 +5670,7 @@ fn recall_pending_escape(on: bool, recalling: i32) -> bool {
 /// 0 = C (explore while waiting; the wait comes after exploration).
 pub(crate) fn recall_wait_no_explore(st: &mut BorgState) -> bool {
     if !recall_wait_holds(
-        p(Param::caution_recall_wait_no_explore) != 0,
+        p(Param::caution_recall_wait_no_explore) != 0 || st.think_dungeon.bravery_recall,
         st.borg.goal.recalling,
         st.borg.tr(BI_CDEPTH),
     ) {
@@ -9913,4 +9915,14 @@ mod walk_away_tests {
         let para = src.find(concat!("paralyser_", "step_away(st)")).expect("paralyser call");
         assert!(walk < para);
     }
+}
+
+/// `effect_handler_RECALL` can roll up to 34 world ticks. This fallback
+/// always uses that horizon, even when the flight gate is disabled.
+pub(crate) fn bravery_recall_survivable(st: &mut BorgState) -> bool {
+    const MAX_DELAY: i32 = 34;
+    let pending = if st.borg.tr(BI_ISPOISONED) != 0 { MAX_DELAY } else { 0 };
+    let cuts = if st.borg.tr(BI_ISCUT) != 0 { 3 * MAX_DELAY } else { 0 };
+    let budget = st.borg.tr(BI_CURHP) - cuts;
+    recall_survivable_with(st, Some(PoisonRecall { budget, ticks: MAX_DELAY, pending }), true)
 }

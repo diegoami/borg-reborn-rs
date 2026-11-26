@@ -1089,7 +1089,8 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
         }
 
         /* Cannot find any stairs */
-        if st.borg.goal.rising
+        if !crate::borg_think_dungeon::bravery_recovery_enabled()
+            && st.borg.goal.rising
             && bored
             && borg_timer(st, st.borg.time.level) >= 1000
             && borg_recall(st)
@@ -1140,9 +1141,10 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
         // is not completed underfoot either — the refusal above is then a
         // policy, not a missed step; 0 keeps the take as the #1174 review
         // left it.
-        let gates_refuse = crate::params::value(
+        let gates_refuse = (crate::params::value(
             crate::params::Param::stairs_descent_gates_without_upstair,
-        ) != 0 && crate::borg_flow_stairs::more_refused(st, false);
+        ) != 0 || crate::borg_think_dungeon::bravery_recovery_enabled())
+            && crate::borg_flow_stairs::more_refused(st, false);
         if exhausted
             && feat_at(st, st.borg.c.x, st.borg.c.y) == FEAT_MORE
             && !crate::borg_caution::recall_restricts(st)
@@ -1224,6 +1226,24 @@ fn leave_town(st: &mut BorgState, bored: bool) -> bool {
         return borg_flow_stair_more(st, GOAL_BORE, false, false);
     }
 
+    if crate::borg_think_dungeon::bravery_recovery_enabled() {
+        if st.borg.tr(BI_MAXDEPTH) >= recall_depth && st.borg.tr(BI_RECALL) >= 3 {
+            match engine::town_recall_destination() {
+                Some(depth) => {
+                    if let Some(reason) = prepared(st, depth) {
+                        let text = prep_text(st, &reason);
+                        note_with(st, format!("# Recall to DL{depth} blocked: ").as_bytes(), &text, b"");
+                    } else if borg_recall(st) {
+                        borg_note(st, &format!("# Recalling into dungeon to DL{depth}."));
+                        return true;
+                    }
+                }
+                None => borg_note(st, "# Automatic Recall from town blocked by engine rules or a destination prompt."),
+            }
+        }
+        return start_at_depth_one(st);
+    }
+
     /* Recall into dungeon */
     if st.borg.tr(BI_MAXDEPTH) >= recall_depth
         && st.borg.tr(BI_RECALL) >= 3
@@ -1260,6 +1280,39 @@ fn leave_town(st: &mut BorgState, bored: bool) -> bool {
 
     /* Attempt to use those stairs */
     borg_flow_stair_more(st, GOAL_BORE, false, false)
+}
+
+/// The ordinary town staircase with the depth-one gates applied even when
+/// already standing on it. A flow at cost zero queues no step.
+pub(crate) fn start_at_depth_one(st: &mut BorgState) -> bool {
+    if st.borg.goal.recalling != 0 {
+        borg_note(st, "# Bravery recovery: DL1 departure blocked by pending Recall.");
+        return false;
+    }
+    if crate::borg_flow_stairs::more_refused(st, false) {
+        if let Some(reason) = prepared(st, 1) {
+            let text = prep_text(st, &reason);
+            note_with(st, b"# DL1 departure blocked: ", &text, b"");
+        } else {
+            borg_note(st, "# Bravery recovery: DL1 departure requires light and any sale hold to clear.");
+        }
+        return false;
+    }
+    if crate::shell::shopping_departure(st) {
+        return true;
+    }
+    if feat_at(st, st.borg.c.x, st.borg.c.y) == FEAT_MORE {
+        if !borg_prep_leave_level_spells(st) {
+            borg_keypress(st, key(b'>'));
+        }
+        return true;
+    }
+    if borg_flow_stair_more(st, GOAL_BORE, false, false) {
+        st.borg.stair_more = true;
+        return true;
+    }
+    borg_note(st, "# Bravery recovery: no reachable town staircase.");
+    false
 }
 
 /// Excavate an existing vault using ranged spells.

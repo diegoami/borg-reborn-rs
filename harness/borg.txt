@@ -1504,6 +1504,9 @@ borg_param_flow_brave_walk_commit = 1
 # at most 3 grids with the map unchanged and no danger: walk to a staircase,
 # else a committed brave walk to one, else close the loop's grids for 20 thinks.
 borg_param_loop_breaker = 1
+# #1282 pilot: 0 = current bravery policy, 1 = no boosts with ordinary
+# escapes, 2 = no boosts with safe stair and townward Recall recovery.
+borg_param_think_bravery_mode = 0
 # #1190: the detector's window, named so the zoo can measure a wider one
 # (the arm at loop_grids = 4, the question of #1190). These are #1153's
 # guesses (16 moves, 3 grids); a four-grid cycle like #1189's needs 4.

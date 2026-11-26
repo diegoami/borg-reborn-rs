@@ -998,7 +998,9 @@ pub(crate) fn more_refused(st: &mut BorgState, brave: bool) -> bool {
     // neo-angband-tracker #629): the four gates below guard the descent
     // itself, but C applies them only when an up staircase has been seen.
     // stairs_descent_gates_without_upstair applies them always; 0 keeps C.
-    if st.stairs.less.num != 0 || p(Param::stairs_descent_gates_without_upstair) != 0 {
+    if st.stairs.less.num != 0 || p(Param::stairs_descent_gates_without_upstair) != 0
+        || crate::borg_think_dungeon::bravery_recovery_enabled()
+    {
         /* not unless safe or brave */
         if !brave {
             let depth = st.borg.tr(BI_CDEPTH) + 1;

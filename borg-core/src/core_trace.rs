@@ -20,6 +20,7 @@ struct Selection {
     errand: Option<(String, Option<i32>)>,
     attacks: Vec<AttackRanking>,
     prepared: Vec<PreparedCheck>,
+    bravery: Vec<BraveryAttempt>,
 }
 
 /// One native attack-selector invocation. Multiple attempts in one think are
@@ -84,6 +85,27 @@ pub(crate) fn record_attack_ranking(trace: Option<AttackRanking>, winner: Option
             }
         });
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+struct BraveryAttempt {
+    stage: i32,
+    from: i16,
+    to: i32,
+    y: i32,
+    x: i32,
+    selected: Option<String>,
+}
+
+pub(crate) fn record_bravery(st: &BorgState, stage: i32, from: i16, to: i32, selected: Option<&str>) {
+    FRAMES.with(|frames| {
+        if let Some(frame) = frames.borrow_mut().last_mut() {
+            frame.bravery.push(BraveryAttempt {
+                stage, from, to, y: st.borg.c.y, x: st.borg.c.x,
+                selected: selected.map(str::to_owned),
+            });
+        }
+    });
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -222,6 +244,8 @@ struct Line {
     attacks: Vec<AttackRanking>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     prepared: Vec<PreparedCheck>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    bravery: Vec<BraveryAttempt>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     trip_id: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -358,6 +382,7 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
         acted,
         attacks: frame.attacks,
         prepared: frame.prepared,
+        bravery: frame.bravery,
         trip_id: None,
         previous_prepared_outcome: None,
     };
@@ -481,6 +506,10 @@ mod tests {
             acted: true,
             attacks: vec![],
             prepared: vec![],
+            bravery: vec![
+                BraveryAttempt { stage: 1, from: 12, to: 24, y: 6, x: 8, selected: None },
+                BraveryAttempt { stage: 2, from: 12, to: 160, y: 6, x: 8, selected: Some("find_upstairs".into()) },
+            ],
             trip_id: None,
             previous_prepared_outcome: None,
         };
@@ -490,6 +519,9 @@ mod tests {
 
         let mut old: serde_json::Value = serde_json::from_str(&text).unwrap();
         old.as_object_mut().unwrap().remove("healing_potions");
-        assert_eq!(serde_json::from_value::<Line>(old).unwrap().healing_potions, None);
+        old.as_object_mut().unwrap().remove("bravery");
+        let old = serde_json::from_value::<Line>(old).unwrap();
+        assert_eq!(old.healing_potions, None);
+        assert!(old.bravery.is_empty());
     }
 }
