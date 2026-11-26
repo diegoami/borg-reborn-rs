@@ -19,13 +19,13 @@ which: [docs/DOCUMENTATION-MAP.md](../docs/DOCUMENTATION-MAP.md).
 
 | Path | Copied from | Commit | What is included |
 | --- | --- | --- | --- |
-| `deaths/better-borg-c/` | diegoami/better-borg-c `docs/deaths/` | `46037038cb0ce3a248ea22c06f02454818dbe4b4` | Every top-level file (README, FEEDBACK, REVIEW-TEMPLATE, `index.json`, `owner-reviews.json`, `window-profile-v2.json`), and every `.md` and `.json` file at the root of each case: `report.md`, `assessment.json`, `record.json`, `build.json`, `overall-assessment.md`, owner feedback, review anchors and verification records |
-| `deaths/borg-rs/` | diegoami/borg-rs `docs/deaths/` | `8c5d000a58e9ddca1f1954ab9552e505856b313f` | Same selection, including `discussion.json`, `owner-reviews.json`, the cohort notes and the seed reports |
+| `deaths/better-borg-c/` | diegoami/better-borg-c `docs/deaths/` | `cc4c3e43aa0a863ad2fc4adab8f930277d181900` | Every top-level file (README, FEEDBACK, REVIEW-TEMPLATE, `index.json`, `owner-reviews.json`, `window-profile-v2.json`), and every `.md` and `.json` file at the root of each case: `report.md`, `assessment.json`, `record.json`, `build.json`, `overall-assessment.md`, owner feedback, review anchors and verification records |
+| `deaths/borg-rs/` | diegoami/borg-rs `docs/deaths/` | `d75e17a5ae743114c9b745934d36721800216f45` | Same selection, including `discussion.json`, `owner-reviews.json`, the cohort notes and the seed reports |
 | `borg-rs/` | diegoami/borg-rs `docs/` | see `pins.json` | borg-rs's own records: what it changed in its engine tree (`FORK-CORRECTIONS.md`, `adoption/status.json`; context only since milestone E, docs/ENGINE.md) and its tooling (`harness.md`, `checkpoints.md`, `REPLAY-TOOLKIT.md`, `ENGINE-UPGRADE.md`, `C-CONSUMER-ADOPTION.md`) |
 | `borg-runner/manuals/`, `borg-runner/knowledge/` | diegoami/borg-runner `manuals/`, `knowledge/` | `e55ac6f384f2e19c0b148c2b1d2ac932fbec3d83` | What agent players learned (S15): `INSTRUCTIONS.md`, the page they read, every found line traced to `run#ask`; `INSTRUCTIONS_2.md` (depth 5–20, untested); `jev-1.md`; and each run's notebook |
 | `borg-runner/records/` | diegoami/borg-runner `records/` | same | Every `.md` file: each run's `REPORT.md` and `notebook.md`, and `OVERVIEW.md`. Screens, keys, decisions and replay pages are left out: read them at the pin (`git -C vendor/borg-runner show e829a01:records/<run>/...`) |
 | `borg-runner/ACCUMULATED_BEHAVIOUR.md`, `borg-runner/docs/DESIGN.md` | diegoami/borg-runner | `e55ac6f384f2e19c0b148c2b1d2ac932fbec3d83` | How the agent players behaved, and how borg-runner works (#816) |
-| `zoo/DESIGN.md`, `zoo/FINDINGS.md`, `zoo/PROFILES.md`, `zoo/catalogue/` | diegoami/borg-zoo | `7b373a702e7b9bb491ba468d97d34cf99ec3df2d` | The zoo's design, what its completed experiments showed (`FINDINGS.md`, #816), what can be asked of it (`PROFILES.md`, #816), and its specimens, profiles and suites as of that commit |
+| `zoo/DESIGN.md`, `zoo/FINDINGS.md`, `zoo/PROFILES.md`, `zoo/catalogue/` | diegoami/borg-zoo | `1ba3a3cfc97bbde629ac187d9ccd3bf5d9eed177` | The zoo's design, what its completed experiments showed (`FINDINGS.md`, #816), what can be asked of it (`PROFILES.md`, #816), and its specimens, profiles and suites as of that commit |
 
 ## Not copied: evidence that needs a read of the pinned repository
 

@@ -1,6 +1,6 @@
 {
   "schema": "borg-rs/c-consumer-adoption@1",
-  "phase": "impact_v13r_owner_accepted",
+  "phase": "impact_v15r_owner_accepted",
   "review_issue": "https://github.com/diegoami/borg-rs/issues/2",
   "m5_candidate": "28468aa9fdc74cbb65d351349b973835d8c42af9",
   "m5_accepted_source": "020322749026418a666da3209c169f48ec9d608c",
@@ -20,6 +20,19 @@
     "review_package_commit": "9929eb4eb16412ef2415a5711a3eecab92fa1288"
   },
   "adopted_batches": [
+    {
+      "id": "c-v15r",
+      "target_commit": "646ebfc2a3a80a0caf87f1ab72fe4bcee0d94343",
+      "target_tag": "4.2.6-impact-v15",
+      "previous_commit": "9ccb2aaeebc56ad6aeb35b668f112f0f58b142f8",
+      "engine_commit": "574b618c3bfec595f3503a58f8e488b1c4ae3a46",
+      "state": "reviewed_approve_owner_accepted",
+      "owner_accepted_on": "2026-11-20",
+      "review": "https://github.com/diegoami/borg-rs/pull/109#pullrequestreview-5984695685",
+      "receipt": "docs/validation/2026-11-19-c-v15r/README.md",
+      "tracking_record": "docs/adoption/c-v15r/README.md",
+      "source_review": "https://github.com/diegoami/better-borg-c/issues/547"
+    },
     {
       "id": "c-v13r",
       "target_commit": "9ccb2aaeebc56ad6aeb35b668f112f0f58b142f8",

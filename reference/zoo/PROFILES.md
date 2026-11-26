@@ -17,6 +17,184 @@ Ask for a run by shortcut, ref and tier, for example: **"small run of `maxdepth-
 | `rs-additive-6` | [#129](https://github.com/diegoami/borg-zoo/issues/129) | 6 | obsolete (#129 closed by the owner) | borg-rs: existing behaviour, shopping only, and four trip thresholds (0,0), (1,2), (1,4), (2,4) as (pack slack, unknown stacks). |
 | `neo-default` | [#137](https://github.com/diegoami/borg-zoo/issues/137) | 1 | small tier done | Neo Borg with its default recorded flags (no settings). |
 | `reborn-errand-ladder` | – | 2 | done (option-C pilot, borg-reborn-rs #207, #208) | Errands: borg-rs's core in the reborn shell with no errand against the class ladders (borg_reborn_errand = ladder). |
+| `reborn-heal-by-class` | [#265](https://github.com/diegoami/borg-zoo/issues/265) | 6 | re-pilot on 38858846 done; small tier (ctl, curve-lo, reserve-lo, common) defined | Healing by class on main 4a482c58: each class's curve and reserve at about 0.5x and 1.5x its shipped value, and class files off (common 100/125); real-HP reserve and speed at shipped values; read per class. |
+| `reborn-outmatched` | [#270](https://github.com/diegoami/borg-zoo/issues/270) | 4 | superseded by #275 (reborn-heal-outmatched on 92fafc61: off, min_loss 30-70); not dispatched | Outmatched healing on main 4a482c58: caution_heal_when_outmatched off against on (shipped), and its min_loss threshold at 25, 50 (compiled) and 75. |
+| `reborn-attack-by-class` | [#274](https://github.com/diegoami/borg-zoo/issues/274) | 4 | verysmall done: no lead; closing proposed | Attack preferences by class on main 4a482c58: shipped, every class preference neutral (1000), distance from 1000 halved, and x1.5 (capped at 2000); read per class. |
+| `reborn-worships` | [#279](https://github.com/diegoami/borg-zoo/issues/279) | 6 | pilot done (gate passed); damage, speed, hp, mana inert (18/18 identical), dropped; ac changes every game | The five equipment borg_worships_* switches (damage, speed, hp, mana, ac), each on alone against all FALSE (shipped), on main 92fafc61. Gold is left out: the live town planner bypasses its selling effect. |
+| `reborn-recall-settings` | [#280](https://github.com/diegoami/borg-zoo/issues/280) | 6 | starts 1-900 done: dl1off neutral | Word of Recall settings on main f660aecc (#571 merged): shipped; no flight Recall on DL1-2 (gate 3); flight Recall on DL1 again (gate 0); Recall valued 300% or 1000% by the town planner; no flight Recall at any depth without breeders or chasers (caution_flee_recall 0). |
+| `reborn-pbd-by-class` | [#290](https://github.com/diegoami/borg-zoo/issues/290) | 4 | small+medium done: deaths 23/360 in every arm; continued for Rangers and Rogues as reborn-pbd-rr | Arrow point-blank divisor by class on main f660aecc: shipped (5, Rogue 3, Ranger 2), common 5 for all, about half, about double; read per class. |
+| `reborn-scary-calm` | [#291](https://github.com/diegoami/borg-zoo/issues/291) | 4 | defined (pilot on f660aecc, not dispatched) | Scary latch (1/0) x calm (hurt 50 + afraid 1, shipped, against 0/0 = C) on main f660aecc. |
+| `reborn-scary-named-damage` | [#292](https://github.com/diegoami/borg-zoo/issues/292) | 3 | pilot done (gate passed); superseded by reborn-scary-classes (#299): the owner wants more class bias, not less | Named scary list with the damage rule at 60% (shipped) or 40%, and the damage rule alone, on main f660aecc. |
+| `reborn-scary-classes` | [#299](https://github.com/diegoami/borg-zoo/issues/299) | 4 | pilot done: up3/up6 inert at 100,000 turns; continued as reborn-scary-tough | The scary list's class spread on main f660aecc: shipped (fragile = tough + 3), fragile + 3, fragile + 6, tough - 3 and fragile + 3; read per class. |
+| `reborn-pbd-rr` | [#290](https://github.com/diegoami/borg-zoo/issues/290) | 3 | done: Ranger divisor 1 neutral, leaning helpful; not confirmed | Point-blank divisor for Rangers (1, 2 shipped, 3) and Rogues (2, 3 shipped, 4) on main f660aecc, played on Ranger and Rogue starts only. |
+| `reborn-scary-tough` | [#299](https://github.com/diegoami/borg-zoo/issues/299) | 3 | all 1,800 starts done: t5 helpful on progress, neutral on deaths | The scary list's tough end on main f660aecc: shipped, tough - 3 and tough - 5 with fragile unchanged; read per class. |
+| `reborn-rising-ticks3` | [#191](https://github.com/diegoami/borg-zoo/issues/191) | 5 | big done; closed (FINDINGS): shipped 300 stands | caution_rising_explore_ticks 300 (shipped), 500, 1000, 1500, 2000 on main f660aecc. |
+| `reborn-attack-focus` | [#319](https://github.com/diegoami/borg-zoo/issues/319) | 3 | done: small+medium+big, no outcome changed; closed (FINDINGS) | Attack focus by class on main f660aecc: shipped class preferences, with every family a class file does not raise at 750 or 500. |
+| `reborn-plays-risky` | [#330](https://github.com/diegoami/borg-zoo/issues/330) | 2 | pilot done: risky kills; closed (FINDINGS) | borg_plays_risky FALSE (shipped) against TRUE on main 6438e1cf. |
+| `reborn-597` | [#342](https://github.com/diegoami/borg-zoo/issues/342) | 3 | pilot done: both switches neutral (inert) | #597 switches on main 6438e1cf: caution_twitch_avoid_lava and caution_stair_parked_fallback each off against shipped 1. |
+| `reborn-scary-ends` | [#350](https://github.com/diegoami/borg-zoo/issues/350) | 11 | floor3 starts 1-900 done (49 v 51 deaths, CL 5.50 v 5.13); full defined | Lowering the scary list's fragile end with the tough end (t5, all5, t5f6 at 100k; f3, all5, t5f6 and halved class fragility at 200k), on main 38858846. |
+| `reborn-bundle` | [#549](https://github.com/diegoami/borg-zoo/issues/549) | 15 | defined (200,000-turn pilot) | HP minimums -25% (hp-lo) and phase reserve 1 at 200 percent (r1p200), alone and together, on main 2801ba18. |
+| `reborn-kill-power-main` | [#244](https://github.com/diegoami/borg-zoo/issues/244) | 2 | pilot done: off neutral on deaths, leans harmful on progress | kill_live_min_power shipped 1 against 0 on main 38858846. |
+| `reborn-errands-main` | [#383](https://github.com/diegoami/borg-zoo/issues/383) | 3 | all tiers done; confirmed on classes-1800-b (128 v 117, p 0.035); 200k medium defined | Errands plan vs no plan on main 3ba17e2c: none (shipped), errands_plan.txt, errands_plan_ambitious.txt; pilot to full. |
+| `reborn-bless` | [#388](https://github.com/diegoami/borg-zoo/issues/388) | 5 | defined (pilot on 3ba17e2c, not dispatched) | Bless rules (#560) on main 3ba17e2c: never cast, stop sooner (max_danger_divisor 4), bless longer (1), bless at lower danger (danger_divisor 6). |
+| `reborn-phase-thresholds` | [#389](https://github.com/diegoami/borg-zoo/issues/389) | 5 | defined (pilot on 3ba17e2c, not dispatched) | Phase Door thresholds on main 3ba17e2c: ordinary danger 5 / 20 tenths, unique 7, no anti-summon delay. |
+| `reborn-town-dangerous` | [#390](https://github.com/diegoami/borg-zoo/issues/390) | 4 | defined (pilot on 3ba17e2c, not dispatched) | Attacking dangerous townspeople on sight (#619) on main 3ba17e2c: on (bonus 300), bonus 600, min_damage 3. |
+| `reborn-gold-reserve` | [#392](https://github.com/diegoami/borg-zoo/issues/392) | 5 | defined (pilot on 3ba17e2c, not dispatched) | Town gold reserve on main 3ba17e2c: fixed 300 / 1000, percent 25 / 50, against 0 (shipped). |
+| `reborn-stand-seeinv` | [#393](https://github.com/diegoami/borg-zoo/issues/393) | 3 | defined (pilot on 3ba17e2c, not dispatched) | caution_scary_stand 0 (always flee) and recover_rest_arms_see_invis 1 against shipped, on main 3ba17e2c. |
+| `reborn-phase-rule-main` | [#347](https://github.com/diegoami/borg-zoo/issues/347) | 2 | defined (pilot and classes-1800-b confirmation on 3ba17e2c, not dispatched) | #584's Phase Door rule on main 3ba17e2c: ctl (shipped off) against thr-100 (escape_phase_adjacent_rule 1, escape_phase_lost_test 0); pilot, then a confirmation on fresh seeds. |
+| `reborn-scary-floor-main` | [#369](https://github.com/diegoami/borg-zoo/issues/369) | 2 | defined (pilot, small, medium, big, full on 3ba17e2c, not dispatched) | The scary list's floor3 (every range - 5, floor CL 3) against the shipped list on main 3ba17e2c, with #621's ignore lines in both arms; pilot to full. |
+| `reborn-neutral-main` | [#400](https://github.com/diegoami/borg-zoo/issues/400) | 5 | defined (pilot, small, medium, big, full on 3ba17e2c, not dispatched) | Settings found neutral elsewhere, each alone on main 3ba17e2c: caution_scary_unlatch_calmed, caution_recall_wait_as_usual, attack_town_dangerous_on_sight, escape_fox_form (1 against shipped 0). |
+| `reborn-untested-town` | [#401](https://github.com/diegoami/borg-zoo/issues/401) | 13 | defined (pilot screen on 3ba17e2c, not dispatched) | Never-tested town planner settings halved and doubled on main 3ba17e2c: borg_town_risk, power_scale, w_attack, w_support, w_space, home_discount. |
+| `reborn-untested-caution` | [#401](https://github.com/diegoami/borg-zoo/issues/401) | 9 | defined (pilot screen on 3ba17e2c, not dispatched) | Never-tested trip, Recall and breeder settings lowered and raised on main 3ba17e2c: borg_town_explore_turns, caution_recall_rest_turns, caution_breeder_easy_escape_steps, caution_flee_recall_chasers. |
+| `reborn-errands-floor3` | [#405](https://github.com/diegoami/borg-zoo/issues/405) | 4 | defined (pilot on 3ba17e2c, not dispatched) | Errands plan × floor3 (2×2) on main 3ba17e2c: ctl, errands, floor3, both. |
+| `reborn-crow` | [#408](https://github.com/diegoami/borg-zoo/issues/408) | 4 | pilot done (inert on classes-18); replay on the 55 crow / wild-cat death starts defined | Crows (and wild cats) scary for fragile classes at CL1-2/3 only, on main 3ba17e2c: crow 0-2, crow 0-3, crow + wild cat 0-2. |
+| `reborn-mage-priest` | [#415](https://github.com/diegoami/borg-zoo/issues/415) | 3 | defined (pilot on 592c6984, not dispatched) | Study 2 of #415 on main 592c6984, Mage and Priest starts, rule and calmed in every arm: healing x1.5, spell preference 1500. |
+| `reborn-bgphase` | [#415](https://github.com/diegoami/borg-zoo/issues/415) | 2 | defined (pilot on Blackguard starts, medium, big, full on 592c6984, not dispatched) | Blackguard exception to the Phase Door rule on main 592c6984: rule on (control, as main will ship) against rule off, calmed unlatch in both; Blackguard starts only. |
+| `reborn-casters` | [#415](https://github.com/diegoami/borg-zoo/issues/415) | 6 | defined (pilot on caster starts, medium, big, full on 592c6984, not dispatched) | Casters' early kit and fighting on main 592c6984, Mage, Priest, Necromancer and Druid starts only, the Phase Door rule and calmed in every arm: more oil, more Phase Door, thrown preference 1500, early animals on the scary list, heal reserve + 100. |
+| `reborn-rebase-main` | [#416](https://github.com/diegoami/borg-zoo/issues/416) | 5 | defined (pilot on 592c6984, not dispatched) | Re-baseline on main 592c6984 after #664: shipped, the Phase Door rule, calmed unlatch, both, and the errands plan. |
+| `reborn-death-bank38` | [#429](https://github.com/diegoami/borg-zoo/issues/429) | 5 | defined (replay of 3ba17e2c's 233 death starts, not dispatched) | The death-start bank of shipped main 3ba17e2c: ctl, the Phase Door rule, calmed unlatch, the errands plan, all three. |
+| `reborn-crow-escape` | [#408](https://github.com/diegoami/borg-zoo/issues/408) | 4 | defined (replay of the 55 crow/wild-cat death starts, not dispatched) | Crow/wild-cat death starts on 3ba17e2c: ctl, the Phase Door rule, the rule + throwing 1500, the rule + more oil. |
+| `reborn-breeder-stoppable` | [#411](https://github.com/diegoami/borg-zoo/issues/411) | 3 | defined (pilot on PR #632 head ed8e270d) | Kill breeders first (caution_breeder_stoppable), alone and with the flight's colony avoidance (caution_breeder_avoid), against both off. |
+| `reborn-class-curves` | [#433](https://github.com/diegoami/borg-zoo/issues/433) | 2 | pilot done (run 44610324668: 0 deaths against 1); small + medium defined | The owner's #682 per-class Phase Door and oil curve scales (and Blackguard healing 100/200) against the same build set back to 100 (main before #682). |
+| `reborn-kill-flow-mode` | [#438](https://github.com/diegoami/borg-zoo/issues/438) | 4 | defined (pilot on PR #695 head f9c44b35, 200k turns) | The hunt removed in steps: kill_flow_mode 0 (C), 1 targeted hunts only, 2 no out-of-view hunt, 3 never hunt. |
+| `reborn-detect-min-level` | [#443](https://github.com/diegoami/borg-zoo/issues/443) | 2 | defined (pilot on PR #703 head 3ed059b6) | No detection prayer by panel below CL10 for the five casters (light_detect_evil_spell_min_level 10) against C (0). |
+| `reborn-slow-crowd-exit` | [#448](https://github.com/diegoami/borg-zoo/issues/448) | 2 | defined (pilot on PR #702 head c3747cc9; small + medium after its gate) | Walk out of a crowd of slower or immobile monsters (caution_slow_crowd_exit) against off. |
+| `reborn-untested-dbc` | [#450](https://github.com/diegoami/borg-zoo/issues/450) | 8 | defined (pilot on main dbc92d18) | Never-varied town settings: device value by class (100 / 50 / 200), shot reserve 50 / 100, shot reserve with oil 50, town flee no-worse. |
+| `reborn-class-curves-dbc` | [#433](https://github.com/diegoami/borg-zoo/issues/433) | 2 | small + medium done (13 against 12 deaths of 360); big + full defined | #433 restarted on dbc92d18: the owner's class curves against all scales 100. |
+| `reborn-detect-min-dbc` | [#443](https://github.com/diegoami/borg-zoo/issues/443) | 2 | defined (pilot, small, medium on main dbc92d18) | #443 on dbc92d18: caster detection min level 10 (shipped) against 0. |
+| `reborn-breederstop-dbc` | [#411](https://github.com/diegoami/borg-zoo/issues/411) | 3 | defined (pilot, small, medium on main dbc92d18) | #411 on dbc92d18: kill breeders first (stoppable), alone and with avoidance, against both off. |
+| `reborn-store-overweight` | [#457](https://github.com/diegoami/borg-zoo/issues/457) | 2 | pilot done (1 -> 0 deaths); small + medium defined | Store at home only when overweight (town_store_only_overweight) against off. |
+| `reborn-bgcurve-dbc` | [#433](https://github.com/diegoami/borg-zoo/issues/433) | 3 | defined (pilot on dbc92d18; classes-1800-b Blackguards after its gate) | Blackguards: shipped (Phase Door 50, healing 100/200) against Phase Door 100, and against healing 75/150. |
+| `reborn-stairs-leash` | [#475](https://github.com/diegoami/borg-zoo/issues/475) | 3 | small + medium done (11 against 4 deaths); big defined | Stairs leash for CL1-4 (flow_leash 1 by level, 2 growing with XP) against C. |
+| `reborn-low-level-detection` | [#470](https://github.com/diegoami/borg-zoo/issues/470) | 4 | defined (pilot) | Detection min level: 0 (C) / casters 10 / all 10 / all 5. |
+| `reborn-town-switch-screen` | [#466](https://github.com/diegoami/borg-zoo/issues/466) | 7 | defined (pilot) | Screen of the town and Druid switches main ships off, one arm each. |
+| `reborn-dungeon-switch-screen` | [#465](https://github.com/diegoami/borg-zoo/issues/465) | 10 | defined (pilot) | Screen of the dungeon switches main ships off, one arm each. |
+| `reborn-shipcheck-b895` | [#480](https://github.com/diegoami/borg-zoo/issues/480) | 6 | defined (first stage on classes-1800-small; medium after its gate) | Main b895e352 (engine 574b618c): shipped against throw-as-melee 0, store-when-overweight 0, detection casters 10, all 10, ranged vs immobile 1. |
+| `reborn-main-fde8` | [#488](https://github.com/diegoami/borg-zoo/issues/488) | 1 | defined (pilot; all 1,800 starts after its gate) | borg-reborn-rs main fde8025a (engine 574b618c) with its shipped settings. |
+| `reborn-breeder-world-x4` | [#482](https://github.com/diegoami/borg-zoo/issues/482) | 6 | not tested: the switch arms were overridden by caution_breeder_policy 3 (identical plays); superseded by reborn-breeder-policy-x4 | Breeder switches in the breeders-x4 world (all arms in the world): shipped against stoppable 0, rest 0, both 0, exit 1, avoid 1. |
+| `reborn-breeder-policy-x4` | [#482](https://github.com/diegoami/borg-zoo/issues/482) | 6 | defined (pilot; small + medium after its gate) | The breeder policy ladder (caution_breeder_policy 0-5, shipped 3) in the breeders-x4 world. |
+| `reborn-teleport-landing-either` | [#495](https://github.com/diegoami/borg-zoo/issues/495) | 2 | defined (pilot at 200k on main c74a8155) | escape_teleport_landing_either (upstream 95387b06) 1 against shipped 0, at 200,000 turns. |
+| `reborn-flight-fixes` | [#501](https://github.com/diegoami/borg-zoo/issues/501) | 2 | defined (pilot; Rangers and small + medium after its gate) | The flight fixes (#743/#747/#749/#750/#751/#753) all on against shipped, on e8b3acfd. |
+| `reborn-cleash` | [#506](https://github.com/diegoami/borg-zoo/issues/506) | 6 | pilots done (first pilot; re-pilot of none as reborn-cleashnone); small tiers ctl+loose and ctl+none defined | C's exploration leash values on main ec0f3b28: shipped (3/9/5), tight (2/5), loose (5/15), depth margin 0 and 10, and no leash. |
+| `reborn-flight3-757` | [#510](https://github.com/diegoami/borg-zoo/issues/510) | 10 | pilot done 2026-11-20 (nodanger stalled; flight3 rescued); small tier (ctl, flight3) defined | PR #757 on 50c23a5e: #501's flight arm with #751 mode 3 (flight3), plus ranged-first (flight3r), and each switch alone. |
+| `reborn-fight-recall` | [#511](https://github.com/diegoami/borg-zoo/issues/511) | 5 | defined (pilot; larger tiers after its gate and the owner) | #763/#764 on 78b8f297: attack-on-sight categories, winning-fight override, safe flight Recall, and all three. |
+| `reborn-phase-first-761` | [#513](https://github.com/diegoami/borg-zoo/issues/513) | 10 | pilot done 2026-11-20 (oil led, phase rescued); small tier (ctl, oil, phase) defined | #761 on 992e0351: Phase Door reserve, less oil, Rangers' lighter kit, floor pickup, unseen flavours, food/light, and all. |
+| `reborn-recallwait` | [#507](https://github.com/diegoami/borg-zoo/issues/507) | 4 | defined (pilot; small + medium after its gate) | #754's Recall-wait switches on PR #762 head 613f1ba5: a pending Recall counts as an escape (esc), no exploring while it counts down (nox), both. |
+| `reborn-cleashnone` | [#506](https://github.com/diegoami/borg-zoo/issues/506) | 2 | defined (re-pilot of ctl against none; small tier after its gate) | C's leash switched off (flow_leash_pickup_max_level and flow_leash_stairs_max_level 0) against C's shipped values, on main ec0f3b28. |
+| `reborn-dive-gates-768` | [#518](https://github.com/diegoami/borg-zoo/issues/518) | 5 | defined (pilot) | C Borg dive gates (#768, PR #772): the shipped depth cap against the merged gates, then the depth margin and class offsets on 4e9af99e. |
+| `reborn-p6compat` | [#520](https://github.com/diegoami/borg-zoo/issues/520) | 1 | defined (pilot) | P6 compatibility check (borg-reborn-rs #774): main 4e9af99e against the synchronized d0657712, shipped defaults. |
+| `reborn-flight3main` | [#516](https://github.com/diegoami/borg-zoo/issues/516) | 6 | defined (pilot) | PR #757's flight switches on main 09a70906 (mode 3 fixed): flight3, flight3r, path3, fast, cure. |
+| `reborn-rangerphase` | [#517](https://github.com/diegoami/borg-zoo/issues/517) | 6 | defined (pilot) | #761 Phase Door first on 3c889f0f (PR #778): ranger, phase, oil, floor and all. |
+| `reborn-prepared` | [#522](https://github.com/diegoami/borg-zoo/issues/522) | 9 | pilot done 2026-11-20 (HP minimums act; level and Cure minimums not tested); small tier (ctl, hp-lo, hp-hi) defined; 200,000-turn pilot defined (reborn-prepared-200k-pilot) | The dive gates' thresholds on main a04e5471: character-level minimums +/-2, HP minimums -25%/+25%, Cure minimum 0 and 4, and loose and tight combinations. |
+| `reborn-weighted765` | [#524](https://github.com/diegoami/borg-zoo/issues/524) | 3 | pilot done 2026-11-20 (weighted5 newly killed one Ranger, 0 of 18 identical); small tier (mode3, weighted5) defined | Threat-weighted stair routing (#765, PR #769) on 4a2eade9: the shipped profile, mode 3, and mode 3 with threat weight 5. |
+| `reborn-phasereserve` | [#526](https://github.com/diegoami/borg-zoo/issues/526) | 7 | defined (pilot; small tier and Rangers after its gate and the owner); 200,000-turn pilot defined (reborn-phase-reserve-200k-pilot); small tier at 200,000 turns (r1p200, r2p400) defined | town_phase_reserve (1, 2, 3 at 200 percent) and town_phase_reserve_percent (50, 100, 200, 400 at reserve 2) on main d745d9fc, against the shipped reserve 0. |
+| `reborn-attacksight` | [#529](https://github.com/diegoami/borg-zoo/issues/529) | 8 | defined (pilot; small tier after its gate and the owner) | attack_on_sight (#760), caution_winning_fight (#759) and the kill-on-sight list on main c4163095: each switch off, both off, the list without its breeders, without its fast-fragile pair, and cut to CL10 and CL20. |
+| `reborn-breederpol` | [#530](https://github.com/diegoami/borg-zoo/issues/530) | 5 | defined (pilot; small tier after its gate and the owner) | caution_breeder_policy in the normal world on main c4163095: shipped 3 and 0, 2, 4, 5. |
+| `reborn-adopted` | [#511](https://github.com/diegoami/borg-zoo/issues/511) | 5 | defined (pilot f827f844; superseded by reborn-ship3 on main d7e58cd, not dispatched) | The three adopted switches (attack_on_sight, caution_winning_fight, caution_recall_survival, shipped 1) isolated against an explicit all-off control on f827f844: off, category, winning, recall, shipped. |
+| `reborn-adopted-600` | [#528](https://github.com/diegoami/borg-zoo/issues/528) | 2 | defined (pilot18 of the retained 600; prepared only; the owner decides dispatch and every tier) | The adopted combined policy (shipped) against explicit all-off on f827f844, on the first 2 starts per class of the owner's retained 600 (200 Rangers + 50 of each other class). |
+| `reborn-ship3` | [#535](https://github.com/diegoami/borg-zoo/issues/535) | 5 | pilot done 2026-11-21; small tier at 200,000 turns (alloff, fight, allon) defined | The three shipped fight/Recall switches ablated on main d7e58cd: alloff, sight, fight, recall, allon. |
+| `reborn-townhunt` | [#538](https://github.com/diegoami/borg-zoo/issues/538) | 6 | defined (pilot) | town_ranged_reserve and town_hunt (borg-reborn-rs #789, PR #800) on 8e0f20af, with and without caution_winning_fight (which also decides town attacks). |
+| `reborn-deathrisk` | [#534](https://github.com/diegoami/borg-zoo/issues/534) | 1 | pilot on 5343532c done (run 44838098884); exact-build pilot on 0eb48328 (core-trace@3) defined | borg-reborn-rs 5343532c (task/T790-death-risk): the shipped settings with per-think death_risk observations, evidence retained for calibration. |
+| `reborn-maindefault` | [#543](https://github.com/diegoami/borg-zoo/issues/543) | 1 | verysmall done (run 44841145368, 1 death); defined: 300,000-turn verysmall (#543), the death bank (#550), and the planned full ladder small-rest, medium, big, full (#551, not dispatched); the planned ladder of #551 on 2801ba18 is superseded by reborn-head (#566), not dispatched | borg-reborn-rs main 2801ba18 with its shipped settings and no overrides, on classes-1800-verysmall (45 starts), for death reports. |
+| `reborn-paladingate` | [#544](https://github.com/diegoami/borg-zoo/issues/544) | 2 | defined (pilot on the 10 Paladin starts) | The Paladin DL3-4 max-HP preparedness gate, 45 against 50, on 2fdfd41c (borg-reborn-rs #795). |
+| `reborn-darkentry` | [#546](https://github.com/diegoami/borg-zoo/issues/546) | 2 | defined (pilot on the 20 Mage and Necromancer starts) | Low-level dark-entry detection (light_detect_dark_entry 1) for Mages and Necromancers on cd0ed207 (borg-reborn-rs #796). |
+| `reborn-killers` | [#548](https://github.com/diegoami/borg-zoo/issues/548) | 6 | defined (200,000-turn pilot) | Fang and Grip scary to CL8-10 and 10-12, the dogs as kill-on-sight, soldiers and acolytes scary to CL12-16 and 16-20, on main 2801ba18. |
+| `reborn-receipt` | [#539](https://github.com/diegoami/borg-zoo/issues/539) | 2 | defined (pilot; adapter contract check of settings-resolved.json) | The resolved-settings receipt on main 78fb330f: a class override, a legacy alias, a scalar and a default-equal value, against the shipped profile. |
+| `reborn-fresh` | [#556](https://github.com/diegoami/borg-zoo/issues/556) | 1 | defined (pilot on the first 18 starts of the fresh block classes-1800-fresh; the full block is the owner's call) | Fresh baseline: main d7e58cd (everything shipped this week) against fde8025a (#488), each with its own shipped settings, for P7's two endpoints. |
+| `reborn-floo` | [#558](https://github.com/diegoami/borg-zoo/issues/558) | 7 | defined (pilot) | Leave-one-out of the shipped flight cluster on main d7e58cd: path1, noflee, danger, weight0, fastany, curefull. |
+| `reborn-sloo` | [#557](https://github.com/diegoami/borg-zoo/issues/557) | 6 | defined (pilot) | Leave-one-out of shipped settings no zoo arm has measured on main 2801ba18: nobump, nothrowfirst, nobreederboost, nooilapart, phasecurve100. |
+| `reborn-deathrisk0eb` | [#534](https://github.com/diegoami/borg-zoo/issues/534) | 1 | defined (exact-build calibration pilot; small and medium follow in order after the gate) | borg-reborn-rs PR #792 at 0eb48328 (core-trace@3): the shipped settings with per-think death_risk observations, evidence retained. |
+| `reborn-recallres` | [#563](https://github.com/diegoami/borg-zoo/issues/563) | 3 | defined (pilot) | Word of Recall replenishment with a reserve of 1 (shipped), 2 and 3 scrolls on ae904090 (borg-reborn-rs #810, PR #813). |
+| `reborn-head` | [#566](https://github.com/diegoami/borg-zoo/issues/566) | 1 | defined (the full classes-1800 ladder: verysmall pilot, small-rest, medium, big, full; dispatched in order at the owner's request) | borg-reborn-rs main 3b4924ba (head on 2026-11-21) with its shipped settings and no overrides over all 1,800 classes-1800 starts. |
+| `reborn-p6final` | [#571](https://github.com/diegoami/borg-zoo/issues/571) | 1 | defined (pilot; the gate is returned before anything else) | P6 final candidate compatibility (borg-reborn-rs #814): main 07aa4b1e against a3635ad8, shipped defaults. |
+| `reborn-cursed` | [#583](https://github.com/diegoami/borg-zoo/issues/583) | 1 | defined (pilot, two experiments: #583, #598) | Cursed equipment (borg-reborn-rs #830, PR #832): the base 88d98537 against the change 9cbe0348, shipped settings. Second pilot (#598) on 88d98537 vs cursed af70b9e9, 36 cells. |
+| `reborn-torch` | [#577](https://github.com/diegoami/borg-zoo/issues/577) | 4 | defined (exposure pilot at 300,000 turns) | Spare torches to buy and keep (borg-reborn-rs #810, PR #835): town_light_reserve_turns 0, 15000, 20000, 25000 on e4d64f08. |
+| `reborn-confusion` | [#581](https://github.com/diegoami/borg-zoo/issues/581) | 9 | pilot and small done; medium defined (#581) | The six confusion settings of borg-reborn-rs #837 on da097a76: CLW cure, no walk before the cure, stuck, CSW reserve, kobold shaman attack or leave. |
+| `reborn-invis` | [#580](https://github.com/diegoami/borg-zoo/issues/580) | 3 | defined (pilot; classes-1800 after the gate) | Invisible attacker mode and Detect Invisible (borg-reborn-rs #831, PR #836) on b3f32a9a: A old behaviour, B shipped, C higher Detect Invisible value. |
+| `reborn-tpblock` | [#578](https://github.com/diegoami/borg-zoo/issues/578) | 2 | defined (pilot, small, medium) | Teleport block under an anti-teleportation curse (borg-reborn-rs #829, PR #833) on 6fe184ea: escape_teleport_block 0 against shipped 1. |
+| `reborn-immfix` | [#586](https://github.com/diegoami/borg-zoo/issues/586) | 3 | defined (pilot, then big at starts 361-900) | caution_ranged_vs_immobile 2 with the confusion and no-return switches on 8eadb21f: shipped, immobile2, immobile2_fix (borg-reborn-rs #837). |
+| `reborn-townkos` | [#569](https://github.com/diegoami/borg-zoo/issues/569) | 6 | defined (pilot) | Kill on sight in town with the town scare lowered (N 6, 11) and the three #637 switches on main 12c4ce7c (borg-reborn-rs #667). |
+| `reborn-townscum` | [#594](https://github.com/diegoami/borg-zoo/issues/594) | 4 | defined (pilot) | Town scumming (borg_money_scum_amount 500, 1000, 2000) on main 12c4ce7c, against the shipped 0. |
+| `reborn-fastfrag` | [#596](https://github.com/diegoami/borg-zoo/issues/596) | 8 | pilot, small, medium done; big (ctl against stats-ban) defined and dispatched | Fast-fragile monsters (borg-reborn-rs 7f8c6b80): scary-list entries, bans and escape variants against the control, 8 arms. |
+| `reborn-healtiers` | [#597](https://github.com/diegoami/borg-zoo/issues/597) | 3 | defined (pilot) | Heal tiers (bba5e4be): speed100 and quaff200 against the control at 300k turns on classes-18-300k. |
+| `reborn-alpha1` | [#601](https://github.com/diegoami/borg-zoo/issues/601) | 1 | defined (pilot; small-rest, medium, big, full planned, not dispatched) | Release measurement of borg-reborn-rs v0.1.0-alpha.1 (ed52fec1): shipped settings, one arm, classes-1800 ladder (45+45+270+540+900), 100,000 turns. |
+| `reborn-rangedonly` | [#593](https://github.com/diegoami/borg-zoo/issues/593) | 4 | pilot done (run 44935138551); small, medium, big defined and dispatched | caution_ranged_only (borg-reborn-rs #838) on 5887c29b: shipped, ranged, immobile2, ranged_clw, classes-18 pilot. |
+| `reborn-nowalk` | [#604](https://github.com/diegoami/borg-zoo/issues/604) | 3 | pilot done (run 44936423074); small, medium defined and dispatched | fast_fragile_no_walk (borg-reborn-rs #849, PR #853) on d9ebf4c9: ctl, nowalk, nowalk-stats, classes-18 pilot. |
+| `reborn-tonight` | [#609](https://github.com/diegoami/borg-zoo/issues/609) | 1 | defined (ladder: pilot, small-rest, medium, big, full), dispatched 2026-11-21 | Tonight's test: borg-reborn-rs main ab775d48, shipped settings, one arm, classes-1800 ladder (45+45+270+540+900), 100,000 turns. |
+| `reborn-p6rf` | [#611](https://github.com/diegoami/borg-zoo/issues/611) | 1 | defined (pilot) | P6 review-fix compatibility (borg-reborn-rs #860): main ab775d48 against 038250d6, shipped settings, classes-18. |
+| `reborn-room` | [#612](https://github.com/diegoami/borg-zoo/issues/612) | 4 | pilot done (run 44950482392); small (classes-1800-300k-verysmall) defined and dispatched; rerun with the full-pack junk fix defined (#639); small rerun on the junk-fix build defined and dispatched (#639); junk-fix small tier changed none of 180 games (7 room stalls remain): diagnosis defined (#639) | Departure room, store keep and Recall curve (borg-reborn-rs #859, PR #864) on c7ea18df: ctl, shipped, room, recall, classes-18 at 300k. |
+| `reborn-variety` | [#616](https://github.com/diegoami/borg-zoo/issues/616) | 4 | pilot done (run 44967883374); small (classes-1800-300k-verysmall) defined and dispatched | Variety, more Recall and Phase Door (borg-reborn-rs #863) on 4290a7da: ctl, shipped, variety, kit, classes-18 at 300k. |
+| `reborn-throwpb` | [#618](https://github.com/diegoami/borg-zoo/issues/618) | 2 | pilot done (run 44967902905); small and medium defined and dispatched | Thrown-object point-blank divisor (borg-reborn-rs #870) on e037588b: inherit (0) against throw1 (1), classes-18. |
+| `reborn-healskip` | [#621](https://github.com/diegoami/borg-zoo/issues/621) | 4 | pilot done (run 44976856993); small and medium defined and dispatched (#621) | Heal skip bands and the non-priest penalty (borg_caution.rs) on main f57499d0: ctl, nopen, half, always, classes-18. |
+| `reborn-despscary` | [#622](https://github.com/diegoami/borg-zoo/issues/622) | 4 | pilot done (run 44976875737); small (ctl, d8, d4) defined and dispatched (#622) | Desperate walk to the stairs from a scary monster on main f57499d0: ctl, d8, d4, lvl10, classes-18. |
+| `reborn-main-f57499d0` | [#623](https://github.com/diegoami/borg-zoo/issues/623) | 1 | defined (ladder: pilot, small-rest, medium, big, full), dispatched 2026-11-22 | Ladder of borg-reborn-rs main f57499d0, shipped settings, one arm, classes-1800 (45+45+270+540+900), 100,000 turns. |
+| `reborn-lightbel` | [#625](https://github.com/diegoami/borg-zoo/issues/625) | 3 | pilot done (run 44976921051); small and medium defined and dispatched (#625) | Engine light radius (#877) and unseen belief (#879) on a516df64: ctl, light1, light1-belief, classes-18. |
+| `reborn-loneslow` | [#626](https://github.com/diegoami/borg-zoo/issues/626) | 11 | pilot, small, medium, big done (all: 13 deaths against 25 in 900 starts); confirmation on classes-1800-fresh defined and dispatched (#626) | borg-reborn-rs #878 (PR #891) on 296adfbf: 11 arms (lone slow attack, danger without fear, faint, unseen-bump phase, breeder bonus), classes-18. |
+| `reborn-bhold` | [#627](https://github.com/diegoami/borg-zoo/issues/627) | 4 | pilot done (run 44976959551); small and medium in the breeders-x4 world defined and dispatched; normal-world pilot defined (#627) | Slow-breeder hold rule (#882, PR #893) on 6062b84a in the breeders-x4 world: ctl, p4, hold, p6, classes-18. |
+| `reborn-kitleash` | [#589](https://github.com/diegoami/borg-zoo/issues/589) | 13 | pilot done (run 44981752264); small and medium (13 arms) defined and dispatched (#589) | Basic-kit mode (#840, PR #844 merged) on main f57499d0: 13 arms (kit_leash variants, kit, restock, start reserve, money first, kit-money-hunt, all), classes-18. |
+| `reborn-blow` | [#632](https://github.com/diegoami/borg-zoo/issues/632) | 2 | pilot done (run 44982717684: 18 of 18 identical); small and medium defined and dispatched (#632) | Flight Recall blow model (#880, PR #892) on 201d56eb: blow-off against blow-on (shipped), classes-18. |
+| `reborn-dev` | [#633](https://github.com/diegoami/borg-zoo/issues/633) | 2 | pilot dispatched (run 44982737491); small (classes-1800-300k-verysmall) defined, dispatched after the pilot's gate (#633) | Devices as variety (#895, PR #898) on 3020d451: ctl against shipped, classes-18 at 300k. |
+| `reborn-conf` | [#636](https://github.com/diegoami/borg-zoo/issues/636) | 5 | pilot done (run 44986409375); small (ctl, confused-pb) defined and dispatched (#636) | Confused attacks by direction (#867, PR #868) on e8895f5e: ctl, confused, ctl-clw, confused-clw, confused-pb, classes-18 at 300k. |
+| `reborn-cursed-torch` | [#638](https://github.com/diegoami/borg-zoo/issues/638) | 1 | defined (pilot) | Cursed torch direct swap (#899, PR #900) on c8f30e3c: shipped, classes-18 and the two repro starts. |
+| `reborn-stairunk` | [#642](https://github.com/diegoami/borg-zoo/issues/642) | 6 | pilot done (run 45023921364); small and medium defined and dispatched (#642) | Stair flights on known grids (#881, PR #897) on ea14528a: ctl, m1, m2 in breeders-x4 and breeders-x8, classes-18. |
+| `reborn-fastpur` | [#643](https://github.com/diegoami/borg-zoo/issues/643) | 11 | pilot done (run 45023948564); small and medium (11 arms) defined and dispatched (#643) | borg-reborn-rs #907-#911 on 608d9fed: ctl, one arm per switch, walkcost-dh, all, classes-18. |
+| `reborn-trackp-9085c266` | [#645](https://github.com/diegoami/borg-zoo/issues/645) | 1 | defined (baseline ladder of the track-p line: pilot, small-rest, medium, big, full), dispatched 2026-11-22 | Baseline of borg-reborn-rs track-p 9085c266, shipped settings, one arm, classes-1800 (45+45+270+540+900), 100,000 turns. |
+| `reborn-main-b34196c5` | [#645](https://github.com/diegoami/borg-zoo/issues/645) | 1 | defined (lighter baseline of the main line: pilot, small-rest, medium), dispatched 2026-11-22 | Baseline of borg-reborn-rs main b34196c5, shipped settings, one arm, classes-1800 (45+45+270), 100,000 turns. |
+| `reborn-kitlt` | [#646](https://github.com/diegoami/borg-zoo/issues/646) | 5 | pilot, small, medium on 9085c266 dispatched; re-pinned to the head 4b2c2fcf with the town-hunt arm (reborn-kit-leash-head-*, #646) | kit_leash on the track-p head 9085c266 (re-run of #589's lead): ctl, leash, leash-m0, kit, c. |
+| `reborn-trackp-4b2c2fcf` | [#645](https://github.com/diegoami/borg-zoo/issues/645) | 1 | defined (baseline ladder of the track-p line at the head: pilot, small-rest, medium, big, full), dispatched 2026-11-22; replaces the ladder at 9085c266 | Baseline of borg-reborn-rs track-p 4b2c2fcf (cursed-torch swap and full-pack fix in), shipped settings, classes-1800 (45+45+270+540+900), 100,000 turns. |
+| `reborn-vrm` | [#648](https://github.com/diegoami/borg-zoo/issues/648) | 4 | pilot done (run 45033226329); small (classes-1800-300k-verysmall) defined and dispatched (#648) | Re-measure of #863/#873 on the merged track-p e2d8919e: ctl, shipped, variety, kit, classes-18 at 300k. |
+| `reborn-flask` | [#649](https://github.com/diegoami/borg-zoo/issues/649) | 3 | pilot done (run 45033254253); small and medium defined and dispatched (#649) | Flask saving (#912) on bf077c4a: ctl, save2, save2-noov, classes-18 at 300k. |
+| `reborn-pbdtp` | [#651](https://github.com/diegoami/borg-zoo/issues/651) | 2 | run 45033279953: arm lo config_error in all 200 cells (class line name); rerun as reborn-pbdtp2 | Ranger arrow point-blank divisor 1 against 2 on track-p e2d8919e (re-measure of #290): ctl, lo. |
+| `reborn-cavesp` | [#652](https://github.com/diegoami/borg-zoo/issues/652) | 8 | pilot done (run 45033305701); small and medium (short list) defined and dispatched (#652) | Five switches from the cave-spider death (#913-#916, #941) on 67a0c69d: 8 arms, classes-18. |
+| `reborn-wjelly` | [#654](https://github.com/diegoami/borg-zoo/issues/654) | 6 | pilot done (run 45033331780); small and medium (short list) defined and dispatched (#654) | Four switches from the white-jelly death (#931-#934) on 172bd671: ctl, reach, osc, kill, poison, all, classes-18. |
+| `reborn-trackp-regression` | [#645](https://github.com/diegoami/borg-zoo/issues/645) | 2 | defined (diagnosis pilot) | The 37 starts that die on track-p 9085c266 and survive on main f57499d0, on the track-p head: shipped against attack_confused_by_direction 0, evidence retained. |
+| `reborn-pbdtp2` | [#651](https://github.com/diegoami/borg-zoo/issues/651) | 2 | defined (development re-measure on the 200 Ranger starts; the first run had config_error for lo: wrong class line name) | Ranger arrow point-blank divisor 1 against 2 on track-p e2d8919e, rerun with attack_arrow_point_blank_divisor_ranger. |
+| `reborn-lonew` | [#678](https://github.com/diegoami/borg-zoo/issues/678) | 10 | defined (pilot in the breeder worlds) | The #878 switches in breeders-x4 and breeders-x8 on 296adfbf: ctl, lone, phase-nofear, breeder5, all, classes-18 (scenario companion of #626). |
+| `reborn-blloww` | [#679](https://github.com/diegoami/borg-zoo/issues/679) | 4 | defined (pilot in the breeder worlds) | Flight Recall blow model in breeders-x4 and breeders-x8 on 201d56eb: blow-off, blow-on, classes-18 (scenario companion of #632). |
+| `reborn-zerohp` | [#670](https://github.com/diegoami/borg-zoo/issues/670) | 2 | defined (pilot) | kill_live_zero_hp (#975, PR #994) on 1f4e9e89: ctl, zero, classes-18. |
+| `reborn-rest` | [#671](https://github.com/diegoami/borg-zoo/issues/671) | 4 | defined (pilot) | borg_recover rest switches (#981, #982; PRs #998, #999) on ed6c7ab8: ctl, shot, cure, both, classes-18. |
+| `reborn-ffq` | [#672](https://github.com/diegoami/borg-zoo/issues/672) | 7 | defined (pilot) | Fast-fragile quantile, heal floor, dot (#926, PR #1002) on 8974509e: 7 arms, classes-18. |
+| `reborn-overex` | [#675](https://github.com/diegoami/borg-zoo/issues/675) | 3 | defined (pilot on the small Mage suite) | Emergency attack spell beyond the mana (#980, PR #991, re-synced to 80cf6bf4): ctl (1), noexert (0), faint100, Mages. |
+| `reborn-unkcure` | [#684](https://github.com/diegoami/borg-zoo/issues/684) | 4 | defined (pilot) | Unknown cures and the cure HP floor (#985, PR #1003) on b5b0f5fd: ctl, hold, floor, both, classes-18. |
+| `reborn-rclshallow` | [#688](https://github.com/diegoami/borg-zoo/issues/688) | 4 | defined (pilot) | Recall on shallow trips (#984, PR #997) on 434d5371: ctl, urgent, hold, both, classes-18. |
+| `reborn-deadend` | [#659](https://github.com/diegoami/borg-zoo/issues/659) | 6 | defined (pilot) | Retreat and back-up refuse a dead end (#881 part 2, PR #953) on b157f9dd: ctl, d1, d2 in breeders-x4 and breeders-x8, classes-18. |
+| `reborn-retreat-flight` | [#657](https://github.com/diegoami/borg-zoo/issues/657) | 2 | defined (pilot) | Stair routing after a tactical retreat (#932, PR #964) on e43b6d87: ctl, hold, classes-18 at 300k. |
+| `reborn-bfol` | [#692](https://github.com/diegoami/borg-zoo/issues/692) | 14 | defined (pilot in the breeder worlds) | The three follow-ups of #878 (#1008-#1010) on bfc24d10: 7 arms in white-worm-mass-x4 and breeders-x4, classes-18. |
+| `reborn-book` | [#693](https://github.com/diegoami/borg-zoo/issues/693) | 2 | defined (pilot) | Keep the first spellbook before its first spell (#1004, PR #1019) on 5ad50d96: ctl, la4, small Rangers and Rogues. |
+| `reborn-trackp-206cf4e7` | [#695](https://github.com/diegoami/borg-zoo/issues/695) | 1 | defined (baseline ladder of track-p at 206cf4e7: pilot, small-rest, medium, big, full), dispatched 2026-11-22 | Baseline of borg-reborn-rs track-p 206cf4e7 (P7 fixes folded in, the grey mushroom fixes, P8 fixes so far), shipped settings, classes-1800 (45+45+270+540+900), 100,000 turns. |
+| `reborn-trackp-abd0cce1` | [#695](https://github.com/diegoami/borg-zoo/issues/695) | 1 | defined (baseline ladder of track-p at its newest head abd0cce1: pilot, small-rest, medium, big, full), dispatched 2026-11-22 | Baseline of borg-reborn-rs track-p abd0cce1 (the newest build: the lone-slow bundle shipped, #1047), shipped settings, classes-1800 (45+45+270+540+900), 100,000 turns. |
+| `reborn-lbun` | [#699](https://github.com/diegoami/borg-zoo/issues/699) | 6 | defined (pilot, big) | The lone-slow bundle and its parts on track-p 206cf4e7: ctl, all, reserve, faint, bump, all-minus-lone. |
+| `reborn-kl206` | [#700](https://github.com/diegoami/borg-zoo/issues/700) | 5 | defined (pilot, small, medium) | Kit leash and town hunt on track-p 206cf4e7: ctl, leash-m0, leash, town-hunt, kit-money-hunt. |
+| `reborn-pb206` | [#701](https://github.com/diegoami/borg-zoo/issues/701) | 2 | defined (pilot, small, medium) | Throw point-blank divisor 1 for warrior, paladin, rogue, blackguard on track-p 206cf4e7: ctl, all1. |
+| `reborn-li206` | [#702](https://github.com/diegoami/borg-zoo/issues/702) | 6 | defined (pilot, full) | Engine light radius alone and with the day's leads on track-p 206cf4e7: ctl, light, light+lone, light+leash, light+throw, combined. |
+| `reborn-ks206` | [#703](https://github.com/diegoami/borg-zoo/issues/703) | 4 | defined (pilot, small, medium) | Kill-on-sight floor and unknown-potion test in the normal world on track-p 206cf4e7: ctl, floor0, potions0, both0. |
+| `reborn-belief` | [#702](https://github.com/diegoami/borg-zoo/issues/702) | 5 | defined (pilot, full) | unseen_belief (#879, borg-reborn-rs #890, a must ship) and the engine light radius (#877) on track-p f8725bc0: ctl, light, belief, light+belief, light+belief-decay5; pilot then full (900 starts). |
+| `reborn-leash-dl1` | [#702](https://github.com/diegoami/borg-zoo/issues/702) | 4 | defined (pilot) | Why the kit leash adds DL1 deaths: 49 death starts of #702's full tier replayed to 25,000 turns with notes on track-p 206cf4e7: ctl, light, leash, light+leash. |
+| `reborn-light-ladder` | [#702](https://github.com/diegoami/borg-zoo/issues/702) | 2 | defined (verysmall, small-rest, medium, big = starts 1-900) | Light radius (cave_light_engine_radius 1) against ctl on classes-1800 starts 1-900 at track-p 206cf4e7: second block for the depth cost seen on starts 901-1800. |
+| `reborn-leash-holes` | [#719](https://github.com/diegoami/borg-zoo/issues/719) | 5 | defined (pilot) | The three stair-leash switches of #1062 (any stair, unknown-stair steps, teleported Recall) on 12fe36d8: ctl, any, unknown, recall, leash3; classes-18. |
+| `reborn-heal-quaff` | [#722](https://github.com/diegoami/borg-zoo/issues/722) | 3 | defined (pilot) | Town heal speed 100 and the quaff bonus 200 (#845, PR #848) on 925fc5d7: ctl, speed100, quaff200; classes-18 at 300,000 turns. |
+| `reborn-short-gold` | [#723](https://github.com/diegoami/borg-zoo/issues/723) | 2 | defined (pilot) | Short-gold shopping with held oil (#828, PR #854) on b8605b5c: ctl, shortgold; classes-18. |
+| `reborn-light-priest` | [#702](https://github.com/diegoami/borg-zoo/issues/702) | 2 | defined (pilot) | Why the light radius slows Priests: the 63 slow Priest starts of the light ladder replayed to 60,000 turns with notes: ctl, light on 206cf4e7. |
+| `reborn-ff-ratio` | [#717](https://github.com/diegoami/borg-zoo/issues/717) | 2 | defined (pilot, full) | Fast-fragile heal ratio 30 (shipped) against 0 (#1065, PR #1089) on c7e55e1d: ctl, ratio0. |
+| `reborn-ff-dot` | [#713](https://github.com/diegoami/borg-zoo/issues/713) | 2 | defined (pilot) | Fast-fragile own cut and poison (count_dot 1, #1028) on track-p 8f32a8a0: ctl, dot. |
+| `reborn-kos-cure` | [#727](https://github.com/diegoami/borg-zoo/issues/727) | 4 | defined (x8 pilot, normal pilot, full) | attack_kill_on_sight_floor_cure 1 (shipped) against 0 (#1064, PR #1082) on bc215cf8: patches-x8 and the normal world; ctl, cure0. |
+| `reborn-ffb769` | [#711](https://github.com/diegoami/borg-zoo/issues/711) | 5 | defined (pilot, full) | The #926 fast-fragile bundle (escape quantile 75, heal floor 50, count_dot 1) and its three parts on track-p 769f3fbd: ctl, bundle, q75, floor50, dot. |
+| `reborn-bfs` | [#730](https://github.com/diegoami/borg-zoo/issues/730) | 2 | defined (pilot, full) | Breadth-first exploration on (shipped, #1088) against off (explore_breadth_first 0, arm bfs0) on track-p 1c071812: ctl, bfs0. |
+| `reborn-phase` | [#731](https://github.com/diegoami/borg-zoo/issues/731) | 4 | defined (pilot, full) | The two #1066 Phase Door switches (unknown_scary, newcomer_wait), shipped on in #1096 on track-p 6cd5c8bf: shipped, phase0 (both 0), unknown, newcomer. |
+| `reborn-mixed` | [#732](https://github.com/diegoami/borg-zoo/issues/732) | 6 | defined (pilot, verysmall, small-rest) | Mixed exploration (explore_mixed, #1098, PR #1117) on 3a2d2215: ctl, mixed, nobfs, mixed-alone, mixed-tight, mixed-loose. |
+| `reborn-food-bfs` | [#729](https://github.com/diegoami/borg-zoo/issues/729) | 2 | defined (pilot) | Food forecasts after the Hungry biscuit fix (#1109) on f0e13e99: ctl0 (breadth-first off), bfs1 (on); classes-18 with evidence. |
+| `reborn-ffb-ladder` | [#711](https://github.com/diegoami/borg-zoo/issues/711) | 2 | defined (verysmall, small-rest, medium, big = starts 1-900) | Confirmation block for the fast-fragile bundle lead on 769f3fbd: ctl, bundle on classes-1800 starts 1-900. |
+| `reborn-bfs-ladder` | [#730](https://github.com/diegoami/borg-zoo/issues/730) | 2 | defined (verysmall, small-rest, medium, big = starts 1-900) | Breadth-first on (shipped) vs off, second block, classes-1800 starts 1-900 on 1c071812: ctl, bfs0. |
+| `reborn-leash-holes-vs` | [#719](https://github.com/diegoami/borg-zoo/issues/719) | 5 | defined (verysmall) | The stair-leash switches of #1062 on 12fe36d8, classes-1800 starts 1-45. |
+| `reborn-ss9276` | [#721](https://github.com/diegoami/borg-zoo/issues/721) | 4 | defined (pilot, verysmall, small-rest, medium, big = starts 1-900) | stair_scum on the shipped build 9276b75a (PR #1090): shipped, noscum, nobfs, neither on classes-18 and classes-1800 starts 1-900. |
+| `reborn-ro-tp` | [#740](https://github.com/diegoami/borg-zoo/issues/740) | 6 | defined (normal pilot, x8 pilot, normal starts 1-900, x8 verysmall) | caution_ranged_only 1 and caution_ranged_vs_immobile 2 on track-p 1c071812: ctl, ranged, immobile2 in the normal world and patches-x8. |
+| `reborn-paralyser` | [#735](https://github.com/diegoami/borg-zoo/issues/735) | 4 | defined (pilot, small, medium) | The #1125 paralyser switches (PR #1129, 173156ac): ctl, lost, walk, all. |
+| `reborn-perception` | [#736](https://github.com/diegoami/borg-zoo/issues/736) | 4 | defined (pilot, full) | Stale light and sight through rubble (#885, #917, PR #1128, 7bfbe121): ctl, dark, rubble, both. |
+| `reborn-trap` | [#737](https://github.com/diegoami/borg-zoo/issues/737) | 5 | defined (20 death seeds, full ctl/trapoff) | The #1067 trap rules, shipped on (PR #1086, 91dd0d0a): ctl, trapoff, way, recover, noleave. |
+| `reborn-t1134` | [#738](https://github.com/diegoami/borg-zoo/issues/738) | 6 | defined (pilot, verysmall) | Phase threshold 50, confusion CLW cure, retreat breaker, prepared remedy 50 on track-p 1c071812 (borg-reborn-rs #1134): ctl, phase50, conf, osc, prep50, all. |
+| `reborn-mixed40` | [#732](https://github.com/diegoami/borg-zoo/issues/732) | 8 | defined (pilot, verysmall, small-rest) | Mixed exploration, C's leave-when-done and the old bfs stay (#1098, PR #1117) on 40c3bcc8: ctl, cexit, bfs-stay, mixed, nobfs, mixed-alone, mixed-tight, mixed-loose. |
+| `reborn-trackp-353f5c09` | [#695](https://github.com/diegoami/borg-zoo/issues/695) | 1 | defined (verysmall, small-rest, medium, big, full) | Baseline ladder of track-p at its current head 353f5c09 (2026-11-23): shipped settings, classes-1800 starts 1-1800. |
+| `reborn-dp` | [#745](https://github.com/diegoami/borg-zoo/issues/745) | 4 | defined (pilots, x8 verysmall-medium, normal verysmall-big) | deal_with_poison (#1140, PR #1146, 1909efb9) in poison-x8 and the normal world: ctl, deal. |
 
 ### `heal-attack-4`
 
@@ -184,35 +362,2906 @@ Every arm: `borg_reborn_core = borg-rs`.
 | --- | --- | --- | --- |
 | [43702957409](https://github.com/diegoami/borg-zoo/actions/runs/43702957409) | full (before RULES 14) | `4.2.6-reborn-core-pilot` | 3,600 games: ladder 448 deaths (24.9%) v no errand 524 (29.1%); descriptive, one development suite |
 
+### `reborn-heal-by-class`
+
+Healing by class on main 4a482c58: each class's curve and reserve at about 0.5x and 1.5x its shipped value, and class files off (common 100/125); real-HP reserve and speed at shipped values; read per class.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_town_heal_curve_scale_percent_blackguard` | `borg_param_town_heal_curve_scale_percent_druid` | `borg_param_town_heal_curve_scale_percent_mage` | `borg_param_town_heal_curve_scale_percent_necromancer` | `borg_param_town_heal_curve_scale_percent_paladin` | `borg_param_town_heal_curve_scale_percent_priest` | `borg_param_town_heal_curve_scale_percent_ranger` | `borg_param_town_heal_curve_scale_percent_rogue` | `borg_param_town_heal_curve_scale_percent_warrior` | `borg_param_town_heal_reserve_hp_percent_blackguard` | `borg_param_town_heal_reserve_hp_percent_druid` | `borg_param_town_heal_reserve_hp_percent_mage` | `borg_param_town_heal_reserve_hp_percent_necromancer` | `borg_param_town_heal_reserve_hp_percent_paladin` | `borg_param_town_heal_reserve_hp_percent_priest` | `borg_param_town_heal_reserve_hp_percent_ranger` | `borg_param_town_heal_reserve_hp_percent_rogue` | `borg_param_town_heal_reserve_hp_percent_warrior` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-hbc-common` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | -1 | -1 | -1 | -1 | -1 | -1 | -1 | -1 | -1 |
+| `reborn-hbc-ctl` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-hbc-curve-hi` | 115 | 185 | 225 | 225 | 115 | 185 | 150 | 150 | 75 | – | – | – | – | – | – | – | – | – |
+| `reborn-hbc-curve-lo` | 40 | 60 | 75 | 75 | 40 | 60 | 50 | 50 | 25 | – | – | – | – | – | – | – | – | – |
+| `reborn-hbc-reserve-hi` | – | – | – | – | – | – | – | – | – | 225 | 375 | 450 | 450 | 225 | 375 | 300 | 300 | 150 |
+| `reborn-hbc-reserve-lo` | – | – | – | – | – | – | – | – | – | 75 | 125 | 150 | 150 | 75 | 125 | 100 | 100 | 50 |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44294456089](https://github.com/diegoami/borg-zoo/actions/runs/44294456089) | pilot | `4.2.6-reborn-rust-main-4a482c58` | 108 games: deaths ctl 1, curve-lo 2, curve-hi 1, reserve-lo 3, reserve-hi 1, common 2; both Druids die with common and reserve-lo |
+| [44445305823](https://github.com/diegoami/borg-zoo/actions/runs/44445305823) | pilot (re-pilot) | `4.2.6-reborn-rust-main-38858846` | 108 games: deaths ctl 0, curve-lo 3, curve-hi 0, reserve-lo 2, reserve-hi 1, common 2 |
+
+### `reborn-outmatched`
+
+Outmatched healing on main 4a482c58: caution_heal_when_outmatched off against on (shipped), and its min_loss threshold at 25, 50 (compiled) and 75.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_heal_outmatched_min_loss` | `borg_param_caution_heal_when_outmatched` |
+| --- | --- | --- |
+| `reborn-outm-ctl` | 50 | 1 |
+| `reborn-outm-off0` | – | 0 |
+| `reborn-outm-loss25` | 25 | 1 |
+| `reborn-outm-loss75` | 75 | 1 |
+
+### `reborn-attack-by-class`
+
+Attack preferences by class on main 4a482c58: shipped, every class preference neutral (1000), distance from 1000 halved, and x1.5 (capped at 2000); read per class.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_preference_blackguard_melee_permille` | `borg_param_attack_preference_blackguard_spell_permille` | `borg_param_attack_preference_druid_spell_permille` | `borg_param_attack_preference_mage_device_permille` | `borg_param_attack_preference_mage_spell_permille` | `borg_param_attack_preference_necromancer_device_permille` | `borg_param_attack_preference_necromancer_spell_permille` | `borg_param_attack_preference_paladin_melee_permille` | `borg_param_attack_preference_paladin_spell_permille` | `borg_param_attack_preference_priest_spell_permille` | `borg_param_attack_preference_ranger_projectile_permille` | `borg_param_attack_preference_rogue_projectile_permille` | `borg_param_attack_preference_rogue_thrown_permille` | `borg_param_attack_preference_warrior_melee_permille` | `borg_param_attack_preference_warrior_projectile_permille` | `borg_param_attack_preference_warrior_thrown_permille` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-abc-ctl` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-abc-flat` | 1000 | 1000 | 1000 | 1000 | 1000 | 1000 | 1000 | 1000 | 1000 | 1000 | 1000 | 1000 | 1000 | 1000 | 1000 | 1000 |
+| `reborn-abc-half` | 1300 | 1200 | 1350 | 1100 | 1500 | 1100 | 1400 | 1400 | 1100 | 1350 | 1500 | 1150 | 1300 | 1400 | 1100 | 1100 |
+| `reborn-abc-strong` | 1900 | 1600 | 2000 | 1300 | 2000 | 1300 | 2000 | 2000 | 1300 | 2000 | 2000 | 1450 | 1900 | 2000 | 1300 | 1300 |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44308236915](https://github.com/diegoami/borg-zoo/actions/runs/44308236915) | pilot | `4.2.6-reborn-rust-main-4a482c58` | 72 games: deaths ctl 1, flat 1, half 2, strong 1; identical to ctl: flat 8, half 11, strong 15 of 18; Priest and Blackguard unaffected |
+| [44329289001](https://github.com/diegoami/borg-zoo/actions/runs/44329289001) | verysmall | `4.2.6-reborn-rust-main-4a482c58` | 135 games: deaths ctl 3, flat 3, half 5 of 45 |
+
+### `reborn-worships`
+
+The five equipment borg_worships_* switches (damage, speed, hp, mana, ac), each on alone against all FALSE (shipped), on main 92fafc61. Gold is left out: the live town planner bypasses its selling effect.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_worships_ac` | `borg_worships_damage` | `borg_worships_hp` | `borg_worships_mana` | `borg_worships_speed` |
+| --- | --- | --- | --- | --- | --- |
+| `reborn-worship-ctl` | – | – | – | – | – |
+| `reborn-worship-damage` | – | TRUE | – | – | – |
+| `reborn-worship-speed` | – | – | – | – | TRUE |
+| `reborn-worship-hp` | – | – | TRUE | – | – |
+| `reborn-worship-mana` | – | – | – | TRUE | – |
+| `reborn-worship-ac` | TRUE | – | – | – | – |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44308259323](https://github.com/diegoami/borg-zoo/actions/runs/44308259323) | pilot | `4.2.6-reborn-rust-main-92fafc61` | 108 games, no deaths; damage/speed/hp/mana 18/18 identical to ctl; ac 0/18 identical, mean CL 5.17 v 5.44 |
+
+### `reborn-recall-settings`
+
+Word of Recall settings on main f660aecc (#571 merged): shipped; no flight Recall on DL1-2 (gate 3); flight Recall on DL1 again (gate 0); Recall valued 300% or 1000% by the town planner; no flight Recall at any depth without breeders or chasers (caution_flee_recall 0).
+
+Every arm: `borg_param_caution_scary_named_monsters = 1`, `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_flee_recall` | `borg_param_caution_flee_recall_gate_below_depth` | `borg_param_town_recall_value_percent` |
+| --- | --- | --- | --- |
+| `reborn-recallset-ctl` | – | 2 | – |
+| `reborn-recallset-dl12` | – | 3 | – |
+| `reborn-recallset-dl1off` | – | 0 | – |
+| `reborn-recallset-gate` | 0 | – | – |
+| `reborn-recallset-v1000` | – | – | 1000 |
+| `reborn-recallset-v300` | – | – | 300 |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44314277222](https://github.com/diegoami/borg-zoo/actions/runs/44314277222) | pilot | `4.2.6-reborn-rust-main-f660aecc` | 108 games, no deaths; flight Recalls ctl 8, dl12 3, dl1off 18, v300 8, v1000 14, gate 3; dl12 and gate identical 18/18 |
+| [44440293820](https://github.com/diegoami/borg-zoo/actions/runs/44440293820) | big (ctl, dl1off) | `4.2.6-reborn-rust-main-f660aecc` | starts 1-900: ctl 62, dl1off 59; big alone 39 v 42 |
+
+### `reborn-pbd-by-class`
+
+Arrow point-blank divisor by class on main f660aecc: shipped (5, Rogue 3, Ranger 2), common 5 for all, about half, about double; read per class.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_arrow_point_blank_divisor_blackguard` | `borg_param_attack_arrow_point_blank_divisor_druid` | `borg_param_attack_arrow_point_blank_divisor_mage` | `borg_param_attack_arrow_point_blank_divisor_necromancer` | `borg_param_attack_arrow_point_blank_divisor_paladin` | `borg_param_attack_arrow_point_blank_divisor_priest` | `borg_param_attack_arrow_point_blank_divisor_ranger` | `borg_param_attack_arrow_point_blank_divisor_rogue` | `borg_param_attack_arrow_point_blank_divisor_warrior` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-pbdc-common` | – | – | – | – | – | – | 0 | 0 | – |
+| `reborn-pbdc-ctl` | – | – | – | – | – | – | – | – | – |
+| `reborn-pbdc-hi` | 10 | 10 | 10 | 10 | 10 | 10 | 4 | 6 | 10 |
+| `reborn-pbdc-lo` | 2 | 2 | 2 | 2 | 2 | 2 | 1 | 2 | 2 |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44317603211](https://github.com/diegoami/borg-zoo/actions/runs/44317603211) | pilot | `4.2.6-reborn-rust-main-f660aecc` | 72 games, no deaths; identical to ctl common 14, hi 13, lo 11 of 18; common changes only Rogues and Rangers |
+| [44346895083 + 44346921471](https://github.com/diegoami/borg-zoo/actions/runs/44346895083 + 44346921471) | small + medium | `4.2.6-reborn-rust-main-f660aecc` | 1,440 games: 23/360 deaths in every arm; every class within one death of ctl |
+
+### `reborn-scary-calm`
+
+Scary latch (1/0) x calm (hurt 50 + afraid 1, shipped, against 0/0 = C) on main f660aecc.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_scary_afraid` | `borg_param_caution_scary_hurt_percent` | `borg_param_caution_scary_latch` |
+| --- | --- | --- | --- |
+| `reborn-calm-c-calm` | 0 | 0 | 1 |
+| `reborn-calm-ctl` | 1 | 50 | 1 |
+| `reborn-calm-unlatch` | 1 | 50 | 0 |
+| `reborn-calm-unlatch-c` | 0 | 0 | 0 |
+
+### `reborn-scary-named-damage`
+
+Named scary list with the damage rule at 60% (shipped) or 40%, and the damage rule alone, on main f660aecc.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_scary_damage_percent` | `borg_param_caution_scary_named_monsters` |
+| --- | --- | --- |
+| `reborn-named-dmg-named-d40` | 40 | 1 |
+| `reborn-named-dmg-named-d60` | 60 | 1 |
+| `reborn-named-dmg-nolist-d60` | 60 | 0 |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44317648896](https://github.com/diegoami/borg-zoo/actions/runs/44317648896) | pilot | `4.2.6-reborn-rust-main-f660aecc` | 54 games: named-d60 0 deaths, named-d40 1 (15/18 identical), nolist-d60 6 (0/18 identical) |
+
+### `reborn-scary-classes`
+
+The scary list's class spread on main f660aecc: shipped (fragile = tough + 3), fragile + 3, fragile + 6, tough - 3 and fragile + 3; read per class.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_scary_list_lines` |
+| --- | --- |
+| `reborn-scaryclass-both` | 28 lines |
+| `reborn-scaryclass-ctl` | – |
+| `reborn-scaryclass-up3` | 28 lines |
+| `reborn-scaryclass-up6` | 28 lines |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44346946815](https://github.com/diegoami/borg-zoo/actions/runs/44346946815) | pilot | `4.2.6-reborn-rust-main-f660aecc` | 72 games, no deaths; up3 and up6 18/18 identical to ctl; both changes every tough-class game |
+
+### `reborn-pbd-rr`
+
+Point-blank divisor for Rangers (1, 2 shipped, 3) and Rogues (2, 3 shipped, 4) on main f660aecc, played on Ranger and Rogue starts only.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_arrow_point_blank_divisor_ranger` | `borg_param_attack_arrow_point_blank_divisor_rogue` |
+| --- | --- | --- |
+| `reborn-pbdrr-ctl` | – | – |
+| `reborn-pbdrr-hi` | 3 | 4 |
+| `reborn-pbdrr-lo` | 1 | 2 |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44359581333](https://github.com/diegoami/borg-zoo/actions/runs/44359581333) | pilot | `4.2.6-reborn-rust-main-f660aecc` | 60 games: Ranger deaths ctl 1, lo 2, hi 0 of 10; Rogue none |
+| [44360811472](https://github.com/diegoami/borg-zoo/actions/runs/44360811472) | medium | `4.2.6-reborn-rust-main-f660aecc` | see the full-study result |
+| [44360836868](https://github.com/diegoami/borg-zoo/actions/runs/44360836868) | big | `4.2.6-reborn-rust-main-f660aecc` | see the full-study result |
+| [44367279069](https://github.com/diegoami/borg-zoo/actions/runs/44367279069) | full | `4.2.6-reborn-rust-main-f660aecc` | all 200 starts per class: Ranger deaths 2:18, 1:11, 3:17; Rogue 3:6, 2:8, 4:5 |
+| [44440258841](https://github.com/diegoami/borg-zoo/actions/runs/44440258841) | confirmation (classes-1800-b Rangers) | `4.2.6-reborn-rust-main-f660aecc` | Ranger 1: 12 v 15 deaths, p 0.58: not confirmed |
+
+### `reborn-scary-tough`
+
+The scary list's tough end on main f660aecc: shipped, tough - 3 and tough - 5 with fragile unchanged; read per class.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_scary_list_lines` |
+| --- | --- |
+| `reborn-scarytough-ctl` | – |
+| `reborn-scarytough-t3` | 28 lines |
+| `reborn-scarytough-t5` | 28 lines |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44359605720](https://github.com/diegoami/borg-zoo/actions/runs/44359605720) | pilot | `4.2.6-reborn-rust-main-f660aecc` | 54 games, no deaths; identical to ctl t3 7, t5 6; t5 mean CL 6.00 v 5.44, DL 2.50 v 2.11 |
+| [44377349082 + 44377372817](https://github.com/diegoami/borg-zoo/actions/runs/44377349082 + 44377372817) | small + medium | `4.2.6-reborn-rust-main-f660aecc` | 1,080 games: deaths ctl 23, t3 24, t5 22 of 360; mean CL 5.09 / 5.34 / 5.45 |
+| [44429988454](https://github.com/diegoami/borg-zoo/actions/runs/44429988454) | big | `4.2.6-reborn-rust-main-f660aecc` | starts 1-900 pooled: ctl 62, t3 69, t5 57 of 900; mean CL 5.08 / 5.26 / 5.45 |
+| [44440277055](https://github.com/diegoami/borg-zoo/actions/runs/44440277055) | full (ctl, t5) | `4.2.6-reborn-rust-main-f660aecc` | all 1,800 starts: ctl 119, t5 115 deaths; mean CL 5.08 v 5.42 |
+
+### `reborn-rising-ticks3`
+
+caution_rising_explore_ticks 300 (shipped), 500, 1000, 1500, 2000 on main f660aecc.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_rising_explore_ticks` |
+| --- | --- |
+| `reborn-rising3-t1000` | 1000 |
+| `reborn-rising3-t1500` | 1500 |
+| `reborn-rising3-t2000` | 2000 |
+| `reborn-rising3-t300` | – |
+| `reborn-rising3-t500` | 500 |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44359631721](https://github.com/diegoami/borg-zoo/actions/runs/44359631721) | pilot | `4.2.6-reborn-rust-main-f660aecc` | 90 games, no deaths; 8/18 identical to t300 in every arm; rising holds 1,101 / 1,369 / 3,823 / 3,904 / 3,202 |
+| [44377398372 + 44377423630](https://github.com/diegoami/borg-zoo/actions/runs/44377398372 + 44377423630) | small + medium | `4.2.6-reborn-rust-main-f660aecc` | 1,800 games: deaths 23/23/21/22/22 of 360 (300/500/1000/1500/2000); mean CL 5.09 to 4.81 |
+| [44430005739](https://github.com/diegoami/borg-zoo/actions/runs/44430005739) | big | `4.2.6-reborn-rust-main-f660aecc` | starts 1-900 pooled: deaths 62/56/58/60/59; mean CL 5.08 to 4.76 |
+
+### `reborn-attack-focus`
+
+Attack focus by class on main f660aecc: shipped class preferences, with every family a class file does not raise at 750 or 500.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_preference_blackguard_activation_permille` | `borg_param_attack_preference_blackguard_device_permille` | `borg_param_attack_preference_blackguard_projectile_permille` | `borg_param_attack_preference_blackguard_thrown_permille` | `borg_param_attack_preference_druid_activation_permille` | `borg_param_attack_preference_druid_device_permille` | `borg_param_attack_preference_druid_melee_permille` | `borg_param_attack_preference_druid_projectile_permille` | `borg_param_attack_preference_druid_thrown_permille` | `borg_param_attack_preference_mage_activation_permille` | `borg_param_attack_preference_mage_melee_permille` | `borg_param_attack_preference_mage_projectile_permille` | `borg_param_attack_preference_mage_thrown_permille` | `borg_param_attack_preference_necromancer_activation_permille` | `borg_param_attack_preference_necromancer_melee_permille` | `borg_param_attack_preference_necromancer_projectile_permille` | `borg_param_attack_preference_necromancer_thrown_permille` | `borg_param_attack_preference_paladin_activation_permille` | `borg_param_attack_preference_paladin_device_permille` | `borg_param_attack_preference_paladin_projectile_permille` | `borg_param_attack_preference_paladin_thrown_permille` | `borg_param_attack_preference_priest_activation_permille` | `borg_param_attack_preference_priest_device_permille` | `borg_param_attack_preference_priest_melee_permille` | `borg_param_attack_preference_priest_projectile_permille` | `borg_param_attack_preference_priest_thrown_permille` | `borg_param_attack_preference_ranger_activation_permille` | `borg_param_attack_preference_ranger_device_permille` | `borg_param_attack_preference_ranger_melee_permille` | `borg_param_attack_preference_ranger_spell_permille` | `borg_param_attack_preference_ranger_thrown_permille` | `borg_param_attack_preference_rogue_activation_permille` | `borg_param_attack_preference_rogue_device_permille` | `borg_param_attack_preference_rogue_melee_permille` | `borg_param_attack_preference_rogue_spell_permille` | `borg_param_attack_preference_warrior_activation_permille` | `borg_param_attack_preference_warrior_device_permille` | `borg_param_attack_preference_warrior_spell_permille` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-afocus-ctl` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-afocus-low500` | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 | 500 |
+| `reborn-afocus-low750` | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 | 750 |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44377324652](https://github.com/diegoami/borg-zoo/actions/runs/44377324652) | pilot | `4.2.6-reborn-rust-main-f660aecc` | 54 games: deaths ctl 0, low750 0, low500 1; identical to ctl low750 12, low500 10 of 18; Druid, Necromancer, Rogue, Ranger change |
+| [44423205315 + 44423223366 + 44423242333](https://github.com/diegoami/borg-zoo/actions/runs/44423205315 + 44423223366 + 44423242333) | small + medium + big | `4.2.6-reborn-rust-main-f660aecc` | 2,700 games: deaths ctl 62, low750 60, low500 61 of 900; mean CL 5.05-5.08 |
+
+### `reborn-plays-risky`
+
+borg_plays_risky FALSE (shipped) against TRUE on main 6438e1cf.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_plays_risky` |
+| --- | --- |
+| `reborn-risky-ctl` | FALSE |
+| `reborn-risky-risky` | TRUE |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44429970417](https://github.com/diegoami/borg-zoo/actions/runs/44429970417) | pilot | `4.2.6-reborn-rust-main-6438e1cf` | 36 games: ctl 0, risky 7 deaths (0/7, p 0.016) |
+
+### `reborn-597`
+
+#597 switches on main 6438e1cf: caution_twitch_avoid_lava and caution_stair_parked_fallback each off against shipped 1.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_stair_parked_fallback` | `borg_param_caution_twitch_avoid_lava` |
+| --- | --- | --- |
+| `reborn-597-ctl` | 1 | 1 |
+| `reborn-597-lava0` | – | 0 |
+| `reborn-597-parked0` | 0 | – |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44440312372](https://github.com/diegoami/borg-zoo/actions/runs/44440312372) | pilot | `4.2.6-reborn-rust-main-6438e1cf` | 54 games, no deaths; both arms 18/18 identical to ctl |
+
+### `reborn-scary-ends`
+
+Lowering the scary list's fragile end with the tough end (t5, all5, t5f6 at 100k; f3, all5, t5f6 and halved class fragility at 200k), on main 38858846.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_scary_list_lines` |
+| --- | --- |
+| `reborn-scaryends-all5` | 28 lines |
+| `reborn-scaryends-all5-pal` | 28 lines |
+| `reborn-scaryends-all8` | 28 lines |
+| `reborn-scaryends-ctl` | – |
+| `reborn-scaryends-early-none` | 14 lines |
+| `reborn-scaryends-f3` | 28 lines |
+| `reborn-scaryends-floor3` | 28 lines |
+| `reborn-scaryends-floor4` | 28 lines |
+| `reborn-scaryends-fraghalf` | 1 line |
+| `reborn-scaryends-t5` | 28 lines |
+| `reborn-scaryends-t5f6` | 28 lines |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44446160367 + 44446177348](https://github.com/diegoami/borg-zoo/actions/runs/44446160367 + 44446177348) | pilots (100k, 200k) | `4.2.6-reborn-rust-main-38858846` | 100k: ctl 0, all5 0 deaths, CL 5.50 v 5.83; 200k: ctl 3, all5 1 deaths, CL 6.17 v 8.22 |
+| [44465218294 + 44465235895](https://github.com/diegoami/borg-zoo/actions/runs/44465218294 + 44465235895) | floor pilots (100k, 200k) | `4.2.6-reborn-rust-main-38858846` | 200k: ctl 3, all5 1, all5-pal 2, floor3 3, floor4 3 deaths; CL 6.17 / 8.22 / 7.83 / 7.06 / 6.61; 100k no deaths |
+| [44498103824 + 44498131613](https://github.com/diegoami/borg-zoo/actions/runs/44498103824 + 44498131613) | floor3 small + medium | `4.2.6-reborn-rust-main-38858846` | starts 1-360: ctl 13, floor3 13 deaths (2/2); CL 5.25 v 5.60; all5 (paired) 18, 5.73 |
+
+### `reborn-bundle`
+
+HP minimums -25% (hp-lo) and phase reserve 1 at 200 percent (r1p200), alone and together, on main 2801ba18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_arrow_point_blank_divisor_ranger` | `borg_param_attack_preference_blackguard_melee_permille` | `borg_param_attack_preference_blackguard_spell_permille` | `borg_param_attack_preference_druid_spell_permille` | `borg_param_attack_preference_mage_device_permille` | `borg_param_attack_preference_mage_spell_permille` | `borg_param_attack_preference_necromancer_device_permille` | `borg_param_attack_preference_necromancer_spell_permille` | `borg_param_attack_preference_paladin_melee_permille` | `borg_param_attack_preference_paladin_spell_permille` | `borg_param_attack_preference_priest_spell_permille` | `borg_param_attack_preference_ranger_projectile_permille` | `borg_param_attack_preference_rogue_projectile_permille` | `borg_param_attack_preference_rogue_thrown_permille` | `borg_param_attack_preference_warrior_melee_permille` | `borg_param_attack_preference_warrior_projectile_permille` | `borg_param_attack_preference_warrior_thrown_permille` | `borg_param_attack_speed_fight_danger_tenths` | `borg_param_caution_flee_recall_gate_below_depth` | `borg_param_caution_heal_when_outmatched` | `borg_param_prepared_dl2_min_hp` | `borg_param_prepared_dl34_min_hp__blackguard` | `borg_param_prepared_dl34_min_hp__druid` | `borg_param_prepared_dl34_min_hp__mage` | `borg_param_prepared_dl34_min_hp__necromancer` | `borg_param_prepared_dl34_min_hp__paladin` | `borg_param_prepared_dl34_min_hp__priest` | `borg_param_prepared_dl34_min_hp__ranger` | `borg_param_prepared_dl34_min_hp__rogue` | `borg_param_prepared_dl34_min_hp__warrior` | `borg_param_prepared_dl59_min_hp__blackguard` | `borg_param_prepared_dl59_min_hp__druid` | `borg_param_prepared_dl59_min_hp__mage` | `borg_param_prepared_dl59_min_hp__necromancer` | `borg_param_prepared_dl59_min_hp__paladin` | `borg_param_prepared_dl59_min_hp__priest` | `borg_param_prepared_dl59_min_hp__ranger` | `borg_param_prepared_dl59_min_hp__rogue` | `borg_param_prepared_dl59_min_hp__warrior` | `borg_param_town_phase_reserve` | `borg_param_town_phase_reserve_percent` | `borg_plan` | `borg_scary_list_lines` | `borg_town_plan` | `borg_trip_pack_slack` | `borg_trip_policy` | `borg_trip_unknown_stacks` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-bundle-plan-speed0` | – | 1600 | 1400 | 1700 | 1200 | 2000 | 1200 | 1800 | 1800 | 1200 | 1700 | 2000 | 1300 | 1600 | 1800 | 1200 | 1200 | – | – | 1 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | errands_plan.txt | – | 1 | 1 | 1 | 5 |
+| `reborn-bundle-plan-speed30` | – | 1600 | 1400 | 1700 | 1200 | 2000 | 1200 | 1800 | 1800 | 1200 | 1700 | 2000 | 1300 | 1600 | 1800 | 1200 | 1200 | 30 | – | 1 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | errands_plan.txt | – | 1 | 1 | 1 | 5 |
+| `reborn-bundle-plan-speed60` | – | 1600 | 1400 | 1700 | 1200 | 2000 | 1200 | 1800 | 1800 | 1200 | 1700 | 2000 | 1300 | 1600 | 1800 | 1200 | 1200 | 60 | – | 1 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | errands_plan.txt | – | 1 | 1 | 1 | 5 |
+| `reborn-bundle-none-speed30` | – | 1600 | 1400 | 1700 | 1200 | 2000 | 1200 | 1800 | 1800 | 1200 | 1700 | 2000 | 1300 | 1600 | 1800 | 1200 | 1200 | 30 | – | 1 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | 1 | 1 | 1 | 5 |
+| `reborn-bundle-ambitious-speed30` | – | 1600 | 1400 | 1700 | 1200 | 2000 | 1200 | 1800 | 1800 | 1200 | 1700 | 2000 | 1300 | 1600 | 1800 | 1200 | 1200 | 30 | – | 1 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | errands_plan_ambitious.txt | – | 1 | 1 | 1 | 5 |
+| `reborn-bundle-none-speed30-unknown2` | – | 1600 | 1400 | 1700 | 1200 | 2000 | 1200 | 1800 | 1800 | 1200 | 1700 | 2000 | 1300 | 1600 | 1800 | 1200 | 1200 | 30 | – | 1 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | 1 | 1 | 1 | 2 |
+| `reborn-bundle-none-speed30-unknown3` | – | 1600 | 1400 | 1700 | 1200 | 2000 | 1200 | 1800 | 1800 | 1200 | 1700 | 2000 | 1300 | 1600 | 1800 | 1200 | 1200 | 30 | – | 1 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | 1 | 1 | 1 | 3 |
+| `reborn-bundle-none-speed30-unknown4` | – | 1600 | 1400 | 1700 | 1200 | 2000 | 1200 | 1800 | 1800 | 1200 | 1700 | 2000 | 1300 | 1600 | 1800 | 1200 | 1200 | 30 | – | 1 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | 1 | 1 | 1 | 4 |
+| `reborn-bundle-ctl` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-bundle-bundle` | 1 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | 0 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | 28 lines | – | – | – | – |
+| `reborn-bundle-bundle-noscary` | 1 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | 0 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-bundle-floor3` | 1 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | 0 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | 28 lines | – | – | – | – |
+| `reborn-bundle-hplo` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | 23 | 38 | 30 | 45 | 45 | 38 | 30 | 38 | 38 | 38 | 45 | 45 | 60 | 60 | 45 | 45 | 45 | 45 | 45 | – | – | – | – | – | – | – | – |
+| `reborn-bundle-r1p200` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | 1 | 200 | – | – | – | – | – | – |
+| `reborn-bundle-both` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | 23 | 38 | 30 | 45 | 45 | 38 | 30 | 38 | 38 | 38 | 45 | 45 | 60 | 60 | 45 | 45 | 45 | 45 | 45 | 1 | 200 | – | – | – | – | – | – |
+
+### `reborn-kill-power-main`
+
+kill_live_min_power shipped 1 against 0 on main 38858846.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_kill_live_min_power` |
+| --- | --- |
+| `reborn-killpow38-ctl` | 1 |
+| `reborn-killpow38-off0` | 0 |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44465254082](https://github.com/diegoami/borg-zoo/actions/runs/44465254082) | pilot | `4.2.6-reborn-rust-main-38858846` | 36 games, no deaths; off CL 5.11 v 5.50 |
+
+### `reborn-errands-main`
+
+Errands plan vs no plan on main 3ba17e2c: none (shipped), errands_plan.txt, errands_plan_ambitious.txt; pilot to full.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_plan` |
+| --- | --- |
+| `reborn-errands38-ambitious` | errands_plan_ambitious.txt |
+| `reborn-errands38-errands` | errands_plan.txt |
+| `reborn-errands38-none` | – |
+
+### `reborn-bless`
+
+Bless rules (#560) on main 3ba17e2c: never cast, stop sooner (max_danger_divisor 4), bless longer (1), bless at lower danger (danger_divisor 6).
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_defend_bless_danger_divisor` | `borg_param_defend_bless_fail` | `borg_param_defend_bless_max_danger_divisor` |
+| --- | --- | --- | --- |
+| `reborn-bless-ctl` | – | – | – |
+| `reborn-bless-dd6` | 6 | – | – |
+| `reborn-bless-maxdd1` | – | – | 1 |
+| `reborn-bless-maxdd4` | – | – | 4 |
+| `reborn-bless-none` | – | 0 | – |
+
+### `reborn-phase-thresholds`
+
+Phase Door thresholds on main 3ba17e2c: ordinary danger 5 / 20 tenths, unique 7, no anti-summon delay.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_escape_phase_antisummon_delay` | `borg_param_escape_phase_ordinary_danger_tenths` | `borg_param_escape_phase_unique_danger_tenths` |
+| --- | --- | --- | --- |
+| `reborn-phaseth-anti0` | 0 | – | – |
+| `reborn-phaseth-ctl` | – | – | – |
+| `reborn-phaseth-ord20` | – | 20 | – |
+| `reborn-phaseth-ord5` | – | 5 | – |
+| `reborn-phaseth-uniq7` | – | – | 7 |
+
+### `reborn-town-dangerous`
+
+Attacking dangerous townspeople on sight (#619) on main 3ba17e2c: on (bonus 300), bonus 600, min_damage 3.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_town_dangerous_bonus_percent` | `borg_param_attack_town_dangerous_min_damage` | `borg_param_attack_town_dangerous_on_sight` |
+| --- | --- | --- | --- |
+| `reborn-towndanger-ctl` | – | – | – |
+| `reborn-towndanger-onsight` | – | – | 1 |
+| `reborn-towndanger-onsight-b600` | 600 | – | 1 |
+| `reborn-towndanger-onsight-min3` | – | 3 | 1 |
+
+### `reborn-gold-reserve`
+
+Town gold reserve on main 3ba17e2c: fixed 300 / 1000, percent 25 / 50, against 0 (shipped).
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_town_gold_reserve` | `borg_param_town_gold_reserve_percent` |
+| --- | --- | --- |
+| `reborn-goldres-ctl` | – | – |
+| `reborn-goldres-p25` | – | 25 |
+| `reborn-goldres-p50` | – | 50 |
+| `reborn-goldres-r1000` | 1000 | – |
+| `reborn-goldres-r300` | 300 | – |
+
+### `reborn-stand-seeinv`
+
+caution_scary_stand 0 (always flee) and recover_rest_arms_see_invis 1 against shipped, on main 3ba17e2c.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_scary_stand` | `borg_param_recover_rest_arms_see_invis` |
+| --- | --- | --- |
+| `reborn-standinv-ctl` | – | – |
+| `reborn-standinv-seeinv1` | – | 1 |
+| `reborn-standinv-stand0` | 0 | – |
+
+### `reborn-phase-rule-main`
+
+#584's Phase Door rule on main 3ba17e2c: ctl (shipped off) against thr-100 (escape_phase_adjacent_rule 1, escape_phase_lost_test 0); pilot, then a confirmation on fresh seeds.
+
+Every arm: `borg_param_escape_phase_lost_danger_percent = 100`, `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_escape_phase_adjacent_rule` | `borg_param_escape_phase_lost_test` |
+| --- | --- | --- |
+| `reborn-phaserule38-ctl` | 0 | 1 |
+| `reborn-phaserule38-thr-100` | 1 | 0 |
+
+### `reborn-scary-floor-main`
+
+The scary list's floor3 (every range - 5, floor CL 3) against the shipped list on main 3ba17e2c, with #621's ignore lines in both arms; pilot to full.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_scary_list_lines` |
+| --- | --- |
+| `reborn-scary38-ctl` | – |
+| `reborn-scary38-floor3` | 35 lines |
+
+### `reborn-neutral-main`
+
+Settings found neutral elsewhere, each alone on main 3ba17e2c: caution_scary_unlatch_calmed, caution_recall_wait_as_usual, attack_town_dangerous_on_sight, escape_fox_form (1 against shipped 0).
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_town_dangerous_on_sight` | `borg_param_caution_recall_wait_as_usual` | `borg_param_caution_scary_unlatch_calmed` | `borg_param_escape_fox_form` |
+| --- | --- | --- | --- | --- |
+| `reborn-neutral38-calmed` | 0 | 0 | 1 | 0 |
+| `reborn-neutral38-ctl` | 0 | 0 | 0 | 0 |
+| `reborn-neutral38-fox` | 0 | 0 | 0 | 1 |
+| `reborn-neutral38-recall-usual` | 0 | 1 | 0 | 0 |
+| `reborn-neutral38-town-kill` | 1 | 0 | 0 | 0 |
+
+### `reborn-untested-town`
+
+Never-tested town planner settings halved and doubled on main 3ba17e2c: borg_town_risk, power_scale, w_attack, w_support, w_space, home_discount.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_town_home_discount` | `borg_town_power_scale` | `borg_town_risk` | `borg_town_w_attack` | `borg_town_w_space` | `borg_town_w_support` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `reborn-untested38-ctl` | – | – | – | – | – | – |
+| `reborn-untested38-risk-lo` | – | – | 500 | – | – | – |
+| `reborn-untested38-risk-hi` | – | – | 2000 | – | – | – |
+| `reborn-untested38-power-lo` | – | 20000 | – | – | – | – |
+| `reborn-untested38-power-hi` | – | 80000 | – | – | – | – |
+| `reborn-untested38-attack-lo` | – | – | – | 50 | – | – |
+| `reborn-untested38-attack-hi` | – | – | – | 200 | – | – |
+| `reborn-untested38-support-lo` | – | – | – | – | – | 25 |
+| `reborn-untested38-support-hi` | – | – | – | – | – | 100 |
+| `reborn-untested38-space-lo` | – | – | – | – | 12 | – |
+| `reborn-untested38-space-hi` | – | – | – | – | 50 | – |
+| `reborn-untested38-home-lo` | 250 | – | – | – | – | – |
+| `reborn-untested38-home-hi` | 1000 | – | – | – | – | – |
+
+### `reborn-untested-caution`
+
+Never-tested trip, Recall and breeder settings lowered and raised on main 3ba17e2c: borg_town_explore_turns, caution_recall_rest_turns, caution_breeder_easy_escape_steps, caution_flee_recall_chasers.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_breeder_easy_escape_steps` | `borg_param_caution_flee_recall_chasers` | `borg_param_caution_recall_rest_turns` | `borg_town_explore_turns` |
+| --- | --- | --- | --- | --- |
+| `reborn-untested38-ctl` | – | – | – | – |
+| `reborn-untested38-explore-lo` | – | – | – | 500 |
+| `reborn-untested38-explore-hi` | – | – | – | 2000 |
+| `reborn-untested38-recallrest-lo` | – | – | 250 | – |
+| `reborn-untested38-recallrest-hi` | – | – | 1000 | – |
+| `reborn-untested38-easyesc-lo` | 3 | – | – | – |
+| `reborn-untested38-easyesc-hi` | 10 | – | – | – |
+| `reborn-untested38-chasers-lo` | – | 2 | – | – |
+| `reborn-untested38-chasers-hi` | – | 6 | – | – |
+
+### `reborn-errands-floor3`
+
+Errands plan × floor3 (2×2) on main 3ba17e2c: ctl, errands, floor3, both.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_plan` | `borg_scary_list_lines` |
+| --- | --- | --- |
+| `reborn-combo38-both` | errands_plan.txt | 35 lines |
+| `reborn-combo38-ctl` | – | – |
+| `reborn-combo38-errands` | errands_plan.txt | – |
+| `reborn-combo38-floor3` | – | 35 lines |
+
+### `reborn-crow`
+
+Crows (and wild cats) scary for fragile classes at CL1-2/3 only, on main 3ba17e2c: crow 0-2, crow 0-3, crow + wild cat 0-2.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_scary_list_lines` |
+| --- | --- |
+| `reborn-crow38-crow2` | 1 line |
+| `reborn-crow38-crow3` | 1 line |
+| `reborn-crow38-crowcat2` | 2 lines |
+| `reborn-crow38-ctl` | – |
+
+### `reborn-mage-priest`
+
+Study 2 of #415 on main 592c6984, Mage and Priest starts, rule and calmed in every arm: healing x1.5, spell preference 1500.
+
+Every arm: `borg_param_caution_scary_unlatch_calmed = 1`, `borg_param_escape_phase_adjacent_rule = 1`, `borg_param_escape_phase_lost_test = 0`, `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_preference_mage_spell_permille` | `borg_param_attack_preference_priest_spell_permille` | `borg_param_town_heal_curve_scale_percent_mage` | `borg_param_town_heal_curve_scale_percent_priest` | `borg_param_town_heal_reserve_hp_percent_mage` | `borg_param_town_heal_reserve_hp_percent_priest` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `reborn-magepriest-ctl` | – | – | – | – | – | – |
+| `reborn-magepriest-heal-hi` | – | – | 225 | 185 | 450 | 375 |
+| `reborn-magepriest-spell1500` | 1500 | 1500 | – | – | – | – |
+
+### `reborn-bgphase`
+
+Blackguard exception to the Phase Door rule on main 592c6984: rule on (control, as main will ship) against rule off, calmed unlatch in both; Blackguard starts only.
+
+Every arm: `borg_param_caution_scary_unlatch_calmed = 1`, `borg_param_escape_phase_lost_danger_percent = 100`, `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_escape_phase_adjacent_rule` | `borg_param_escape_phase_lost_test` |
+| --- | --- | --- |
+| `reborn-bgphase59-rule-off` | 0 | 1 |
+| `reborn-bgphase59-rule-on` | 1 | 0 |
+
+### `reborn-casters`
+
+Casters' early kit and fighting on main 592c6984, Mage, Priest, Necromancer and Druid starts only, the Phase Door rule and calmed in every arm: more oil, more Phase Door, thrown preference 1500, early animals on the scary list, heal reserve + 100.
+
+Every arm: `borg_param_caution_scary_unlatch_calmed = 1`, `borg_param_escape_phase_adjacent_rule = 1`, `borg_param_escape_phase_lost_danger_percent = 100`, `borg_param_escape_phase_lost_test = 0`, `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_preference_thrown_permille` | `borg_param_town_heal_reserve_hp_percent_druid` | `borg_param_town_heal_reserve_hp_percent_mage` | `borg_param_town_heal_reserve_hp_percent_necromancer` | `borg_param_town_heal_reserve_hp_percent_priest` | `borg_scary_list_lines` | `borg_town_attack_turns` | `borg_town_w_attack` | `borg_town_w_escape` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-casters59-ctl` | – | – | – | – | – | – | – | – | – |
+| `reborn-casters59-escape` | – | – | – | – | – | – | – | – | 100 |
+| `reborn-casters59-heal` | – | 350 | 400 | 400 | 350 | – | – | – | – |
+| `reborn-casters59-oil` | – | – | – | – | – | – | 50 | 200 | – |
+| `reborn-casters59-scary-animals` | – | – | – | – | – | 4 lines | – | – | – |
+| `reborn-casters59-thrown` | 1500 | – | – | – | – | – | – | – | – |
+
+### `reborn-rebase-main`
+
+Re-baseline on main 592c6984 after #664: shipped, the Phase Door rule, calmed unlatch, both, and the errands plan.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_scary_unlatch_calmed` | `borg_param_escape_phase_adjacent_rule` | `borg_param_escape_phase_lost_danger_percent` | `borg_param_escape_phase_lost_test` | `borg_plan` |
+| --- | --- | --- | --- | --- | --- |
+| `reborn-rebase59-calmed` | 1 | – | – | – | – |
+| `reborn-rebase59-errands` | – | – | – | – | errands_plan.txt |
+| `reborn-rebase59-rule` | – | 1 | 100 | 0 | – |
+| `reborn-rebase59-rule-calmed` | 1 | 1 | 100 | 0 | – |
+| `reborn-rebase59-shipped` | – | – | – | – | – |
+
+### `reborn-death-bank38`
+
+The death-start bank of shipped main 3ba17e2c: ctl, the Phase Door rule, calmed unlatch, the errands plan, all three.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_scary_unlatch_calmed` | `borg_param_escape_phase_adjacent_rule` | `borg_param_escape_phase_lost_danger_percent` | `borg_param_escape_phase_lost_test` | `borg_plan` |
+| --- | --- | --- | --- | --- | --- |
+| `reborn-bank38-all3` | 1 | 1 | 100 | 0 | errands_plan.txt |
+| `reborn-bank38-calmed` | 1 | – | – | – | – |
+| `reborn-bank38-ctl` | – | – | – | – | – |
+| `reborn-bank38-errands` | – | – | – | – | errands_plan.txt |
+| `reborn-bank38-phase` | – | 1 | 100 | 0 | – |
+
+### `reborn-crow-escape`
+
+Crow/wild-cat death starts on 3ba17e2c: ctl, the Phase Door rule, the rule + throwing 1500, the rule + more oil.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_preference_thrown_permille` | `borg_param_escape_phase_adjacent_rule` | `borg_param_escape_phase_lost_danger_percent` | `borg_param_escape_phase_lost_test` | `borg_town_attack_turns` | `borg_town_w_attack` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `reborn-crowesc38-ctl` | – | – | – | – | – | – |
+| `reborn-crowesc38-phase` | – | 1 | 100 | 0 | – | – |
+| `reborn-crowesc38-phase-oil` | – | 1 | 100 | 0 | 50 | 200 |
+| `reborn-crowesc38-phase-thrown` | 1500 | 1 | 100 | 0 | – | – |
+
+### `reborn-breeder-stoppable`
+
+Kill breeders first (caution_breeder_stoppable), alone and with the flight's colony avoidance (caution_breeder_avoid), against both off.
+
+Every arm: `borg_param_caution_scary_named_monsters = 1`, `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_breeder_avoid` | `borg_param_caution_breeder_stoppable` |
+| --- | --- | --- |
+| `reborn-breederstop-ctl` | 0 | 0 |
+| `reborn-breederstop-stop` | 0 | 1 |
+| `reborn-breederstop-stop-avoid` | 1 | 1 |
+
+### `reborn-class-curves`
+
+The owner's #682 per-class Phase Door and oil curve scales (and Blackguard healing 100/200) against the same build set back to 100 (main before #682).
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_town_heal_curve_scale_percent_blackguard` | `borg_param_town_heal_reserve_hp_percent_blackguard` | `borg_param_town_oil_curve_scale_percent@blackguard` | `borg_param_town_oil_curve_scale_percent@druid` | `borg_param_town_oil_curve_scale_percent@mage` | `borg_param_town_oil_curve_scale_percent@necromancer` | `borg_param_town_oil_curve_scale_percent@paladin` | `borg_param_town_oil_curve_scale_percent@priest` | `borg_param_town_oil_curve_scale_percent@ranger` | `borg_param_town_oil_curve_scale_percent@rogue` | `borg_param_town_oil_curve_scale_percent@warrior` | `borg_param_town_phase_curve_scale_percent@blackguard` | `borg_param_town_phase_curve_scale_percent@druid` | `borg_param_town_phase_curve_scale_percent@mage` | `borg_param_town_phase_curve_scale_percent@necromancer` | `borg_param_town_phase_curve_scale_percent@paladin` | `borg_param_town_phase_curve_scale_percent@priest` | `borg_param_town_phase_curve_scale_percent@ranger` | `borg_param_town_phase_curve_scale_percent@rogue` | `borg_param_town_phase_curve_scale_percent@warrior` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-curves-a87b-ctl` | 75 | 150 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| `reborn-curves-a87b-owner` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+
+### `reborn-kill-flow-mode`
+
+The hunt removed in steps: kill_flow_mode 0 (C), 1 targeted hunts only, 2 no out-of-view hunt, 3 never hunt.
+
+Every arm: `borg_param_caution_scary_named_monsters = 1`, `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_kill_flow_mode` |
+| --- | --- |
+| `reborn-killflow-ctl` | 0 |
+| `reborn-killflow-inview` | 2 |
+| `reborn-killflow-nohunt` | 3 |
+| `reborn-killflow-targeted` | 1 |
+
+### `reborn-detect-min-level`
+
+No detection prayer by panel below CL10 for the five casters (light_detect_evil_spell_min_level 10) against C (0).
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_light_detect_evil_spell_min_level@druid` | `borg_param_light_detect_evil_spell_min_level@mage` | `borg_param_light_detect_evil_spell_min_level@necromancer` | `borg_param_light_detect_evil_spell_min_level@paladin` | `borg_param_light_detect_evil_spell_min_level@priest` |
+| --- | --- | --- | --- | --- | --- |
+| `reborn-detectmin-ctl` | 0 | 0 | 0 | 0 | 0 |
+| `reborn-detectmin-switch` | – | – | – | – | – |
+
+### `reborn-slow-crowd-exit`
+
+Walk out of a crowd of slower or immobile monsters (caution_slow_crowd_exit) against off.
+
+Every arm: `borg_param_caution_scary_named_monsters = 1`, `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_slow_crowd_exit` |
+| --- | --- |
+| `reborn-slowcrowd-ctl` | 0 |
+| `reborn-slowcrowd-exit` | 1 |
+
+### `reborn-untested-dbc`
+
+Never-varied town settings: device value by class (100 / 50 / 200), shot reserve 50 / 100, shot reserve with oil 50, town flee no-worse.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_town_flee_no_worse` | `borg_param_town_devices_percent` | `borg_param_town_devices_percent@blackguard` | `borg_param_town_devices_percent@druid` | `borg_param_town_devices_percent@mage` | `borg_param_town_devices_percent@necromancer` | `borg_param_town_devices_percent@paladin` | `borg_param_town_devices_percent@priest` | `borg_param_town_devices_percent@ranger` | `borg_param_town_devices_percent@rogue` | `borg_param_town_devices_percent@warrior` | `borg_param_town_missiles_other_ranged_percent` | `borg_param_town_missiles_percent` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-untested-dbc-ctl` | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-untested-dbc-dev100` | – | – | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | – | – |
+| `reborn-untested-dbc-dev200` | – | 200 | 200 | 200 | 200 | 200 | 200 | 200 | 200 | 200 | 200 | – | – |
+| `reborn-untested-dbc-dev50` | – | 50 | 50 | 50 | 50 | 50 | 50 | 50 | 50 | 50 | 50 | – | – |
+| `reborn-untested-dbc-miss100` | – | – | – | – | – | – | – | – | – | – | – | – | 100 |
+| `reborn-untested-dbc-miss100-or50` | – | – | – | – | – | – | – | – | – | – | – | 50 | 100 |
+| `reborn-untested-dbc-miss50` | – | – | – | – | – | – | – | – | – | – | – | – | 50 |
+| `reborn-untested-dbc-townflee` | 1 | – | – | – | – | – | – | – | – | – | – | – | – |
+
+### `reborn-class-curves-dbc`
+
+#433 restarted on dbc92d18: the owner's class curves against all scales 100.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_town_heal_curve_scale_percent_blackguard` | `borg_param_town_heal_reserve_hp_percent_blackguard` | `borg_param_town_oil_curve_scale_percent@blackguard` | `borg_param_town_oil_curve_scale_percent@druid` | `borg_param_town_oil_curve_scale_percent@mage` | `borg_param_town_oil_curve_scale_percent@necromancer` | `borg_param_town_oil_curve_scale_percent@paladin` | `borg_param_town_oil_curve_scale_percent@priest` | `borg_param_town_oil_curve_scale_percent@ranger` | `borg_param_town_oil_curve_scale_percent@rogue` | `borg_param_town_oil_curve_scale_percent@warrior` | `borg_param_town_phase_curve_scale_percent@blackguard` | `borg_param_town_phase_curve_scale_percent@druid` | `borg_param_town_phase_curve_scale_percent@mage` | `borg_param_town_phase_curve_scale_percent@necromancer` | `borg_param_town_phase_curve_scale_percent@paladin` | `borg_param_town_phase_curve_scale_percent@priest` | `borg_param_town_phase_curve_scale_percent@ranger` | `borg_param_town_phase_curve_scale_percent@rogue` | `borg_param_town_phase_curve_scale_percent@warrior` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-curves-dbc-ctl` | 75 | 150 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+| `reborn-curves-dbc-owner` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+
+### `reborn-detect-min-dbc`
+
+#443 on dbc92d18: caster detection min level 10 (shipped) against 0.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_light_detect_evil_spell_min_level@druid` | `borg_param_light_detect_evil_spell_min_level@mage` | `borg_param_light_detect_evil_spell_min_level@necromancer` | `borg_param_light_detect_evil_spell_min_level@paladin` | `borg_param_light_detect_evil_spell_min_level@priest` |
+| --- | --- | --- | --- | --- | --- |
+| `reborn-detectmin-dbc-ctl` | 0 | 0 | 0 | 0 | 0 |
+| `reborn-detectmin-dbc-switch` | – | – | – | – | – |
+
+### `reborn-breederstop-dbc`
+
+#411 on dbc92d18: kill breeders first (stoppable), alone and with avoidance, against both off.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_breeder_avoid` | `borg_param_caution_breeder_stoppable` |
+| --- | --- | --- |
+| `reborn-breederstop-dbc-ctl` | 0 | 0 |
+| `reborn-breederstop-dbc-stop` | 0 | 1 |
+| `reborn-breederstop-dbc-stop-avoid` | 1 | 1 |
+
+### `reborn-store-overweight`
+
+Store at home only when overweight (town_store_only_overweight) against off.
+
+Every arm: `borg_param_caution_scary_named_monsters = 1`, `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_town_store_only_overweight` |
+| --- | --- |
+| `reborn-storeow-ctl` | 0 |
+| `reborn-storeow-overweight` | 1 |
+
+### `reborn-bgcurve-dbc`
+
+Blackguards: shipped (Phase Door 50, healing 100/200) against Phase Door 100, and against healing 75/150.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_town_heal_curve_scale_percent_blackguard` | `borg_param_town_heal_reserve_hp_percent_blackguard` | `borg_param_town_phase_curve_scale_percent@blackguard` |
+| --- | --- | --- | --- |
+| `reborn-bgcurve-dbc-heal-old` | 75 | 150 | – |
+| `reborn-bgcurve-dbc-pd100` | – | – | 100 |
+| `reborn-bgcurve-dbc-shipped` | – | – | – |
+
+### `reborn-stairs-leash`
+
+Stairs leash for CL1-4 (flow_leash 1 by level, 2 growing with XP) against C.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_flow_leash` |
+| --- | --- |
+| `reborn-leash-ctl` | 0 |
+| `reborn-leash-grow` | 2 |
+| `reborn-leash-level` | 1 |
+
+### `reborn-low-level-detection`
+
+Detection min level: 0 (C) / casters 10 / all 10 / all 5.
+
+Every arm: `borg_param_caution_scary_named_monsters = 1`, `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_light_detect_evil_spell_min_level` | `borg_param_light_detect_evil_spell_min_level__blackguard` | `borg_param_light_detect_evil_spell_min_level__druid` | `borg_param_light_detect_evil_spell_min_level__mage` | `borg_param_light_detect_evil_spell_min_level__necromancer` | `borg_param_light_detect_evil_spell_min_level__paladin` | `borg_param_light_detect_evil_spell_min_level__priest` | `borg_param_light_detect_evil_spell_min_level__ranger` | `borg_param_light_detect_evil_spell_min_level__rogue` | `borg_param_light_detect_evil_spell_min_level__warrior` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-lowdetect-all10` | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 |
+| `reborn-lowdetect-all5` | 5 | 5 | 5 | 5 | 5 | 5 | 5 | 5 | 5 | 5 |
+| `reborn-lowdetect-casters10` | – | – | 10 | 10 | 10 | 10 | 10 | – | – | – |
+| `reborn-lowdetect-d0` | – | – | – | – | – | – | – | – | – | – |
+
+### `reborn-town-switch-screen`
+
+Screen of the town and Druid switches main ships off, one arm each.
+
+Every arm: `borg_param_caution_scary_named_monsters = 1`, `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_town_dangerous_bonus_whole` | `borg_param_attack_town_dangerous_caster_walk` | `borg_param_attack_town_dangerous_on_sight` | `borg_param_attack_town_dangerous_wand` | `borg_param_caution_town_flee_no_worse` | `borg_param_caution_town_never_scary` | `borg_param_escape_fox_form` | `borg_param_escape_fox_form_town` | `borg_param_town_recall_reserve` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-townscreen-ctl` | – | – | – | – | – | – | – | – | – |
+| `reborn-townscreen-fox` | – | – | – | – | – | – | 1 | – | – |
+| `reborn-townscreen-fox-town` | – | – | – | – | – | – | – | 1 | – |
+| `reborn-townscreen-recall-reserve` | – | – | – | – | – | – | – | – | 1 |
+| `reborn-townscreen-town-fight` | 1 | 1 | 1 | 1 | – | – | – | – | – |
+| `reborn-townscreen-town-flee` | – | – | – | – | 1 | – | – | – | – |
+| `reborn-townscreen-town-not-scary` | – | – | – | – | – | 1 | – | – | – |
+
+### `reborn-dungeon-switch-screen`
+
+Screen of the dungeon switches main ships off, one arm each.
+
+Every arm: `borg_param_caution_scary_named_monsters = 1`, `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_flee_known_down_stairs` | `borg_param_caution_jumpstart_keep_stairs` | `borg_param_caution_ranged_vs_immobile` | `borg_param_caution_recall_wait_as_usual` | `borg_param_caution_rising_hold_flee_descent` | `borg_param_caution_scary_unlatch_kill` | `borg_param_caution_stairs_leave_on_monster` | `borg_param_escape_phase_lost_test` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-dunscreen-ctl` | – | – | – | – | – | – | – | – |
+| `reborn-dunscreen-down-jump` | 1 | 1 | – | – | – | – | – | – |
+| `reborn-dunscreen-downstairs` | 1 | – | – | – | – | – | – | – |
+| `reborn-dunscreen-phase-fight` | – | – | – | – | – | – | – | 1 |
+| `reborn-dunscreen-phase-landing` | – | – | – | – | – | – | – | 2 |
+| `reborn-dunscreen-ranged-immobile` | – | – | 1 | – | – | – | – | – |
+| `reborn-dunscreen-recall-wait` | – | – | – | 1 | – | – | – | – |
+| `reborn-dunscreen-rising-hold` | – | – | – | – | 1 | – | – | – |
+| `reborn-dunscreen-stairs-leave` | – | – | – | – | – | – | 1 | – |
+| `reborn-dunscreen-unlatch-kill` | – | – | – | – | – | 1 | – | – |
+
+### `reborn-shipcheck-b895`
+
+Main b895e352 (engine 574b618c): shipped against throw-as-melee 0, store-when-overweight 0, detection casters 10, all 10, ranged vs immobile 1.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_throw_as_melee` | `borg_param_caution_ranged_vs_immobile` | `borg_param_light_detect_evil_spell_min_level` | `borg_param_light_detect_evil_spell_min_level__druid` | `borg_param_light_detect_evil_spell_min_level__mage` | `borg_param_light_detect_evil_spell_min_level__necromancer` | `borg_param_light_detect_evil_spell_min_level__paladin` | `borg_param_light_detect_evil_spell_min_level__priest` | `borg_param_town_store_only_overweight` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-shipcheck-b895-all10` | – | – | 10 | 10 | 10 | 10 | 10 | 10 | – |
+| `reborn-shipcheck-b895-casters10` | – | – | – | 10 | 10 | 10 | 10 | 10 | – |
+| `reborn-shipcheck-b895-ranged` | – | 1 | – | – | – | – | – | – | – |
+| `reborn-shipcheck-b895-shipped` | – | – | – | – | – | – | – | – | – |
+| `reborn-shipcheck-b895-store0` | – | – | – | – | – | – | – | – | 0 |
+| `reborn-shipcheck-b895-throw0` | 0 | – | – | – | – | – | – | – | – |
+
+### `reborn-main-fde8`
+
+borg-reborn-rs main fde8025a (engine 574b618c) with its shipped settings.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-main-fde8-shipped`.
+
+### `reborn-breeder-world-x4`
+
+Breeder switches in the breeders-x4 world (all arms in the world): shipped against stoppable 0, rest 0, both 0, exit 1, avoid 1.
+
+Every arm: `borg_param_caution_scary_named_monsters = 1`, `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`, `borg_world = breeders-x4`.
+
+| Profile | `borg_param_caution_breeder_avoid` | `borg_param_caution_breeder_exit` | `borg_param_caution_breeder_stoppable` | `borg_param_recover_rest_breeders` |
+| --- | --- | --- | --- | --- |
+| `reborn-worldx4-avoid` | 1 | – | – | – |
+| `reborn-worldx4-both0` | – | – | 0 | 0 |
+| `reborn-worldx4-ctl` | – | – | – | – |
+| `reborn-worldx4-exit` | – | 1 | – | – |
+| `reborn-worldx4-rest0` | – | – | – | 0 |
+| `reborn-worldx4-stop0` | – | – | 0 | – |
+
+### `reborn-breeder-policy-x4`
+
+The breeder policy ladder (caution_breeder_policy 0-5, shipped 3) in the breeders-x4 world.
+
+Every arm: `borg_param_caution_scary_named_monsters = 1`, `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`, `borg_world = breeders-x4`.
+
+| Profile | `borg_param_caution_breeder_policy` |
+| --- | --- |
+| `reborn-bpolicy-x4-p0` | 0 |
+| `reborn-bpolicy-x4-p1` | 1 |
+| `reborn-bpolicy-x4-p2` | 2 |
+| `reborn-bpolicy-x4-p3` | 3 |
+| `reborn-bpolicy-x4-p4` | 4 |
+| `reborn-bpolicy-x4-p5` | 5 |
+
+### `reborn-teleport-landing-either`
+
+escape_teleport_landing_either (upstream 95387b06) 1 against shipped 0, at 200,000 turns.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_escape_teleport_landing_either` |
+| --- | --- |
+| `reborn-tplanding-ctl` | 0 |
+| `reborn-tplanding-either` | 1 |
+
+### `reborn-flight-fixes`
+
+The flight fixes (#743/#747/#749/#750/#751/#753) all on against shipped, on e8b3acfd.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_desperate_fast_danger_percent` | `borg_param_caution_recall_cure_min_loss_percent` | `borg_param_caution_rising_hold_min_hp_percent` | `borg_param_caution_stairs_clean_path` | `borg_param_caution_stairs_clean_path_flee` | `borg_param_caution_stairs_flight_ignore_danger` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `reborn-flight-ctl` | – | – | – | – | – | – |
+| `reborn-flight-flight` | 50 | 30 | 50 | 2 | 1 | 1 |
+
+### `reborn-cleash`
+
+C's exploration leash values on main ec0f3b28: shipped (3/9/5), tight (2/5), loose (5/15), depth margin 0 and 10, and no leash.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_flow_leash_base` | `borg_param_flow_leash_depth_margin` | `borg_param_flow_leash_per_level` | `borg_param_flow_leash_pickup_max_level` | `borg_param_flow_leash_stairs_max_level` |
+| --- | --- | --- | --- | --- | --- |
+| `reborn-cleash-ctl` | – | – | – | – | – |
+| `reborn-cleash-tight` | 5 | – | 2 | – | – |
+| `reborn-cleash-loose` | 15 | – | 5 | – | – |
+| `reborn-cleash-margin0` | – | 0 | – | – | – |
+| `reborn-cleash-margin10` | – | 10 | – | – | – |
+| `reborn-cleash-none` | – | -100 | – | 0 | 0 |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44769379993](https://github.com/diegoami/borg-zoo/actions/runs/44769379993) | pilot | `4.2.6-reborn-rust-main-ec0f3b28` | none arm config_error (depth margin -100); loose 0 deaths CL 6.17, margin0 CL 5.72, margin10 = ctl in 14 of 18 |
+
+### `reborn-flight3-757`
+
+PR #757 on 50c23a5e: #501's flight arm with #751 mode 3 (flight3), plus ranged-first (flight3r), and each switch alone.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_desperate_fast_danger_percent` | `borg_param_caution_desperate_ranged_first_reach` | `borg_param_caution_recall_cure_min_loss_percent` | `borg_param_caution_rising_hold_min_hp_percent` | `borg_param_caution_stairs_clean_path` | `borg_param_caution_stairs_clean_path_flee` | `borg_param_caution_stairs_flight_ignore_danger` |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-flight3m-ctl` | – | – | – | – | – | – | – |
+| `reborn-flight3m-flight3` | 50 | – | 30 | 50 | 3 | 1 | 1 |
+| `reborn-flight3m-flight3r` | 50 | 3 | 30 | 50 | 3 | 1 | 1 |
+| `reborn-flight3m-path3` | – | – | – | – | 3 | – | – |
+| `reborn-flight3m-ranged` | – | 3 | – | – | – | – | – |
+| `reborn-flight3m-flee` | – | – | – | – | – | 1 | – |
+| `reborn-flight3m-fast` | 50 | – | – | – | – | – | – |
+| `reborn-flight3m-cure` | – | – | 30 | – | – | – | – |
+| `reborn-flight3m-nodanger` | – | – | – | – | – | – | 1 |
+| `reborn-flight3m-hold` | – | – | – | 50 | – | – | – |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44774313553](https://github.com/diegoami/borg-zoo/actions/runs/44774313553) | pilot | `4.2.6-reborn-rust-flight3-50c23a5e` | nodanger stalled (1 frozen-turn loop); flight3 and flight3r rescued the one dead start, 0 newly killed; ranged, flee, hold identical to ctl in 18 of 18 |
+
+### `reborn-fight-recall`
+
+#763/#764 on 78b8f297: attack-on-sight categories, winning-fight override, safe flight Recall, and all three.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_on_sight` | `borg_param_caution_recall_survival` | `borg_param_caution_winning_fight` |
+| --- | --- | --- | --- |
+| `reborn-fightrecall-ctl` | – | – | – |
+| `reborn-fightrecall-attack-sight` | 1 | – | – |
+| `reborn-fightrecall-winning-fight` | – | – | 1 |
+| `reborn-fightrecall-recall-safe` | – | 1 | – |
+| `reborn-fightrecall-all` | 1 | 1 | 1 |
+
+### `reborn-phase-first-761`
+
+#761 on 992e0351: Phase Door reserve, less oil, Rangers' lighter kit, floor pickup, unseen flavours, food/light, and all.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_flow_take_phase_first` | `borg_param_flow_take_phase_short_below` | `borg_param_town_food_percent` | `borg_param_town_heal_reserve_hp_percent_ranger` | `borg_param_town_light_percent` | `borg_param_town_oil_curve_scale_percent` | `borg_param_town_oil_curve_scale_percent__blackguard` | `borg_param_town_oil_curve_scale_percent__druid` | `borg_param_town_oil_curve_scale_percent__mage` | `borg_param_town_oil_curve_scale_percent__necromancer` | `borg_param_town_oil_curve_scale_percent__paladin` | `borg_param_town_oil_curve_scale_percent__priest` | `borg_param_town_oil_curve_scale_percent__ranger` | `borg_param_town_oil_curve_scale_percent__rogue` | `borg_param_town_oil_curve_scale_percent__warrior` | `borg_param_town_phase_reserve` | `borg_param_town_phase_reserve_percent` | `borg_param_town_ranger_arrows_max__ranger` | `borg_param_town_unseen_percent` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-phasefirst-ctl` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-phasefirst-ranger` | – | – | – | 100 | – | – | – | – | – | – | – | – | 25 | – | – | – | – | 20 | – |
+| `reborn-phasefirst-phase` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | 2 | 200 | – | – |
+| `reborn-phasefirst-oil` | – | – | – | – | – | 50 | 50 | 75 | 50 | 50 | 60 | 75 | 25 | 60 | 50 | – | – | – | – |
+| `reborn-phasefirst-phaseoil` | – | – | – | – | – | 50 | 50 | 75 | 50 | 50 | 60 | 75 | 25 | 60 | 50 | 2 | 200 | – | – |
+| `reborn-phasefirst-floor` | – | 2 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-phasefirst-floorfirst` | 1 | 2 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-phasefirst-unseen` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | 50 |
+| `reborn-phasefirst-foodlight` | – | – | 50 | – | 50 | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-phasefirst-all` | – | 2 | 50 | 100 | 50 | 50 | 50 | 75 | 50 | 50 | 60 | 75 | 25 | 60 | 50 | 2 | 200 | 20 | 50 |
+
+| Run | Tier | Specimen | Result |
+| --- | --- | --- | --- |
+| [44774388022](https://github.com/diegoami/borg-zoo/actions/runs/44774388022) | pilot | `4.2.6-reborn-rust-phase-992e0351` | clean; oil CL 6.67 (0 newly killed), phase/unseen/foodlight/all rescued the one dead start; ranger/floor/floorfirst identical to ctl in 15-16 of 18 |
+
+### `reborn-recallwait`
+
+#754's Recall-wait switches on PR #762 head 613f1ba5: a pending Recall counts as an escape (esc), no exploring while it counts down (nox), both.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_recall_pending_escape` | `borg_param_caution_recall_wait_no_explore` |
+| --- | --- | --- |
+| `reborn-recallwait-ctl` | – | – |
+| `reborn-recallwait-esc` | 1 | – |
+| `reborn-recallwait-nox` | – | 1 |
+| `reborn-recallwait-both` | 1 | 1 |
+
+### `reborn-cleashnone`
+
+C's leash switched off (flow_leash_pickup_max_level and flow_leash_stairs_max_level 0) against C's shipped values, on main ec0f3b28.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_flow_leash_pickup_max_level` | `borg_param_flow_leash_stairs_max_level` |
+| --- | --- | --- |
+| `reborn-cleashnone-ctl` | – | – |
+| `reborn-cleashnone-none` | 0 | 0 |
+
+### `reborn-dive-gates-768`
+
+C Borg dive gates (#768, PR #772): the shipped depth cap against the merged gates, then the depth margin and class offsets on 4e9af99e.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_prepared_clevel_depth_margin` | `borg_param_prepared_mid_clevel_offset__blackguard` | `borg_param_prepared_mid_clevel_offset__druid` | `borg_param_prepared_mid_clevel_offset__mage` | `borg_param_prepared_mid_clevel_offset__necromancer` | `borg_param_prepared_mid_clevel_offset__paladin` | `borg_param_prepared_mid_clevel_offset__priest` | `borg_param_prepared_mid_clevel_offset__ranger` | `borg_param_prepared_mid_clevel_offset__rogue` | `borg_param_prepared_mid_clevel_offset__warrior` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-dive-gates-768-shipped` | – | – | – | – | – | – | – | – | – | – |
+| `reborn-dive-gates-768-margin-minus2` | -2 | – | – | – | – | – | – | – | – | – |
+| `reborn-dive-gates-768-margin-plus2` | 2 | – | – | – | – | – | – | – | – | – |
+| `reborn-dive-gates-768-mid-looser` | 2 | -7 | -3 | 2 | 2 | -3 | -3 | -3 | -3 | -7 |
+| `reborn-dive-gates-768-mid-tighter` | 2 | -1 | 3 | 8 | 8 | 3 | 3 | 3 | 3 | -1 |
+
+### `reborn-p6compat`
+
+P6 compatibility check (borg-reborn-rs #774): main 4e9af99e against the synchronized d0657712, shipped defaults.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-p6compat-shipped`.
+
+### `reborn-flight3main`
+
+PR #757's flight switches on main 09a70906 (mode 3 fixed): flight3, flight3r, path3, fast, cure.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_desperate_fast_danger_percent` | `borg_param_caution_desperate_ranged_first_reach` | `borg_param_caution_recall_cure_min_loss_percent` | `borg_param_caution_rising_hold_min_hp_percent` | `borg_param_caution_stairs_clean_path` | `borg_param_caution_stairs_clean_path_flee` | `borg_param_caution_stairs_flight_ignore_danger` |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-flight3main-ctl` | – | – | – | – | – | – | – |
+| `reborn-flight3main-flight3` | 50 | – | 30 | 50 | 3 | 1 | 1 |
+| `reborn-flight3main-flight3r` | 50 | 3 | 30 | 50 | 3 | 1 | 1 |
+| `reborn-flight3main-path3` | – | – | – | – | 3 | – | – |
+| `reborn-flight3main-fast` | 50 | – | – | – | – | – | – |
+| `reborn-flight3main-cure` | – | – | 30 | – | – | – | – |
+
+### `reborn-rangerphase`
+
+#761 Phase Door first on 3c889f0f (PR #778): ranger, phase, oil, floor and all.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_flow_take_phase_short_below` | `borg_param_town_heal_reserve_hp_percent_ranger` | `borg_param_town_oil_curve_scale_percent` | `borg_param_town_oil_curve_scale_percent__blackguard` | `borg_param_town_oil_curve_scale_percent__druid` | `borg_param_town_oil_curve_scale_percent__mage` | `borg_param_town_oil_curve_scale_percent__necromancer` | `borg_param_town_oil_curve_scale_percent__paladin` | `borg_param_town_oil_curve_scale_percent__priest` | `borg_param_town_oil_curve_scale_percent__ranger` | `borg_param_town_oil_curve_scale_percent__rogue` | `borg_param_town_oil_curve_scale_percent__warrior` | `borg_param_town_phase_reserve` | `borg_param_town_phase_reserve_percent` | `borg_param_town_ranger_arrows_max__ranger` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-rangerphase-ctl` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-rangerphase-ranger` | – | 100 | – | – | – | – | – | – | – | 25 | – | – | – | – | 20 |
+| `reborn-rangerphase-phase` | – | – | – | – | – | – | – | – | – | – | – | – | 2 | 200 | – |
+| `reborn-rangerphase-oil` | – | – | 50 | 50 | 75 | 50 | 50 | 60 | 75 | 25 | 60 | 50 | – | – | – |
+| `reborn-rangerphase-floor` | 2 | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-rangerphase-all` | 2 | 100 | 50 | 50 | 75 | 50 | 50 | 60 | 75 | 25 | 60 | 50 | 2 | 200 | 20 |
+
+### `reborn-prepared`
+
+The dive gates' thresholds on main a04e5471: character-level minimums +/-2, HP minimums -25%/+25%, Cure minimum 0 and 4, and loose and tight combinations.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_prepared_cure_min` | `borg_param_prepared_dl2_min_hp` | `borg_param_prepared_dl34_min_clevel__blackguard` | `borg_param_prepared_dl34_min_clevel__druid` | `borg_param_prepared_dl34_min_clevel__mage` | `borg_param_prepared_dl34_min_clevel__necromancer` | `borg_param_prepared_dl34_min_clevel__paladin` | `borg_param_prepared_dl34_min_clevel__priest` | `borg_param_prepared_dl34_min_clevel__ranger` | `borg_param_prepared_dl34_min_clevel__rogue` | `borg_param_prepared_dl34_min_clevel__warrior` | `borg_param_prepared_dl34_min_hp__blackguard` | `borg_param_prepared_dl34_min_hp__druid` | `borg_param_prepared_dl34_min_hp__mage` | `borg_param_prepared_dl34_min_hp__necromancer` | `borg_param_prepared_dl34_min_hp__paladin` | `borg_param_prepared_dl34_min_hp__priest` | `borg_param_prepared_dl34_min_hp__ranger` | `borg_param_prepared_dl34_min_hp__rogue` | `borg_param_prepared_dl34_min_hp__warrior` | `borg_param_prepared_dl59_min_clevel__blackguard` | `borg_param_prepared_dl59_min_clevel__druid` | `borg_param_prepared_dl59_min_clevel__mage` | `borg_param_prepared_dl59_min_clevel__necromancer` | `borg_param_prepared_dl59_min_clevel__paladin` | `borg_param_prepared_dl59_min_clevel__priest` | `borg_param_prepared_dl59_min_clevel__ranger` | `borg_param_prepared_dl59_min_clevel__rogue` | `borg_param_prepared_dl59_min_clevel__warrior` | `borg_param_prepared_dl59_min_hp__blackguard` | `borg_param_prepared_dl59_min_hp__druid` | `borg_param_prepared_dl59_min_hp__mage` | `borg_param_prepared_dl59_min_hp__necromancer` | `borg_param_prepared_dl59_min_hp__paladin` | `borg_param_prepared_dl59_min_hp__priest` | `borg_param_prepared_dl59_min_hp__ranger` | `borg_param_prepared_dl59_min_hp__rogue` | `borg_param_prepared_dl59_min_hp__warrior` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-prepared-ctl` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-prepared-cl-lo` | – | – | 2 | 7 | 9 | 9 | 2 | 7 | 2 | 6 | 2 | – | – | – | – | – | – | – | – | – | 4 | 13 | 13 | 13 | 4 | 13 | 4 | 8 | 4 | – | – | – | – | – | – | – | – | – |
+| `reborn-prepared-cl-hi` | – | – | 6 | 11 | 13 | 13 | 6 | 11 | 6 | 10 | 6 | – | – | – | – | – | – | – | – | – | 8 | 17 | 17 | 17 | 8 | 17 | 8 | 12 | 8 | – | – | – | – | – | – | – | – | – |
+| `reborn-prepared-hp-lo` | – | 23 | – | – | – | – | – | – | – | – | – | 38 | 30 | 45 | 45 | 38 | 30 | 38 | 38 | 38 | – | – | – | – | – | – | – | – | – | 45 | 45 | 60 | 60 | 45 | 45 | 45 | 45 | 45 |
+| `reborn-prepared-hp-hi` | – | 38 | – | – | – | – | – | – | – | – | – | 63 | 50 | 75 | 75 | 63 | 50 | 63 | 63 | 63 | – | – | – | – | – | – | – | – | – | 75 | 75 | 100 | 100 | 75 | 75 | 75 | 75 | 75 |
+| `reborn-prepared-cure0` | 0 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-prepared-cure4` | 4 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-prepared-loose` | 0 | 23 | 2 | 7 | 9 | 9 | 2 | 7 | 2 | 6 | 2 | 38 | 30 | 45 | 45 | 38 | 30 | 38 | 38 | 38 | 4 | 13 | 13 | 13 | 4 | 13 | 4 | 8 | 4 | 45 | 45 | 60 | 60 | 45 | 45 | 45 | 45 | 45 |
+| `reborn-prepared-tight` | 4 | 38 | 6 | 11 | 13 | 13 | 6 | 11 | 6 | 10 | 6 | 63 | 50 | 75 | 75 | 63 | 50 | 63 | 63 | 63 | 8 | 17 | 17 | 17 | 8 | 17 | 8 | 12 | 8 | 75 | 75 | 100 | 100 | 75 | 75 | 75 | 75 | 75 |
+
+### `reborn-weighted765`
+
+Threat-weighted stair routing (#765, PR #769) on 4a2eade9: the shipped profile, mode 3, and mode 3 with threat weight 5.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_desperate_fast_danger_percent` | `borg_param_caution_recall_cure_min_loss_percent` | `borg_param_caution_stairs_clean_path` | `borg_param_caution_stairs_clean_path_flee` | `borg_param_caution_stairs_flight_ignore_danger` | `borg_param_caution_stairs_flight_threat_weight` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `reborn-weighted765-shipped` | – | – | – | – | – | – |
+| `reborn-weighted765-mode3` | 50 | 30 | 3 | 1 | 1 | 0 |
+| `reborn-weighted765-weighted5` | 50 | 30 | 3 | 1 | 1 | 5 |
+
+### `reborn-phasereserve`
+
+town_phase_reserve (1, 2, 3 at 200 percent) and town_phase_reserve_percent (50, 100, 200, 400 at reserve 2) on main d745d9fc, against the shipped reserve 0.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_town_phase_reserve` | `borg_param_town_phase_reserve_percent` |
+| --- | --- | --- |
+| `reborn-phasereserve-ctl` | – | – |
+| `reborn-phasereserve-r1p200` | 1 | 200 |
+| `reborn-phasereserve-r2p200` | 2 | 200 |
+| `reborn-phasereserve-r3p200` | 3 | 200 |
+| `reborn-phasereserve-r2p50` | 2 | 50 |
+| `reborn-phasereserve-r2p100` | 2 | 100 |
+| `reborn-phasereserve-r2p400` | 2 | 400 |
+
+### `reborn-attacksight`
+
+attack_on_sight (#760), caution_winning_fight (#759) and the kill-on-sight list on main c4163095: each switch off, both off, the list without its breeders, without its fast-fragile pair, and cut to CL10 and CL20.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_on_sight` | `borg_param_caution_winning_fight` | `borg_scary_list_lines` |
+| --- | --- | --- | --- |
+| `reborn-attacksight-ctl` | – | – | – |
+| `reborn-attacksight-both0` | 0 | 0 | – |
+| `reborn-attacksight-sight0` | 0 | – | – |
+| `reborn-attacksight-win0` | – | 0 | – |
+| `reborn-attacksight-nobreed` | – | – | 5 lines |
+| `reborn-attacksight-nofast` | – | – | 2 lines |
+| `reborn-attacksight-cl10` | – | – | 7 lines |
+| `reborn-attacksight-cl20` | – | – | 7 lines |
+
+### `reborn-breederpol`
+
+caution_breeder_policy in the normal world on main c4163095: shipped 3 and 0, 2, 4, 5.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_breeder_policy` |
+| --- | --- |
+| `reborn-breederpol-ctl` | – |
+| `reborn-breederpol-p0` | 0 |
+| `reborn-breederpol-p2` | 2 |
+| `reborn-breederpol-p4` | 4 |
+| `reborn-breederpol-p5` | 5 |
+
+### `reborn-adopted`
+
+The three adopted switches (attack_on_sight, caution_winning_fight, caution_recall_survival, shipped 1) isolated against an explicit all-off control on f827f844: off, category, winning, recall, shipped.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_on_sight` | `borg_param_caution_recall_survival` | `borg_param_caution_winning_fight` |
+| --- | --- | --- | --- |
+| `reborn-adopted-f827f844-off` | 0 | 0 | 0 |
+| `reborn-adopted-f827f844-category` | 1 | 0 | 0 |
+| `reborn-adopted-f827f844-winning` | 0 | 0 | 1 |
+| `reborn-adopted-f827f844-recall` | 0 | 1 | 0 |
+| `reborn-adopted-f827f844-shipped` | – | – | – |
+
+### `reborn-adopted-600`
+
+The adopted combined policy (shipped) against explicit all-off on f827f844, on the first 2 starts per class of the owner's retained 600 (200 Rangers + 50 of each other class).
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_on_sight` | `borg_param_caution_recall_survival` | `borg_param_caution_winning_fight` |
+| --- | --- | --- | --- |
+| `reborn-adopted-f827f844-combined-off` | 0 | 0 | 0 |
+| `reborn-adopted-f827f844-combined-shipped` | – | – | – |
+
+### `reborn-ship3`
+
+The three shipped fight/Recall switches ablated on main d7e58cd: alloff, sight, fight, recall, allon.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_on_sight` | `borg_param_caution_recall_survival` | `borg_param_caution_winning_fight` |
+| --- | --- | --- | --- |
+| `reborn-ship3-alloff` | 0 | 0 | 0 |
+| `reborn-ship3-sight` | – | 0 | 0 |
+| `reborn-ship3-fight` | 0 | 0 | – |
+| `reborn-ship3-recall` | 0 | – | 0 |
+| `reborn-ship3-allon` | – | – | – |
+
+### `reborn-townhunt`
+
+town_ranged_reserve and town_hunt (borg-reborn-rs #789, PR #800) on 8e0f20af, with and without caution_winning_fight (which also decides town attacks).
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_winning_fight` | `borg_param_town_hunt` | `borg_param_town_hunt_min_hp_percent` | `borg_param_town_hunt_ranged_bonus_percent` | `borg_param_town_ranged_reserve` |
+| --- | --- | --- | --- | --- | --- |
+| `reborn-townhunt-ctl` | – | – | – | – | – |
+| `reborn-townhunt-reserve` | – | – | – | – | 6 |
+| `reborn-townhunt-hunt` | – | 1 | 50 | 50 | – |
+| `reborn-townhunt-combined` | – | 1 | 50 | 50 | 6 |
+| `reborn-townhunt-hunt-nofight` | 0 | 1 | 50 | 50 | – |
+| `reborn-townhunt-combined-nofight` | 0 | 1 | 50 | 50 | 6 |
+
+### `reborn-deathrisk`
+
+borg-reborn-rs 5343532c (task/T790-death-risk): the shipped settings with per-think death_risk observations, evidence retained for calibration.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-deathrisk-shipped`.
+
+### `reborn-maindefault`
+
+borg-reborn-rs main 2801ba18 with its shipped settings and no overrides, on classes-1800-verysmall (45 starts), for death reports.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-maindefault-shipped`.
+
+### `reborn-paladingate`
+
+The Paladin DL3-4 max-HP preparedness gate, 45 against 50, on 2fdfd41c (borg-reborn-rs #795).
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_prepared_dl34_min_hp__paladin` |
+| --- | --- |
+| `reborn-paladingate-ctl` | – |
+| `reborn-paladingate-hp45` | 45 |
+
+### `reborn-darkentry`
+
+Low-level dark-entry detection (light_detect_dark_entry 1) for Mages and Necromancers on cd0ed207 (borg-reborn-rs #796).
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_light_detect_dark_entry` |
+| --- | --- |
+| `reborn-darkentry-ctl` | – |
+| `reborn-darkentry-dark1` | 1 |
+
+### `reborn-killers`
+
+Fang and Grip scary to CL8-10 and 10-12, the dogs as kill-on-sight, soldiers and acolytes scary to CL12-16 and 16-20, on main 2801ba18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_scary_list_lines` |
+| --- | --- |
+| `reborn-killers-ctl` | – |
+| `reborn-killers-dogs10` | 2 lines |
+| `reborn-killers-dogs12` | 2 lines |
+| `reborn-killers-doghunt` | 2 lines |
+| `reborn-killers-fighters12` | 2 lines |
+| `reborn-killers-fighters16` | 2 lines |
+
+### `reborn-receipt`
+
+The resolved-settings receipt on main 78fb330f: a class override, a legacy alias, a scalar and a default-equal value, against the shipped profile.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_preference_mage_spell_permille` | `borg_param_town_phase_reserve__mage` | `borg_param_town_phase_reserve__ranger` | `borg_param_town_phase_reserve__warrior` | `borg_param_town_phase_reserve_percent` |
+| --- | --- | --- | --- | --- | --- |
+| `reborn-receipt-ctl` | – | – | – | – | – |
+| `reborn-receipt-override` | 1600 | 1 | 3 | 0 | 150 |
+
+### `reborn-fresh`
+
+Fresh baseline: main d7e58cd (everything shipped this week) against fde8025a (#488), each with its own shipped settings, for P7's two endpoints.
+
+Profiles: `reborn-fresh-shipped`.
+
+### `reborn-floo`
+
+Leave-one-out of the shipped flight cluster on main d7e58cd: path1, noflee, danger, weight0, fastany, curefull.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_desperate_fast_danger_percent` | `borg_param_caution_recall_cure_min_loss_percent` | `borg_param_caution_stairs_clean_path` | `borg_param_caution_stairs_clean_path_flee` | `borg_param_caution_stairs_flight_ignore_danger` | `borg_param_caution_stairs_flight_threat_weight` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `reborn-floo-shipped` | – | – | – | – | – | – |
+| `reborn-floo-path1` | – | – | 1 | – | – | – |
+| `reborn-floo-noflee` | – | – | – | 0 | – | – |
+| `reborn-floo-danger` | – | – | – | – | 0 | – |
+| `reborn-floo-weight0` | – | – | – | – | – | 0 |
+| `reborn-floo-fastany` | 0 | – | – | – | – | – |
+| `reborn-floo-curefull` | – | 0 | – | – | – | – |
+
+### `reborn-sloo`
+
+Leave-one-out of shipped settings no zoo arm has measured on main 2801ba18: nobump, nothrowfirst, nobreederboost, nooilapart, phasecurve100.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_breeder_boost_danger_tenths` | `borg_param_caution_cornered_throw_first` | `borg_param_caution_unseen_bump_heal_hp_percent` | `borg_param_caution_unseen_bump_response` | `borg_param_caution_unseen_bump_turns` | `borg_param_town_oil_apart` | `borg_param_town_phase_curve_scale_percent__blackguard` | `borg_param_town_phase_curve_scale_percent__druid` | `borg_param_town_phase_curve_scale_percent__mage` | `borg_param_town_phase_curve_scale_percent__necromancer` | `borg_param_town_phase_curve_scale_percent__priest` | `borg_param_town_phase_curve_scale_percent__ranger` | `borg_param_town_phase_curve_scale_percent__rogue` | `borg_param_town_phase_curve_scale_percent__warrior` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-sloo-shipped` | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-sloo-nobump` | – | – | 0 | 0 | 0 | – | – | – | – | – | – | – | – | – |
+| `reborn-sloo-nothrowfirst` | – | 0 | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-sloo-nobreederboost` | 0 | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-sloo-nooilapart` | – | – | – | – | – | 0 | – | – | – | – | – | – | – | – |
+| `reborn-sloo-phasecurve100` | – | – | – | – | – | – | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 |
+
+### `reborn-deathrisk0eb`
+
+borg-reborn-rs PR #792 at 0eb48328 (core-trace@3): the shipped settings with per-think death_risk observations, evidence retained.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-deathrisk0eb-shipped`.
+
+### `reborn-recallres`
+
+Word of Recall replenishment with a reserve of 1 (shipped), 2 and 3 scrolls on ae904090 (borg-reborn-rs #810, PR #813).
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`, `borg_town_plan = 1`.
+
+| Profile | `borg_param_town_recall_reserve` |
+| --- | --- |
+| `reborn-recallres-ctl` | – |
+| `reborn-recallres-res2` | 2 |
+| `reborn-recallres-res3` | 3 |
+
+### `reborn-head`
+
+borg-reborn-rs main 3b4924ba (head on 2026-11-21) with its shipped settings and no overrides over all 1,800 classes-1800 starts.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-head-shipped`.
+
+### `reborn-p6final`
+
+P6 final candidate compatibility (borg-reborn-rs #814): main 07aa4b1e against a3635ad8, shipped defaults.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-p6final-shipped`.
+
+### `reborn-cursed`
+
+Cursed equipment (borg-reborn-rs #830, PR #832): the base 88d98537 against the change 9cbe0348, shipped settings. Second pilot (#598) on 88d98537 vs cursed af70b9e9, 36 cells.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-cursed-shipped`.
+
+### `reborn-torch`
+
+Spare torches to buy and keep (borg-reborn-rs #810, PR #835): town_light_reserve_turns 0, 15000, 20000, 25000 on e4d64f08.
+
+Every arm: `borg_param_town_lantern_upgrade_power = 0`, `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`, `borg_town_plan = 1`.
+
+| Profile | `borg_param_town_light_reserve_turns` |
+| --- | --- |
+| `reborn-torch-shipped` | 0 |
+| `reborn-torch-two` | 15000 |
+| `reborn-torch-three` | 20000 |
+| `reborn-torch-four` | 25000 |
+
+### `reborn-confusion`
+
+The six confusion settings of borg-reborn-rs #837 on da097a76: CLW cure, no walk before the cure, stuck, CSW reserve, kobold shaman attack or leave.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_confused_clw_cure` | `borg_param_caution_confused_cure_before_walk` | `borg_param_caution_confusion_cure_when_stuck` | `borg_param_caution_immobile_step_mobile_first` | `borg_param_caution_ranged_vs_immobile` | `borg_param_town_confusion_cure_reserve` | `borg_scary_list_lines` |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-confusion-ctl` | – | – | – | – | – | – | – |
+| `reborn-confusion-clw` | 1 | – | – | – | – | – | – |
+| `reborn-confusion-clw_walk` | 1 | 1 | – | – | – | – | – |
+| `reborn-confusion-csw` | 1 | – | – | – | – | 1 | – |
+| `reborn-confusion-stuck` | 1 | 1 | 1 | 1 | 1 | – | – |
+| `reborn-confusion-r2` | 1 | 1 | 1 | 1 | 2 | – | – |
+| `reborn-confusion-all` | 1 | 1 | 1 | 1 | 2 | 1 | – |
+| `reborn-confusion-shaman_attack` | 1 | 1 | – | – | – | – | 1 line |
+| `reborn-confusion-shaman_leave` | 1 | 1 | – | – | – | – | 1 line |
+
+### `reborn-invis`
+
+Invisible attacker mode and Detect Invisible (borg-reborn-rs #831, PR #836) on b3f32a9a: A old behaviour, B shipped, C higher Detect Invisible value.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_recover_unseen_attack_turns` | `borg_param_recover_unseen_detect_reads` | `borg_param_recover_unseen_heal_hp_percent` | `borg_param_recover_unseen_probe_tries` | `borg_param_town_invisible_count` | `borg_param_town_invisible_percent` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `reborn-invis-A` | 0 | 0 | 0 | 0 | 0 | – |
+| `reborn-invis-B` | – | – | – | – | – | – |
+| `reborn-invis-C` | – | – | – | – | – | 40 |
+
+### `reborn-tpblock`
+
+Teleport block under an anti-teleportation curse (borg-reborn-rs #829, PR #833) on 6fe184ea: escape_teleport_block 0 against shipped 1.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_escape_teleport_block` |
+| --- | --- |
+| `reborn-tpblock-ctl` | 0 |
+| `reborn-tpblock-block` | – |
+
+### `reborn-immfix`
+
+caution_ranged_vs_immobile 2 with the confusion and no-return switches on 8eadb21f: shipped, immobile2, immobile2_fix (borg-reborn-rs #837).
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_confused_clw_cure` | `borg_param_caution_confused_cure_before_walk` | `borg_param_caution_confusion_cure_when_stuck` | `borg_param_caution_immobile_no_return` | `borg_param_caution_immobile_step_mobile_first` | `borg_param_caution_ranged_vs_immobile` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `reborn-immfix-shipped` | – | – | – | – | – | – |
+| `reborn-immfix-immobile2` | – | – | – | – | – | 2 |
+| `reborn-immfix-immobile2_fix` | 1 | 2 | 1 | 1 | 1 | 2 |
+
+### `reborn-townkos`
+
+Kill on sight in town with the town scare lowered (N 6, 11) and the three #637 switches on main 12c4ce7c (borg-reborn-rs #667).
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_town_dangerous_bonus_whole` | `borg_param_attack_town_dangerous_caster_walk` | `borg_param_attack_town_dangerous_on_sight` | `borg_param_attack_town_dangerous_wand` | `borg_param_caution_town_scary_levels_less` |
+| --- | --- | --- | --- | --- | --- |
+| `reborn-townkos-shipped` | – | – | – | – | – |
+| `reborn-townkos-n6_off` | – | – | – | – | 6 |
+| `reborn-townkos-n6_on` | – | – | 1 | – | 6 |
+| `reborn-townkos-n11_off` | – | – | – | – | 11 |
+| `reborn-townkos-n11_on` | – | – | 1 | – | 11 |
+| `reborn-townkos-n11_sw` | 1 | 1 | 1 | 1 | 11 |
+
+### `reborn-townscum`
+
+Town scumming (borg_money_scum_amount 500, 1000, 2000) on main 12c4ce7c, against the shipped 0.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_money_scum_amount` |
+| --- | --- |
+| `reborn-townscum-ctl` | – |
+| `reborn-townscum-scum500` | 500 |
+| `reborn-townscum-scum1000` | 1000 |
+| `reborn-townscum-scum2000` | 2000 |
+
+### `reborn-fastfrag`
+
+Fast-fragile monsters (borg-reborn-rs 7f8c6b80): scary-list entries, bans and escape variants against the control, 8 arms.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_fast_fragile_by_stats` | `borg_param_fast_fragile_escape_percent` | `borg_param_fast_fragile_no_heal` | `borg_param_fast_fragile_policy` |
+| --- | --- | --- | --- | --- |
+| `reborn-fastfrag-ctl` | – | – | – | – |
+| `reborn-fastfrag-named` | – | – | – | 1 |
+| `reborn-fastfrag-named-ban` | – | – | 1 | 1 |
+| `reborn-fastfrag-stats` | 1 | – | – | 1 |
+| `reborn-fastfrag-stats-ban` | 1 | – | 1 | 1 |
+| `reborn-fastfrag-named-esc75` | – | 75 | 1 | 1 |
+| `reborn-fastfrag-attack-only` | – | 0 | – | 1 |
+| `reborn-fastfrag-named-ban-exc` | – | – | 2 | 1 |
+
+### `reborn-healtiers`
+
+Heal tiers (bba5e4be): speed100 and quaff200 against the control at 300k turns on classes-18-300k.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_town_heal_quaff_bonus_percent` | `borg_param_town_heal_speed_percent` |
+| --- | --- | --- |
+| `reborn-healtiers-ctl` | – | – |
+| `reborn-healtiers-speed100` | – | 100 |
+| `reborn-healtiers-quaff200` | 200 | – |
+
+### `reborn-alpha1`
+
+Release measurement of borg-reborn-rs v0.1.0-alpha.1 (ed52fec1): shipped settings, one arm, classes-1800 ladder (45+45+270+540+900), 100,000 turns.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-alpha1-shipped`.
+
+### `reborn-rangedonly`
+
+caution_ranged_only (borg-reborn-rs #838) on 5887c29b: shipped, ranged, immobile2, ranged_clw, classes-18 pilot.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_confused_clw_cure` | `borg_param_caution_confused_cure_before_walk` | `borg_param_caution_ranged_only` | `borg_param_caution_ranged_vs_immobile` |
+| --- | --- | --- | --- | --- |
+| `reborn-rangedonly-shipped` | – | – | – | – |
+| `reborn-rangedonly-ranged` | – | – | 1 | – |
+| `reborn-rangedonly-immobile2` | – | – | – | 2 |
+| `reborn-rangedonly-ranged_clw` | 1 | 2 | 1 | – |
+
+### `reborn-nowalk`
+
+fast_fragile_no_walk (borg-reborn-rs #849, PR #853) on d9ebf4c9: ctl, nowalk, nowalk-stats, classes-18 pilot.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_fast_fragile_by_stats` | `borg_param_fast_fragile_no_walk` |
+| --- | --- | --- |
+| `reborn-nowalk-ctl` | – | – |
+| `reborn-nowalk-nowalk` | – | 1 |
+| `reborn-nowalk-nowalk-stats` | 1 | 1 |
+
+### `reborn-tonight`
+
+Tonight's test: borg-reborn-rs main ab775d48, shipped settings, one arm, classes-1800 ladder (45+45+270+540+900), 100,000 turns.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-tonight-shipped`.
+
+### `reborn-p6rf`
+
+P6 review-fix compatibility (borg-reborn-rs #860): main ab775d48 against 038250d6, shipped settings, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-p6rf-shipped`.
+
+### `reborn-room`
+
+Departure room, store keep and Recall curve (borg-reborn-rs #859, PR #864) on c7ea18df: ctl, shipped, room, recall, classes-18 at 300k.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_town_departure_free_slots` | `borg_param_town_departure_free_weight` | `borg_param_town_recall_curve_scale_percent` | `borg_param_town_store_keep_min` |
+| --- | --- | --- | --- | --- |
+| `reborn-room-ctl` | 0 | 0 | 0 | 0 |
+| `reborn-room-shipped` | – | – | – | – |
+| `reborn-room-room` | 2 | 50 | 0 | 0 |
+| `reborn-room-recall` | 0 | 0 | 110 | 0 |
+
+### `reborn-variety`
+
+Variety, more Recall and Phase Door (borg-reborn-rs #863) on 4290a7da: ctl, shipped, variety, kit, classes-18 at 300k.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_buy_recall_from_gold` | `borg_param_town_phase_reserve` | `borg_param_town_phase_reserve__blackguard` | `borg_param_town_phase_reserve__priest` | `borg_param_town_phase_reserve__ranger` | `borg_param_town_prepared_percent` | `borg_param_town_recall_reserve` | `borg_param_town_staple_ccw` | `borg_param_town_staple_clw` | `borg_param_town_staple_clw__blackguard` | `borg_param_town_staple_clw__druid` | `borg_param_town_staple_clw__mage` | `borg_param_town_staple_clw__necromancer` | `borg_param_town_staple_clw__paladin` | `borg_param_town_staple_clw__priest` | `borg_param_town_staple_clw__ranger` | `borg_param_town_staple_clw__rogue` | `borg_param_town_staple_clw__warrior` | `borg_param_town_staple_csw` | `borg_param_town_staple_csw__blackguard` | `borg_param_town_staple_csw__druid` | `borg_param_town_staple_csw__mage` | `borg_param_town_staple_csw__necromancer` | `borg_param_town_staple_csw__paladin` | `borg_param_town_staple_csw__priest` | `borg_param_town_staple_csw__ranger` | `borg_param_town_staple_csw__rogue` | `borg_param_town_staple_csw__warrior` | `borg_param_town_staple_food` | `borg_param_town_staple_light` | `borg_param_town_staple_oil` | `borg_param_town_staple_oil__blackguard` | `borg_param_town_staple_oil__druid` | `borg_param_town_staple_oil__mage` | `borg_param_town_staple_oil__necromancer` | `borg_param_town_staple_oil__paladin` | `borg_param_town_staple_oil__priest` | `borg_param_town_staple_oil__ranger` | `borg_param_town_staple_oil__rogue` | `borg_param_town_staple_oil__warrior` | `borg_param_town_staple_phase` | `borg_param_town_staple_phase__blackguard` | `borg_param_town_staple_phase__druid` | `borg_param_town_staple_phase__mage` | `borg_param_town_staple_phase__necromancer` | `borg_param_town_staple_phase__paladin` | `borg_param_town_staple_phase__priest` | `borg_param_town_staple_phase__ranger` | `borg_param_town_staple_phase__rogue` | `borg_param_town_staple_phase__warrior` | `borg_param_town_variety_min_depth` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-var-ctl` | 400 | 0 | 0 | 0 | 2 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `reborn-var-shipped` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-var-variety` | 400 | 0 | 0 | 0 | 2 | – | 1 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-var-kit` | – | – | – | – | – | 0 | – | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+### `reborn-throwpb`
+
+Thrown-object point-blank divisor (borg-reborn-rs #870) on e037588b: inherit (0) against throw1 (1), classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_throw_point_blank_divisor` |
+| --- | --- |
+| `reborn-throwpb-inherit` | 0 |
+| `reborn-throwpb-throw1` | 1 |
+
+### `reborn-healskip`
+
+Heal skip bands and the non-priest penalty (borg_caution.rs) on main f57499d0: ctl, nopen, half, always, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_heal_band1_skip_chance` | `borg_param_caution_heal_band2_skip_chance` | `borg_param_caution_heal_band3_skip_chance` | `borg_param_caution_heal_band4_skip_chance` | `borg_param_caution_heal_band5_skip_chance` | `borg_param_caution_heal_nonpriest_chance_penalty` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `reborn-healskip-ctl` | – | – | – | – | – | – |
+| `reborn-healskip-nopen` | – | – | – | – | – | 0 |
+| `reborn-healskip-half` | 49 | 48 | 40 | 25 | 12 | – |
+| `reborn-healskip-always` | – | 0 | 0 | 0 | 0 | 0 |
+
+### `reborn-despscary`
+
+Desperate walk to the stairs from a scary monster on main f57499d0: ctl, d8, d4, lvl10, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_desperate_scary_distance` | `borg_param_caution_desperate_scary_level` |
+| --- | --- | --- |
+| `reborn-despscary-ctl` | – | – |
+| `reborn-despscary-d8` | 8 | – |
+| `reborn-despscary-d4` | 4 | – |
+| `reborn-despscary-lvl10` | – | 10 |
+
+### `reborn-main-f57499d0`
+
+Ladder of borg-reborn-rs main f57499d0, shipped settings, one arm, classes-1800 (45+45+270+540+900), 100,000 turns.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-head-shipped`.
+
+### `reborn-lightbel`
+
+Engine light radius (#877) and unseen belief (#879) on a516df64: ctl, light1, light1-belief, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_cave_light_engine_radius` | `borg_param_unseen_belief` |
+| --- | --- | --- |
+| `reborn-lightbel-ctl` | – | – |
+| `reborn-lightbel-light1` | 1 | – |
+| `reborn-lightbel-light1-belief` | 1 | 1 |
+
+### `reborn-loneslow`
+
+borg-reborn-rs #878 (PR #891) on 296adfbf: 11 arms (lone slow attack, danger without fear, faint, unseen-bump phase, breeder bonus), classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_reserve_faint_percent` | `borg_param_attack_reserve_spell_damage_only` | `borg_param_caution_unseen_bump_phase_min_danger` | `borg_param_caution_unseen_bump_phase_turns` | `borg_param_danger_breeder_melee_extra_tenths` | `borg_param_escape_phase_lost_damage_only` | `borg_param_lone_slow_attack` |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-loneslow-ctl` | – | – | – | – | – | – | – |
+| `reborn-loneslow-lone` | – | – | – | – | – | – | 1 |
+| `reborn-loneslow-phase-nofear` | – | – | – | – | – | 1 | – |
+| `reborn-loneslow-reserve-nofear` | – | 1 | – | – | – | – | – |
+| `reborn-loneslow-faint25` | 25 | – | – | – | – | – | – |
+| `reborn-loneslow-bump-fresh` | – | – | – | 20 | – | – | – |
+| `reborn-loneslow-bump-danger` | – | – | 5 | – | – | – | – |
+| `reborn-loneslow-breeder5` | – | – | – | – | 5 | – | – |
+| `reborn-loneslow-breeder0` | – | – | – | – | 0 | – | – |
+| `reborn-loneslow-all` | 25 | 1 | 5 | 20 | – | 1 | 1 |
+| `reborn-loneslow-all-breeder5` | 25 | 1 | 5 | 20 | 5 | 1 | 1 |
+
+### `reborn-bhold`
+
+Slow-breeder hold rule (#882, PR #893) on 6062b84a in the breeders-x4 world: ctl, p4, hold, p6, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`, `borg_world = breeders-x4`.
+
+| Profile | `borg_param_caution_breeder_hold` | `borg_param_caution_breeder_policy` |
+| --- | --- | --- |
+| `reborn-bhold-ctl` | – | – |
+| `reborn-bhold-p4` | – | 4 |
+| `reborn-bhold-hold` | 1 | -1 |
+| `reborn-bhold-p6` | – | 6 |
+
+### `reborn-kitleash`
+
+Basic-kit mode (#840, PR #844 merged) on main f57499d0: 13 arms (kit_leash variants, kit, restock, start reserve, money first, kit-money-hunt, all), classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_kit_descent_min_percent` | `borg_param_kit_leash` | `borg_param_kit_leash_min` | `borg_param_kit_leash_power` | `borg_param_kit_leave_danger_percent` | `borg_param_kit_money_first` | `borg_param_kit_restock` | `borg_param_kit_restock_light_turns` | `borg_param_kit_start_reserve` | `borg_param_kit_start_reserve__blackguard` | `borg_param_kit_start_reserve__priest` | `borg_param_kit_start_reserve__ranger` | `borg_param_kit_start_reserve__rogue` | `borg_param_town_hunt` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-kitleash-ctl` | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-kitleash-leash` | – | 1 | 1 | 1 | – | – | – | – | – | – | – | – | – | – |
+| `reborn-kitleash-leash-p2` | – | 1 | – | 2 | – | – | – | – | – | – | – | – | – | – |
+| `reborn-kitleash-leash-m0` | – | 1 | 0 | 2 | – | – | – | – | – | – | – | – | – | – |
+| `reborn-kitleash-leash-m2` | – | 1 | 2 | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-kitleash-kit` | 50 | 1 | – | – | 25 | – | – | – | – | – | – | – | – | – |
+| `reborn-kitleash-a` | – | – | – | – | – | – | 1 | 500 | – | – | – | – | – | – |
+| `reborn-kitleash-b` | – | – | – | – | – | – | – | – | 1 | – | – | – | – | – |
+| `reborn-kitleash-b-classes` | – | – | – | – | – | – | – | – | – | 1 | 1 | 1 | 1 | – |
+| `reborn-kitleash-c` | – | 1 | – | – | – | 1 | – | – | – | – | – | – | – | – |
+| `reborn-kitleash-a+b` | – | – | – | – | – | – | 1 | – | 1 | – | – | – | – | – |
+| `reborn-kitleash-kit-money-hunt` | – | 1 | 2 | – | – | 1 | – | – | – | – | – | – | – | 1 |
+| `reborn-kitleash-all` | 50 | 1 | – | – | 25 | 1 | 1 | 500 | 1 | – | – | – | – | – |
+
+### `reborn-blow`
+
+Flight Recall blow model (#880, PR #892) on 201d56eb: blow-off against blow-on (shipped), classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_recall_blow_model` |
+| --- | --- |
+| `reborn-blow-blow-off` | 0 |
+| `reborn-blow-blow-on` | – |
+
+### `reborn-dev`
+
+Devices as variety (#895, PR #898) on 3020d451: ctl against shipped, classes-18 at 300k.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_town_device_percent` |
+| --- | --- |
+| `reborn-dev-ctl` | 0 |
+| `reborn-dev-shipped` | – |
+
+### `reborn-conf`
+
+Confused attacks by direction (#867, PR #868) on e8895f5e: ctl, confused, ctl-clw, confused-clw, confused-pb, classes-18 at 300k.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_confused_by_direction` | `borg_param_attack_throw_point_blank_divisor` | `borg_param_caution_confused_clw_cure` |
+| --- | --- | --- | --- |
+| `reborn-conf-ctl` | – | – | – |
+| `reborn-conf-confused` | 1 | – | – |
+| `reborn-conf-ctl-clw` | – | – | 1 |
+| `reborn-conf-confused-clw` | 1 | – | 1 |
+| `reborn-conf-confused-pb` | 1 | 1 | – |
+
+### `reborn-cursed-torch`
+
+Cursed torch direct swap (#899, PR #900) on c8f30e3c: shipped, classes-18 and the two repro starts.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-cursed-torch-shipped`.
+
+### `reborn-stairunk`
+
+Stair flights on known grids (#881, PR #897) on ea14528a: ctl, m1, m2 in breeders-x4 and breeders-x8, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_stairs_flight_unknown` | `borg_param_caution_stairs_flight_unknown_steps` | `borg_world` |
+| --- | --- | --- | --- |
+| `reborn-stairunk-ctl-x4` | – | – | breeders-x4 |
+| `reborn-stairunk-m1-x4` | 1 | 5 | breeders-x4 |
+| `reborn-stairunk-m2-x4` | 2 | – | breeders-x4 |
+| `reborn-stairunk-ctl-x8` | – | – | breeders-x8 |
+| `reborn-stairunk-m1-x8` | 1 | 5 | breeders-x8 |
+| `reborn-stairunk-m2-x8` | 2 | – | breeders-x8 |
+
+### `reborn-fastpur`
+
+borg-reborn-rs #907-#911 on 608d9fed: ctl, one arm per switch, walkcost-dh, all, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_desperate_fast_haste` | `borg_param_caution_desperate_walk_cost_percent` | `borg_param_caution_heal_lethal_over_max` | `borg_param_caution_heal_outmatched_before_walk` | `borg_param_caution_scary_take_distance` | `borg_param_caution_winning_fight_group_percent` | `borg_param_caution_winning_fight_margin_percent` | `borg_param_danger_observed_haste` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-fastpur-ctl` | – | – | – | – | – | – | – | – |
+| `reborn-fastpur-haste` | 1 | – | – | – | – | – | – | – |
+| `reborn-fastpur-dangerhaste` | – | – | – | – | – | – | – | 1 |
+| `reborn-fastpur-walkcost` | – | 100 | – | – | – | – | – | – |
+| `reborn-fastpur-walkcost-dh` | – | 100 | – | – | – | – | – | 1 |
+| `reborn-fastpur-healmax` | – | – | 1 | – | – | – | – | – |
+| `reborn-fastpur-healfirst` | – | – | – | 1 | – | – | – | – |
+| `reborn-fastpur-margin` | – | – | – | – | – | – | 20 | – |
+| `reborn-fastpur-group` | – | – | – | – | – | 100 | – | – |
+| `reborn-fastpur-take` | – | – | – | – | 5 | – | – | – |
+| `reborn-fastpur-all` | 1 | 100 | 1 | 1 | 5 | 100 | 20 | 1 |
+
+### `reborn-trackp-9085c266`
+
+Baseline of borg-reborn-rs track-p 9085c266, shipped settings, one arm, classes-1800 (45+45+270+540+900), 100,000 turns.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-head-shipped`.
+
+### `reborn-main-b34196c5`
+
+Baseline of borg-reborn-rs main b34196c5, shipped settings, one arm, classes-1800 (45+45+270), 100,000 turns.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-head-shipped`.
+
+### `reborn-kitlt`
+
+kit_leash on the track-p head 9085c266 (re-run of #589's lead): ctl, leash, leash-m0, kit, c.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_kit_descent_min_percent` | `borg_param_kit_leash` | `borg_param_kit_leash_min` | `borg_param_kit_leash_power` | `borg_param_kit_leave_danger_percent` | `borg_param_kit_money_first` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `reborn-kitlt-ctl` | – | – | – | – | – | – |
+| `reborn-kitlt-leash` | – | 1 | 1 | 1 | – | – |
+| `reborn-kitlt-leash-m0` | – | 1 | 0 | 2 | – | – |
+| `reborn-kitlt-kit` | 50 | 1 | – | – | 25 | – |
+| `reborn-kitlt-c` | – | 1 | – | – | – | 1 |
+
+### `reborn-trackp-4b2c2fcf`
+
+Baseline of borg-reborn-rs track-p 4b2c2fcf (cursed-torch swap and full-pack fix in), shipped settings, classes-1800 (45+45+270+540+900), 100,000 turns.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-head-shipped`.
+
+### `reborn-vrm`
+
+Re-measure of #863/#873 on the merged track-p e2d8919e: ctl, shipped, variety, kit, classes-18 at 300k.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_buy_recall_from_gold` | `borg_param_town_phase_reserve` | `borg_param_town_phase_reserve__blackguard` | `borg_param_town_phase_reserve__priest` | `borg_param_town_phase_reserve__ranger` | `borg_param_town_phase_reserve_percent` | `borg_param_town_prepared_percent` | `borg_param_town_recall_reserve` | `borg_param_town_staple_ccw` | `borg_param_town_staple_clw` | `borg_param_town_staple_clw__blackguard` | `borg_param_town_staple_clw__druid` | `borg_param_town_staple_clw__mage` | `borg_param_town_staple_clw__necromancer` | `borg_param_town_staple_clw__paladin` | `borg_param_town_staple_clw__priest` | `borg_param_town_staple_clw__ranger` | `borg_param_town_staple_clw__rogue` | `borg_param_town_staple_clw__warrior` | `borg_param_town_staple_csw` | `borg_param_town_staple_csw__blackguard` | `borg_param_town_staple_csw__druid` | `borg_param_town_staple_csw__mage` | `borg_param_town_staple_csw__necromancer` | `borg_param_town_staple_csw__paladin` | `borg_param_town_staple_csw__priest` | `borg_param_town_staple_csw__ranger` | `borg_param_town_staple_csw__rogue` | `borg_param_town_staple_csw__warrior` | `borg_param_town_staple_food` | `borg_param_town_staple_light` | `borg_param_town_staple_oil` | `borg_param_town_staple_oil__blackguard` | `borg_param_town_staple_oil__druid` | `borg_param_town_staple_oil__mage` | `borg_param_town_staple_oil__necromancer` | `borg_param_town_staple_oil__paladin` | `borg_param_town_staple_oil__priest` | `borg_param_town_staple_oil__ranger` | `borg_param_town_staple_oil__rogue` | `borg_param_town_staple_oil__warrior` | `borg_param_town_staple_phase` | `borg_param_town_staple_phase__blackguard` | `borg_param_town_staple_phase__druid` | `borg_param_town_staple_phase__mage` | `borg_param_town_staple_phase__necromancer` | `borg_param_town_staple_phase__paladin` | `borg_param_town_staple_phase__priest` | `borg_param_town_staple_phase__ranger` | `borg_param_town_staple_phase__rogue` | `borg_param_town_staple_phase__warrior` | `borg_param_town_variety_min_depth` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-vrm-ctl` | 400 | 0 | 0 | 0 | 2 | 100 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `reborn-vrm-shipped` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-vrm-variety` | 400 | 0 | 0 | 0 | 2 | 100 | – | 1 | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-vrm-kit` | – | – | – | – | – | – | 0 | – | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+### `reborn-flask`
+
+Flask saving (#912) on bf077c4a: ctl, save2, save2-noov, classes-18 at 300k.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_flask_saving` | `borg_param_attack_throw_point_blank_divisor__blackguard` | `borg_param_attack_throw_point_blank_divisor__paladin` | `borg_param_attack_throw_point_blank_divisor__rogue` | `borg_param_attack_throw_point_blank_divisor__warrior` |
+| --- | --- | --- | --- | --- | --- |
+| `reborn-flask-ctl` | – | – | – | – | – |
+| `reborn-flask-save2` | 2 | – | – | – | – |
+| `reborn-flask-save2-noov` | 2 | 1 | 1 | 1 | 1 |
+
+### `reborn-pbdtp`
+
+Ranger arrow point-blank divisor 1 against 2 on track-p e2d8919e (re-measure of #290): ctl, lo.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_arrow_point_blank_divisor__ranger` |
+| --- | --- |
+| `reborn-pbdtp-ctl` | – |
+| `reborn-pbdtp-lo` | 1 |
+
+### `reborn-cavesp`
+
+Five switches from the cave-spider death (#913-#916, #941) on 67a0c69d: 8 arms, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_emergency_speed_danger_percent` | `borg_param_caution_retreat_from_faster` | `borg_param_fast_fragile_by_stats` | `borg_param_fast_fragile_contact_max` | `borg_param_kill_grouped_names` | `borg_param_trait_timed_sync` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `reborn-cavesp-ctl` | – | – | – | – | – | – |
+| `reborn-cavesp-sync` | – | – | – | – | – | 1 |
+| `reborn-cavesp-sync-speed` | 50 | – | – | – | – | 1 |
+| `reborn-cavesp-retreat` | – | 1 | – | – | – | – |
+| `reborn-cavesp-grouped` | – | – | – | – | 1 | – |
+| `reborn-cavesp-stats` | – | – | 1 | – | – | – |
+| `reborn-cavesp-stats-contact` | – | – | 1 | 1 | – | – |
+| `reborn-cavesp-all` | 50 | 1 | – | 1 | 1 | 1 |
+
+### `reborn-wjelly`
+
+Four switches from the white-jelly death (#931-#934) on 172bd671: ctl, reach, osc, kill, poison, all, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_poisoned_no_cure_retreat_hp_percent` | `borg_param_caution_retreat_immobile_kill_turns` | `borg_param_caution_retreat_oscillation_limit` | `borg_param_caution_stairs_immobile_reach` |
+| --- | --- | --- | --- | --- |
+| `reborn-wjelly-ctl` | – | – | – | – |
+| `reborn-wjelly-reach` | – | – | – | 1 |
+| `reborn-wjelly-osc` | – | – | 3 | – |
+| `reborn-wjelly-kill` | – | 3 | – | – |
+| `reborn-wjelly-poison` | 75 | – | – | – |
+| `reborn-wjelly-all` | 75 | 3 | 3 | 1 |
+
+### `reborn-trackp-regression`
+
+The 37 starts that die on track-p 9085c266 and survive on main f57499d0, on the track-p head: shipped against attack_confused_by_direction 0, evidence retained.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_confused_by_direction` |
+| --- | --- |
+| `reborn-regress-shipped` | – |
+| `reborn-regress-confused0` | 0 |
+
+### `reborn-pbdtp2`
+
+Ranger arrow point-blank divisor 1 against 2 on track-p e2d8919e, rerun with attack_arrow_point_blank_divisor_ranger.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_arrow_point_blank_divisor_ranger` |
+| --- | --- |
+| `reborn-pbdtp2-ctl` | – |
+| `reborn-pbdtp2-lo` | 1 |
+
+### `reborn-lonew`
+
+The #878 switches in breeders-x4 and breeders-x8 on 296adfbf: ctl, lone, phase-nofear, breeder5, all, classes-18 (scenario companion of #626).
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_reserve_faint_percent` | `borg_param_attack_reserve_spell_damage_only` | `borg_param_caution_unseen_bump_phase_min_danger` | `borg_param_caution_unseen_bump_phase_turns` | `borg_param_danger_breeder_melee_extra_tenths` | `borg_param_escape_phase_lost_damage_only` | `borg_param_lone_slow_attack` | `borg_world` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-lonew-ctl-x4` | – | – | – | – | – | – | – | breeders-x4 |
+| `reborn-lonew-lone-x4` | – | – | – | – | – | – | 1 | breeders-x4 |
+| `reborn-lonew-phase-nofear-x4` | – | – | – | – | – | 1 | – | breeders-x4 |
+| `reborn-lonew-breeder5-x4` | – | – | – | – | 5 | – | – | breeders-x4 |
+| `reborn-lonew-all-x4` | 25 | 1 | 5 | 20 | – | 1 | 1 | breeders-x4 |
+| `reborn-lonew-ctl-x8` | – | – | – | – | – | – | – | breeders-x8 |
+| `reborn-lonew-lone-x8` | – | – | – | – | – | – | 1 | breeders-x8 |
+| `reborn-lonew-phase-nofear-x8` | – | – | – | – | – | 1 | – | breeders-x8 |
+| `reborn-lonew-breeder5-x8` | – | – | – | – | 5 | – | – | breeders-x8 |
+| `reborn-lonew-all-x8` | 25 | 1 | 5 | 20 | – | 1 | 1 | breeders-x8 |
+
+### `reborn-blloww`
+
+Flight Recall blow model in breeders-x4 and breeders-x8 on 201d56eb: blow-off, blow-on, classes-18 (scenario companion of #632).
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_recall_blow_model` | `borg_world` |
+| --- | --- | --- |
+| `reborn-blloww-blow-off-x4` | 0 | breeders-x4 |
+| `reborn-blloww-blow-on-x4` | – | breeders-x4 |
+| `reborn-blloww-blow-off-x8` | 0 | breeders-x8 |
+| `reborn-blloww-blow-on-x8` | – | breeders-x8 |
+
+### `reborn-zerohp`
+
+kill_live_zero_hp (#975, PR #994) on 1f4e9e89: ctl, zero, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_kill_live_zero_hp` |
+| --- | --- |
+| `reborn-zerohp-ctl` | – |
+| `reborn-zerohp-zero` | 1 |
+
+### `reborn-rest`
+
+borg_recover rest switches (#981, #982; PRs #998, #999) on ed6c7ab8: ctl, shot, cure, both, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_recover_rest_cure_distance` | `borg_param_recover_rest_cure_hp_percent` | `borg_param_recover_unseen_shot` |
+| --- | --- | --- | --- |
+| `reborn-rest-ctl` | – | – | – |
+| `reborn-rest-shot` | – | – | 1 |
+| `reborn-rest-cure` | 20 | 50 | – |
+| `reborn-rest-both` | 20 | 50 | 1 |
+
+### `reborn-ffq`
+
+Fast-fragile quantile, heal floor, dot (#926, PR #1002) on 8974509e: 7 arms, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_fast_fragile_count_dot` | `borg_param_fast_fragile_escape_percent` | `borg_param_fast_fragile_escape_quantile` | `borg_param_fast_fragile_heal_floor` |
+| --- | --- | --- | --- | --- |
+| `reborn-ffq-ctl` | – | – | – | – |
+| `reborn-ffq-q50` | – | – | 50 | – |
+| `reborn-ffq-esc75` | – | 75 | – | – |
+| `reborn-ffq-q100` | – | – | 100 | – |
+| `reborn-ffq-floor25` | – | – | – | 25 |
+| `reborn-ffq-dot` | 1 | – | – | – |
+| `reborn-ffq-q50-floor-dot` | 1 | – | 50 | 25 |
+
+### `reborn-overex`
+
+Emergency attack spell beyond the mana (#980, PR #991, re-synced to 80cf6bf4): ctl (1), noexert (0), faint100, Mages.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_reserve_faint_percent` | `borg_param_attack_reserve_spell_overexert` |
+| --- | --- | --- |
+| `reborn-overex-ctl` | – | – |
+| `reborn-overex-noexert` | – | 0 |
+| `reborn-overex-faint100` | 100 | – |
+
+### `reborn-unkcure`
+
+Unknown cures and the cure HP floor (#985, PR #1003) on b5b0f5fd: ctl, hold, floor, both, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_cure_hp_floor_percent` | `borg_param_sell_poor_town_unknown_hold` |
+| --- | --- | --- |
+| `reborn-unkcure-ctl` | – | – |
+| `reborn-unkcure-hold` | – | 1 |
+| `reborn-unkcure-floor` | 30 | – |
+| `reborn-unkcure-both` | 30 | 1 |
+
+### `reborn-rclshallow`
+
+Recall on shallow trips (#984, PR #997) on 434d5371: ctl, urgent, hold, both, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_recall_dl1_hold_up` | `borg_param_town_recall_urgent_depth` |
+| --- | --- | --- |
+| `reborn-rclshallow-ctl` | – | – |
+| `reborn-rclshallow-urgent` | – | 1 |
+| `reborn-rclshallow-hold` | 1 | – |
+| `reborn-rclshallow-both` | 1 | 1 |
+
+### `reborn-deadend`
+
+Retreat and back-up refuse a dead end (#881 part 2, PR #953) on b157f9dd: ctl, d1, d2 in breeders-x4 and breeders-x8, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_retreat_dead_end` | `borg_world` |
+| --- | --- | --- |
+| `reborn-deadend-ctl-x4` | – | breeders-x4 |
+| `reborn-deadend-d1-x4` | 1 | breeders-x4 |
+| `reborn-deadend-d2-x4` | 2 | breeders-x4 |
+| `reborn-deadend-ctl-x8` | – | breeders-x8 |
+| `reborn-deadend-d1-x8` | 1 | breeders-x8 |
+| `reborn-deadend-d2-x8` | 2 | breeders-x8 |
+
+### `reborn-retreat-flight`
+
+Stair routing after a tactical retreat (#932, PR #964) on e43b6d87: ctl, hold, classes-18 at 300k.
+
+| Profile | `borg_param_caution_retreat_reentry_ticks` |
+| --- | --- |
+| `reborn-retreat-flight-ctl` | – |
+| `reborn-retreat-flight-hold` | 128 |
+
+### `reborn-bfol`
+
+The three follow-ups of #878 (#1008-#1010) on bfc24d10: 7 arms in white-worm-mass-x4 and breeders-x4, classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_attack_price_status_blows` | `borg_param_caution_breeder_danger_damage_only` | `borg_param_lone_slow_attack` | `borg_param_lone_slow_breeder_lost` | `borg_world` |
+| --- | --- | --- | --- | --- | --- |
+| `reborn-bfol-ctl-wwm` | – | – | – | – | white-worm-mass-x4 |
+| `reborn-bfol-lone-wwm` | – | – | 1 | – | white-worm-mass-x4 |
+| `reborn-bfol-lost-wwm` | – | – | 1 | 1 | white-worm-mass-x4 |
+| `reborn-bfol-stand-wwm` | – | 1 | – | – | white-worm-mass-x4 |
+| `reborn-bfol-price-wwm` | 1 | – | – | – | white-worm-mass-x4 |
+| `reborn-bfol-stand-price-wwm` | 1 | 1 | – | – | white-worm-mass-x4 |
+| `reborn-bfol-all-wwm` | 1 | 1 | 1 | 1 | white-worm-mass-x4 |
+| `reborn-bfol-ctl-x4` | – | – | – | – | breeders-x4 |
+| `reborn-bfol-lone-x4` | – | – | 1 | – | breeders-x4 |
+| `reborn-bfol-lost-x4` | – | – | 1 | 1 | breeders-x4 |
+| `reborn-bfol-stand-x4` | – | 1 | – | – | breeders-x4 |
+| `reborn-bfol-price-x4` | 1 | – | – | – | breeders-x4 |
+| `reborn-bfol-stand-price-x4` | 1 | 1 | – | – | breeders-x4 |
+| `reborn-bfol-all-x4` | 1 | 1 | 1 | 1 | breeders-x4 |
+
+### `reborn-book`
+
+Keep the first spellbook before its first spell (#1004, PR #1019) on 5ad50d96: ctl, la4, small Rangers and Rogues.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_town_book_lookahead_levels` |
+| --- | --- |
+| `reborn-book-ctl` | – |
+| `reborn-book-la4` | 4 |
+
+### `reborn-trackp-206cf4e7`
+
+Baseline of borg-reborn-rs track-p 206cf4e7 (P7 fixes folded in, the grey mushroom fixes, P8 fixes so far), shipped settings, classes-1800 (45+45+270+540+900), 100,000 turns.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-head-shipped`.
+
+### `reborn-trackp-abd0cce1`
+
+Baseline of borg-reborn-rs track-p abd0cce1 (the newest build: the lone-slow bundle shipped, #1047), shipped settings, classes-1800 (45+45+270+540+900), 100,000 turns.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-head-shipped`.
+
+### `reborn-lbun`
+
+The lone-slow bundle and its parts on track-p 206cf4e7: ctl, all, reserve, faint, bump, all-minus-lone.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_reserve_faint_percent` | `borg_param_attack_reserve_spell_damage_only` | `borg_param_caution_unseen_bump_phase_min_danger` | `borg_param_caution_unseen_bump_phase_turns` | `borg_param_escape_phase_lost_damage_only` | `borg_param_lone_slow_attack` |
+| --- | --- | --- | --- | --- | --- | --- |
+| `reborn-lbun-ctl` | – | – | – | – | – | – |
+| `reborn-lbun-all` | 25 | 1 | 5 | 20 | 1 | 1 |
+| `reborn-lbun-reserve` | – | 1 | – | – | – | – |
+| `reborn-lbun-faint` | 25 | – | – | – | – | – |
+| `reborn-lbun-bump` | – | – | 5 | 20 | – | – |
+| `reborn-lbun-all-minus-lone` | 25 | 1 | 5 | 20 | 1 | – |
+
+### `reborn-kl206`
+
+Kit leash and town hunt on track-p 206cf4e7: ctl, leash-m0, leash, town-hunt, kit-money-hunt.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_kit_leash` | `borg_param_kit_leash_min` | `borg_param_kit_leash_power` | `borg_param_kit_money_first` | `borg_param_town_hunt` |
+| --- | --- | --- | --- | --- | --- |
+| `reborn-kl206-ctl` | – | – | – | – | – |
+| `reborn-kl206-leash-m0` | 1 | 0 | 2 | – | – |
+| `reborn-kl206-leash` | 1 | 1 | 1 | – | – |
+| `reborn-kl206-town-hunt` | – | – | – | – | 1 |
+| `reborn-kl206-kit-money-hunt` | 1 | 2 | – | 1 | 1 |
+
+### `reborn-pb206`
+
+Throw point-blank divisor 1 for warrior, paladin, rogue, blackguard on track-p 206cf4e7: ctl, all1.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_throw_point_blank_divisor__blackguard` | `borg_param_attack_throw_point_blank_divisor__paladin` | `borg_param_attack_throw_point_blank_divisor__rogue` | `borg_param_attack_throw_point_blank_divisor__warrior` |
+| --- | --- | --- | --- | --- |
+| `reborn-pb206-ctl` | – | – | – | – |
+| `reborn-pb206-all1` | 1 | 1 | 1 | 1 |
+
+### `reborn-li206`
+
+Engine light radius alone and with the day's leads on track-p 206cf4e7: ctl, light, light+lone, light+leash, light+throw, combined.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_reserve_faint_percent` | `borg_param_attack_reserve_spell_damage_only` | `borg_param_attack_throw_point_blank_divisor__blackguard` | `borg_param_attack_throw_point_blank_divisor__paladin` | `borg_param_attack_throw_point_blank_divisor__rogue` | `borg_param_attack_throw_point_blank_divisor__warrior` | `borg_param_caution_unseen_bump_phase_min_danger` | `borg_param_caution_unseen_bump_phase_turns` | `borg_param_cave_light_engine_radius` | `borg_param_escape_phase_lost_damage_only` | `borg_param_kit_leash` | `borg_param_kit_leash_min` | `borg_param_kit_leash_power` | `borg_param_lone_slow_attack` | `borg_param_town_hunt` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `reborn-li206-ctl` | – | – | – | – | – | – | – | – | – | – | – | – | – | – | – |
+| `reborn-li206-light` | – | – | – | – | – | – | – | – | 1 | – | – | – | – | – | – |
+| `reborn-li206-light+lone` | 25 | 1 | – | – | – | – | 5 | 20 | 1 | 1 | – | – | – | 1 | – |
+| `reborn-li206-light+leash` | – | – | – | – | – | – | – | – | 1 | – | 1 | 0 | 2 | – | – |
+| `reborn-li206-light+throw` | – | – | 1 | 1 | 1 | 1 | – | – | 1 | – | – | – | – | – | – |
+| `reborn-li206-combined` | 25 | 1 | 1 | 1 | 1 | 1 | 5 | 20 | 1 | 1 | 1 | 0 | 2 | 1 | 1 |
+
+### `reborn-ks206`
+
+Kill-on-sight floor and unknown-potion test in the normal world on track-p 206cf4e7: ctl, floor0, potions0, both0.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_kill_on_sight_min_hp_percent` | `borg_param_item_test_unknown_potions` |
+| --- | --- | --- |
+| `reborn-ks206-ctl` | – | – |
+| `reborn-ks206-floor0` | 0 | – |
+| `reborn-ks206-potions0` | – | 0 |
+| `reborn-ks206-both0` | 0 | 0 |
+
+### `reborn-belief`
+
+unseen_belief (#879, borg-reborn-rs #890, a must ship) and the engine light radius (#877) on track-p f8725bc0: ctl, light, belief, light+belief, light+belief-decay5; pilot then full (900 starts).
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_cave_light_engine_radius` | `borg_param_unseen_belief` | `borg_param_unseen_decay_percent` |
+| --- | --- | --- | --- |
+| `reborn-bel-ctl` | – | – | – |
+| `reborn-bel-light` | 1 | – | – |
+| `reborn-bel-belief` | – | 1 | – |
+| `reborn-bel-light+belief` | 1 | 1 | – |
+| `reborn-bel-light+belief-decay5` | 1 | 1 | 5 |
+
+### `reborn-leash-dl1`
+
+Why the kit leash adds DL1 deaths: 49 death starts of #702's full tier replayed to 25,000 turns with notes on track-p 206cf4e7: ctl, light, leash, light+leash.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_cave_light_engine_radius` | `borg_param_kit_leash` | `borg_param_kit_leash_min` | `borg_param_kit_leash_power` |
+| --- | --- | --- | --- | --- |
+| `reborn-ldl1-ctl` | – | – | – | – |
+| `reborn-ldl1-light` | 1 | – | – | – |
+| `reborn-ldl1-leash` | – | 1 | 0 | 2 |
+| `reborn-ldl1-light+leash` | 1 | 1 | 0 | 2 |
+
+### `reborn-light-ladder`
+
+Light radius (cave_light_engine_radius 1) against ctl on classes-1800 starts 1-900 at track-p 206cf4e7: second block for the depth cost seen on starts 901-1800.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_cave_light_engine_radius` |
+| --- | --- |
+| `reborn-li206-ctl` | – |
+| `reborn-li206-light` | 1 |
+
+### `reborn-leash-holes`
+
+The three stair-leash switches of #1062 (any stair, unknown-stair steps, teleported Recall) on 12fe36d8: ctl, any, unknown, recall, leash3; classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_flow_leash_any_stair` | `borg_param_flow_leash_teleported_recall` | `borg_param_flow_leash_unknown_stair_steps` |
+| --- | --- | --- | --- |
+| `reborn-lhole-ctl` | – | – | – |
+| `reborn-lhole-any` | 1 | – | – |
+| `reborn-lhole-unknown` | – | – | 20 |
+| `reborn-lhole-recall` | – | 1 | – |
+| `reborn-lhole-leash3` | 1 | 1 | 20 |
+
+### `reborn-heal-quaff`
+
+Town heal speed 100 and the quaff bonus 200 (#845, PR #848) on 925fc5d7: ctl, speed100, quaff200; classes-18 at 300,000 turns.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_town_heal_quaff_bonus_percent` | `borg_param_town_heal_speed_percent` |
+| --- | --- | --- |
+| `reborn-hq-ctl` | – | – |
+| `reborn-hq-speed100` | – | 100 |
+| `reborn-hq-quaff200` | 200 | – |
+
+### `reborn-short-gold`
+
+Short-gold shopping with held oil (#828, PR #854) on b8605b5c: ctl, shortgold; classes-18.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_town_short_gold` |
+| --- | --- |
+| `reborn-sg-ctl` | 0 |
+| `reborn-sg-shortgold` | 1 |
+
+### `reborn-light-priest`
+
+Why the light radius slows Priests: the 63 slow Priest starts of the light ladder replayed to 60,000 turns with notes: ctl, light on 206cf4e7.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_cave_light_engine_radius` |
+| --- | --- |
+| `reborn-li206-ctl` | – |
+| `reborn-li206-light` | 1 |
+
+### `reborn-ff-ratio`
+
+Fast-fragile heal ratio 30 (shipped) against 0 (#1065, PR #1089) on c7e55e1d: ctl, ratio0.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_fast_fragile_heal_min_ratio` |
+| --- | --- |
+| `reborn-ffr-ctl` | – |
+| `reborn-ffr-ratio0` | 0 |
+
+### `reborn-ff-dot`
+
+Fast-fragile own cut and poison (count_dot 1, #1028) on track-p 8f32a8a0: ctl, dot.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_fast_fragile_count_dot` |
+| --- | --- |
+| `reborn-ffd-ctl` | – |
+| `reborn-ffd-dot` | 1 |
+
+### `reborn-kos-cure`
+
+attack_kill_on_sight_floor_cure 1 (shipped) against 0 (#1064, PR #1082) on bc215cf8: patches-x8 and the normal world; ctl, cure0.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_attack_kill_on_sight_floor_cure` | `borg_world` |
+| --- | --- | --- |
+| `reborn-kos-ctl-x8` | – | patches-x8 |
+| `reborn-kos-cure0-x8` | 0 | patches-x8 |
+| `reborn-kos-ctl` | – | – |
+| `reborn-kos-cure0` | 0 | – |
+
+### `reborn-ffb769`
+
+The #926 fast-fragile bundle (escape quantile 75, heal floor 50, count_dot 1) and its three parts on track-p 769f3fbd: ctl, bundle, q75, floor50, dot.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_fast_fragile_count_dot` | `borg_param_fast_fragile_escape_quantile` | `borg_param_fast_fragile_heal_floor` |
+| --- | --- | --- | --- |
+| `reborn-ffb769-ctl` | – | – | – |
+| `reborn-ffb769-bundle` | 1 | 75 | 50 |
+| `reborn-ffb769-q75` | – | 75 | – |
+| `reborn-ffb769-floor50` | – | – | 50 |
+| `reborn-ffb769-dot` | 1 | – | – |
+
+### `reborn-bfs`
+
+Breadth-first exploration on (shipped, #1088) against off (explore_breadth_first 0, arm bfs0) on track-p 1c071812: ctl, bfs0.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_explore_breadth_first` |
+| --- | --- |
+| `reborn-bfs-ctl` | – |
+| `reborn-bfs-bfs0` | 0 |
+
+### `reborn-phase`
+
+The two #1066 Phase Door switches (unknown_scary, newcomer_wait), shipped on in #1096 on track-p 6cd5c8bf: shipped, phase0 (both 0), unknown, newcomer.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_escape_phase_newcomer_wait` | `borg_param_escape_phase_unknown_scary` |
+| --- | --- | --- |
+| `reborn-ph-shipped` | 1 | 1 |
+| `reborn-ph-phase0` | 0 | 0 |
+| `reborn-ph-unknown` | 0 | 1 |
+| `reborn-ph-newcomer` | 1 | 0 |
+
+### `reborn-mixed`
+
+Mixed exploration (explore_mixed, #1098, PR #1117) on 3a2d2215: ctl, mixed, nobfs, mixed-alone, mixed-tight, mixed-loose.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_explore_breadth_first` | `borg_param_explore_mix_contact_damage` | `borg_param_explore_mixed` |
+| --- | --- | --- | --- |
+| `reborn-mx-ctl` | – | – | – |
+| `reborn-mx-mixed` | – | – | 1 |
+| `reborn-mx-nobfs` | 0 | – | – |
+| `reborn-mx-mixed-alone` | 0 | – | 1 |
+| `reborn-mx-mixed-tight` | – | 8 | 1 |
+| `reborn-mx-mixed-loose` | – | 3 | 1 |
+
+### `reborn-food-bfs`
+
+Food forecasts after the Hungry biscuit fix (#1109) on f0e13e99: ctl0 (breadth-first off), bfs1 (on); classes-18 with evidence.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_explore_breadth_first` |
+| --- | --- |
+| `reborn-food-ctl0` | 0 |
+| `reborn-food-bfs1` | 1 |
+
+### `reborn-ffb-ladder`
+
+Confirmation block for the fast-fragile bundle lead on 769f3fbd: ctl, bundle on classes-1800 starts 1-900.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_fast_fragile_count_dot` | `borg_param_fast_fragile_escape_quantile` | `borg_param_fast_fragile_heal_floor` |
+| --- | --- | --- | --- |
+| `reborn-ffb769-ctl` | – | – | – |
+| `reborn-ffb769-bundle` | 1 | 75 | 50 |
+
+### `reborn-bfs-ladder`
+
+Breadth-first on (shipped) vs off, second block, classes-1800 starts 1-900 on 1c071812: ctl, bfs0.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_explore_breadth_first` |
+| --- | --- |
+| `reborn-bfs-ctl` | – |
+| `reborn-bfs-bfs0` | 0 |
+
+### `reborn-leash-holes-vs`
+
+The stair-leash switches of #1062 on 12fe36d8, classes-1800 starts 1-45.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_flow_leash_any_stair` | `borg_param_flow_leash_teleported_recall` | `borg_param_flow_leash_unknown_stair_steps` |
+| --- | --- | --- | --- |
+| `reborn-lhole-ctl` | – | – | – |
+| `reborn-lhole-any` | 1 | – | – |
+| `reborn-lhole-unknown` | – | – | 20 |
+| `reborn-lhole-recall` | – | 1 | – |
+| `reborn-lhole-leash3` | 1 | 1 | 20 |
+
+### `reborn-ss9276`
+
+stair_scum on the shipped build 9276b75a (PR #1090): shipped, noscum, nobfs, neither on classes-18 and classes-1800 starts 1-900.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_explore_breadth_first` | `borg_param_stair_scum` |
+| --- | --- | --- |
+| `reborn-ss9276-shipped` | – | – |
+| `reborn-ss9276-noscum` | – | 0 |
+| `reborn-ss9276-nobfs` | 0 | – |
+| `reborn-ss9276-neither` | 0 | 0 |
+
+### `reborn-ro-tp`
+
+caution_ranged_only 1 and caution_ranged_vs_immobile 2 on track-p 1c071812: ctl, ranged, immobile2 in the normal world and patches-x8.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_ranged_only` | `borg_param_caution_ranged_vs_immobile` | `borg_world` |
+| --- | --- | --- | --- |
+| `reborn-ro-ctl` | – | – | – |
+| `reborn-ro-ranged` | 1 | – | – |
+| `reborn-ro-immobile2` | – | 2 | – |
+| `reborn-ro-ctl-x8` | – | – | patches-x8 |
+| `reborn-ro-ranged-x8` | 1 | – | patches-x8 |
+| `reborn-ro-immobile2-x8` | – | 2 | patches-x8 |
+
+### `reborn-paralyser`
+
+The #1125 paralyser switches (PR #1129, 173156ac): ctl, lost, walk, all.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_paralyser_no_reach` | `borg_param_caution_paralyser_step_away` | `borg_param_caution_remember_never_move` | `borg_param_escape_paralyser_fight_lost` |
+| --- | --- | --- | --- | --- |
+| `reborn-par-ctl` | – | – | – | – |
+| `reborn-par-lost` | – | – | – | 1 |
+| `reborn-par-walk` | 1 | 1 | 1 | – |
+| `reborn-par-all` | 1 | 1 | 1 | 1 |
+
+### `reborn-perception`
+
+Stale light and sight through rubble (#885, #917, PR #1128, 7bfbe121): ctl, dark, rubble, both.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_update_dark_clears_light` | `borg_param_view_rubble_blocks_sight` |
+| --- | --- | --- |
+| `reborn-per-ctl` | – | – |
+| `reborn-per-dark` | 1 | – |
+| `reborn-per-rubble` | – | 1 |
+| `reborn-per-both` | 1 | 1 |
+
+### `reborn-trap`
+
+The #1067 trap rules, shipped on (PR #1086, 91dd0d0a): ctl, trapoff, way, recover, noleave.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_trap_leave_level_count` | `borg_param_trap_recover` | `borg_param_trap_way_back` |
+| --- | --- | --- | --- |
+| `reborn-trap-ctl` | – | – | – |
+| `reborn-trap-trapoff` | 0 | 0 | 0 |
+| `reborn-trap-way` | 0 | 0 | – |
+| `reborn-trap-recover` | 0 | – | 0 |
+| `reborn-trap-noleave` | 0 | – | – |
+
+### `reborn-t1134`
+
+Phase threshold 50, confusion CLW cure, retreat breaker, prepared remedy 50 on track-p 1c071812 (borg-reborn-rs #1134): ctl, phase50, conf, osc, prep50, all.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_caution_confused_clw_cure` | `borg_param_caution_retreat_oscillation_backaway` | `borg_param_caution_retreat_oscillation_limit` | `borg_param_escape_phase_lost_danger_percent` | `borg_param_town_prepared_percent` |
+| --- | --- | --- | --- | --- | --- |
+| `reborn-t1134-ctl` | – | – | – | – | – |
+| `reborn-t1134-phase50` | – | – | – | 50 | – |
+| `reborn-t1134-conf` | 1 | – | – | – | – |
+| `reborn-t1134-osc` | – | 1 | 3 | – | – |
+| `reborn-t1134-prep50` | – | – | – | – | 50 |
+| `reborn-t1134-all` | 1 | 1 | 3 | 50 | – |
+
+### `reborn-mixed40`
+
+Mixed exploration, C's leave-when-done and the old bfs stay (#1098, PR #1117) on 40c3bcc8: ctl, cexit, bfs-stay, mixed, nobfs, mixed-alone, mixed-tight, mixed-loose.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_explore_bfs_leave_when_done` | `borg_param_explore_breadth_first` | `borg_param_explore_c_leave_when_done` | `borg_param_explore_mix_contact_damage` | `borg_param_explore_mixed` |
+| --- | --- | --- | --- | --- | --- |
+| `reborn-mx40-ctl` | – | – | – | – | – |
+| `reborn-mx40-cexit` | – | – | 1 | – | – |
+| `reborn-mx40-bfs-stay` | 0 | – | – | – | – |
+| `reborn-mx40-mixed` | – | – | – | – | 1 |
+| `reborn-mx40-nobfs` | – | 0 | – | – | – |
+| `reborn-mx40-mixed-alone` | – | 0 | – | – | 1 |
+| `reborn-mx40-mixed-tight` | – | – | – | 8 | 1 |
+| `reborn-mx40-mixed-loose` | – | – | – | 3 | 1 |
+
+### `reborn-trackp-353f5c09`
+
+Baseline ladder of track-p at its current head 353f5c09 (2026-11-23): shipped settings, classes-1800 starts 1-1800.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+Profiles: `reborn-head-shipped`.
+
+### `reborn-dp`
+
+deal_with_poison (#1140, PR #1146, 1909efb9) in poison-x8 and the normal world: ctl, deal.
+
+Every arm: `borg_reborn_core = borg-rs`, `borg_reborn_errand = none`.
+
+| Profile | `borg_param_deal_with_poison` | `borg_world` |
+| --- | --- | --- |
+| `reborn-dp-ctl` | – | – |
+| `reborn-dp-deal` | 1 | – |
+| `reborn-dp-ctl-x8` | – | poison-x8 |
+| `reborn-dp-deal-x8` | 1 | poison-x8 |
+
 ## Settings you have built arms with
 
 Only the settings that differ between the arms of a shortcut.
 
 | Setting | Values used | Shortcuts | What it does, and what we learned |
 | --- | --- | --- | --- |
-| `borg_plan` | errands_plan.txt, errands_plan_ambitious.txt, not set | `heal-pilot-12`, `maxdepth-2x5`, `reborn-5arm-town`, `reborn-3x3-trip`, `reborn-5arm-shop` | The errands plan the Borg follows. Loop-levels plans up to `d3ebe3c0`: the errands plan added caster deaths with the town planner (borg-cemetery#19). Max-depth caps from `6d1bca10` (#440): a cap is a preparation check, not a hard limit; 35 of 900 games died or ended below it (#147). |
-| `borg_town_plan` | 0, 1 | `reborn-5arm-town`, `reborn-3x3-trip`, `reborn-5arm-shop`, `rs-additive-6` | "New inventory": the live town planner. Alone it looked best in the #123 small tier (15 deaths v control 22 of 90). |
-| `borg_trip_policy` | 0, 1 | `heal-pilot-12`, `maxdepth-2x5`, `reborn-3x3-trip`, `reborn-5arm-shop`, `rs-additive-6` | Extra reasons to return to town. Barely changes play: 42 of 54 paired pilot games identical. Kept off in #123's development arms until it is shown to help (owner). From `8a0b57c8` it is borg-rs#88's additive policy. |
-| `borg_trip_unknown_stacks` | 0, 2, 3, 4, not set | `maxdepth-2x5`, `rs-additive-6` | Return when this many carried stacks are unidentified (default 4). Changes play: (3,x) differs from return-off in about 40% of games; (5,1) played like return-off in 26-27 of 30 starts. |
-| `borg_trip_pack_slack` | 0, 1, 2, not set | `maxdepth-2x5`, `rs-additive-6` | Return when this few pack slots are free (default 2). Almost no effect: 1 and 2 played identical keys in 359 of 360 #147 games. |
+| `borg_plan` | errands_plan.txt, errands_plan_ambitious.txt, not set | `heal-pilot-12`, `maxdepth-2x5`, `reborn-5arm-town`, `reborn-3x3-trip`, `reborn-5arm-shop`, `reborn-bundle`, `reborn-errands-main`, `reborn-errands-floor3`, `reborn-rebase-main`, `reborn-death-bank38` | The errands plan the Borg follows. Loop-levels plans up to `d3ebe3c0`: the errands plan added caster deaths with the town planner (borg-cemetery#19). Max-depth caps from `6d1bca10` (#440): a cap is a preparation check, not a hard limit; 35 of 900 games died or ended below it (#147). |
+| `borg_town_plan` | 0, 1, not set | `reborn-5arm-town`, `reborn-3x3-trip`, `reborn-5arm-shop`, `rs-additive-6`, `reborn-bundle` | "New inventory": the live town planner. Alone it looked best in the #123 small tier (15 deaths v control 22 of 90). |
+| `borg_trip_policy` | 0, 1, not set | `heal-pilot-12`, `maxdepth-2x5`, `reborn-3x3-trip`, `reborn-5arm-shop`, `rs-additive-6`, `reborn-bundle` | Extra reasons to return to town. Barely changes play: 42 of 54 paired pilot games identical. Kept off in #123's development arms until it is shown to help (owner). From `8a0b57c8` it is borg-rs#88's additive policy. |
+| `borg_trip_unknown_stacks` | 0, 2, 3, 4, 5, not set | `maxdepth-2x5`, `rs-additive-6`, `reborn-bundle` | Return when this many carried stacks are unidentified (default 4). Changes play: (3,x) differs from return-off in about 40% of games; (5,1) played like return-off in 26-27 of 30 starts. |
+| `borg_trip_pack_slack` | 0, 1, 2, not set | `maxdepth-2x5`, `rs-additive-6`, `reborn-bundle` | Return when this few pack slots are free (default 2). Almost no effect: 1 and 2 played identical keys in 359 of 360 #147 games. |
 | `borg_reborn_errand` | ladder, none | `reborn-errand-ladder` | The errand over the core: `none`, or a command such as `ladder` (the class ladders). The ladder looked better in the option-C pilot (24.9% v 29.1% deaths, descriptive). |
-| `borg_param_caution_heal_when_outmatched` | 1, not set | `heal-attack-4`, `heal-pilot-12` | A hurt Borg in lethal danger with no escape drinks its best cure potion (#151). Waits for borg-reborn-rs #461. |
-| `borg_param_attack_preference_blackguard_melee_permille` | 1600, not set | `heal-attack-4` |  |
-| `borg_param_attack_preference_blackguard_spell_permille` | 1400, not set | `heal-attack-4` |  |
-| `borg_param_attack_preference_druid_spell_permille` | 1700, not set | `heal-attack-4` |  |
-| `borg_param_attack_preference_mage_device_permille` | 1200, not set | `heal-attack-4` |  |
-| `borg_param_attack_preference_mage_spell_permille` | 2000, not set | `heal-attack-4` |  |
-| `borg_param_attack_preference_necromancer_device_permille` | 1200, not set | `heal-attack-4` |  |
-| `borg_param_attack_preference_necromancer_spell_permille` | 1800, not set | `heal-attack-4` |  |
-| `borg_param_attack_preference_paladin_melee_permille` | 1800, not set | `heal-attack-4` |  |
-| `borg_param_attack_preference_paladin_spell_permille` | 1200, not set | `heal-attack-4` |  |
-| `borg_param_attack_preference_priest_spell_permille` | 1700, not set | `heal-attack-4` |  |
-| `borg_param_attack_preference_ranger_projectile_permille` | 2000, not set | `heal-attack-4` |  |
-| `borg_param_attack_preference_rogue_projectile_permille` | 1300, not set | `heal-attack-4` |  |
-| `borg_param_attack_preference_rogue_thrown_permille` | 1600, not set | `heal-attack-4` |  |
-| `borg_param_attack_preference_warrior_melee_permille` | 1800, not set | `heal-attack-4` |  |
-| `borg_param_attack_preference_warrior_projectile_permille` | 1200, not set | `heal-attack-4` |  |
-| `borg_param_attack_preference_warrior_thrown_permille` | 1200, not set | `heal-attack-4` |  |
+| `borg_param_caution_heal_when_outmatched` | 0, 1, not set | `heal-attack-4`, `heal-pilot-12`, `reborn-outmatched`, `reborn-bundle` | A hurt Borg in lethal danger with no escape drinks its best cure potion (#151). Waits for borg-reborn-rs #461. |
+| `borg_money_scum_amount` | 500, 1000, 2000, not set | `reborn-townscum` |  |
+| `borg_param_attack_arrow_point_blank_divisor__ranger` | 1, not set | `reborn-pbdtp` |  |
+| `borg_param_attack_arrow_point_blank_divisor_blackguard` | 2, 10, not set | `reborn-pbd-by-class` |  |
+| `borg_param_attack_arrow_point_blank_divisor_druid` | 2, 10, not set | `reborn-pbd-by-class` |  |
+| `borg_param_attack_arrow_point_blank_divisor_mage` | 2, 10, not set | `reborn-pbd-by-class` |  |
+| `borg_param_attack_arrow_point_blank_divisor_necromancer` | 2, 10, not set | `reborn-pbd-by-class` |  |
+| `borg_param_attack_arrow_point_blank_divisor_paladin` | 2, 10, not set | `reborn-pbd-by-class` |  |
+| `borg_param_attack_arrow_point_blank_divisor_priest` | 2, 10, not set | `reborn-pbd-by-class` |  |
+| `borg_param_attack_arrow_point_blank_divisor_ranger` | 0, 1, 3, 4, not set | `reborn-pbd-by-class`, `reborn-pbd-rr`, `reborn-bundle`, `reborn-pbdtp2` |  |
+| `borg_param_attack_arrow_point_blank_divisor_rogue` | 0, 2, 4, 6, not set | `reborn-pbd-by-class`, `reborn-pbd-rr` |  |
+| `borg_param_attack_arrow_point_blank_divisor_warrior` | 2, 10, not set | `reborn-pbd-by-class` |  |
+| `borg_param_attack_confused_by_direction` | 0, 1, not set | `reborn-conf`, `reborn-trackp-regression` |  |
+| `borg_param_attack_flask_saving` | 2, not set | `reborn-flask` |  |
+| `borg_param_attack_kill_on_sight_floor_cure` | 0, not set | `reborn-kos-cure` |  |
+| `borg_param_attack_kill_on_sight_min_hp_percent` | 0, not set | `reborn-ks206` |  |
+| `borg_param_attack_on_sight` | 0, 1, not set | `reborn-fight-recall`, `reborn-attacksight`, `reborn-adopted`, `reborn-adopted-600`, `reborn-ship3` |  |
+| `borg_param_attack_preference_blackguard_activation_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_blackguard_device_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_blackguard_melee_permille` | 1000, 1300, 1600, 1900, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle` |  |
+| `borg_param_attack_preference_blackguard_projectile_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_blackguard_spell_permille` | 1000, 1200, 1400, 1600, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle` |  |
+| `borg_param_attack_preference_blackguard_thrown_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_druid_activation_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_druid_device_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_druid_melee_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_druid_projectile_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_druid_spell_permille` | 1000, 1350, 1700, 2000, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle` |  |
+| `borg_param_attack_preference_druid_thrown_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_mage_activation_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_mage_device_permille` | 1000, 1100, 1200, 1300, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle` |  |
+| `borg_param_attack_preference_mage_melee_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_mage_projectile_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_mage_spell_permille` | 1000, 1500, 1600, 2000, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle`, `reborn-mage-priest`, `reborn-receipt` |  |
+| `borg_param_attack_preference_mage_thrown_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_necromancer_activation_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_necromancer_device_permille` | 1000, 1100, 1200, 1300, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle` |  |
+| `borg_param_attack_preference_necromancer_melee_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_necromancer_projectile_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_necromancer_spell_permille` | 1000, 1400, 1800, 2000, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle` |  |
+| `borg_param_attack_preference_necromancer_thrown_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_paladin_activation_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_paladin_device_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_paladin_melee_permille` | 1000, 1400, 1800, 2000, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle` |  |
+| `borg_param_attack_preference_paladin_projectile_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_paladin_spell_permille` | 1000, 1100, 1200, 1300, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle` |  |
+| `borg_param_attack_preference_paladin_thrown_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_priest_activation_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_priest_device_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_priest_melee_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_priest_projectile_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_priest_spell_permille` | 1000, 1350, 1500, 1700, 2000, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle`, `reborn-mage-priest` |  |
+| `borg_param_attack_preference_priest_thrown_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_ranger_activation_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_ranger_device_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_ranger_melee_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_ranger_projectile_permille` | 1000, 1500, 2000, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle` |  |
+| `borg_param_attack_preference_ranger_spell_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_ranger_thrown_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_rogue_activation_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_rogue_device_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_rogue_melee_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_rogue_projectile_permille` | 1000, 1150, 1300, 1450, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle` |  |
+| `borg_param_attack_preference_rogue_spell_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_rogue_thrown_permille` | 1000, 1300, 1600, 1900, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle` |  |
+| `borg_param_attack_preference_thrown_permille` | 1500, not set | `reborn-casters`, `reborn-crow-escape` |  |
+| `borg_param_attack_preference_warrior_activation_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_warrior_device_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_warrior_melee_permille` | 1000, 1400, 1800, 2000, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle` |  |
+| `borg_param_attack_preference_warrior_projectile_permille` | 1000, 1100, 1200, 1300, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle` |  |
+| `borg_param_attack_preference_warrior_spell_permille` | 500, 750, not set | `reborn-attack-focus` |  |
+| `borg_param_attack_preference_warrior_thrown_permille` | 1000, 1100, 1200, 1300, not set | `heal-attack-4`, `reborn-attack-by-class`, `reborn-bundle` |  |
+| `borg_param_attack_reserve_faint_percent` | 25, 100, not set | `reborn-loneslow`, `reborn-lonew`, `reborn-overex`, `reborn-lbun`, `reborn-li206` |  |
+| `borg_param_attack_reserve_spell_damage_only` | 1, not set | `reborn-loneslow`, `reborn-lonew`, `reborn-lbun`, `reborn-li206` |  |
+| `borg_param_attack_reserve_spell_overexert` | 0, not set | `reborn-overex` |  |
+| `borg_param_attack_speed_fight_danger_tenths` | 30, 60, not set | `reborn-bundle` |  |
+| `borg_param_attack_throw_as_melee` | 0, not set | `reborn-shipcheck-b895` |  |
+| `borg_param_attack_throw_point_blank_divisor` | 0, 1, not set | `reborn-throwpb`, `reborn-conf` |  |
+| `borg_param_attack_throw_point_blank_divisor__blackguard` | 1, not set | `reborn-flask`, `reborn-pb206`, `reborn-li206` |  |
+| `borg_param_attack_throw_point_blank_divisor__paladin` | 1, not set | `reborn-flask`, `reborn-pb206`, `reborn-li206` |  |
+| `borg_param_attack_throw_point_blank_divisor__rogue` | 1, not set | `reborn-flask`, `reborn-pb206`, `reborn-li206` |  |
+| `borg_param_attack_throw_point_blank_divisor__warrior` | 1, not set | `reborn-flask`, `reborn-pb206`, `reborn-li206` |  |
+| `borg_param_attack_town_dangerous_bonus_percent` | 600, not set | `reborn-town-dangerous` |  |
+| `borg_param_attack_town_dangerous_bonus_whole` | 1, not set | `reborn-town-switch-screen`, `reborn-townkos` |  |
+| `borg_param_attack_town_dangerous_caster_walk` | 1, not set | `reborn-town-switch-screen`, `reborn-townkos` |  |
+| `borg_param_attack_town_dangerous_min_damage` | 3, not set | `reborn-town-dangerous` |  |
+| `borg_param_attack_town_dangerous_on_sight` | 0, 1, not set | `reborn-town-dangerous`, `reborn-neutral-main`, `reborn-town-switch-screen`, `reborn-townkos` |  |
+| `borg_param_attack_town_dangerous_wand` | 1, not set | `reborn-town-switch-screen`, `reborn-townkos` |  |
+| `borg_param_buy_recall_from_gold` | 400, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_caution_attack_price_status_blows` | 1, not set | `reborn-bfol` |  |
+| `borg_param_caution_breeder_avoid` | 0, 1, not set | `reborn-breeder-stoppable`, `reborn-breederstop-dbc`, `reborn-breeder-world-x4` |  |
+| `borg_param_caution_breeder_boost_danger_tenths` | 0, not set | `reborn-sloo` |  |
+| `borg_param_caution_breeder_danger_damage_only` | 1, not set | `reborn-bfol` |  |
+| `borg_param_caution_breeder_easy_escape_steps` | 3, 10, not set | `reborn-untested-caution` |  |
+| `borg_param_caution_breeder_exit` | 1, not set | `reborn-breeder-world-x4` |  |
+| `borg_param_caution_breeder_hold` | 1, not set | `reborn-bhold` |  |
+| `borg_param_caution_breeder_policy` | -1, 0, 1, 2, 3, 4, 5, 6, not set | `reborn-breeder-policy-x4`, `reborn-breederpol`, `reborn-bhold` |  |
+| `borg_param_caution_breeder_stoppable` | 0, 1, not set | `reborn-breeder-stoppable`, `reborn-breederstop-dbc`, `reborn-breeder-world-x4` |  |
+| `borg_param_caution_confused_clw_cure` | 1, not set | `reborn-confusion`, `reborn-immfix`, `reborn-rangedonly`, `reborn-conf`, `reborn-t1134` |  |
+| `borg_param_caution_confused_cure_before_walk` | 1, 2, not set | `reborn-confusion`, `reborn-immfix`, `reborn-rangedonly` |  |
+| `borg_param_caution_confusion_cure_when_stuck` | 1, not set | `reborn-confusion`, `reborn-immfix` |  |
+| `borg_param_caution_cornered_throw_first` | 0, not set | `reborn-sloo` |  |
+| `borg_param_caution_cure_hp_floor_percent` | 30, not set | `reborn-unkcure` |  |
+| `borg_param_caution_desperate_fast_danger_percent` | 0, 50, not set | `reborn-flight-fixes`, `reborn-flight3-757`, `reborn-flight3main`, `reborn-weighted765`, `reborn-floo` |  |
+| `borg_param_caution_desperate_fast_haste` | 1, not set | `reborn-fastpur` |  |
+| `borg_param_caution_desperate_ranged_first_reach` | 3, not set | `reborn-flight3-757`, `reborn-flight3main` |  |
+| `borg_param_caution_desperate_scary_distance` | 4, 8, not set | `reborn-despscary` |  |
+| `borg_param_caution_desperate_scary_level` | 10, not set | `reborn-despscary` |  |
+| `borg_param_caution_desperate_walk_cost_percent` | 100, not set | `reborn-fastpur` |  |
+| `borg_param_caution_emergency_speed_danger_percent` | 50, not set | `reborn-cavesp` |  |
+| `borg_param_caution_flee_known_down_stairs` | 1, not set | `reborn-dungeon-switch-screen` |  |
+| `borg_param_caution_flee_recall` | 0, not set | `reborn-recall-settings` |  |
+| `borg_param_caution_flee_recall_chasers` | 2, 6, not set | `reborn-untested-caution` |  |
+| `borg_param_caution_flee_recall_gate_below_depth` | 0, 2, 3, not set | `reborn-recall-settings`, `reborn-bundle` |  |
+| `borg_param_caution_heal_band1_skip_chance` | 49, not set | `reborn-healskip` |  |
+| `borg_param_caution_heal_band2_skip_chance` | 0, 48, not set | `reborn-healskip` |  |
+| `borg_param_caution_heal_band3_skip_chance` | 0, 40, not set | `reborn-healskip` |  |
+| `borg_param_caution_heal_band4_skip_chance` | 0, 25, not set | `reborn-healskip` |  |
+| `borg_param_caution_heal_band5_skip_chance` | 0, 12, not set | `reborn-healskip` |  |
+| `borg_param_caution_heal_lethal_over_max` | 1, not set | `reborn-fastpur` |  |
+| `borg_param_caution_heal_nonpriest_chance_penalty` | 0, not set | `reborn-healskip` |  |
+| `borg_param_caution_heal_outmatched_before_walk` | 1, not set | `reborn-fastpur` |  |
+| `borg_param_caution_heal_outmatched_min_loss` | 25, 50, 75, not set | `reborn-outmatched` |  |
+| `borg_param_caution_immobile_no_return` | 1, not set | `reborn-immfix` |  |
+| `borg_param_caution_immobile_step_mobile_first` | 1, not set | `reborn-confusion`, `reborn-immfix` |  |
+| `borg_param_caution_jumpstart_keep_stairs` | 1, not set | `reborn-dungeon-switch-screen` |  |
+| `borg_param_caution_paralyser_no_reach` | 1, not set | `reborn-paralyser` |  |
+| `borg_param_caution_paralyser_step_away` | 1, not set | `reborn-paralyser` |  |
+| `borg_param_caution_poisoned_no_cure_retreat_hp_percent` | 75, not set | `reborn-wjelly` |  |
+| `borg_param_caution_ranged_only` | 1, not set | `reborn-rangedonly`, `reborn-ro-tp` |  |
+| `borg_param_caution_ranged_vs_immobile` | 1, 2, not set | `reborn-dungeon-switch-screen`, `reborn-shipcheck-b895`, `reborn-confusion`, `reborn-immfix`, `reborn-rangedonly`, `reborn-ro-tp` |  |
+| `borg_param_caution_recall_blow_model` | 0, not set | `reborn-blow`, `reborn-blloww` |  |
+| `borg_param_caution_recall_cure_min_loss_percent` | 0, 30, not set | `reborn-flight-fixes`, `reborn-flight3-757`, `reborn-flight3main`, `reborn-weighted765`, `reborn-floo` |  |
+| `borg_param_caution_recall_dl1_hold_up` | 1, not set | `reborn-rclshallow` |  |
+| `borg_param_caution_recall_pending_escape` | 1, not set | `reborn-recallwait` |  |
+| `borg_param_caution_recall_rest_turns` | 250, 1000, not set | `reborn-untested-caution` |  |
+| `borg_param_caution_recall_survival` | 0, 1, not set | `reborn-fight-recall`, `reborn-adopted`, `reborn-adopted-600`, `reborn-ship3` |  |
+| `borg_param_caution_recall_wait_as_usual` | 0, 1, not set | `reborn-neutral-main`, `reborn-dungeon-switch-screen` |  |
+| `borg_param_caution_recall_wait_no_explore` | 1, not set | `reborn-recallwait` |  |
+| `borg_param_caution_remember_never_move` | 1, not set | `reborn-paralyser` |  |
+| `borg_param_caution_retreat_dead_end` | 1, 2, not set | `reborn-deadend` |  |
+| `borg_param_caution_retreat_from_faster` | 1, not set | `reborn-cavesp` |  |
+| `borg_param_caution_retreat_immobile_kill_turns` | 3, not set | `reborn-wjelly` |  |
+| `borg_param_caution_retreat_oscillation_backaway` | 1, not set | `reborn-t1134` |  |
+| `borg_param_caution_retreat_oscillation_limit` | 3, not set | `reborn-wjelly`, `reborn-t1134` |  |
+| `borg_param_caution_retreat_reentry_ticks` | 128, not set | `reborn-retreat-flight` |  |
+| `borg_param_caution_rising_explore_ticks` | 500, 1000, 1500, 2000, not set | `reborn-rising-ticks3` |  |
+| `borg_param_caution_rising_hold_flee_descent` | 1, not set | `reborn-dungeon-switch-screen` |  |
+| `borg_param_caution_rising_hold_min_hp_percent` | 50, not set | `reborn-flight-fixes`, `reborn-flight3-757`, `reborn-flight3main` |  |
+| `borg_param_caution_scary_afraid` | 0, 1 | `reborn-scary-calm` |  |
+| `borg_param_caution_scary_damage_percent` | 40, 60 | `reborn-scary-named-damage` |  |
+| `borg_param_caution_scary_hurt_percent` | 0, 50 | `reborn-scary-calm` |  |
+| `borg_param_caution_scary_latch` | 0, 1 | `reborn-scary-calm` |  |
+| `borg_param_caution_scary_named_monsters` | 0, 1 | `reborn-scary-named-damage` |  |
+| `borg_param_caution_scary_stand` | 0, not set | `reborn-stand-seeinv` |  |
+| `borg_param_caution_scary_take_distance` | 5, not set | `reborn-fastpur` |  |
+| `borg_param_caution_scary_unlatch_calmed` | 0, 1, not set | `reborn-neutral-main`, `reborn-rebase-main`, `reborn-death-bank38` |  |
+| `borg_param_caution_scary_unlatch_kill` | 1, not set | `reborn-dungeon-switch-screen` |  |
+| `borg_param_caution_slow_crowd_exit` | 0, 1 | `reborn-slow-crowd-exit` |  |
+| `borg_param_caution_stair_parked_fallback` | 0, 1, not set | `reborn-597` |  |
+| `borg_param_caution_stairs_clean_path` | 1, 2, 3, not set | `reborn-flight-fixes`, `reborn-flight3-757`, `reborn-flight3main`, `reborn-weighted765`, `reborn-floo` |  |
+| `borg_param_caution_stairs_clean_path_flee` | 0, 1, not set | `reborn-flight-fixes`, `reborn-flight3-757`, `reborn-flight3main`, `reborn-weighted765`, `reborn-floo` |  |
+| `borg_param_caution_stairs_flight_ignore_danger` | 0, 1, not set | `reborn-flight-fixes`, `reborn-flight3-757`, `reborn-flight3main`, `reborn-weighted765`, `reborn-floo` |  |
+| `borg_param_caution_stairs_flight_threat_weight` | 0, 5, not set | `reborn-weighted765`, `reborn-floo` |  |
+| `borg_param_caution_stairs_flight_unknown` | 1, 2, not set | `reborn-stairunk` |  |
+| `borg_param_caution_stairs_flight_unknown_steps` | 5, not set | `reborn-stairunk` |  |
+| `borg_param_caution_stairs_immobile_reach` | 1, not set | `reborn-wjelly` |  |
+| `borg_param_caution_stairs_leave_on_monster` | 1, not set | `reborn-dungeon-switch-screen` |  |
+| `borg_param_caution_town_flee_no_worse` | 1, not set | `reborn-untested-dbc`, `reborn-town-switch-screen` |  |
+| `borg_param_caution_town_never_scary` | 1, not set | `reborn-town-switch-screen` |  |
+| `borg_param_caution_town_scary_levels_less` | 6, 11, not set | `reborn-townkos` |  |
+| `borg_param_caution_twitch_avoid_lava` | 0, 1, not set | `reborn-597` |  |
+| `borg_param_caution_unseen_bump_heal_hp_percent` | 0, not set | `reborn-sloo` |  |
+| `borg_param_caution_unseen_bump_phase_min_danger` | 5, not set | `reborn-loneslow`, `reborn-lonew`, `reborn-lbun`, `reborn-li206` |  |
+| `borg_param_caution_unseen_bump_phase_turns` | 20, not set | `reborn-loneslow`, `reborn-lonew`, `reborn-lbun`, `reborn-li206` |  |
+| `borg_param_caution_unseen_bump_response` | 0, not set | `reborn-sloo` |  |
+| `borg_param_caution_unseen_bump_turns` | 0, not set | `reborn-sloo` |  |
+| `borg_param_caution_winning_fight` | 0, 1, not set | `reborn-fight-recall`, `reborn-attacksight`, `reborn-adopted`, `reborn-adopted-600`, `reborn-ship3`, `reborn-townhunt` |  |
+| `borg_param_caution_winning_fight_group_percent` | 100, not set | `reborn-fastpur` |  |
+| `borg_param_caution_winning_fight_margin_percent` | 20, not set | `reborn-fastpur` |  |
+| `borg_param_cave_light_engine_radius` | 1, not set | `reborn-lightbel`, `reborn-li206`, `reborn-belief`, `reborn-leash-dl1`, `reborn-light-ladder`, `reborn-light-priest` |  |
+| `borg_param_danger_breeder_melee_extra_tenths` | 0, 5, not set | `reborn-loneslow`, `reborn-lonew` |  |
+| `borg_param_danger_observed_haste` | 1, not set | `reborn-fastpur` |  |
+| `borg_param_deal_with_poison` | 1, not set | `reborn-dp` |  |
+| `borg_param_defend_bless_danger_divisor` | 6, not set | `reborn-bless` |  |
+| `borg_param_defend_bless_fail` | 0, not set | `reborn-bless` |  |
+| `borg_param_defend_bless_max_danger_divisor` | 1, 4, not set | `reborn-bless` |  |
+| `borg_param_escape_fox_form` | 0, 1, not set | `reborn-neutral-main`, `reborn-town-switch-screen` |  |
+| `borg_param_escape_fox_form_town` | 1, not set | `reborn-town-switch-screen` |  |
+| `borg_param_escape_paralyser_fight_lost` | 1, not set | `reborn-paralyser` |  |
+| `borg_param_escape_phase_adjacent_rule` | 0, 1, not set | `reborn-phase-rule-main`, `reborn-bgphase`, `reborn-rebase-main`, `reborn-death-bank38`, `reborn-crow-escape` |  |
+| `borg_param_escape_phase_antisummon_delay` | 0, not set | `reborn-phase-thresholds` |  |
+| `borg_param_escape_phase_lost_damage_only` | 1, not set | `reborn-loneslow`, `reborn-lonew`, `reborn-lbun`, `reborn-li206` |  |
+| `borg_param_escape_phase_lost_danger_percent` | 50, 100, not set | `reborn-rebase-main`, `reborn-death-bank38`, `reborn-crow-escape`, `reborn-t1134` |  |
+| `borg_param_escape_phase_lost_test` | 0, 1, 2, not set | `reborn-phase-rule-main`, `reborn-bgphase`, `reborn-rebase-main`, `reborn-death-bank38`, `reborn-crow-escape`, `reborn-dungeon-switch-screen` |  |
+| `borg_param_escape_phase_newcomer_wait` | 0, 1 | `reborn-phase` |  |
+| `borg_param_escape_phase_ordinary_danger_tenths` | 5, 20, not set | `reborn-phase-thresholds` |  |
+| `borg_param_escape_phase_unique_danger_tenths` | 7, not set | `reborn-phase-thresholds` |  |
+| `borg_param_escape_phase_unknown_scary` | 0, 1 | `reborn-phase` |  |
+| `borg_param_escape_teleport_block` | 0, not set | `reborn-tpblock` |  |
+| `borg_param_escape_teleport_landing_either` | 0, 1 | `reborn-teleport-landing-either` |  |
+| `borg_param_explore_bfs_leave_when_done` | 0, not set | `reborn-mixed40` |  |
+| `borg_param_explore_breadth_first` | 0, 1, not set | `reborn-bfs`, `reborn-mixed`, `reborn-food-bfs`, `reborn-bfs-ladder`, `reborn-ss9276`, `reborn-mixed40` |  |
+| `borg_param_explore_c_leave_when_done` | 1, not set | `reborn-mixed40` |  |
+| `borg_param_explore_mix_contact_damage` | 3, 8, not set | `reborn-mixed`, `reborn-mixed40` |  |
+| `borg_param_explore_mixed` | 1, not set | `reborn-mixed`, `reborn-mixed40` |  |
+| `borg_param_fast_fragile_by_stats` | 1, not set | `reborn-fastfrag`, `reborn-nowalk`, `reborn-cavesp` |  |
+| `borg_param_fast_fragile_contact_max` | 1, not set | `reborn-cavesp` |  |
+| `borg_param_fast_fragile_count_dot` | 1, not set | `reborn-ffq`, `reborn-ff-dot`, `reborn-ffb769`, `reborn-ffb-ladder` |  |
+| `borg_param_fast_fragile_escape_percent` | 0, 75, not set | `reborn-fastfrag`, `reborn-ffq` |  |
+| `borg_param_fast_fragile_escape_quantile` | 50, 75, 100, not set | `reborn-ffq`, `reborn-ffb769`, `reborn-ffb-ladder` |  |
+| `borg_param_fast_fragile_heal_floor` | 25, 50, not set | `reborn-ffq`, `reborn-ffb769`, `reborn-ffb-ladder` |  |
+| `borg_param_fast_fragile_heal_min_ratio` | 0, not set | `reborn-ff-ratio` |  |
+| `borg_param_fast_fragile_no_heal` | 1, 2, not set | `reborn-fastfrag` |  |
+| `borg_param_fast_fragile_no_walk` | 1, not set | `reborn-nowalk` |  |
+| `borg_param_fast_fragile_policy` | 1, not set | `reborn-fastfrag` |  |
+| `borg_param_flow_leash` | 0, 1, 2 | `reborn-stairs-leash` |  |
+| `borg_param_flow_leash_any_stair` | 1, not set | `reborn-leash-holes`, `reborn-leash-holes-vs` |  |
+| `borg_param_flow_leash_base` | 5, 15, not set | `reborn-cleash` |  |
+| `borg_param_flow_leash_depth_margin` | -100, 0, 10, not set | `reborn-cleash` |  |
+| `borg_param_flow_leash_per_level` | 2, 5, not set | `reborn-cleash` |  |
+| `borg_param_flow_leash_pickup_max_level` | 0, not set | `reborn-cleash`, `reborn-cleashnone` |  |
+| `borg_param_flow_leash_stairs_max_level` | 0, not set | `reborn-cleash`, `reborn-cleashnone` |  |
+| `borg_param_flow_leash_teleported_recall` | 1, not set | `reborn-leash-holes`, `reborn-leash-holes-vs` |  |
+| `borg_param_flow_leash_unknown_stair_steps` | 20, not set | `reborn-leash-holes`, `reborn-leash-holes-vs` |  |
+| `borg_param_flow_take_phase_first` | 1, not set | `reborn-phase-first-761` |  |
+| `borg_param_flow_take_phase_short_below` | 2, not set | `reborn-phase-first-761`, `reborn-rangerphase` |  |
+| `borg_param_item_test_unknown_potions` | 0, not set | `reborn-ks206` |  |
+| `borg_param_kill_flow_mode` | 0, 1, 2, 3 | `reborn-kill-flow-mode` |  |
+| `borg_param_kill_grouped_names` | 1, not set | `reborn-cavesp` |  |
+| `borg_param_kill_live_min_power` | 0, 1 | `reborn-kill-power-main` |  |
+| `borg_param_kill_live_zero_hp` | 1, not set | `reborn-zerohp` |  |
+| `borg_param_kit_descent_min_percent` | 50, not set | `reborn-kitleash`, `reborn-kitlt` |  |
+| `borg_param_kit_leash` | 1, not set | `reborn-kitleash`, `reborn-kitlt`, `reborn-kl206`, `reborn-li206`, `reborn-leash-dl1` |  |
+| `borg_param_kit_leash_min` | 0, 1, 2, not set | `reborn-kitleash`, `reborn-kitlt`, `reborn-kl206`, `reborn-li206`, `reborn-leash-dl1` |  |
+| `borg_param_kit_leash_power` | 1, 2, not set | `reborn-kitleash`, `reborn-kitlt`, `reborn-kl206`, `reborn-li206`, `reborn-leash-dl1` |  |
+| `borg_param_kit_leave_danger_percent` | 25, not set | `reborn-kitleash`, `reborn-kitlt` |  |
+| `borg_param_kit_money_first` | 1, not set | `reborn-kitleash`, `reborn-kitlt`, `reborn-kl206` |  |
+| `borg_param_kit_restock` | 1, not set | `reborn-kitleash` |  |
+| `borg_param_kit_restock_light_turns` | 500, not set | `reborn-kitleash` |  |
+| `borg_param_kit_start_reserve` | 1, not set | `reborn-kitleash` |  |
+| `borg_param_kit_start_reserve__blackguard` | 1, not set | `reborn-kitleash` |  |
+| `borg_param_kit_start_reserve__priest` | 1, not set | `reborn-kitleash` |  |
+| `borg_param_kit_start_reserve__ranger` | 1, not set | `reborn-kitleash` |  |
+| `borg_param_kit_start_reserve__rogue` | 1, not set | `reborn-kitleash` |  |
+| `borg_param_light_detect_dark_entry` | 1, not set | `reborn-darkentry` |  |
+| `borg_param_light_detect_evil_spell_min_level` | 5, 10, not set | `reborn-low-level-detection`, `reborn-shipcheck-b895` |  |
+| `borg_param_light_detect_evil_spell_min_level@druid` | 0, not set | `reborn-detect-min-level`, `reborn-detect-min-dbc` |  |
+| `borg_param_light_detect_evil_spell_min_level@mage` | 0, not set | `reborn-detect-min-level`, `reborn-detect-min-dbc` |  |
+| `borg_param_light_detect_evil_spell_min_level@necromancer` | 0, not set | `reborn-detect-min-level`, `reborn-detect-min-dbc` |  |
+| `borg_param_light_detect_evil_spell_min_level@paladin` | 0, not set | `reborn-detect-min-level`, `reborn-detect-min-dbc` |  |
+| `borg_param_light_detect_evil_spell_min_level@priest` | 0, not set | `reborn-detect-min-level`, `reborn-detect-min-dbc` |  |
+| `borg_param_light_detect_evil_spell_min_level__blackguard` | 5, 10, not set | `reborn-low-level-detection` |  |
+| `borg_param_light_detect_evil_spell_min_level__druid` | 5, 10, not set | `reborn-low-level-detection`, `reborn-shipcheck-b895` |  |
+| `borg_param_light_detect_evil_spell_min_level__mage` | 5, 10, not set | `reborn-low-level-detection`, `reborn-shipcheck-b895` |  |
+| `borg_param_light_detect_evil_spell_min_level__necromancer` | 5, 10, not set | `reborn-low-level-detection`, `reborn-shipcheck-b895` |  |
+| `borg_param_light_detect_evil_spell_min_level__paladin` | 5, 10, not set | `reborn-low-level-detection`, `reborn-shipcheck-b895` |  |
+| `borg_param_light_detect_evil_spell_min_level__priest` | 5, 10, not set | `reborn-low-level-detection`, `reborn-shipcheck-b895` |  |
+| `borg_param_light_detect_evil_spell_min_level__ranger` | 5, 10, not set | `reborn-low-level-detection` |  |
+| `borg_param_light_detect_evil_spell_min_level__rogue` | 5, 10, not set | `reborn-low-level-detection` |  |
+| `borg_param_light_detect_evil_spell_min_level__warrior` | 5, 10, not set | `reborn-low-level-detection` |  |
+| `borg_param_lone_slow_attack` | 1, not set | `reborn-loneslow`, `reborn-lonew`, `reborn-bfol`, `reborn-lbun`, `reborn-li206` |  |
+| `borg_param_lone_slow_breeder_lost` | 1, not set | `reborn-bfol` |  |
+| `borg_param_prepared_clevel_depth_margin` | -2, 2, not set | `reborn-dive-gates-768` |  |
+| `borg_param_prepared_cure_min` | 0, 4, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl2_min_hp` | 23, 38, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_clevel__blackguard` | 2, 6, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_clevel__druid` | 7, 11, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_clevel__mage` | 9, 13, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_clevel__necromancer` | 9, 13, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_clevel__paladin` | 2, 6, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_clevel__priest` | 7, 11, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_clevel__ranger` | 2, 6, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_clevel__rogue` | 6, 10, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_clevel__warrior` | 2, 6, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_hp__blackguard` | 38, 63, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_hp__druid` | 30, 50, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_hp__mage` | 45, 75, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_hp__necromancer` | 45, 75, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_hp__paladin` | 38, 45, 63, not set | `reborn-bundle`, `reborn-prepared`, `reborn-paladingate` |  |
+| `borg_param_prepared_dl34_min_hp__priest` | 30, 50, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_hp__ranger` | 38, 63, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_hp__rogue` | 38, 63, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl34_min_hp__warrior` | 38, 63, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_clevel__blackguard` | 4, 8, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_clevel__druid` | 13, 17, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_clevel__mage` | 13, 17, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_clevel__necromancer` | 13, 17, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_clevel__paladin` | 4, 8, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_clevel__priest` | 13, 17, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_clevel__ranger` | 4, 8, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_clevel__rogue` | 8, 12, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_clevel__warrior` | 4, 8, not set | `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_hp__blackguard` | 45, 75, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_hp__druid` | 45, 75, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_hp__mage` | 60, 100, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_hp__necromancer` | 60, 100, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_hp__paladin` | 45, 75, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_hp__priest` | 45, 75, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_hp__ranger` | 45, 75, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_hp__rogue` | 45, 75, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_dl59_min_hp__warrior` | 45, 75, not set | `reborn-bundle`, `reborn-prepared` |  |
+| `borg_param_prepared_mid_clevel_offset__blackguard` | -7, -1, not set | `reborn-dive-gates-768` |  |
+| `borg_param_prepared_mid_clevel_offset__druid` | -3, 3, not set | `reborn-dive-gates-768` |  |
+| `borg_param_prepared_mid_clevel_offset__mage` | 2, 8, not set | `reborn-dive-gates-768` |  |
+| `borg_param_prepared_mid_clevel_offset__necromancer` | 2, 8, not set | `reborn-dive-gates-768` |  |
+| `borg_param_prepared_mid_clevel_offset__paladin` | -3, 3, not set | `reborn-dive-gates-768` |  |
+| `borg_param_prepared_mid_clevel_offset__priest` | -3, 3, not set | `reborn-dive-gates-768` |  |
+| `borg_param_prepared_mid_clevel_offset__ranger` | -3, 3, not set | `reborn-dive-gates-768` |  |
+| `borg_param_prepared_mid_clevel_offset__rogue` | -3, 3, not set | `reborn-dive-gates-768` |  |
+| `borg_param_prepared_mid_clevel_offset__warrior` | -7, -1, not set | `reborn-dive-gates-768` |  |
+| `borg_param_recover_rest_arms_see_invis` | 1, not set | `reborn-stand-seeinv` |  |
+| `borg_param_recover_rest_breeders` | 0, not set | `reborn-breeder-world-x4` |  |
+| `borg_param_recover_rest_cure_distance` | 20, not set | `reborn-rest` |  |
+| `borg_param_recover_rest_cure_hp_percent` | 50, not set | `reborn-rest` |  |
+| `borg_param_recover_unseen_attack_turns` | 0, not set | `reborn-invis` |  |
+| `borg_param_recover_unseen_detect_reads` | 0, not set | `reborn-invis` |  |
+| `borg_param_recover_unseen_heal_hp_percent` | 0, not set | `reborn-invis` |  |
+| `borg_param_recover_unseen_probe_tries` | 0, not set | `reborn-invis` |  |
+| `borg_param_recover_unseen_shot` | 1, not set | `reborn-rest` |  |
+| `borg_param_sell_poor_town_unknown_hold` | 1, not set | `reborn-unkcure` |  |
+| `borg_param_stair_scum` | 0, not set | `reborn-ss9276` |  |
+| `borg_param_town_book_lookahead_levels` | 4, not set | `reborn-book` |  |
+| `borg_param_town_confusion_cure_reserve` | 1, not set | `reborn-confusion` |  |
+| `borg_param_town_departure_free_slots` | 0, 2, not set | `reborn-room` |  |
+| `borg_param_town_departure_free_weight` | 0, 50, not set | `reborn-room` |  |
+| `borg_param_town_device_percent` | 0, not set | `reborn-dev` |  |
+| `borg_param_town_devices_percent` | 50, 200, not set | `reborn-untested-dbc` |  |
+| `borg_param_town_devices_percent@blackguard` | 50, 100, 200, not set | `reborn-untested-dbc` |  |
+| `borg_param_town_devices_percent@druid` | 50, 100, 200, not set | `reborn-untested-dbc` |  |
+| `borg_param_town_devices_percent@mage` | 50, 100, 200, not set | `reborn-untested-dbc` |  |
+| `borg_param_town_devices_percent@necromancer` | 50, 100, 200, not set | `reborn-untested-dbc` |  |
+| `borg_param_town_devices_percent@paladin` | 50, 100, 200, not set | `reborn-untested-dbc` |  |
+| `borg_param_town_devices_percent@priest` | 50, 100, 200, not set | `reborn-untested-dbc` |  |
+| `borg_param_town_devices_percent@ranger` | 50, 100, 200, not set | `reborn-untested-dbc` |  |
+| `borg_param_town_devices_percent@rogue` | 50, 100, 200, not set | `reborn-untested-dbc` |  |
+| `borg_param_town_devices_percent@warrior` | 50, 100, 200, not set | `reborn-untested-dbc` |  |
+| `borg_param_town_food_percent` | 50, not set | `reborn-phase-first-761` |  |
+| `borg_param_town_gold_reserve` | 300, 1000, not set | `reborn-gold-reserve` |  |
+| `borg_param_town_gold_reserve_percent` | 25, 50, not set | `reborn-gold-reserve` |  |
+| `borg_param_town_heal_curve_scale_percent_blackguard` | 0, 40, 75, 115, not set | `reborn-heal-by-class`, `reborn-class-curves`, `reborn-class-curves-dbc`, `reborn-bgcurve-dbc` |  |
+| `borg_param_town_heal_curve_scale_percent_druid` | 0, 60, 185, not set | `reborn-heal-by-class` |  |
+| `borg_param_town_heal_curve_scale_percent_mage` | 0, 75, 225, not set | `reborn-heal-by-class`, `reborn-mage-priest` |  |
+| `borg_param_town_heal_curve_scale_percent_necromancer` | 0, 75, 225, not set | `reborn-heal-by-class` |  |
+| `borg_param_town_heal_curve_scale_percent_paladin` | 0, 40, 115, not set | `reborn-heal-by-class` |  |
+| `borg_param_town_heal_curve_scale_percent_priest` | 0, 60, 185, not set | `reborn-heal-by-class`, `reborn-mage-priest` |  |
+| `borg_param_town_heal_curve_scale_percent_ranger` | 0, 50, 150, not set | `reborn-heal-by-class` |  |
+| `borg_param_town_heal_curve_scale_percent_rogue` | 0, 50, 150, not set | `reborn-heal-by-class` |  |
+| `borg_param_town_heal_curve_scale_percent_warrior` | 0, 25, 75, not set | `reborn-heal-by-class` |  |
+| `borg_param_town_heal_quaff_bonus_percent` | 200, not set | `reborn-healtiers`, `reborn-heal-quaff` |  |
+| `borg_param_town_heal_reserve_hp_percent_blackguard` | -1, 75, 150, 225, not set | `reborn-heal-by-class`, `reborn-class-curves`, `reborn-class-curves-dbc`, `reborn-bgcurve-dbc` |  |
+| `borg_param_town_heal_reserve_hp_percent_druid` | -1, 125, 350, 375, not set | `reborn-heal-by-class`, `reborn-casters` |  |
+| `borg_param_town_heal_reserve_hp_percent_mage` | -1, 150, 400, 450, not set | `reborn-heal-by-class`, `reborn-mage-priest`, `reborn-casters` |  |
+| `borg_param_town_heal_reserve_hp_percent_necromancer` | -1, 150, 400, 450, not set | `reborn-heal-by-class`, `reborn-casters` |  |
+| `borg_param_town_heal_reserve_hp_percent_paladin` | -1, 75, 225, not set | `reborn-heal-by-class` |  |
+| `borg_param_town_heal_reserve_hp_percent_priest` | -1, 125, 350, 375, not set | `reborn-heal-by-class`, `reborn-mage-priest`, `reborn-casters` |  |
+| `borg_param_town_heal_reserve_hp_percent_ranger` | -1, 100, 300, not set | `reborn-heal-by-class`, `reborn-phase-first-761`, `reborn-rangerphase` |  |
+| `borg_param_town_heal_reserve_hp_percent_rogue` | -1, 100, 300, not set | `reborn-heal-by-class` |  |
+| `borg_param_town_heal_reserve_hp_percent_warrior` | -1, 50, 150, not set | `reborn-heal-by-class` |  |
+| `borg_param_town_heal_speed_percent` | 100, not set | `reborn-healtiers`, `reborn-heal-quaff` |  |
+| `borg_param_town_hunt` | 1, not set | `reborn-townhunt`, `reborn-kitleash`, `reborn-kl206`, `reborn-li206` |  |
+| `borg_param_town_hunt_min_hp_percent` | 50, not set | `reborn-townhunt` |  |
+| `borg_param_town_hunt_ranged_bonus_percent` | 50, not set | `reborn-townhunt` |  |
+| `borg_param_town_invisible_count` | 0, not set | `reborn-invis` |  |
+| `borg_param_town_invisible_percent` | 40, not set | `reborn-invis` |  |
+| `borg_param_town_light_percent` | 50, not set | `reborn-phase-first-761` |  |
+| `borg_param_town_light_reserve_turns` | 0, 15000, 20000, 25000 | `reborn-torch` |  |
+| `borg_param_town_missiles_other_ranged_percent` | 50, not set | `reborn-untested-dbc` |  |
+| `borg_param_town_missiles_percent` | 50, 100, not set | `reborn-untested-dbc` |  |
+| `borg_param_town_oil_apart` | 0, not set | `reborn-sloo` |  |
+| `borg_param_town_oil_curve_scale_percent` | 50, not set | `reborn-phase-first-761`, `reborn-rangerphase` |  |
+| `borg_param_town_oil_curve_scale_percent@blackguard` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_oil_curve_scale_percent@druid` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_oil_curve_scale_percent@mage` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_oil_curve_scale_percent@necromancer` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_oil_curve_scale_percent@paladin` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_oil_curve_scale_percent@priest` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_oil_curve_scale_percent@ranger` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_oil_curve_scale_percent@rogue` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_oil_curve_scale_percent@warrior` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_oil_curve_scale_percent__blackguard` | 50, not set | `reborn-phase-first-761`, `reborn-rangerphase` |  |
+| `borg_param_town_oil_curve_scale_percent__druid` | 75, not set | `reborn-phase-first-761`, `reborn-rangerphase` |  |
+| `borg_param_town_oil_curve_scale_percent__mage` | 50, not set | `reborn-phase-first-761`, `reborn-rangerphase` |  |
+| `borg_param_town_oil_curve_scale_percent__necromancer` | 50, not set | `reborn-phase-first-761`, `reborn-rangerphase` |  |
+| `borg_param_town_oil_curve_scale_percent__paladin` | 60, not set | `reborn-phase-first-761`, `reborn-rangerphase` |  |
+| `borg_param_town_oil_curve_scale_percent__priest` | 75, not set | `reborn-phase-first-761`, `reborn-rangerphase` |  |
+| `borg_param_town_oil_curve_scale_percent__ranger` | 25, not set | `reborn-phase-first-761`, `reborn-rangerphase` |  |
+| `borg_param_town_oil_curve_scale_percent__rogue` | 60, not set | `reborn-phase-first-761`, `reborn-rangerphase` |  |
+| `borg_param_town_oil_curve_scale_percent__warrior` | 50, not set | `reborn-phase-first-761`, `reborn-rangerphase` |  |
+| `borg_param_town_phase_curve_scale_percent@blackguard` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc`, `reborn-bgcurve-dbc` |  |
+| `borg_param_town_phase_curve_scale_percent@druid` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_phase_curve_scale_percent@mage` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_phase_curve_scale_percent@necromancer` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_phase_curve_scale_percent@paladin` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_phase_curve_scale_percent@priest` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_phase_curve_scale_percent@ranger` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_phase_curve_scale_percent@rogue` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_phase_curve_scale_percent@warrior` | 100, not set | `reborn-class-curves`, `reborn-class-curves-dbc` |  |
+| `borg_param_town_phase_curve_scale_percent__blackguard` | 100, not set | `reborn-sloo` |  |
+| `borg_param_town_phase_curve_scale_percent__druid` | 100, not set | `reborn-sloo` |  |
+| `borg_param_town_phase_curve_scale_percent__mage` | 100, not set | `reborn-sloo` |  |
+| `borg_param_town_phase_curve_scale_percent__necromancer` | 100, not set | `reborn-sloo` |  |
+| `borg_param_town_phase_curve_scale_percent__priest` | 100, not set | `reborn-sloo` |  |
+| `borg_param_town_phase_curve_scale_percent__ranger` | 100, not set | `reborn-sloo` |  |
+| `borg_param_town_phase_curve_scale_percent__rogue` | 100, not set | `reborn-sloo` |  |
+| `borg_param_town_phase_curve_scale_percent__warrior` | 100, not set | `reborn-sloo` |  |
+| `borg_param_town_phase_reserve` | 0, 1, 2, 3, not set | `reborn-bundle`, `reborn-phase-first-761`, `reborn-rangerphase`, `reborn-phasereserve`, `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_phase_reserve__blackguard` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_phase_reserve__mage` | 1, not set | `reborn-receipt` |  |
+| `borg_param_town_phase_reserve__priest` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_phase_reserve__ranger` | 2, 3, not set | `reborn-receipt`, `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_phase_reserve__warrior` | 0, not set | `reborn-receipt` |  |
+| `borg_param_town_phase_reserve_percent` | 50, 100, 150, 200, 400, not set | `reborn-bundle`, `reborn-phase-first-761`, `reborn-rangerphase`, `reborn-phasereserve`, `reborn-receipt`, `reborn-vrm` |  |
+| `borg_param_town_prepared_percent` | 0, 50, not set | `reborn-variety`, `reborn-vrm`, `reborn-t1134` |  |
+| `borg_param_town_ranged_reserve` | 6, not set | `reborn-townhunt` |  |
+| `borg_param_town_ranger_arrows_max__ranger` | 20, not set | `reborn-phase-first-761`, `reborn-rangerphase` |  |
+| `borg_param_town_recall_curve_scale_percent` | 0, 110, not set | `reborn-room` |  |
+| `borg_param_town_recall_reserve` | 1, 2, 3, not set | `reborn-town-switch-screen`, `reborn-recallres`, `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_recall_urgent_depth` | 1, not set | `reborn-rclshallow` |  |
+| `borg_param_town_recall_value_percent` | 300, 1000, not set | `reborn-recall-settings` |  |
+| `borg_param_town_short_gold` | 0, 1 | `reborn-short-gold` |  |
+| `borg_param_town_staple_ccw` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_clw` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_clw__blackguard` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_clw__druid` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_clw__mage` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_clw__necromancer` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_clw__paladin` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_clw__priest` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_clw__ranger` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_clw__rogue` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_clw__warrior` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_csw` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_csw__blackguard` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_csw__druid` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_csw__mage` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_csw__necromancer` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_csw__paladin` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_csw__priest` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_csw__ranger` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_csw__rogue` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_csw__warrior` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_food` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_light` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_oil` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_oil__blackguard` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_oil__druid` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_oil__mage` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_oil__necromancer` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_oil__paladin` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_oil__priest` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_oil__ranger` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_oil__rogue` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_oil__warrior` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_phase` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_phase__blackguard` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_phase__druid` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_phase__mage` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_phase__necromancer` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_phase__paladin` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_phase__priest` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_phase__ranger` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_phase__rogue` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_staple_phase__warrior` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_town_store_keep_min` | 0, not set | `reborn-room` |  |
+| `borg_param_town_store_only_overweight` | 0, 1, not set | `reborn-store-overweight`, `reborn-shipcheck-b895` |  |
+| `borg_param_town_unseen_percent` | 50, not set | `reborn-phase-first-761` |  |
+| `borg_param_town_variety_min_depth` | 0, not set | `reborn-variety`, `reborn-vrm` |  |
+| `borg_param_trait_timed_sync` | 1, not set | `reborn-cavesp` |  |
+| `borg_param_trap_leave_level_count` | 0, not set | `reborn-trap` |  |
+| `borg_param_trap_recover` | 0, not set | `reborn-trap` |  |
+| `borg_param_trap_way_back` | 0, not set | `reborn-trap` |  |
+| `borg_param_unseen_belief` | 1, not set | `reborn-lightbel`, `reborn-belief` |  |
+| `borg_param_unseen_decay_percent` | 5, not set | `reborn-belief` |  |
+| `borg_param_update_dark_clears_light` | 1, not set | `reborn-perception` |  |
+| `borg_param_view_rubble_blocks_sight` | 1, not set | `reborn-perception` |  |
+| `borg_plays_risky` | FALSE, TRUE | `reborn-plays-risky` |  |
+| `borg_scary_list_lines` | 1 line, 14 lines, 2 lines, 28 lines, 35 lines, 4 lines, 5 lines, 7 lines, not set | `reborn-scary-classes`, `reborn-scary-tough`, `reborn-scary-ends`, `reborn-bundle`, `reborn-scary-floor-main`, `reborn-errands-floor3`, `reborn-crow`, `reborn-casters`, `reborn-attacksight`, `reborn-killers`, `reborn-confusion` |  |
+| `borg_town_attack_turns` | 50, not set | `reborn-casters`, `reborn-crow-escape` |  |
+| `borg_town_explore_turns` | 500, 2000, not set | `reborn-untested-caution` |  |
+| `borg_town_home_discount` | 250, 1000, not set | `reborn-untested-town` |  |
+| `borg_town_power_scale` | 20000, 80000, not set | `reborn-untested-town` |  |
+| `borg_town_risk` | 500, 2000, not set | `reborn-untested-town` |  |
+| `borg_town_w_attack` | 50, 200, not set | `reborn-untested-town`, `reborn-casters`, `reborn-crow-escape` |  |
+| `borg_town_w_escape` | 100, not set | `reborn-casters` |  |
+| `borg_town_w_space` | 12, 50, not set | `reborn-untested-town` |  |
+| `borg_town_w_support` | 25, 100, not set | `reborn-untested-town` |  |
+| `borg_world` | breeders-x4, breeders-x8, patches-x8, poison-x8, white-worm-mass-x4, not set | `reborn-stairunk`, `reborn-lonew`, `reborn-blloww`, `reborn-deadend`, `reborn-bfol`, `reborn-kos-cure`, `reborn-ro-tp`, `reborn-dp` |  |
+| `borg_worships_ac` | TRUE, not set | `reborn-worships` |  |
+| `borg_worships_damage` | TRUE, not set | `reborn-worships` |  |
+| `borg_worships_hp` | TRUE, not set | `reborn-worships` |  |
+| `borg_worships_mana` | TRUE, not set | `reborn-worships` |  |
+| `borg_worships_speed` | TRUE, not set | `reborn-worships` |  |
 
 ## Settings available for new arms
 
@@ -238,3 +3287,11 @@ Exposed by borg-reborn-rs `main` but not yet used to build arms. A profile sets 
 | `4.2.6-rs-pr92-home-fix` | diegoami/borg-rs | `8c5d000a` | M13 Rust Borg at borg-rs main 8c5d000a, PR92's merge (borg-zoo#129): PR88's added town-return triggers (7251f64a, an ancestor) plus PR92, which stops a confirmed Home transfer being reversed within the same visit (the borg-rs#90 oil store/take loop). |
 | `neo-b4-parity-books-v1` | diegoami/neo-angband-borg-mod-tracker | `464a1555` | Experimental Borg1.4.0-beta.6.zoo.1: six C-parity fixes514-519 plus retained book-value correction509, on verified beta.4/API2.1 engine d27ed50f. |
 | `4.2.6-reborn-core-pilot` | diegoami/borg-reborn-rs | `1be6edc7` | borg-reborn-rs 1be6edc, the option-C pilot (borg-reborn-rs #207, #208): borg-rs's core (milestone 12, vendored as borg-core/) inside the reborn shell, selected through the run's borg.txt (borg_reborn_core, borg_reborn_errand). |
+| `4.2.6-reborn-rust-main-4a482c58` | diegoami/borg-reborn-rs | `4a482c58` | borg-reborn-rs 4a482c58, main after #539 (caution_scary_hurt_percent 50, caution_scary_afraid 1) and fba1c6e0 (borg_trip_unknown_stacks 2, caution_stair_scum_threat 1). |
+| `4.2.6-reborn-rust-main-38858846` | diegoami/borg-reborn-rs | `38858846` | borg-reborn-rs 38858846, main at the merge of #607 (#606: borg-rs is the default core). |
+| `4.2.6-reborn-rust-main-92fafc61` | diegoami/borg-reborn-rs | `92fafc61` | borg-reborn-rs 92fafc61, main at the merge of #561 (#558 breeder hunt by class). |
+| `4.2.6-reborn-rust-main-f660aecc` | diegoami/borg-reborn-rs | `f660aecc` | borg-reborn-rs f660aecc, main at the merge of #571 (#557: town_recall_value_percent, prepared_recall_depth, one Word of Recall section in borg.txt), after #561 and #575. |
+| `4.2.6-reborn-rust-main-6438e1cf` | diegoami/borg-reborn-rs | `6438e1cf` | borg-reborn-rs 6438e1cf, main at the merge of #605 (#604 town loop). |
+| `4.2.6-reborn-rust-main-ec0f3b28` | diegoami/borg-reborn-rs | `ec0f3b28` | borg-reborn-rs main ec0f3b28 (PR #755, C's leash as flow_leash_* settings). |
+| `4.2.6-reborn-rust-flight3-50c23a5e` | diegoami/borg-reborn-rs | `50c23a5e` | borg-reborn-rs scratch/T751-mode3 50c23a5e: PR #757's switches, #751 mode 3, caution_desperate_ranged_first_reach; all shipped 0; not merged with main's #755. |
+| `4.2.6-reborn-rust-phase-992e0351` | diegoami/borg-reborn-rs | `992e0351` | borg-reborn-rs scratch/T761-phase 992e0351 (main ec0f3b28 + #761): Phase Door reserve, floor pickup, unseen, food/light percents; shipped off/100. |

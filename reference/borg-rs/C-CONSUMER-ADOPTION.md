@@ -70,11 +70,10 @@ merge, release or wholesale donor-tree replacement is part of this contract.
 
 Tool sources08a5cd019 and f3ced6219768 in IMPORTED.json remain tooling provenance.
 They are not by themselves accepted gameplay targets. The engine base moves
-through a deliberate, qualified adoption: it is currently the official
-import `42cd156ac` (v12R, owner-accepted 2026-11-13) plus the documented
-local fork corrections and harness hooks. The base is not itself a
-constraint - the constraint is the path: verified milestone, review,
-owner acceptance and tag.
+through deliberate adoption. The last owner-accepted pin is `42cd156ac`
+(v12R, 2026-11-13). The [v15 candidate](adoption/c-v15r/README.md) advances
+it to `574b618c3` with the local fork corrections and harness hooks.
+Verified milestones proceed through review, owner acceptance, and tagging.
 
 ## Reconcile and implement a bounded batch
 
