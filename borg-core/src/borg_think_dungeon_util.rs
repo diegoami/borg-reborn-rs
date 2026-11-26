@@ -361,12 +361,13 @@ pub fn borg_think_dungeon_light(st: &mut BorgState, lightless: bool) -> bool {
                     let (act_illumination, act_light) = (st.act.illumination, st.act.light);
                     let sv_rod = st.item_val.sv_rod_illumination;
                     let sv_staff = st.item_val.sv_staff_light;
-                    let sv_scroll = st.item_val.sv_scroll_light;
                     if borg_activate_item(st, act_illumination)
                         || borg_activate_item(st, act_light)
                         || borg_zap_rod(st, sv_rod)
                         || borg_use_staff(st, sv_staff)
-                        || borg_read_scroll(st, sv_scroll)
+                        // borg-reborn-rs (#1273): keep the old chain for recorded replays.
+                        || (!crate::borg_light::light_scroll_idle_spend()
+                            && borg_read_scroll(st, st.item_val.sv_scroll_light))
                         || borg_spell(st, CALL_LIGHT)
                         || borg_spell(st, LIGHT_ROOM)
                     {

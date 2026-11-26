@@ -1118,6 +1118,9 @@ borg_param_town_oil_curve_scale_percent = 100
 # #1119: first discretionary radius-one room-lighting cast needs evidence of darkness.
 borg_param_light_first_cast_require_dark = 1
 
+# #1273: spend Light scrolls on quiet dark squares. Recorded replays pin 0.
+borg_param_light_scroll_idle_spend = 1
+
 # Dark-entry detection (#796): opt in below the spell level gate while retaining response SP.
 borg_param_light_hallway_repeat_guard = 1
 borg_param_light_detect_dark_entry = 0

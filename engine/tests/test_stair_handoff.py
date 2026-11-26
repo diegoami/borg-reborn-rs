@@ -31,6 +31,8 @@ def state_at(states, turn):
 PINNED_TOWN_SETTINGS = [
     # #1250: keep the original use and timing of Magic Mapping.
     ("item_use_idle", 0),
+    # #1273: preserve the original lighting and inventory-use decisions.
+    ("light_scroll_idle_spend", 0),
     # #1253: keep the recorded inventory actions and the turns they took.
     ("attack_throw_junk_potions", 0), ("junk_discard_harmful_in_town", 0),
     # #1264 changes full-pack and weight disposal after these recorded routes.

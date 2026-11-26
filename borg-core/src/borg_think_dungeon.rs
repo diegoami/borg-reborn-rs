@@ -942,6 +942,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_caution");
     }
 
+    // borg-reborn-rs (#1273): discard known Light scrolls after caution.
+    if crate::borg_junk::borg_discard_light_scrolls(st) {
+        return choice!("borg_discard_light_scrolls");
+    }
+
     if crate::borg_junk::borg_discard_town_consumable(st) {
         return choice!("borg_discard_town_consumable");
     }

@@ -23,7 +23,7 @@ use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes};
 use crate::borg_item::{inven_wield, BorgItem};
 use crate::borg_item_use::{
     borg_activate_item, borg_aim_wand, borg_equips_rod, borg_read_scroll, borg_use_staff,
-    borg_zap_rod,
+    borg_zap_rod, idle_use_safe,
 };
 use crate::borg_magic::{borg_get_spell_power, borg_spell, borg_spell_fail, borg_spell_legal_fail, borg_spell_okay_fail};
 use crate::borg_messages_react::borg_react;
@@ -49,8 +49,8 @@ use crate::headers::ui_event_h::keycode_t;
 use crate::state::BorgState;
 use std::collections::{BTreeMap, BTreeSet};
 
-/// `CLASS_NECROMANCER` (list-classes.h order).
-const CLASS_NECROMANCER: i32 = 4;
+/// `CLASS_NECROMANCER` is the only class with `PF_UNLIGHT` in class.txt.
+pub(crate) const CLASS_NECROMANCER: i32 = 4;
 
 /// Grid info flag: ignore the game map for this grid (`BORG_IGNORE_MAP`).
 const BORG_IGNORE_MAP: u16 = 0x100;
@@ -166,6 +166,16 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
         return false;
     }
 
+    // borg-reborn-rs (#1273): spend cheap scrolls before mana or the room heuristics.
+    if light_scroll_idle_spend() && try_read_light_scroll(st, unglowing_on_panel, |st, sval| {
+        !engine::player_is_shapechanged() && borg_read_scroll(st, sval)
+    }) {
+        borg_note(st, "# Illuminating the dungeon with a scroll");
+        borg_react(st, b"SELF:lite", b"SELF:lite");
+        st.borg.time.call_light = st.borg.time.now;
+        return true;
+    }
+
     /* Use wizard light sometimes */
     if due(st, st.borg.time.wizard_light, 1000)
         && (borg_activate_item(st, st.act.clairvoyance)
@@ -279,7 +289,7 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
         || borg_activate_item(st, st.act.light)
         || borg_zap_rod(st, st.item_val.sv_rod_illumination)
         || borg_use_staff(st, st.item_val.sv_staff_light)
-        || borg_read_scroll(st, st.item_val.sv_scroll_light)
+        || (!light_scroll_idle_spend() && borg_read_scroll(st, st.item_val.sv_scroll_light))
         || cast_room_lighting(
             st, uses_corner_test, param(Param::light_first_cast_require_dark) != 0,
             borg_spell_fail, unglowing_on_panel,
@@ -357,6 +367,38 @@ fn observed_dark_floors<'a>(
     })
 }
 
+pub(crate) fn light_scroll_idle_spend() -> bool {
+    param(Param::light_scroll_idle_spend) != 0
+}
+
+/// A scroll is cheap enough to light any dark square, including corridors.
+fn try_read_light_scroll(
+    st: &mut BorgState,
+    is_unglowing_on_panel: impl Fn(i32, i32) -> bool,
+    read: impl FnOnce(&mut BorgState, i32) -> bool,
+) -> bool {
+    if st.borg.tr(BI_CDEPTH) == 0 || st.borg.tr(BI_CLASS) == CLASS_NECROMANCER || !idle_use_safe(st) {
+        return false;
+    }
+
+    let here = (st.borg.c.y, st.borg.c.x);
+    if !is_unglowing_on_panel(here.0, here.1)
+        || st.light.room_lighting.minimum_radius(
+            here,
+            || false,
+            || observed_dark_floors(st, &is_unglowing_on_panel),
+        ).is_none()
+    {
+        return false;
+    }
+
+    if !read(st, st.item_val.sv_scroll_light) {
+        return false;
+    }
+    st.light.room_lighting.pending = Some((here, false));
+    true
+}
+
 fn cast_room_lighting(
     st: &mut BorgState,
     uses_corner_test: bool,
@@ -394,7 +436,7 @@ fn try_room_lighting(minimum_radius: i32, mut cast: impl FnMut(borg_spells) -> b
         .any(|(spell, radius)| radius >= minimum_radius && cast(spell))
 }
 
-/// Resolve the attempt after the map and view have observed the spell's effect.
+/// Resolve the attempt after the map and view have observed the lighting effect.
 pub(crate) fn finish_room_lighting(st: &mut BorgState) {
     observe_room_lighting(st, unglowing_on_panel);
 }
@@ -1328,14 +1370,45 @@ fn try_hallway_beam(
 
 #[cfg(test)]
 mod room_lighting_tests {
-    use super::{cast_room_lighting, observe_room_lighting, GridPosition, RoomLighting};
+    use super::{cast_room_lighting, observe_room_lighting, try_read_light_scroll, GridPosition, RoomLighting, CLASS_NECROMANCER};
     use crate::borg_cave::CaveState;
     use crate::borg_headers::borg_magic_h::{CALL_LIGHT, LIGHT_ROOM};
+    use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CLASS, BI_LIGHT, BI_MAX};
     use crate::headers::list_terrain_h::FEAT_FLOOR;
     use crate::state::BorgState;
     use std::collections::BTreeSet;
 
     const CAST_FROM: GridPosition = (44, 46);
+
+    #[test]
+    fn light_scrolls_are_spent_on_quiet_dark_squares_even_with_radius_one() {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        st.borg.trait_[BI_CDEPTH as usize] = 1;
+        st.borg.trait_[BI_LIGHT as usize] = 2;
+        st.item_val.sv_scroll_light = 17;
+        (st.borg.c.y, st.borg.c.x) = CAST_FROM;
+        let dark = |_, _| true;
+        let read = |_: &mut BorgState, sval| {
+            assert_eq!(sval, 17);
+            true
+        };
+
+        st.borg.trait_[BI_CLASS as usize] = CLASS_NECROMANCER;
+        assert!(!try_read_light_scroll(&mut st, dark, read));
+        st.borg.trait_[BI_CLASS as usize] = 0;
+        st.borg.goal.fleeing = true;
+        assert!(!try_read_light_scroll(&mut st, dark, read));
+        st.borg.goal.fleeing = false;
+        assert!(!try_read_light_scroll(&mut st, |_, _| false, read));
+        assert!(try_read_light_scroll(&mut st, dark, read));
+
+        st.light.room_lighting.confirm_message(b"You are surrounded by a white light.");
+        observe_room_lighting(&mut st, dark);
+        assert!(!try_read_light_scroll(&mut st, dark, read));
+        st.borg.c.x += 1;
+        assert!(try_read_light_scroll(&mut st, dark, read));
+    }
 
     #[test]
     fn both_room_lighting_spells_remember_a_confirmed_cast() {

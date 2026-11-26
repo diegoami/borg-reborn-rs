@@ -1016,6 +1016,17 @@ and the newly observed floor rule apply at both settings. The harness ships 1.
 |---|---|---|---|---|
 | `light_first_cast_require_dark` | 0 | flag | 0–1 | `borg_light.rs:284` |
 
+## Opportunistic Scrolls of Light (#1273)
+
+At 1, the Borg spends a carried Light scroll on a quiet, unglowing dungeon
+square before choosing other local lighting. At 0, it uses the original
+lighting and junk consumption rules for classes that use light. The Track P
+profile uses 1. Necromancers discard the scrolls at either setting.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `light_scroll_idle_spend` | 0 | flag | 0–1 | `borg_light.rs:371` |
+
 ## Ranger Phase Door reserve regression (#797)
 
 The Ranger check runs one fixed Half-Orc birth with reserve 0 and 2 and
@@ -8820,7 +8831,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1080` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1087` |
 
 ## Quiver surplus in town (#1168, #1272)
 
@@ -9105,7 +9116,7 @@ identified spares.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2246` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2258` |
 | `junk_gear_alternatives` | 2 | distinct better options | 0–3 | `borg_junk.rs:64` |
 
 The removal establishes the control for the paired pilot of the #1264
