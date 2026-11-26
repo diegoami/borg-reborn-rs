@@ -1472,6 +1472,13 @@ pub fn player_combat_speed() -> i32 {
     player_ref().state.speed
 }
 
+/// The effective CON index used for poison recovery (game-world.c, decrease_timeouts).
+/// The engine's stat calculation includes equipment, curses and shape changes.
+pub(crate) fn player_con_index() -> i32 {
+    use crate::headers::list_stats_h::STAT_CON;
+    player_ref().state.stat_ind[STAT_CON as usize]
+}
+
 /// borg-reborn-rs (#1028): the player's energy (`player->energy`), spent
 /// `move_energy` an action and refilled by `turn_energy` each game turn
 /// (game-world.c:1092).

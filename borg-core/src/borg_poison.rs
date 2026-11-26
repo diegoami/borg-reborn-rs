@@ -83,6 +83,15 @@ pub(crate) fn pending_hp(counter: i32, con_index: i32) -> i32 {
     (counter.max(0) + d - 1) / d
 }
 
+/// #1083: the running poison charged to Phase, outmatched healing and flight.
+/// Off means no timed counter or CON read.
+pub(crate) fn decision_pending_hp(st: &BorgState) -> i32 {
+    if param(Param::escape_phase_lost_poison_pending) == 0 || st.borg.tr(BI_ISPOISONED) == 0 {
+        return 0;
+    }
+    pending_hp(i32::from(engine::player_timed(TMD_POISONED)), engine::player_con_index())
+}
+
 /// What a potion of `heal` HP gives drunk late: B drinks it at HP at most
 /// `line` (the next turn's poison plus `poison_late_drink_margin`), where it
 /// can restore at most `max - line`. Review of #1146 (finding 1): crediting
