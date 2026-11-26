@@ -12,51 +12,50 @@
     },
     "borg-rs": {
       "repository": "diegoami/borg-rs",
-      "commit": "8c5d000a58e9ddca1f1954ab9552e505856b313f",
+      "commit": "d75e17a5ae743114c9b745934d36721800216f45",
       "role": "A reference only (docs/SPEC.md §2): the faithful Rust port of the C Borg. Its harness hooks and headless frontend were copied once and are ours (docs/PROVENANCE.md); nothing of it is a build input, an oracle or a control. Its docs/ are copied in reference/borg-rs/.",
-      "read_on": "2026-11-19",
+      "read_on": "2026-11-26",
       "issues": true,
       "watch_tags": "m*"
     },
     "better-borg-c": {
       "repository": "diegoami/better-borg-c",
-      "commit": "46037038cb0ce3a248ea22c06f02454818dbe4b4",
+      "commit": "cc4c3e43aa0a863ad2fc4adab8f930277d181900",
       "baseline": {
         "tag": "4.2.6-impact-v7",
         "commit": "3573d741e6dc3cafa4099fcef8b38fdb32952977",
         "carries": 76
       },
       "role": "C Borg with verified fixes; native measurement runner, death dossiers (copied in reference/deaths/better-borg-c/).",
-      "read_on": "2026-11-13",
+      "read_on": "2026-11-26",
       "issues": true,
       "watch_tags": "4.2.6-impact-v*",
       "borg_dir": "src/borg"
     },
     "neo-angband-tracker": {
       "repository": "diegoami/neo-angband-tracker",
-      "commit": "c2ddf2ca045d0ceade7a915a8f7a0ab2a427d4d3",
+      "commit": "dbde80762dd45857c7840f1af9df1bd39930d4ab",
       "paths": [
         "docs/c-borg/BORG_SPEC.md",
         "docs/c-borg/TUNABLE-BORG-PLAN.md",
-        "docs/c-borg/README.md",
-        "docs/c-manual/"
+        "docs/c-borg/README.md"
       ],
-      "role": "The C Borg specification and the Tunable Borg Plan (copied in reference/c-borg/); the issue board for C Borg defects. Also the Angband Strategy Manual (docs/c-manual/ on the default branch, the complete version of S12's draft): copied in reference/c-manual/, with its copy of the official user manual.",
-      "read_on": "2026-11-13",
+      "role": "The issue board for C Borg defects and an upstream reference for the C Borg specification and Tunable Borg Plan. The maintained C Borg docs and Angband Strategy Manual live in docs/c-borg/ and docs/strategy/ here. The official user manual lives in engine/angband/docs/.",
+      "read_on": "2026-11-26",
       "issues": true
     },
     "borg-zoo": {
       "repository": "diegoami/borg-zoo",
-      "commit": "7b373a702e7b9bb491ba468d97d34cf99ec3df2d",
+      "commit": "1ba3a3cfc97bbde629ac187d9ccd3bf5d9eed177",
       "role": "The yardstick: suites, specimens, outcome vocabulary, the borg-rs adapter (zoo/borgrs.py) the reborn Borg and the controls must satisfy (T1.8). Design and catalogue copied in reference/zoo/.",
-      "read_on": "2026-11-18",
+      "read_on": "2026-11-26",
       "issues": true
     },
     "borg-runner": {
       "repository": "diegoami/borg-runner",
       "commit": "e55ac6f384f2e19c0b148c2b1d2ac932fbec3d83",
       "role": "Language-model agents play upstream 4.2.6 (e473720, our engine until #215) from the screen, one key at a time; every key is recorded and each run is written up. What the agent players learned accumulates in manuals/INSTRUCTIONS.md (the page they read, each found line traced to run#ask; volume 2, INSTRUCTIONS_2.md, covers depth 5-20 and is untested), with each run's notebook (knowledge/) and report (records/): a source of game knowledge (S15, owner 2026-11-10), never a dependency.",
-      "read_on": "2026-11-13",
+      "read_on": "2026-11-26",
       "issues": true
     }
   },

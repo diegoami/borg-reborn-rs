@@ -201,6 +201,2401 @@
           "result": "3,600 games: ladder 448 deaths (24.9%) v no errand 524 (29.1%); descriptive, one development suite"
         }
       ]
+    },
+    "reborn-heal-by-class": {
+      "issue": 265,
+      "status": "re-pilot on 38858846 done; small tier (ctl, curve-lo, reserve-lo, common) defined",
+      "what": "Healing by class on main 4a482c58: each class's curve and reserve at about 0.5x and 1.5x its shipped value, and class files off (common 100/125); real-HP reserve and speed at shipped values; read per class.",
+      "profiles": [
+        "reborn-hbc-common",
+        "reborn-hbc-ctl",
+        "reborn-hbc-curve-hi",
+        "reborn-hbc-curve-lo",
+        "reborn-hbc-reserve-hi",
+        "reborn-hbc-reserve-lo"
+      ],
+      "runs": [
+        {
+          "run": "44294456089",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-main-4a482c58",
+          "result": "108 games: deaths ctl 1, curve-lo 2, curve-hi 1, reserve-lo 3, reserve-hi 1, common 2; both Druids die with common and reserve-lo"
+        },
+        {
+          "run": "44445305823",
+          "tier": "pilot (re-pilot)",
+          "specimen": "4.2.6-reborn-rust-main-38858846",
+          "result": "108 games: deaths ctl 0, curve-lo 3, curve-hi 0, reserve-lo 2, reserve-hi 1, common 2"
+        }
+      ]
+    },
+    "reborn-outmatched": {
+      "issue": 270,
+      "status": "superseded by #275 (reborn-heal-outmatched on 92fafc61: off, min_loss 30-70); not dispatched",
+      "what": "Outmatched healing on main 4a482c58: caution_heal_when_outmatched off against on (shipped), and its min_loss threshold at 25, 50 (compiled) and 75.",
+      "profiles": [
+        "reborn-outm-ctl",
+        "reborn-outm-off0",
+        "reborn-outm-loss25",
+        "reborn-outm-loss75"
+      ],
+      "runs": []
+    },
+    "reborn-attack-by-class": {
+      "issue": 274,
+      "status": "verysmall done: no lead; closing proposed",
+      "what": "Attack preferences by class on main 4a482c58: shipped, every class preference neutral (1000), distance from 1000 halved, and x1.5 (capped at 2000); read per class.",
+      "profiles": [
+        "reborn-abc-ctl",
+        "reborn-abc-flat",
+        "reborn-abc-half",
+        "reborn-abc-strong"
+      ],
+      "runs": [
+        {
+          "run": "44308236915",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-main-4a482c58",
+          "result": "72 games: deaths ctl 1, flat 1, half 2, strong 1; identical to ctl: flat 8, half 11, strong 15 of 18; Priest and Blackguard unaffected"
+        },
+        {
+          "run": "44329289001",
+          "tier": "verysmall",
+          "specimen": "4.2.6-reborn-rust-main-4a482c58",
+          "result": "135 games: deaths ctl 3, flat 3, half 5 of 45"
+        }
+      ]
+    },
+    "reborn-worships": {
+      "issue": 279,
+      "status": "pilot done (gate passed); damage, speed, hp, mana inert (18/18 identical), dropped; ac changes every game",
+      "what": "The five equipment borg_worships_* switches (damage, speed, hp, mana, ac), each on alone against all FALSE (shipped), on main 92fafc61. Gold is left out: the live town planner bypasses its selling effect.",
+      "profiles": [
+        "reborn-worship-ctl",
+        "reborn-worship-damage",
+        "reborn-worship-speed",
+        "reborn-worship-hp",
+        "reborn-worship-mana",
+        "reborn-worship-ac"
+      ],
+      "runs": [
+        {
+          "run": "44308259323",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-main-92fafc61",
+          "result": "108 games, no deaths; damage/speed/hp/mana 18/18 identical to ctl; ac 0/18 identical, mean CL 5.17 v 5.44"
+        }
+      ]
+    },
+    "reborn-recall-settings": {
+      "issue": 280,
+      "status": "starts 1-900 done: dl1off neutral",
+      "what": "Word of Recall settings on main f660aecc (#571 merged): shipped; no flight Recall on DL1-2 (gate 3); flight Recall on DL1 again (gate 0); Recall valued 300% or 1000% by the town planner; no flight Recall at any depth without breeders or chasers (caution_flee_recall 0).",
+      "profiles": [
+        "reborn-recallset-ctl",
+        "reborn-recallset-dl12",
+        "reborn-recallset-dl1off",
+        "reborn-recallset-gate",
+        "reborn-recallset-v1000",
+        "reborn-recallset-v300"
+      ],
+      "runs": [
+        {
+          "run": "44314277222",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "108 games, no deaths; flight Recalls ctl 8, dl12 3, dl1off 18, v300 8, v1000 14, gate 3; dl12 and gate identical 18/18"
+        },
+        {
+          "run": "44440293820",
+          "tier": "big (ctl, dl1off)",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "starts 1-900: ctl 62, dl1off 59; big alone 39 v 42"
+        }
+      ]
+    },
+    "reborn-pbd-by-class": {
+      "issue": 290,
+      "status": "small+medium done: deaths 23/360 in every arm; continued for Rangers and Rogues as reborn-pbd-rr",
+      "what": "Arrow point-blank divisor by class on main f660aecc: shipped (5, Rogue 3, Ranger 2), common 5 for all, about half, about double; read per class.",
+      "profiles": [
+        "reborn-pbdc-common",
+        "reborn-pbdc-ctl",
+        "reborn-pbdc-hi",
+        "reborn-pbdc-lo"
+      ],
+      "runs": [
+        {
+          "run": "44317603211",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "72 games, no deaths; identical to ctl common 14, hi 13, lo 11 of 18; common changes only Rogues and Rangers"
+        },
+        {
+          "run": "44346895083 + 44346921471",
+          "tier": "small + medium",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "1,440 games: 23/360 deaths in every arm; every class within one death of ctl"
+        }
+      ]
+    },
+    "reborn-scary-calm": {
+      "issue": 291,
+      "status": "defined (pilot on f660aecc, not dispatched)",
+      "what": "Scary latch (1/0) x calm (hurt 50 + afraid 1, shipped, against 0/0 = C) on main f660aecc.",
+      "profiles": [
+        "reborn-calm-c-calm",
+        "reborn-calm-ctl",
+        "reborn-calm-unlatch",
+        "reborn-calm-unlatch-c"
+      ],
+      "runs": []
+    },
+    "reborn-scary-named-damage": {
+      "issue": 292,
+      "status": "pilot done (gate passed); superseded by reborn-scary-classes (#299): the owner wants more class bias, not less",
+      "what": "Named scary list with the damage rule at 60% (shipped) or 40%, and the damage rule alone, on main f660aecc.",
+      "profiles": [
+        "reborn-named-dmg-named-d40",
+        "reborn-named-dmg-named-d60",
+        "reborn-named-dmg-nolist-d60"
+      ],
+      "runs": [
+        {
+          "run": "44317648896",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "54 games: named-d60 0 deaths, named-d40 1 (15/18 identical), nolist-d60 6 (0/18 identical)"
+        }
+      ]
+    },
+    "reborn-scary-classes": {
+      "issue": 299,
+      "status": "pilot done: up3/up6 inert at 100,000 turns; continued as reborn-scary-tough",
+      "what": "The scary list's class spread on main f660aecc: shipped (fragile = tough + 3), fragile + 3, fragile + 6, tough - 3 and fragile + 3; read per class.",
+      "profiles": [
+        "reborn-scaryclass-both",
+        "reborn-scaryclass-ctl",
+        "reborn-scaryclass-up3",
+        "reborn-scaryclass-up6"
+      ],
+      "runs": [
+        {
+          "run": "44346946815",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "72 games, no deaths; up3 and up6 18/18 identical to ctl; both changes every tough-class game"
+        }
+      ]
+    },
+    "reborn-pbd-rr": {
+      "issue": 290,
+      "status": "done: Ranger divisor 1 neutral, leaning helpful; not confirmed",
+      "what": "Point-blank divisor for Rangers (1, 2 shipped, 3) and Rogues (2, 3 shipped, 4) on main f660aecc, played on Ranger and Rogue starts only.",
+      "profiles": [
+        "reborn-pbdrr-ctl",
+        "reborn-pbdrr-hi",
+        "reborn-pbdrr-lo"
+      ],
+      "runs": [
+        {
+          "run": "44359581333",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "60 games: Ranger deaths ctl 1, lo 2, hi 0 of 10; Rogue none"
+        },
+        {
+          "run": "44360811472",
+          "tier": "medium",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "see the full-study result"
+        },
+        {
+          "run": "44360836868",
+          "tier": "big",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "see the full-study result"
+        },
+        {
+          "run": "44367279069",
+          "tier": "full",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "all 200 starts per class: Ranger deaths 2:18, 1:11, 3:17; Rogue 3:6, 2:8, 4:5"
+        },
+        {
+          "run": "44440258841",
+          "tier": "confirmation (classes-1800-b Rangers)",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "Ranger 1: 12 v 15 deaths, p 0.58: not confirmed"
+        }
+      ]
+    },
+    "reborn-scary-tough": {
+      "issue": 299,
+      "status": "all 1,800 starts done: t5 helpful on progress, neutral on deaths",
+      "what": "The scary list's tough end on main f660aecc: shipped, tough - 3 and tough - 5 with fragile unchanged; read per class.",
+      "profiles": [
+        "reborn-scarytough-ctl",
+        "reborn-scarytough-t3",
+        "reborn-scarytough-t5"
+      ],
+      "runs": [
+        {
+          "run": "44359605720",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "54 games, no deaths; identical to ctl t3 7, t5 6; t5 mean CL 6.00 v 5.44, DL 2.50 v 2.11"
+        },
+        {
+          "run": "44377349082 + 44377372817",
+          "tier": "small + medium",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "1,080 games: deaths ctl 23, t3 24, t5 22 of 360; mean CL 5.09 / 5.34 / 5.45"
+        },
+        {
+          "run": "44429988454",
+          "tier": "big",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "starts 1-900 pooled: ctl 62, t3 69, t5 57 of 900; mean CL 5.08 / 5.26 / 5.45"
+        },
+        {
+          "run": "44440277055",
+          "tier": "full (ctl, t5)",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "all 1,800 starts: ctl 119, t5 115 deaths; mean CL 5.08 v 5.42"
+        }
+      ]
+    },
+    "reborn-rising-ticks3": {
+      "issue": 191,
+      "status": "big done; closed (FINDINGS): shipped 300 stands",
+      "what": "caution_rising_explore_ticks 300 (shipped), 500, 1000, 1500, 2000 on main f660aecc.",
+      "profiles": [
+        "reborn-rising3-t1000",
+        "reborn-rising3-t1500",
+        "reborn-rising3-t2000",
+        "reborn-rising3-t300",
+        "reborn-rising3-t500"
+      ],
+      "runs": [
+        {
+          "run": "44359631721",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "90 games, no deaths; 8/18 identical to t300 in every arm; rising holds 1,101 / 1,369 / 3,823 / 3,904 / 3,202"
+        },
+        {
+          "run": "44377398372 + 44377423630",
+          "tier": "small + medium",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "1,800 games: deaths 23/23/21/22/22 of 360 (300/500/1000/1500/2000); mean CL 5.09 to 4.81"
+        },
+        {
+          "run": "44430005739",
+          "tier": "big",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "starts 1-900 pooled: deaths 62/56/58/60/59; mean CL 5.08 to 4.76"
+        }
+      ]
+    },
+    "reborn-attack-focus": {
+      "issue": 319,
+      "status": "done: small+medium+big, no outcome changed; closed (FINDINGS)",
+      "what": "Attack focus by class on main f660aecc: shipped class preferences, with every family a class file does not raise at 750 or 500.",
+      "profiles": [
+        "reborn-afocus-ctl",
+        "reborn-afocus-low500",
+        "reborn-afocus-low750"
+      ],
+      "runs": [
+        {
+          "run": "44377324652",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "54 games: deaths ctl 0, low750 0, low500 1; identical to ctl low750 12, low500 10 of 18; Druid, Necromancer, Rogue, Ranger change"
+        },
+        {
+          "run": "44423205315 + 44423223366 + 44423242333",
+          "tier": "small + medium + big",
+          "specimen": "4.2.6-reborn-rust-main-f660aecc",
+          "result": "2,700 games: deaths ctl 62, low750 60, low500 61 of 900; mean CL 5.05-5.08"
+        }
+      ]
+    },
+    "reborn-plays-risky": {
+      "issue": 330,
+      "status": "pilot done: risky kills; closed (FINDINGS)",
+      "what": "borg_plays_risky FALSE (shipped) against TRUE on main 6438e1cf.",
+      "profiles": [
+        "reborn-risky-ctl",
+        "reborn-risky-risky"
+      ],
+      "runs": [
+        {
+          "run": "44429970417",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-main-6438e1cf",
+          "result": "36 games: ctl 0, risky 7 deaths (0/7, p 0.016)"
+        }
+      ]
+    },
+    "reborn-597": {
+      "issue": 342,
+      "status": "pilot done: both switches neutral (inert)",
+      "what": "#597 switches on main 6438e1cf: caution_twitch_avoid_lava and caution_stair_parked_fallback each off against shipped 1.",
+      "profiles": [
+        "reborn-597-ctl",
+        "reborn-597-lava0",
+        "reborn-597-parked0"
+      ],
+      "runs": [
+        {
+          "run": "44440312372",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-main-6438e1cf",
+          "result": "54 games, no deaths; both arms 18/18 identical to ctl"
+        }
+      ]
+    },
+    "reborn-scary-ends": {
+      "issue": 350,
+      "status": "floor3 starts 1-900 done (49 v 51 deaths, CL 5.50 v 5.13); full defined",
+      "what": "Lowering the scary list's fragile end with the tough end (t5, all5, t5f6 at 100k; f3, all5, t5f6 and halved class fragility at 200k), on main 38858846.",
+      "profiles": [
+        "reborn-scaryends-all5",
+        "reborn-scaryends-all5-pal",
+        "reborn-scaryends-all8",
+        "reborn-scaryends-ctl",
+        "reborn-scaryends-early-none",
+        "reborn-scaryends-f3",
+        "reborn-scaryends-floor3",
+        "reborn-scaryends-floor4",
+        "reborn-scaryends-fraghalf",
+        "reborn-scaryends-t5",
+        "reborn-scaryends-t5f6"
+      ],
+      "runs": [
+        {
+          "run": "44446160367 + 44446177348",
+          "tier": "pilots (100k, 200k)",
+          "specimen": "4.2.6-reborn-rust-main-38858846",
+          "result": "100k: ctl 0, all5 0 deaths, CL 5.50 v 5.83; 200k: ctl 3, all5 1 deaths, CL 6.17 v 8.22"
+        },
+        {
+          "run": "44465218294 + 44465235895",
+          "tier": "floor pilots (100k, 200k)",
+          "specimen": "4.2.6-reborn-rust-main-38858846",
+          "result": "200k: ctl 3, all5 1, all5-pal 2, floor3 3, floor4 3 deaths; CL 6.17 / 8.22 / 7.83 / 7.06 / 6.61; 100k no deaths"
+        },
+        {
+          "run": "44498103824 + 44498131613",
+          "tier": "floor3 small + medium",
+          "specimen": "4.2.6-reborn-rust-main-38858846",
+          "result": "starts 1-360: ctl 13, floor3 13 deaths (2/2); CL 5.25 v 5.60; all5 (paired) 18, 5.73"
+        }
+      ]
+    },
+    "reborn-bundle": {
+      "issue": 549,
+      "status": "defined (200,000-turn pilot)",
+      "what": "HP minimums -25% (hp-lo) and phase reserve 1 at 200 percent (r1p200), alone and together, on main 2801ba18.",
+      "profiles": [
+        "reborn-bundle-plan-speed0",
+        "reborn-bundle-plan-speed30",
+        "reborn-bundle-plan-speed60",
+        "reborn-bundle-none-speed30",
+        "reborn-bundle-ambitious-speed30",
+        "reborn-bundle-none-speed30-unknown2",
+        "reborn-bundle-none-speed30-unknown3",
+        "reborn-bundle-none-speed30-unknown4",
+        "reborn-bundle-ctl",
+        "reborn-bundle-bundle",
+        "reborn-bundle-bundle-noscary",
+        "reborn-bundle-floor3",
+        "reborn-bundle-hplo",
+        "reborn-bundle-r1p200",
+        "reborn-bundle-both"
+      ],
+      "runs": []
+    },
+    "reborn-kill-power-main": {
+      "issue": 244,
+      "status": "pilot done: off neutral on deaths, leans harmful on progress",
+      "what": "kill_live_min_power shipped 1 against 0 on main 38858846.",
+      "profiles": [
+        "reborn-killpow38-ctl",
+        "reborn-killpow38-off0"
+      ],
+      "runs": [
+        {
+          "run": "44465254082",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-main-38858846",
+          "result": "36 games, no deaths; off CL 5.11 v 5.50"
+        }
+      ]
+    },
+    "reborn-errands-main": {
+      "issue": 383,
+      "status": "all tiers done; confirmed on classes-1800-b (128 v 117, p 0.035); 200k medium defined",
+      "what": "Errands plan vs no plan on main 3ba17e2c: none (shipped), errands_plan.txt, errands_plan_ambitious.txt; pilot to full.",
+      "profiles": [
+        "reborn-errands38-ambitious",
+        "reborn-errands38-errands",
+        "reborn-errands38-none"
+      ],
+      "runs": []
+    },
+    "reborn-bless": {
+      "issue": 388,
+      "status": "defined (pilot on 3ba17e2c, not dispatched)",
+      "what": "Bless rules (#560) on main 3ba17e2c: never cast, stop sooner (max_danger_divisor 4), bless longer (1), bless at lower danger (danger_divisor 6).",
+      "profiles": [
+        "reborn-bless-ctl",
+        "reborn-bless-dd6",
+        "reborn-bless-maxdd1",
+        "reborn-bless-maxdd4",
+        "reborn-bless-none"
+      ],
+      "runs": []
+    },
+    "reborn-phase-thresholds": {
+      "issue": 389,
+      "status": "defined (pilot on 3ba17e2c, not dispatched)",
+      "what": "Phase Door thresholds on main 3ba17e2c: ordinary danger 5 / 20 tenths, unique 7, no anti-summon delay.",
+      "profiles": [
+        "reborn-phaseth-anti0",
+        "reborn-phaseth-ctl",
+        "reborn-phaseth-ord20",
+        "reborn-phaseth-ord5",
+        "reborn-phaseth-uniq7"
+      ],
+      "runs": []
+    },
+    "reborn-town-dangerous": {
+      "issue": 390,
+      "status": "defined (pilot on 3ba17e2c, not dispatched)",
+      "what": "Attacking dangerous townspeople on sight (#619) on main 3ba17e2c: on (bonus 300), bonus 600, min_damage 3.",
+      "profiles": [
+        "reborn-towndanger-ctl",
+        "reborn-towndanger-onsight",
+        "reborn-towndanger-onsight-b600",
+        "reborn-towndanger-onsight-min3"
+      ],
+      "runs": []
+    },
+    "reborn-gold-reserve": {
+      "issue": 392,
+      "status": "defined (pilot on 3ba17e2c, not dispatched)",
+      "what": "Town gold reserve on main 3ba17e2c: fixed 300 / 1000, percent 25 / 50, against 0 (shipped).",
+      "profiles": [
+        "reborn-goldres-ctl",
+        "reborn-goldres-p25",
+        "reborn-goldres-p50",
+        "reborn-goldres-r1000",
+        "reborn-goldres-r300"
+      ],
+      "runs": []
+    },
+    "reborn-stand-seeinv": {
+      "issue": 393,
+      "status": "defined (pilot on 3ba17e2c, not dispatched)",
+      "what": "caution_scary_stand 0 (always flee) and recover_rest_arms_see_invis 1 against shipped, on main 3ba17e2c.",
+      "profiles": [
+        "reborn-standinv-ctl",
+        "reborn-standinv-seeinv1",
+        "reborn-standinv-stand0"
+      ],
+      "runs": []
+    },
+    "reborn-phase-rule-main": {
+      "issue": 347,
+      "status": "defined (pilot and classes-1800-b confirmation on 3ba17e2c, not dispatched)",
+      "what": "#584's Phase Door rule on main 3ba17e2c: ctl (shipped off) against thr-100 (escape_phase_adjacent_rule 1, escape_phase_lost_test 0); pilot, then a confirmation on fresh seeds.",
+      "profiles": [
+        "reborn-phaserule38-ctl",
+        "reborn-phaserule38-thr-100"
+      ],
+      "runs": []
+    },
+    "reborn-scary-floor-main": {
+      "issue": 369,
+      "status": "defined (pilot, small, medium, big, full on 3ba17e2c, not dispatched)",
+      "what": "The scary list's floor3 (every range - 5, floor CL 3) against the shipped list on main 3ba17e2c, with #621's ignore lines in both arms; pilot to full.",
+      "profiles": [
+        "reborn-scary38-ctl",
+        "reborn-scary38-floor3"
+      ],
+      "runs": []
+    },
+    "reborn-neutral-main": {
+      "issue": 400,
+      "status": "defined (pilot, small, medium, big, full on 3ba17e2c, not dispatched)",
+      "what": "Settings found neutral elsewhere, each alone on main 3ba17e2c: caution_scary_unlatch_calmed, caution_recall_wait_as_usual, attack_town_dangerous_on_sight, escape_fox_form (1 against shipped 0).",
+      "profiles": [
+        "reborn-neutral38-calmed",
+        "reborn-neutral38-ctl",
+        "reborn-neutral38-fox",
+        "reborn-neutral38-recall-usual",
+        "reborn-neutral38-town-kill"
+      ],
+      "runs": []
+    },
+    "reborn-untested-town": {
+      "issue": 401,
+      "status": "defined (pilot screen on 3ba17e2c, not dispatched)",
+      "what": "Never-tested town planner settings halved and doubled on main 3ba17e2c: borg_town_risk, power_scale, w_attack, w_support, w_space, home_discount.",
+      "profiles": [
+        "reborn-untested38-ctl",
+        "reborn-untested38-risk-lo",
+        "reborn-untested38-risk-hi",
+        "reborn-untested38-power-lo",
+        "reborn-untested38-power-hi",
+        "reborn-untested38-attack-lo",
+        "reborn-untested38-attack-hi",
+        "reborn-untested38-support-lo",
+        "reborn-untested38-support-hi",
+        "reborn-untested38-space-lo",
+        "reborn-untested38-space-hi",
+        "reborn-untested38-home-lo",
+        "reborn-untested38-home-hi"
+      ],
+      "runs": []
+    },
+    "reborn-untested-caution": {
+      "issue": 401,
+      "status": "defined (pilot screen on 3ba17e2c, not dispatched)",
+      "what": "Never-tested trip, Recall and breeder settings lowered and raised on main 3ba17e2c: borg_town_explore_turns, caution_recall_rest_turns, caution_breeder_easy_escape_steps, caution_flee_recall_chasers.",
+      "profiles": [
+        "reborn-untested38-ctl",
+        "reborn-untested38-explore-lo",
+        "reborn-untested38-explore-hi",
+        "reborn-untested38-recallrest-lo",
+        "reborn-untested38-recallrest-hi",
+        "reborn-untested38-easyesc-lo",
+        "reborn-untested38-easyesc-hi",
+        "reborn-untested38-chasers-lo",
+        "reborn-untested38-chasers-hi"
+      ],
+      "runs": []
+    },
+    "reborn-errands-floor3": {
+      "issue": 405,
+      "status": "defined (pilot on 3ba17e2c, not dispatched)",
+      "what": "Errands plan × floor3 (2×2) on main 3ba17e2c: ctl, errands, floor3, both.",
+      "profiles": [
+        "reborn-combo38-both",
+        "reborn-combo38-ctl",
+        "reborn-combo38-errands",
+        "reborn-combo38-floor3"
+      ],
+      "runs": []
+    },
+    "reborn-crow": {
+      "issue": 408,
+      "status": "pilot done (inert on classes-18); replay on the 55 crow / wild-cat death starts defined",
+      "what": "Crows (and wild cats) scary for fragile classes at CL1-2/3 only, on main 3ba17e2c: crow 0-2, crow 0-3, crow + wild cat 0-2.",
+      "profiles": [
+        "reborn-crow38-crow2",
+        "reborn-crow38-crow3",
+        "reborn-crow38-crowcat2",
+        "reborn-crow38-ctl"
+      ],
+      "runs": []
+    },
+    "reborn-mage-priest": {
+      "issue": 415,
+      "status": "defined (pilot on 592c6984, not dispatched)",
+      "what": "Study 2 of #415 on main 592c6984, Mage and Priest starts, rule and calmed in every arm: healing x1.5, spell preference 1500.",
+      "profiles": [
+        "reborn-magepriest-ctl",
+        "reborn-magepriest-heal-hi",
+        "reborn-magepriest-spell1500"
+      ],
+      "runs": []
+    },
+    "reborn-bgphase": {
+      "issue": 415,
+      "status": "defined (pilot on Blackguard starts, medium, big, full on 592c6984, not dispatched)",
+      "what": "Blackguard exception to the Phase Door rule on main 592c6984: rule on (control, as main will ship) against rule off, calmed unlatch in both; Blackguard starts only.",
+      "profiles": [
+        "reborn-bgphase59-rule-off",
+        "reborn-bgphase59-rule-on"
+      ],
+      "runs": []
+    },
+    "reborn-casters": {
+      "issue": 415,
+      "status": "defined (pilot on caster starts, medium, big, full on 592c6984, not dispatched)",
+      "what": "Casters' early kit and fighting on main 592c6984, Mage, Priest, Necromancer and Druid starts only, the Phase Door rule and calmed in every arm: more oil, more Phase Door, thrown preference 1500, early animals on the scary list, heal reserve + 100.",
+      "profiles": [
+        "reborn-casters59-ctl",
+        "reborn-casters59-escape",
+        "reborn-casters59-heal",
+        "reborn-casters59-oil",
+        "reborn-casters59-scary-animals",
+        "reborn-casters59-thrown"
+      ],
+      "runs": []
+    },
+    "reborn-rebase-main": {
+      "issue": 416,
+      "status": "defined (pilot on 592c6984, not dispatched)",
+      "what": "Re-baseline on main 592c6984 after #664: shipped, the Phase Door rule, calmed unlatch, both, and the errands plan.",
+      "profiles": [
+        "reborn-rebase59-calmed",
+        "reborn-rebase59-errands",
+        "reborn-rebase59-rule",
+        "reborn-rebase59-rule-calmed",
+        "reborn-rebase59-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-death-bank38": {
+      "issue": 429,
+      "status": "defined (replay of 3ba17e2c's 233 death starts, not dispatched)",
+      "what": "The death-start bank of shipped main 3ba17e2c: ctl, the Phase Door rule, calmed unlatch, the errands plan, all three.",
+      "profiles": [
+        "reborn-bank38-all3",
+        "reborn-bank38-calmed",
+        "reborn-bank38-ctl",
+        "reborn-bank38-errands",
+        "reborn-bank38-phase"
+      ],
+      "runs": []
+    },
+    "reborn-crow-escape": {
+      "issue": 408,
+      "status": "defined (replay of the 55 crow/wild-cat death starts, not dispatched)",
+      "what": "Crow/wild-cat death starts on 3ba17e2c: ctl, the Phase Door rule, the rule + throwing 1500, the rule + more oil.",
+      "profiles": [
+        "reborn-crowesc38-ctl",
+        "reborn-crowesc38-phase",
+        "reborn-crowesc38-phase-oil",
+        "reborn-crowesc38-phase-thrown"
+      ],
+      "runs": []
+    },
+    "reborn-breeder-stoppable": {
+      "issue": 411,
+      "status": "defined (pilot on PR #632 head ed8e270d)",
+      "what": "Kill breeders first (caution_breeder_stoppable), alone and with the flight's colony avoidance (caution_breeder_avoid), against both off.",
+      "profiles": [
+        "reborn-breederstop-ctl",
+        "reborn-breederstop-stop",
+        "reborn-breederstop-stop-avoid"
+      ],
+      "runs": []
+    },
+    "reborn-class-curves": {
+      "issue": 433,
+      "status": "pilot done (run 44610324668: 0 deaths against 1); small + medium defined",
+      "what": "The owner's #682 per-class Phase Door and oil curve scales (and Blackguard healing 100/200) against the same build set back to 100 (main before #682).",
+      "profiles": [
+        "reborn-curves-a87b-ctl",
+        "reborn-curves-a87b-owner"
+      ],
+      "runs": []
+    },
+    "reborn-kill-flow-mode": {
+      "issue": 438,
+      "status": "defined (pilot on PR #695 head f9c44b35, 200k turns)",
+      "what": "The hunt removed in steps: kill_flow_mode 0 (C), 1 targeted hunts only, 2 no out-of-view hunt, 3 never hunt.",
+      "profiles": [
+        "reborn-killflow-ctl",
+        "reborn-killflow-inview",
+        "reborn-killflow-nohunt",
+        "reborn-killflow-targeted"
+      ],
+      "runs": []
+    },
+    "reborn-detect-min-level": {
+      "issue": 443,
+      "status": "defined (pilot on PR #703 head 3ed059b6)",
+      "what": "No detection prayer by panel below CL10 for the five casters (light_detect_evil_spell_min_level 10) against C (0).",
+      "profiles": [
+        "reborn-detectmin-ctl",
+        "reborn-detectmin-switch"
+      ],
+      "runs": []
+    },
+    "reborn-slow-crowd-exit": {
+      "issue": 448,
+      "status": "defined (pilot on PR #702 head c3747cc9; small + medium after its gate)",
+      "what": "Walk out of a crowd of slower or immobile monsters (caution_slow_crowd_exit) against off.",
+      "profiles": [
+        "reborn-slowcrowd-ctl",
+        "reborn-slowcrowd-exit"
+      ],
+      "runs": []
+    },
+    "reborn-untested-dbc": {
+      "issue": 450,
+      "status": "defined (pilot on main dbc92d18)",
+      "what": "Never-varied town settings: device value by class (100 / 50 / 200), shot reserve 50 / 100, shot reserve with oil 50, town flee no-worse.",
+      "profiles": [
+        "reborn-untested-dbc-ctl",
+        "reborn-untested-dbc-dev100",
+        "reborn-untested-dbc-dev200",
+        "reborn-untested-dbc-dev50",
+        "reborn-untested-dbc-miss100",
+        "reborn-untested-dbc-miss100-or50",
+        "reborn-untested-dbc-miss50",
+        "reborn-untested-dbc-townflee"
+      ],
+      "runs": []
+    },
+    "reborn-class-curves-dbc": {
+      "issue": 433,
+      "status": "small + medium done (13 against 12 deaths of 360); big + full defined",
+      "what": "#433 restarted on dbc92d18: the owner's class curves against all scales 100.",
+      "profiles": [
+        "reborn-curves-dbc-ctl",
+        "reborn-curves-dbc-owner"
+      ],
+      "runs": []
+    },
+    "reborn-detect-min-dbc": {
+      "issue": 443,
+      "status": "defined (pilot, small, medium on main dbc92d18)",
+      "what": "#443 on dbc92d18: caster detection min level 10 (shipped) against 0.",
+      "profiles": [
+        "reborn-detectmin-dbc-ctl",
+        "reborn-detectmin-dbc-switch"
+      ],
+      "runs": []
+    },
+    "reborn-breederstop-dbc": {
+      "issue": 411,
+      "status": "defined (pilot, small, medium on main dbc92d18)",
+      "what": "#411 on dbc92d18: kill breeders first (stoppable), alone and with avoidance, against both off.",
+      "profiles": [
+        "reborn-breederstop-dbc-ctl",
+        "reborn-breederstop-dbc-stop",
+        "reborn-breederstop-dbc-stop-avoid"
+      ],
+      "runs": []
+    },
+    "reborn-store-overweight": {
+      "issue": 457,
+      "status": "pilot done (1 -> 0 deaths); small + medium defined",
+      "what": "Store at home only when overweight (town_store_only_overweight) against off.",
+      "profiles": [
+        "reborn-storeow-ctl",
+        "reborn-storeow-overweight"
+      ],
+      "runs": []
+    },
+    "reborn-bgcurve-dbc": {
+      "issue": 433,
+      "status": "defined (pilot on dbc92d18; classes-1800-b Blackguards after its gate)",
+      "what": "Blackguards: shipped (Phase Door 50, healing 100/200) against Phase Door 100, and against healing 75/150.",
+      "profiles": [
+        "reborn-bgcurve-dbc-heal-old",
+        "reborn-bgcurve-dbc-pd100",
+        "reborn-bgcurve-dbc-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-stairs-leash": {
+      "issue": 475,
+      "status": "small + medium done (11 against 4 deaths); big defined",
+      "what": "Stairs leash for CL1-4 (flow_leash 1 by level, 2 growing with XP) against C.",
+      "profiles": [
+        "reborn-leash-ctl",
+        "reborn-leash-grow",
+        "reborn-leash-level"
+      ],
+      "runs": []
+    },
+    "reborn-low-level-detection": {
+      "issue": 470,
+      "status": "defined (pilot)",
+      "what": "Detection min level: 0 (C) / casters 10 / all 10 / all 5.",
+      "profiles": [
+        "reborn-lowdetect-all10",
+        "reborn-lowdetect-all5",
+        "reborn-lowdetect-casters10",
+        "reborn-lowdetect-d0"
+      ],
+      "runs": []
+    },
+    "reborn-town-switch-screen": {
+      "issue": 466,
+      "status": "defined (pilot)",
+      "what": "Screen of the town and Druid switches main ships off, one arm each.",
+      "profiles": [
+        "reborn-townscreen-ctl",
+        "reborn-townscreen-fox",
+        "reborn-townscreen-fox-town",
+        "reborn-townscreen-recall-reserve",
+        "reborn-townscreen-town-fight",
+        "reborn-townscreen-town-flee",
+        "reborn-townscreen-town-not-scary"
+      ],
+      "runs": []
+    },
+    "reborn-dungeon-switch-screen": {
+      "issue": 465,
+      "status": "defined (pilot)",
+      "what": "Screen of the dungeon switches main ships off, one arm each.",
+      "profiles": [
+        "reborn-dunscreen-ctl",
+        "reborn-dunscreen-down-jump",
+        "reborn-dunscreen-downstairs",
+        "reborn-dunscreen-phase-fight",
+        "reborn-dunscreen-phase-landing",
+        "reborn-dunscreen-ranged-immobile",
+        "reborn-dunscreen-recall-wait",
+        "reborn-dunscreen-rising-hold",
+        "reborn-dunscreen-stairs-leave",
+        "reborn-dunscreen-unlatch-kill"
+      ],
+      "runs": []
+    },
+    "reborn-shipcheck-b895": {
+      "issue": 480,
+      "status": "defined (first stage on classes-1800-small; medium after its gate)",
+      "what": "Main b895e352 (engine 574b618c): shipped against throw-as-melee 0, store-when-overweight 0, detection casters 10, all 10, ranged vs immobile 1.",
+      "profiles": [
+        "reborn-shipcheck-b895-all10",
+        "reborn-shipcheck-b895-casters10",
+        "reborn-shipcheck-b895-ranged",
+        "reborn-shipcheck-b895-shipped",
+        "reborn-shipcheck-b895-store0",
+        "reborn-shipcheck-b895-throw0"
+      ],
+      "runs": []
+    },
+    "reborn-main-fde8": {
+      "issue": 488,
+      "status": "defined (pilot; all 1,800 starts after its gate)",
+      "what": "borg-reborn-rs main fde8025a (engine 574b618c) with its shipped settings.",
+      "profiles": [
+        "reborn-main-fde8-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-breeder-world-x4": {
+      "issue": 482,
+      "status": "not tested: the switch arms were overridden by caution_breeder_policy 3 (identical plays); superseded by reborn-breeder-policy-x4",
+      "what": "Breeder switches in the breeders-x4 world (all arms in the world): shipped against stoppable 0, rest 0, both 0, exit 1, avoid 1.",
+      "profiles": [
+        "reborn-worldx4-avoid",
+        "reborn-worldx4-both0",
+        "reborn-worldx4-ctl",
+        "reborn-worldx4-exit",
+        "reborn-worldx4-rest0",
+        "reborn-worldx4-stop0"
+      ],
+      "runs": []
+    },
+    "reborn-breeder-policy-x4": {
+      "issue": 482,
+      "status": "defined (pilot; small + medium after its gate)",
+      "what": "The breeder policy ladder (caution_breeder_policy 0-5, shipped 3) in the breeders-x4 world.",
+      "profiles": [
+        "reborn-bpolicy-x4-p0",
+        "reborn-bpolicy-x4-p1",
+        "reborn-bpolicy-x4-p2",
+        "reborn-bpolicy-x4-p3",
+        "reborn-bpolicy-x4-p4",
+        "reborn-bpolicy-x4-p5"
+      ],
+      "runs": []
+    },
+    "reborn-teleport-landing-either": {
+      "issue": 495,
+      "status": "defined (pilot at 200k on main c74a8155)",
+      "what": "escape_teleport_landing_either (upstream 95387b06) 1 against shipped 0, at 200,000 turns.",
+      "profiles": [
+        "reborn-tplanding-ctl",
+        "reborn-tplanding-either"
+      ],
+      "runs": []
+    },
+    "reborn-flight-fixes": {
+      "issue": 501,
+      "status": "defined (pilot; Rangers and small + medium after its gate)",
+      "what": "The flight fixes (#743/#747/#749/#750/#751/#753) all on against shipped, on e8b3acfd.",
+      "profiles": [
+        "reborn-flight-ctl",
+        "reborn-flight-flight"
+      ],
+      "runs": []
+    },
+    "reborn-cleash": {
+      "issue": 506,
+      "status": "pilots done (first pilot; re-pilot of none as reborn-cleashnone); small tiers ctl+loose and ctl+none defined",
+      "what": "C's exploration leash values on main ec0f3b28: shipped (3/9/5), tight (2/5), loose (5/15), depth margin 0 and 10, and no leash.",
+      "profiles": [
+        "reborn-cleash-ctl",
+        "reborn-cleash-tight",
+        "reborn-cleash-loose",
+        "reborn-cleash-margin0",
+        "reborn-cleash-margin10",
+        "reborn-cleash-none"
+      ],
+      "runs": [
+        {
+          "run": "44769379993",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-main-ec0f3b28",
+          "result": "none arm config_error (depth margin -100); loose 0 deaths CL 6.17, margin0 CL 5.72, margin10 = ctl in 14 of 18"
+        }
+      ]
+    },
+    "reborn-flight3-757": {
+      "issue": 510,
+      "status": "pilot done 2026-11-20 (nodanger stalled; flight3 rescued); small tier (ctl, flight3) defined",
+      "what": "PR #757 on 50c23a5e: #501's flight arm with #751 mode 3 (flight3), plus ranged-first (flight3r), and each switch alone.",
+      "profiles": [
+        "reborn-flight3m-ctl",
+        "reborn-flight3m-flight3",
+        "reborn-flight3m-flight3r",
+        "reborn-flight3m-path3",
+        "reborn-flight3m-ranged",
+        "reborn-flight3m-flee",
+        "reborn-flight3m-fast",
+        "reborn-flight3m-cure",
+        "reborn-flight3m-nodanger",
+        "reborn-flight3m-hold"
+      ],
+      "runs": [
+        {
+          "run": "44774313553",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-flight3-50c23a5e",
+          "result": "nodanger stalled (1 frozen-turn loop); flight3 and flight3r rescued the one dead start, 0 newly killed; ranged, flee, hold identical to ctl in 18 of 18"
+        }
+      ]
+    },
+    "reborn-fight-recall": {
+      "issue": 511,
+      "status": "defined (pilot; larger tiers after its gate and the owner)",
+      "what": "#763/#764 on 78b8f297: attack-on-sight categories, winning-fight override, safe flight Recall, and all three.",
+      "profiles": [
+        "reborn-fightrecall-ctl",
+        "reborn-fightrecall-attack-sight",
+        "reborn-fightrecall-winning-fight",
+        "reborn-fightrecall-recall-safe",
+        "reborn-fightrecall-all"
+      ],
+      "runs": []
+    },
+    "reborn-phase-first-761": {
+      "issue": 513,
+      "status": "pilot done 2026-11-20 (oil led, phase rescued); small tier (ctl, oil, phase) defined",
+      "what": "#761 on 992e0351: Phase Door reserve, less oil, Rangers' lighter kit, floor pickup, unseen flavours, food/light, and all.",
+      "profiles": [
+        "reborn-phasefirst-ctl",
+        "reborn-phasefirst-ranger",
+        "reborn-phasefirst-phase",
+        "reborn-phasefirst-oil",
+        "reborn-phasefirst-phaseoil",
+        "reborn-phasefirst-floor",
+        "reborn-phasefirst-floorfirst",
+        "reborn-phasefirst-unseen",
+        "reborn-phasefirst-foodlight",
+        "reborn-phasefirst-all"
+      ],
+      "runs": [
+        {
+          "run": "44774388022",
+          "tier": "pilot",
+          "specimen": "4.2.6-reborn-rust-phase-992e0351",
+          "result": "clean; oil CL 6.67 (0 newly killed), phase/unseen/foodlight/all rescued the one dead start; ranger/floor/floorfirst identical to ctl in 15-16 of 18"
+        }
+      ]
+    },
+    "reborn-recallwait": {
+      "issue": 507,
+      "status": "defined (pilot; small + medium after its gate)",
+      "what": "#754's Recall-wait switches on PR #762 head 613f1ba5: a pending Recall counts as an escape (esc), no exploring while it counts down (nox), both.",
+      "profiles": [
+        "reborn-recallwait-ctl",
+        "reborn-recallwait-esc",
+        "reborn-recallwait-nox",
+        "reborn-recallwait-both"
+      ],
+      "runs": []
+    },
+    "reborn-cleashnone": {
+      "issue": 506,
+      "status": "defined (re-pilot of ctl against none; small tier after its gate)",
+      "what": "C's leash switched off (flow_leash_pickup_max_level and flow_leash_stairs_max_level 0) against C's shipped values, on main ec0f3b28.",
+      "profiles": [
+        "reborn-cleashnone-ctl",
+        "reborn-cleashnone-none"
+      ],
+      "runs": []
+    },
+    "reborn-dive-gates-768": {
+      "issue": 518,
+      "status": "defined (pilot)",
+      "what": "C Borg dive gates (#768, PR #772): the shipped depth cap against the merged gates, then the depth margin and class offsets on 4e9af99e.",
+      "profiles": [
+        "reborn-dive-gates-768-shipped",
+        "reborn-dive-gates-768-margin-minus2",
+        "reborn-dive-gates-768-margin-plus2",
+        "reborn-dive-gates-768-mid-looser",
+        "reborn-dive-gates-768-mid-tighter"
+      ],
+      "runs": []
+    },
+    "reborn-p6compat": {
+      "issue": 520,
+      "status": "defined (pilot)",
+      "what": "P6 compatibility check (borg-reborn-rs #774): main 4e9af99e against the synchronized d0657712, shipped defaults.",
+      "profiles": [
+        "reborn-p6compat-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-flight3main": {
+      "issue": 516,
+      "status": "defined (pilot)",
+      "what": "PR #757's flight switches on main 09a70906 (mode 3 fixed): flight3, flight3r, path3, fast, cure.",
+      "profiles": [
+        "reborn-flight3main-ctl",
+        "reborn-flight3main-flight3",
+        "reborn-flight3main-flight3r",
+        "reborn-flight3main-path3",
+        "reborn-flight3main-fast",
+        "reborn-flight3main-cure"
+      ],
+      "runs": []
+    },
+    "reborn-rangerphase": {
+      "issue": 517,
+      "status": "defined (pilot)",
+      "what": "#761 Phase Door first on 3c889f0f (PR #778): ranger, phase, oil, floor and all.",
+      "profiles": [
+        "reborn-rangerphase-ctl",
+        "reborn-rangerphase-ranger",
+        "reborn-rangerphase-phase",
+        "reborn-rangerphase-oil",
+        "reborn-rangerphase-floor",
+        "reborn-rangerphase-all"
+      ],
+      "runs": []
+    },
+    "reborn-prepared": {
+      "issue": 522,
+      "status": "pilot done 2026-11-20 (HP minimums act; level and Cure minimums not tested); small tier (ctl, hp-lo, hp-hi) defined; 200,000-turn pilot defined (reborn-prepared-200k-pilot)",
+      "what": "The dive gates' thresholds on main a04e5471: character-level minimums +/-2, HP minimums -25%/+25%, Cure minimum 0 and 4, and loose and tight combinations.",
+      "profiles": [
+        "reborn-prepared-ctl",
+        "reborn-prepared-cl-lo",
+        "reborn-prepared-cl-hi",
+        "reborn-prepared-hp-lo",
+        "reborn-prepared-hp-hi",
+        "reborn-prepared-cure0",
+        "reborn-prepared-cure4",
+        "reborn-prepared-loose",
+        "reborn-prepared-tight"
+      ],
+      "runs": []
+    },
+    "reborn-weighted765": {
+      "issue": 524,
+      "status": "pilot done 2026-11-20 (weighted5 newly killed one Ranger, 0 of 18 identical); small tier (mode3, weighted5) defined",
+      "what": "Threat-weighted stair routing (#765, PR #769) on 4a2eade9: the shipped profile, mode 3, and mode 3 with threat weight 5.",
+      "profiles": [
+        "reborn-weighted765-shipped",
+        "reborn-weighted765-mode3",
+        "reborn-weighted765-weighted5"
+      ],
+      "runs": []
+    },
+    "reborn-phasereserve": {
+      "issue": 526,
+      "status": "defined (pilot; small tier and Rangers after its gate and the owner); 200,000-turn pilot defined (reborn-phase-reserve-200k-pilot); small tier at 200,000 turns (r1p200, r2p400) defined",
+      "what": "town_phase_reserve (1, 2, 3 at 200 percent) and town_phase_reserve_percent (50, 100, 200, 400 at reserve 2) on main d745d9fc, against the shipped reserve 0.",
+      "profiles": [
+        "reborn-phasereserve-ctl",
+        "reborn-phasereserve-r1p200",
+        "reborn-phasereserve-r2p200",
+        "reborn-phasereserve-r3p200",
+        "reborn-phasereserve-r2p50",
+        "reborn-phasereserve-r2p100",
+        "reborn-phasereserve-r2p400"
+      ],
+      "runs": []
+    },
+    "reborn-attacksight": {
+      "issue": 529,
+      "status": "defined (pilot; small tier after its gate and the owner)",
+      "what": "attack_on_sight (#760), caution_winning_fight (#759) and the kill-on-sight list on main c4163095: each switch off, both off, the list without its breeders, without its fast-fragile pair, and cut to CL10 and CL20.",
+      "profiles": [
+        "reborn-attacksight-ctl",
+        "reborn-attacksight-both0",
+        "reborn-attacksight-sight0",
+        "reborn-attacksight-win0",
+        "reborn-attacksight-nobreed",
+        "reborn-attacksight-nofast",
+        "reborn-attacksight-cl10",
+        "reborn-attacksight-cl20"
+      ],
+      "runs": []
+    },
+    "reborn-breederpol": {
+      "issue": 530,
+      "status": "defined (pilot; small tier after its gate and the owner)",
+      "what": "caution_breeder_policy in the normal world on main c4163095: shipped 3 and 0, 2, 4, 5.",
+      "profiles": [
+        "reborn-breederpol-ctl",
+        "reborn-breederpol-p0",
+        "reborn-breederpol-p2",
+        "reborn-breederpol-p4",
+        "reborn-breederpol-p5"
+      ],
+      "runs": []
+    },
+    "reborn-adopted": {
+      "issue": 511,
+      "status": "defined (pilot f827f844; superseded by reborn-ship3 on main d7e58cd, not dispatched)",
+      "what": "The three adopted switches (attack_on_sight, caution_winning_fight, caution_recall_survival, shipped 1) isolated against an explicit all-off control on f827f844: off, category, winning, recall, shipped.",
+      "profiles": [
+        "reborn-adopted-f827f844-off",
+        "reborn-adopted-f827f844-category",
+        "reborn-adopted-f827f844-winning",
+        "reborn-adopted-f827f844-recall",
+        "reborn-adopted-f827f844-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-adopted-600": {
+      "issue": 528,
+      "status": "defined (pilot18 of the retained 600; prepared only; the owner decides dispatch and every tier)",
+      "what": "The adopted combined policy (shipped) against explicit all-off on f827f844, on the first 2 starts per class of the owner's retained 600 (200 Rangers + 50 of each other class).",
+      "profiles": [
+        "reborn-adopted-f827f844-combined-off",
+        "reborn-adopted-f827f844-combined-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-ship3": {
+      "issue": 535,
+      "status": "pilot done 2026-11-21; small tier at 200,000 turns (alloff, fight, allon) defined",
+      "what": "The three shipped fight/Recall switches ablated on main d7e58cd: alloff, sight, fight, recall, allon.",
+      "profiles": [
+        "reborn-ship3-alloff",
+        "reborn-ship3-sight",
+        "reborn-ship3-fight",
+        "reborn-ship3-recall",
+        "reborn-ship3-allon"
+      ],
+      "runs": []
+    },
+    "reborn-townhunt": {
+      "issue": 538,
+      "status": "defined (pilot)",
+      "what": "town_ranged_reserve and town_hunt (borg-reborn-rs #789, PR #800) on 8e0f20af, with and without caution_winning_fight (which also decides town attacks).",
+      "profiles": [
+        "reborn-townhunt-ctl",
+        "reborn-townhunt-reserve",
+        "reborn-townhunt-hunt",
+        "reborn-townhunt-combined",
+        "reborn-townhunt-hunt-nofight",
+        "reborn-townhunt-combined-nofight"
+      ],
+      "runs": []
+    },
+    "reborn-deathrisk": {
+      "issue": 534,
+      "status": "pilot on 5343532c done (run 44838098884); exact-build pilot on 0eb48328 (core-trace@3) defined",
+      "what": "borg-reborn-rs 5343532c (task/T790-death-risk): the shipped settings with per-think death_risk observations, evidence retained for calibration.",
+      "profiles": [
+        "reborn-deathrisk-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-maindefault": {
+      "issue": 543,
+      "status": "verysmall done (run 44841145368, 1 death); defined: 300,000-turn verysmall (#543), the death bank (#550), and the planned full ladder small-rest, medium, big, full (#551, not dispatched); the planned ladder of #551 on 2801ba18 is superseded by reborn-head (#566), not dispatched",
+      "what": "borg-reborn-rs main 2801ba18 with its shipped settings and no overrides, on classes-1800-verysmall (45 starts), for death reports.",
+      "profiles": [
+        "reborn-maindefault-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-paladingate": {
+      "issue": 544,
+      "status": "defined (pilot on the 10 Paladin starts)",
+      "what": "The Paladin DL3-4 max-HP preparedness gate, 45 against 50, on 2fdfd41c (borg-reborn-rs #795).",
+      "profiles": [
+        "reborn-paladingate-ctl",
+        "reborn-paladingate-hp45"
+      ],
+      "runs": []
+    },
+    "reborn-darkentry": {
+      "issue": 546,
+      "status": "defined (pilot on the 20 Mage and Necromancer starts)",
+      "what": "Low-level dark-entry detection (light_detect_dark_entry 1) for Mages and Necromancers on cd0ed207 (borg-reborn-rs #796).",
+      "profiles": [
+        "reborn-darkentry-ctl",
+        "reborn-darkentry-dark1"
+      ],
+      "runs": []
+    },
+    "reborn-killers": {
+      "issue": 548,
+      "status": "defined (200,000-turn pilot)",
+      "what": "Fang and Grip scary to CL8-10 and 10-12, the dogs as kill-on-sight, soldiers and acolytes scary to CL12-16 and 16-20, on main 2801ba18.",
+      "profiles": [
+        "reborn-killers-ctl",
+        "reborn-killers-dogs10",
+        "reborn-killers-dogs12",
+        "reborn-killers-doghunt",
+        "reborn-killers-fighters12",
+        "reborn-killers-fighters16"
+      ],
+      "runs": []
+    },
+    "reborn-receipt": {
+      "issue": 539,
+      "status": "defined (pilot; adapter contract check of settings-resolved.json)",
+      "what": "The resolved-settings receipt on main 78fb330f: a class override, a legacy alias, a scalar and a default-equal value, against the shipped profile.",
+      "profiles": [
+        "reborn-receipt-ctl",
+        "reborn-receipt-override"
+      ],
+      "runs": []
+    },
+    "reborn-fresh": {
+      "issue": 556,
+      "status": "defined (pilot on the first 18 starts of the fresh block classes-1800-fresh; the full block is the owner's call)",
+      "what": "Fresh baseline: main d7e58cd (everything shipped this week) against fde8025a (#488), each with its own shipped settings, for P7's two endpoints.",
+      "profiles": [
+        "reborn-fresh-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-floo": {
+      "issue": 558,
+      "status": "defined (pilot)",
+      "what": "Leave-one-out of the shipped flight cluster on main d7e58cd: path1, noflee, danger, weight0, fastany, curefull.",
+      "profiles": [
+        "reborn-floo-shipped",
+        "reborn-floo-path1",
+        "reborn-floo-noflee",
+        "reborn-floo-danger",
+        "reborn-floo-weight0",
+        "reborn-floo-fastany",
+        "reborn-floo-curefull"
+      ],
+      "runs": []
+    },
+    "reborn-sloo": {
+      "issue": 557,
+      "status": "defined (pilot)",
+      "what": "Leave-one-out of shipped settings no zoo arm has measured on main 2801ba18: nobump, nothrowfirst, nobreederboost, nooilapart, phasecurve100.",
+      "profiles": [
+        "reborn-sloo-shipped",
+        "reborn-sloo-nobump",
+        "reborn-sloo-nothrowfirst",
+        "reborn-sloo-nobreederboost",
+        "reborn-sloo-nooilapart",
+        "reborn-sloo-phasecurve100"
+      ],
+      "runs": []
+    },
+    "reborn-deathrisk0eb": {
+      "issue": 534,
+      "status": "defined (exact-build calibration pilot; small and medium follow in order after the gate)",
+      "what": "borg-reborn-rs PR #792 at 0eb48328 (core-trace@3): the shipped settings with per-think death_risk observations, evidence retained.",
+      "profiles": [
+        "reborn-deathrisk0eb-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-recallres": {
+      "issue": 563,
+      "status": "defined (pilot)",
+      "what": "Word of Recall replenishment with a reserve of 1 (shipped), 2 and 3 scrolls on ae904090 (borg-reborn-rs #810, PR #813).",
+      "profiles": [
+        "reborn-recallres-ctl",
+        "reborn-recallres-res2",
+        "reborn-recallres-res3"
+      ],
+      "runs": []
+    },
+    "reborn-head": {
+      "issue": 566,
+      "status": "defined (the full classes-1800 ladder: verysmall pilot, small-rest, medium, big, full; dispatched in order at the owner's request)",
+      "what": "borg-reborn-rs main 3b4924ba (head on 2026-11-21) with its shipped settings and no overrides over all 1,800 classes-1800 starts.",
+      "profiles": [
+        "reborn-head-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-p6final": {
+      "issue": 571,
+      "status": "defined (pilot; the gate is returned before anything else)",
+      "what": "P6 final candidate compatibility (borg-reborn-rs #814): main 07aa4b1e against a3635ad8, shipped defaults.",
+      "profiles": [
+        "reborn-p6final-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-cursed": {
+      "issue": 583,
+      "status": "defined (pilot, two experiments: #583, #598)",
+      "what": "Cursed equipment (borg-reborn-rs #830, PR #832): the base 88d98537 against the change 9cbe0348, shipped settings. Second pilot (#598) on 88d98537 vs cursed af70b9e9, 36 cells.",
+      "profiles": [
+        "reborn-cursed-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-torch": {
+      "issue": 577,
+      "status": "defined (exposure pilot at 300,000 turns)",
+      "what": "Spare torches to buy and keep (borg-reborn-rs #810, PR #835): town_light_reserve_turns 0, 15000, 20000, 25000 on e4d64f08.",
+      "profiles": [
+        "reborn-torch-shipped",
+        "reborn-torch-two",
+        "reborn-torch-three",
+        "reborn-torch-four"
+      ],
+      "runs": []
+    },
+    "reborn-confusion": {
+      "issue": 581,
+      "status": "pilot and small done; medium defined (#581)",
+      "what": "The six confusion settings of borg-reborn-rs #837 on da097a76: CLW cure, no walk before the cure, stuck, CSW reserve, kobold shaman attack or leave.",
+      "profiles": [
+        "reborn-confusion-ctl",
+        "reborn-confusion-clw",
+        "reborn-confusion-clw_walk",
+        "reborn-confusion-csw",
+        "reborn-confusion-stuck",
+        "reborn-confusion-r2",
+        "reborn-confusion-all",
+        "reborn-confusion-shaman_attack",
+        "reborn-confusion-shaman_leave"
+      ],
+      "runs": []
+    },
+    "reborn-invis": {
+      "issue": 580,
+      "status": "defined (pilot; classes-1800 after the gate)",
+      "what": "Invisible attacker mode and Detect Invisible (borg-reborn-rs #831, PR #836) on b3f32a9a: A old behaviour, B shipped, C higher Detect Invisible value.",
+      "profiles": [
+        "reborn-invis-A",
+        "reborn-invis-B",
+        "reborn-invis-C"
+      ],
+      "runs": []
+    },
+    "reborn-tpblock": {
+      "issue": 578,
+      "status": "defined (pilot, small, medium)",
+      "what": "Teleport block under an anti-teleportation curse (borg-reborn-rs #829, PR #833) on 6fe184ea: escape_teleport_block 0 against shipped 1.",
+      "profiles": [
+        "reborn-tpblock-ctl",
+        "reborn-tpblock-block"
+      ],
+      "runs": []
+    },
+    "reborn-immfix": {
+      "issue": 586,
+      "status": "defined (pilot, then big at starts 361-900)",
+      "what": "caution_ranged_vs_immobile 2 with the confusion and no-return switches on 8eadb21f: shipped, immobile2, immobile2_fix (borg-reborn-rs #837).",
+      "profiles": [
+        "reborn-immfix-shipped",
+        "reborn-immfix-immobile2",
+        "reborn-immfix-immobile2_fix"
+      ],
+      "runs": []
+    },
+    "reborn-townkos": {
+      "issue": 569,
+      "status": "defined (pilot)",
+      "what": "Kill on sight in town with the town scare lowered (N 6, 11) and the three #637 switches on main 12c4ce7c (borg-reborn-rs #667).",
+      "profiles": [
+        "reborn-townkos-shipped",
+        "reborn-townkos-n6_off",
+        "reborn-townkos-n6_on",
+        "reborn-townkos-n11_off",
+        "reborn-townkos-n11_on",
+        "reborn-townkos-n11_sw"
+      ],
+      "runs": []
+    },
+    "reborn-townscum": {
+      "issue": 594,
+      "status": "defined (pilot)",
+      "what": "Town scumming (borg_money_scum_amount 500, 1000, 2000) on main 12c4ce7c, against the shipped 0.",
+      "profiles": [
+        "reborn-townscum-ctl",
+        "reborn-townscum-scum500",
+        "reborn-townscum-scum1000",
+        "reborn-townscum-scum2000"
+      ],
+      "runs": []
+    },
+    "reborn-fastfrag": {
+      "issue": 596,
+      "status": "pilot, small, medium done; big (ctl against stats-ban) defined and dispatched",
+      "what": "Fast-fragile monsters (borg-reborn-rs 7f8c6b80): scary-list entries, bans and escape variants against the control, 8 arms.",
+      "profiles": [
+        "reborn-fastfrag-ctl",
+        "reborn-fastfrag-named",
+        "reborn-fastfrag-named-ban",
+        "reborn-fastfrag-stats",
+        "reborn-fastfrag-stats-ban",
+        "reborn-fastfrag-named-esc75",
+        "reborn-fastfrag-attack-only",
+        "reborn-fastfrag-named-ban-exc"
+      ],
+      "runs": []
+    },
+    "reborn-healtiers": {
+      "issue": 597,
+      "status": "defined (pilot)",
+      "what": "Heal tiers (bba5e4be): speed100 and quaff200 against the control at 300k turns on classes-18-300k.",
+      "profiles": [
+        "reborn-healtiers-ctl",
+        "reborn-healtiers-speed100",
+        "reborn-healtiers-quaff200"
+      ],
+      "runs": []
+    },
+    "reborn-alpha1": {
+      "issue": 601,
+      "status": "defined (pilot; small-rest, medium, big, full planned, not dispatched)",
+      "what": "Release measurement of borg-reborn-rs v0.1.0-alpha.1 (ed52fec1): shipped settings, one arm, classes-1800 ladder (45+45+270+540+900), 100,000 turns.",
+      "profiles": [
+        "reborn-alpha1-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-rangedonly": {
+      "issue": 593,
+      "status": "pilot done (run 44935138551); small, medium, big defined and dispatched",
+      "what": "caution_ranged_only (borg-reborn-rs #838) on 5887c29b: shipped, ranged, immobile2, ranged_clw, classes-18 pilot.",
+      "profiles": [
+        "reborn-rangedonly-shipped",
+        "reborn-rangedonly-ranged",
+        "reborn-rangedonly-immobile2",
+        "reborn-rangedonly-ranged_clw"
+      ],
+      "runs": []
+    },
+    "reborn-nowalk": {
+      "issue": 604,
+      "status": "pilot done (run 44936423074); small, medium defined and dispatched",
+      "what": "fast_fragile_no_walk (borg-reborn-rs #849, PR #853) on d9ebf4c9: ctl, nowalk, nowalk-stats, classes-18 pilot.",
+      "profiles": [
+        "reborn-nowalk-ctl",
+        "reborn-nowalk-nowalk",
+        "reborn-nowalk-nowalk-stats"
+      ],
+      "runs": []
+    },
+    "reborn-tonight": {
+      "issue": 609,
+      "status": "defined (ladder: pilot, small-rest, medium, big, full), dispatched 2026-11-21",
+      "what": "Tonight's test: borg-reborn-rs main ab775d48, shipped settings, one arm, classes-1800 ladder (45+45+270+540+900), 100,000 turns.",
+      "profiles": [
+        "reborn-tonight-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-p6rf": {
+      "issue": 611,
+      "status": "defined (pilot)",
+      "what": "P6 review-fix compatibility (borg-reborn-rs #860): main ab775d48 against 038250d6, shipped settings, classes-18.",
+      "profiles": [
+        "reborn-p6rf-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-room": {
+      "issue": 612,
+      "status": "pilot done (run 44950482392); small (classes-1800-300k-verysmall) defined and dispatched; rerun with the full-pack junk fix defined (#639); small rerun on the junk-fix build defined and dispatched (#639); junk-fix small tier changed none of 180 games (7 room stalls remain): diagnosis defined (#639)",
+      "what": "Departure room, store keep and Recall curve (borg-reborn-rs #859, PR #864) on c7ea18df: ctl, shipped, room, recall, classes-18 at 300k.",
+      "profiles": [
+        "reborn-room-ctl",
+        "reborn-room-shipped",
+        "reborn-room-room",
+        "reborn-room-recall"
+      ],
+      "runs": []
+    },
+    "reborn-variety": {
+      "issue": 616,
+      "status": "pilot done (run 44967883374); small (classes-1800-300k-verysmall) defined and dispatched",
+      "what": "Variety, more Recall and Phase Door (borg-reborn-rs #863) on 4290a7da: ctl, shipped, variety, kit, classes-18 at 300k.",
+      "profiles": [
+        "reborn-var-ctl",
+        "reborn-var-shipped",
+        "reborn-var-variety",
+        "reborn-var-kit"
+      ],
+      "runs": []
+    },
+    "reborn-throwpb": {
+      "issue": 618,
+      "status": "pilot done (run 44967902905); small and medium defined and dispatched",
+      "what": "Thrown-object point-blank divisor (borg-reborn-rs #870) on e037588b: inherit (0) against throw1 (1), classes-18.",
+      "profiles": [
+        "reborn-throwpb-inherit",
+        "reborn-throwpb-throw1"
+      ],
+      "runs": []
+    },
+    "reborn-healskip": {
+      "issue": 621,
+      "status": "pilot done (run 44976856993); small and medium defined and dispatched (#621)",
+      "what": "Heal skip bands and the non-priest penalty (borg_caution.rs) on main f57499d0: ctl, nopen, half, always, classes-18.",
+      "profiles": [
+        "reborn-healskip-ctl",
+        "reborn-healskip-nopen",
+        "reborn-healskip-half",
+        "reborn-healskip-always"
+      ],
+      "runs": []
+    },
+    "reborn-despscary": {
+      "issue": 622,
+      "status": "pilot done (run 44976875737); small (ctl, d8, d4) defined and dispatched (#622)",
+      "what": "Desperate walk to the stairs from a scary monster on main f57499d0: ctl, d8, d4, lvl10, classes-18.",
+      "profiles": [
+        "reborn-despscary-ctl",
+        "reborn-despscary-d8",
+        "reborn-despscary-d4",
+        "reborn-despscary-lvl10"
+      ],
+      "runs": []
+    },
+    "reborn-main-f57499d0": {
+      "issue": 623,
+      "status": "defined (ladder: pilot, small-rest, medium, big, full), dispatched 2026-11-22",
+      "what": "Ladder of borg-reborn-rs main f57499d0, shipped settings, one arm, classes-1800 (45+45+270+540+900), 100,000 turns.",
+      "profiles": [
+        "reborn-head-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-lightbel": {
+      "issue": 625,
+      "status": "pilot done (run 44976921051); small and medium defined and dispatched (#625)",
+      "what": "Engine light radius (#877) and unseen belief (#879) on a516df64: ctl, light1, light1-belief, classes-18.",
+      "profiles": [
+        "reborn-lightbel-ctl",
+        "reborn-lightbel-light1",
+        "reborn-lightbel-light1-belief"
+      ],
+      "runs": []
+    },
+    "reborn-loneslow": {
+      "issue": 626,
+      "status": "pilot, small, medium, big done (all: 13 deaths against 25 in 900 starts); confirmation on classes-1800-fresh defined and dispatched (#626)",
+      "what": "borg-reborn-rs #878 (PR #891) on 296adfbf: 11 arms (lone slow attack, danger without fear, faint, unseen-bump phase, breeder bonus), classes-18.",
+      "profiles": [
+        "reborn-loneslow-ctl",
+        "reborn-loneslow-lone",
+        "reborn-loneslow-phase-nofear",
+        "reborn-loneslow-reserve-nofear",
+        "reborn-loneslow-faint25",
+        "reborn-loneslow-bump-fresh",
+        "reborn-loneslow-bump-danger",
+        "reborn-loneslow-breeder5",
+        "reborn-loneslow-breeder0",
+        "reborn-loneslow-all",
+        "reborn-loneslow-all-breeder5"
+      ],
+      "runs": []
+    },
+    "reborn-bhold": {
+      "issue": 627,
+      "status": "pilot done (run 44976959551); small and medium in the breeders-x4 world defined and dispatched; normal-world pilot defined (#627)",
+      "what": "Slow-breeder hold rule (#882, PR #893) on 6062b84a in the breeders-x4 world: ctl, p4, hold, p6, classes-18.",
+      "profiles": [
+        "reborn-bhold-ctl",
+        "reborn-bhold-p4",
+        "reborn-bhold-hold",
+        "reborn-bhold-p6"
+      ],
+      "runs": []
+    },
+    "reborn-kitleash": {
+      "issue": 589,
+      "status": "pilot done (run 44981752264); small and medium (13 arms) defined and dispatched (#589)",
+      "what": "Basic-kit mode (#840, PR #844 merged) on main f57499d0: 13 arms (kit_leash variants, kit, restock, start reserve, money first, kit-money-hunt, all), classes-18.",
+      "profiles": [
+        "reborn-kitleash-ctl",
+        "reborn-kitleash-leash",
+        "reborn-kitleash-leash-p2",
+        "reborn-kitleash-leash-m0",
+        "reborn-kitleash-leash-m2",
+        "reborn-kitleash-kit",
+        "reborn-kitleash-a",
+        "reborn-kitleash-b",
+        "reborn-kitleash-b-classes",
+        "reborn-kitleash-c",
+        "reborn-kitleash-a+b",
+        "reborn-kitleash-kit-money-hunt",
+        "reborn-kitleash-all"
+      ],
+      "runs": []
+    },
+    "reborn-blow": {
+      "issue": 632,
+      "status": "pilot done (run 44982717684: 18 of 18 identical); small and medium defined and dispatched (#632)",
+      "what": "Flight Recall blow model (#880, PR #892) on 201d56eb: blow-off against blow-on (shipped), classes-18.",
+      "profiles": [
+        "reborn-blow-blow-off",
+        "reborn-blow-blow-on"
+      ],
+      "runs": []
+    },
+    "reborn-dev": {
+      "issue": 633,
+      "status": "pilot dispatched (run 44982737491); small (classes-1800-300k-verysmall) defined, dispatched after the pilot's gate (#633)",
+      "what": "Devices as variety (#895, PR #898) on 3020d451: ctl against shipped, classes-18 at 300k.",
+      "profiles": [
+        "reborn-dev-ctl",
+        "reborn-dev-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-conf": {
+      "issue": 636,
+      "status": "pilot done (run 44986409375); small (ctl, confused-pb) defined and dispatched (#636)",
+      "what": "Confused attacks by direction (#867, PR #868) on e8895f5e: ctl, confused, ctl-clw, confused-clw, confused-pb, classes-18 at 300k.",
+      "profiles": [
+        "reborn-conf-ctl",
+        "reborn-conf-confused",
+        "reborn-conf-ctl-clw",
+        "reborn-conf-confused-clw",
+        "reborn-conf-confused-pb"
+      ],
+      "runs": []
+    },
+    "reborn-cursed-torch": {
+      "issue": 638,
+      "status": "defined (pilot)",
+      "what": "Cursed torch direct swap (#899, PR #900) on c8f30e3c: shipped, classes-18 and the two repro starts.",
+      "profiles": [
+        "reborn-cursed-torch-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-stairunk": {
+      "issue": 642,
+      "status": "pilot done (run 45023921364); small and medium defined and dispatched (#642)",
+      "what": "Stair flights on known grids (#881, PR #897) on ea14528a: ctl, m1, m2 in breeders-x4 and breeders-x8, classes-18.",
+      "profiles": [
+        "reborn-stairunk-ctl-x4",
+        "reborn-stairunk-m1-x4",
+        "reborn-stairunk-m2-x4",
+        "reborn-stairunk-ctl-x8",
+        "reborn-stairunk-m1-x8",
+        "reborn-stairunk-m2-x8"
+      ],
+      "runs": []
+    },
+    "reborn-fastpur": {
+      "issue": 643,
+      "status": "pilot done (run 45023948564); small and medium (11 arms) defined and dispatched (#643)",
+      "what": "borg-reborn-rs #907-#911 on 608d9fed: ctl, one arm per switch, walkcost-dh, all, classes-18.",
+      "profiles": [
+        "reborn-fastpur-ctl",
+        "reborn-fastpur-haste",
+        "reborn-fastpur-dangerhaste",
+        "reborn-fastpur-walkcost",
+        "reborn-fastpur-walkcost-dh",
+        "reborn-fastpur-healmax",
+        "reborn-fastpur-healfirst",
+        "reborn-fastpur-margin",
+        "reborn-fastpur-group",
+        "reborn-fastpur-take",
+        "reborn-fastpur-all"
+      ],
+      "runs": []
+    },
+    "reborn-trackp-9085c266": {
+      "issue": 645,
+      "status": "defined (baseline ladder of the track-p line: pilot, small-rest, medium, big, full), dispatched 2026-11-22",
+      "what": "Baseline of borg-reborn-rs track-p 9085c266, shipped settings, one arm, classes-1800 (45+45+270+540+900), 100,000 turns.",
+      "profiles": [
+        "reborn-head-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-main-b34196c5": {
+      "issue": 645,
+      "status": "defined (lighter baseline of the main line: pilot, small-rest, medium), dispatched 2026-11-22",
+      "what": "Baseline of borg-reborn-rs main b34196c5, shipped settings, one arm, classes-1800 (45+45+270), 100,000 turns.",
+      "profiles": [
+        "reborn-head-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-kitlt": {
+      "issue": 646,
+      "status": "pilot, small, medium on 9085c266 dispatched; re-pinned to the head 4b2c2fcf with the town-hunt arm (reborn-kit-leash-head-*, #646)",
+      "what": "kit_leash on the track-p head 9085c266 (re-run of #589's lead): ctl, leash, leash-m0, kit, c.",
+      "profiles": [
+        "reborn-kitlt-ctl",
+        "reborn-kitlt-leash",
+        "reborn-kitlt-leash-m0",
+        "reborn-kitlt-kit",
+        "reborn-kitlt-c"
+      ],
+      "runs": []
+    },
+    "reborn-trackp-4b2c2fcf": {
+      "issue": 645,
+      "status": "defined (baseline ladder of the track-p line at the head: pilot, small-rest, medium, big, full), dispatched 2026-11-22; replaces the ladder at 9085c266",
+      "what": "Baseline of borg-reborn-rs track-p 4b2c2fcf (cursed-torch swap and full-pack fix in), shipped settings, classes-1800 (45+45+270+540+900), 100,000 turns.",
+      "profiles": [
+        "reborn-head-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-vrm": {
+      "issue": 648,
+      "status": "pilot done (run 45033226329); small (classes-1800-300k-verysmall) defined and dispatched (#648)",
+      "what": "Re-measure of #863/#873 on the merged track-p e2d8919e: ctl, shipped, variety, kit, classes-18 at 300k.",
+      "profiles": [
+        "reborn-vrm-ctl",
+        "reborn-vrm-shipped",
+        "reborn-vrm-variety",
+        "reborn-vrm-kit"
+      ],
+      "runs": []
+    },
+    "reborn-flask": {
+      "issue": 649,
+      "status": "pilot done (run 45033254253); small and medium defined and dispatched (#649)",
+      "what": "Flask saving (#912) on bf077c4a: ctl, save2, save2-noov, classes-18 at 300k.",
+      "profiles": [
+        "reborn-flask-ctl",
+        "reborn-flask-save2",
+        "reborn-flask-save2-noov"
+      ],
+      "runs": []
+    },
+    "reborn-pbdtp": {
+      "issue": 651,
+      "status": "run 45033279953: arm lo config_error in all 200 cells (class line name); rerun as reborn-pbdtp2",
+      "what": "Ranger arrow point-blank divisor 1 against 2 on track-p e2d8919e (re-measure of #290): ctl, lo.",
+      "profiles": [
+        "reborn-pbdtp-ctl",
+        "reborn-pbdtp-lo"
+      ],
+      "runs": []
+    },
+    "reborn-cavesp": {
+      "issue": 652,
+      "status": "pilot done (run 45033305701); small and medium (short list) defined and dispatched (#652)",
+      "what": "Five switches from the cave-spider death (#913-#916, #941) on 67a0c69d: 8 arms, classes-18.",
+      "profiles": [
+        "reborn-cavesp-ctl",
+        "reborn-cavesp-sync",
+        "reborn-cavesp-sync-speed",
+        "reborn-cavesp-retreat",
+        "reborn-cavesp-grouped",
+        "reborn-cavesp-stats",
+        "reborn-cavesp-stats-contact",
+        "reborn-cavesp-all"
+      ],
+      "runs": []
+    },
+    "reborn-wjelly": {
+      "issue": 654,
+      "status": "pilot done (run 45033331780); small and medium (short list) defined and dispatched (#654)",
+      "what": "Four switches from the white-jelly death (#931-#934) on 172bd671: ctl, reach, osc, kill, poison, all, classes-18.",
+      "profiles": [
+        "reborn-wjelly-ctl",
+        "reborn-wjelly-reach",
+        "reborn-wjelly-osc",
+        "reborn-wjelly-kill",
+        "reborn-wjelly-poison",
+        "reborn-wjelly-all"
+      ],
+      "runs": []
+    },
+    "reborn-trackp-regression": {
+      "issue": 645,
+      "status": "defined (diagnosis pilot)",
+      "what": "The 37 starts that die on track-p 9085c266 and survive on main f57499d0, on the track-p head: shipped against attack_confused_by_direction 0, evidence retained.",
+      "profiles": [
+        "reborn-regress-shipped",
+        "reborn-regress-confused0"
+      ],
+      "runs": []
+    },
+    "reborn-pbdtp2": {
+      "issue": 651,
+      "status": "defined (development re-measure on the 200 Ranger starts; the first run had config_error for lo: wrong class line name)",
+      "what": "Ranger arrow point-blank divisor 1 against 2 on track-p e2d8919e, rerun with attack_arrow_point_blank_divisor_ranger.",
+      "profiles": [
+        "reborn-pbdtp2-ctl",
+        "reborn-pbdtp2-lo"
+      ],
+      "runs": []
+    },
+    "reborn-lonew": {
+      "issue": 678,
+      "status": "defined (pilot in the breeder worlds)",
+      "what": "The #878 switches in breeders-x4 and breeders-x8 on 296adfbf: ctl, lone, phase-nofear, breeder5, all, classes-18 (scenario companion of #626).",
+      "profiles": [
+        "reborn-lonew-ctl-x4",
+        "reborn-lonew-lone-x4",
+        "reborn-lonew-phase-nofear-x4",
+        "reborn-lonew-breeder5-x4",
+        "reborn-lonew-all-x4",
+        "reborn-lonew-ctl-x8",
+        "reborn-lonew-lone-x8",
+        "reborn-lonew-phase-nofear-x8",
+        "reborn-lonew-breeder5-x8",
+        "reborn-lonew-all-x8"
+      ],
+      "runs": []
+    },
+    "reborn-blloww": {
+      "issue": 679,
+      "status": "defined (pilot in the breeder worlds)",
+      "what": "Flight Recall blow model in breeders-x4 and breeders-x8 on 201d56eb: blow-off, blow-on, classes-18 (scenario companion of #632).",
+      "profiles": [
+        "reborn-blloww-blow-off-x4",
+        "reborn-blloww-blow-on-x4",
+        "reborn-blloww-blow-off-x8",
+        "reborn-blloww-blow-on-x8"
+      ],
+      "runs": []
+    },
+    "reborn-zerohp": {
+      "issue": 670,
+      "status": "defined (pilot)",
+      "what": "kill_live_zero_hp (#975, PR #994) on 1f4e9e89: ctl, zero, classes-18.",
+      "profiles": [
+        "reborn-zerohp-ctl",
+        "reborn-zerohp-zero"
+      ],
+      "runs": []
+    },
+    "reborn-rest": {
+      "issue": 671,
+      "status": "defined (pilot)",
+      "what": "borg_recover rest switches (#981, #982; PRs #998, #999) on ed6c7ab8: ctl, shot, cure, both, classes-18.",
+      "profiles": [
+        "reborn-rest-ctl",
+        "reborn-rest-shot",
+        "reborn-rest-cure",
+        "reborn-rest-both"
+      ],
+      "runs": []
+    },
+    "reborn-ffq": {
+      "issue": 672,
+      "status": "defined (pilot)",
+      "what": "Fast-fragile quantile, heal floor, dot (#926, PR #1002) on 8974509e: 7 arms, classes-18.",
+      "profiles": [
+        "reborn-ffq-ctl",
+        "reborn-ffq-q50",
+        "reborn-ffq-esc75",
+        "reborn-ffq-q100",
+        "reborn-ffq-floor25",
+        "reborn-ffq-dot",
+        "reborn-ffq-q50-floor-dot"
+      ],
+      "runs": []
+    },
+    "reborn-overex": {
+      "issue": 675,
+      "status": "defined (pilot on the small Mage suite)",
+      "what": "Emergency attack spell beyond the mana (#980, PR #991, re-synced to 80cf6bf4): ctl (1), noexert (0), faint100, Mages.",
+      "profiles": [
+        "reborn-overex-ctl",
+        "reborn-overex-noexert",
+        "reborn-overex-faint100"
+      ],
+      "runs": []
+    },
+    "reborn-unkcure": {
+      "issue": 684,
+      "status": "defined (pilot)",
+      "what": "Unknown cures and the cure HP floor (#985, PR #1003) on b5b0f5fd: ctl, hold, floor, both, classes-18.",
+      "profiles": [
+        "reborn-unkcure-ctl",
+        "reborn-unkcure-hold",
+        "reborn-unkcure-floor",
+        "reborn-unkcure-both"
+      ],
+      "runs": []
+    },
+    "reborn-rclshallow": {
+      "issue": 688,
+      "status": "defined (pilot)",
+      "what": "Recall on shallow trips (#984, PR #997) on 434d5371: ctl, urgent, hold, both, classes-18.",
+      "profiles": [
+        "reborn-rclshallow-ctl",
+        "reborn-rclshallow-urgent",
+        "reborn-rclshallow-hold",
+        "reborn-rclshallow-both"
+      ],
+      "runs": []
+    },
+    "reborn-deadend": {
+      "issue": 659,
+      "status": "defined (pilot)",
+      "what": "Retreat and back-up refuse a dead end (#881 part 2, PR #953) on b157f9dd: ctl, d1, d2 in breeders-x4 and breeders-x8, classes-18.",
+      "profiles": [
+        "reborn-deadend-ctl-x4",
+        "reborn-deadend-d1-x4",
+        "reborn-deadend-d2-x4",
+        "reborn-deadend-ctl-x8",
+        "reborn-deadend-d1-x8",
+        "reborn-deadend-d2-x8"
+      ],
+      "runs": []
+    },
+    "reborn-retreat-flight": {
+      "issue": 657,
+      "status": "defined (pilot)",
+      "what": "Stair routing after a tactical retreat (#932, PR #964) on e43b6d87: ctl, hold, classes-18 at 300k.",
+      "profiles": [
+        "reborn-retreat-flight-ctl",
+        "reborn-retreat-flight-hold"
+      ],
+      "runs": []
+    },
+    "reborn-bfol": {
+      "issue": 692,
+      "status": "defined (pilot in the breeder worlds)",
+      "what": "The three follow-ups of #878 (#1008-#1010) on bfc24d10: 7 arms in white-worm-mass-x4 and breeders-x4, classes-18.",
+      "profiles": [
+        "reborn-bfol-ctl-wwm",
+        "reborn-bfol-lone-wwm",
+        "reborn-bfol-lost-wwm",
+        "reborn-bfol-stand-wwm",
+        "reborn-bfol-price-wwm",
+        "reborn-bfol-stand-price-wwm",
+        "reborn-bfol-all-wwm",
+        "reborn-bfol-ctl-x4",
+        "reborn-bfol-lone-x4",
+        "reborn-bfol-lost-x4",
+        "reborn-bfol-stand-x4",
+        "reborn-bfol-price-x4",
+        "reborn-bfol-stand-price-x4",
+        "reborn-bfol-all-x4"
+      ],
+      "runs": []
+    },
+    "reborn-book": {
+      "issue": 693,
+      "status": "defined (pilot)",
+      "what": "Keep the first spellbook before its first spell (#1004, PR #1019) on 5ad50d96: ctl, la4, small Rangers and Rogues.",
+      "profiles": [
+        "reborn-book-ctl",
+        "reborn-book-la4"
+      ],
+      "runs": []
+    },
+    "reborn-trackp-206cf4e7": {
+      "issue": 695,
+      "status": "defined (baseline ladder of track-p at 206cf4e7: pilot, small-rest, medium, big, full), dispatched 2026-11-22",
+      "what": "Baseline of borg-reborn-rs track-p 206cf4e7 (P7 fixes folded in, the grey mushroom fixes, P8 fixes so far), shipped settings, classes-1800 (45+45+270+540+900), 100,000 turns.",
+      "profiles": [
+        "reborn-head-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-trackp-abd0cce1": {
+      "issue": 695,
+      "status": "defined (baseline ladder of track-p at its newest head abd0cce1: pilot, small-rest, medium, big, full), dispatched 2026-11-22",
+      "what": "Baseline of borg-reborn-rs track-p abd0cce1 (the newest build: the lone-slow bundle shipped, #1047), shipped settings, classes-1800 (45+45+270+540+900), 100,000 turns.",
+      "profiles": [
+        "reborn-head-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-lbun": {
+      "issue": 699,
+      "status": "defined (pilot, big)",
+      "what": "The lone-slow bundle and its parts on track-p 206cf4e7: ctl, all, reserve, faint, bump, all-minus-lone.",
+      "profiles": [
+        "reborn-lbun-ctl",
+        "reborn-lbun-all",
+        "reborn-lbun-reserve",
+        "reborn-lbun-faint",
+        "reborn-lbun-bump",
+        "reborn-lbun-all-minus-lone"
+      ],
+      "runs": []
+    },
+    "reborn-kl206": {
+      "issue": 700,
+      "status": "defined (pilot, small, medium)",
+      "what": "Kit leash and town hunt on track-p 206cf4e7: ctl, leash-m0, leash, town-hunt, kit-money-hunt.",
+      "profiles": [
+        "reborn-kl206-ctl",
+        "reborn-kl206-leash-m0",
+        "reborn-kl206-leash",
+        "reborn-kl206-town-hunt",
+        "reborn-kl206-kit-money-hunt"
+      ],
+      "runs": []
+    },
+    "reborn-pb206": {
+      "issue": 701,
+      "status": "defined (pilot, small, medium)",
+      "what": "Throw point-blank divisor 1 for warrior, paladin, rogue, blackguard on track-p 206cf4e7: ctl, all1.",
+      "profiles": [
+        "reborn-pb206-ctl",
+        "reborn-pb206-all1"
+      ],
+      "runs": []
+    },
+    "reborn-li206": {
+      "issue": 702,
+      "status": "defined (pilot, full)",
+      "what": "Engine light radius alone and with the day's leads on track-p 206cf4e7: ctl, light, light+lone, light+leash, light+throw, combined.",
+      "profiles": [
+        "reborn-li206-ctl",
+        "reborn-li206-light",
+        "reborn-li206-light+lone",
+        "reborn-li206-light+leash",
+        "reborn-li206-light+throw",
+        "reborn-li206-combined"
+      ],
+      "runs": []
+    },
+    "reborn-ks206": {
+      "issue": 703,
+      "status": "defined (pilot, small, medium)",
+      "what": "Kill-on-sight floor and unknown-potion test in the normal world on track-p 206cf4e7: ctl, floor0, potions0, both0.",
+      "profiles": [
+        "reborn-ks206-ctl",
+        "reborn-ks206-floor0",
+        "reborn-ks206-potions0",
+        "reborn-ks206-both0"
+      ],
+      "runs": []
+    },
+    "reborn-belief": {
+      "issue": 702,
+      "status": "defined (pilot, full)",
+      "what": "unseen_belief (#879, borg-reborn-rs #890, a must ship) and the engine light radius (#877) on track-p f8725bc0: ctl, light, belief, light+belief, light+belief-decay5; pilot then full (900 starts).",
+      "profiles": [
+        "reborn-bel-ctl",
+        "reborn-bel-light",
+        "reborn-bel-belief",
+        "reborn-bel-light+belief",
+        "reborn-bel-light+belief-decay5"
+      ],
+      "runs": []
+    },
+    "reborn-leash-dl1": {
+      "issue": 702,
+      "status": "defined (pilot)",
+      "what": "Why the kit leash adds DL1 deaths: 49 death starts of #702's full tier replayed to 25,000 turns with notes on track-p 206cf4e7: ctl, light, leash, light+leash.",
+      "profiles": [
+        "reborn-ldl1-ctl",
+        "reborn-ldl1-light",
+        "reborn-ldl1-leash",
+        "reborn-ldl1-light+leash"
+      ],
+      "runs": []
+    },
+    "reborn-light-ladder": {
+      "issue": 702,
+      "status": "defined (verysmall, small-rest, medium, big = starts 1-900)",
+      "what": "Light radius (cave_light_engine_radius 1) against ctl on classes-1800 starts 1-900 at track-p 206cf4e7: second block for the depth cost seen on starts 901-1800.",
+      "profiles": [
+        "reborn-li206-ctl",
+        "reborn-li206-light"
+      ],
+      "runs": []
+    },
+    "reborn-leash-holes": {
+      "issue": 719,
+      "status": "defined (pilot)",
+      "what": "The three stair-leash switches of #1062 (any stair, unknown-stair steps, teleported Recall) on 12fe36d8: ctl, any, unknown, recall, leash3; classes-18.",
+      "profiles": [
+        "reborn-lhole-ctl",
+        "reborn-lhole-any",
+        "reborn-lhole-unknown",
+        "reborn-lhole-recall",
+        "reborn-lhole-leash3"
+      ],
+      "runs": []
+    },
+    "reborn-heal-quaff": {
+      "issue": 722,
+      "status": "defined (pilot)",
+      "what": "Town heal speed 100 and the quaff bonus 200 (#845, PR #848) on 925fc5d7: ctl, speed100, quaff200; classes-18 at 300,000 turns.",
+      "profiles": [
+        "reborn-hq-ctl",
+        "reborn-hq-speed100",
+        "reborn-hq-quaff200"
+      ],
+      "runs": []
+    },
+    "reborn-short-gold": {
+      "issue": 723,
+      "status": "defined (pilot)",
+      "what": "Short-gold shopping with held oil (#828, PR #854) on b8605b5c: ctl, shortgold; classes-18.",
+      "profiles": [
+        "reborn-sg-ctl",
+        "reborn-sg-shortgold"
+      ],
+      "runs": []
+    },
+    "reborn-light-priest": {
+      "issue": 702,
+      "status": "defined (pilot)",
+      "what": "Why the light radius slows Priests: the 63 slow Priest starts of the light ladder replayed to 60,000 turns with notes: ctl, light on 206cf4e7.",
+      "profiles": [
+        "reborn-li206-ctl",
+        "reborn-li206-light"
+      ],
+      "runs": []
+    },
+    "reborn-ff-ratio": {
+      "issue": 717,
+      "status": "defined (pilot, full)",
+      "what": "Fast-fragile heal ratio 30 (shipped) against 0 (#1065, PR #1089) on c7e55e1d: ctl, ratio0.",
+      "profiles": [
+        "reborn-ffr-ctl",
+        "reborn-ffr-ratio0"
+      ],
+      "runs": []
+    },
+    "reborn-ff-dot": {
+      "issue": 713,
+      "status": "defined (pilot)",
+      "what": "Fast-fragile own cut and poison (count_dot 1, #1028) on track-p 8f32a8a0: ctl, dot.",
+      "profiles": [
+        "reborn-ffd-ctl",
+        "reborn-ffd-dot"
+      ],
+      "runs": []
+    },
+    "reborn-kos-cure": {
+      "issue": 727,
+      "status": "defined (x8 pilot, normal pilot, full)",
+      "what": "attack_kill_on_sight_floor_cure 1 (shipped) against 0 (#1064, PR #1082) on bc215cf8: patches-x8 and the normal world; ctl, cure0.",
+      "profiles": [
+        "reborn-kos-ctl-x8",
+        "reborn-kos-cure0-x8",
+        "reborn-kos-ctl",
+        "reborn-kos-cure0"
+      ],
+      "runs": []
+    },
+    "reborn-ffb769": {
+      "issue": 711,
+      "status": "defined (pilot, full)",
+      "what": "The #926 fast-fragile bundle (escape quantile 75, heal floor 50, count_dot 1) and its three parts on track-p 769f3fbd: ctl, bundle, q75, floor50, dot.",
+      "profiles": [
+        "reborn-ffb769-ctl",
+        "reborn-ffb769-bundle",
+        "reborn-ffb769-q75",
+        "reborn-ffb769-floor50",
+        "reborn-ffb769-dot"
+      ],
+      "runs": []
+    },
+    "reborn-bfs": {
+      "issue": 730,
+      "status": "defined (pilot, full)",
+      "what": "Breadth-first exploration on (shipped, #1088) against off (explore_breadth_first 0, arm bfs0) on track-p 1c071812: ctl, bfs0.",
+      "profiles": [
+        "reborn-bfs-ctl",
+        "reborn-bfs-bfs0"
+      ],
+      "runs": []
+    },
+    "reborn-phase": {
+      "issue": 731,
+      "status": "defined (pilot, full)",
+      "what": "The two #1066 Phase Door switches (unknown_scary, newcomer_wait), shipped on in #1096 on track-p 6cd5c8bf: shipped, phase0 (both 0), unknown, newcomer.",
+      "profiles": [
+        "reborn-ph-shipped",
+        "reborn-ph-phase0",
+        "reborn-ph-unknown",
+        "reborn-ph-newcomer"
+      ],
+      "runs": []
+    },
+    "reborn-mixed": {
+      "issue": 732,
+      "status": "defined (pilot, verysmall, small-rest)",
+      "what": "Mixed exploration (explore_mixed, #1098, PR #1117) on 3a2d2215: ctl, mixed, nobfs, mixed-alone, mixed-tight, mixed-loose.",
+      "profiles": [
+        "reborn-mx-ctl",
+        "reborn-mx-mixed",
+        "reborn-mx-nobfs",
+        "reborn-mx-mixed-alone",
+        "reborn-mx-mixed-tight",
+        "reborn-mx-mixed-loose"
+      ],
+      "runs": []
+    },
+    "reborn-food-bfs": {
+      "issue": 729,
+      "status": "defined (pilot)",
+      "what": "Food forecasts after the Hungry biscuit fix (#1109) on f0e13e99: ctl0 (breadth-first off), bfs1 (on); classes-18 with evidence.",
+      "profiles": [
+        "reborn-food-ctl0",
+        "reborn-food-bfs1"
+      ],
+      "runs": []
+    },
+    "reborn-ffb-ladder": {
+      "issue": 711,
+      "status": "defined (verysmall, small-rest, medium, big = starts 1-900)",
+      "what": "Confirmation block for the fast-fragile bundle lead on 769f3fbd: ctl, bundle on classes-1800 starts 1-900.",
+      "profiles": [
+        "reborn-ffb769-ctl",
+        "reborn-ffb769-bundle"
+      ],
+      "runs": []
+    },
+    "reborn-bfs-ladder": {
+      "issue": 730,
+      "status": "defined (verysmall, small-rest, medium, big = starts 1-900)",
+      "what": "Breadth-first on (shipped) vs off, second block, classes-1800 starts 1-900 on 1c071812: ctl, bfs0.",
+      "profiles": [
+        "reborn-bfs-ctl",
+        "reborn-bfs-bfs0"
+      ],
+      "runs": []
+    },
+    "reborn-leash-holes-vs": {
+      "issue": 719,
+      "status": "defined (verysmall)",
+      "what": "The stair-leash switches of #1062 on 12fe36d8, classes-1800 starts 1-45.",
+      "profiles": [
+        "reborn-lhole-ctl",
+        "reborn-lhole-any",
+        "reborn-lhole-unknown",
+        "reborn-lhole-recall",
+        "reborn-lhole-leash3"
+      ],
+      "runs": []
+    },
+    "reborn-ss9276": {
+      "issue": 721,
+      "status": "defined (pilot, verysmall, small-rest, medium, big = starts 1-900)",
+      "what": "stair_scum on the shipped build 9276b75a (PR #1090): shipped, noscum, nobfs, neither on classes-18 and classes-1800 starts 1-900.",
+      "profiles": [
+        "reborn-ss9276-shipped",
+        "reborn-ss9276-noscum",
+        "reborn-ss9276-nobfs",
+        "reborn-ss9276-neither"
+      ],
+      "runs": []
+    },
+    "reborn-ro-tp": {
+      "issue": 740,
+      "status": "defined (normal pilot, x8 pilot, normal starts 1-900, x8 verysmall)",
+      "what": "caution_ranged_only 1 and caution_ranged_vs_immobile 2 on track-p 1c071812: ctl, ranged, immobile2 in the normal world and patches-x8.",
+      "profiles": [
+        "reborn-ro-ctl",
+        "reborn-ro-ranged",
+        "reborn-ro-immobile2",
+        "reborn-ro-ctl-x8",
+        "reborn-ro-ranged-x8",
+        "reborn-ro-immobile2-x8"
+      ],
+      "runs": []
+    },
+    "reborn-paralyser": {
+      "issue": 735,
+      "status": "defined (pilot, small, medium)",
+      "what": "The #1125 paralyser switches (PR #1129, 173156ac): ctl, lost, walk, all.",
+      "profiles": [
+        "reborn-par-ctl",
+        "reborn-par-lost",
+        "reborn-par-walk",
+        "reborn-par-all"
+      ],
+      "runs": []
+    },
+    "reborn-perception": {
+      "issue": 736,
+      "status": "defined (pilot, full)",
+      "what": "Stale light and sight through rubble (#885, #917, PR #1128, 7bfbe121): ctl, dark, rubble, both.",
+      "profiles": [
+        "reborn-per-ctl",
+        "reborn-per-dark",
+        "reborn-per-rubble",
+        "reborn-per-both"
+      ],
+      "runs": []
+    },
+    "reborn-trap": {
+      "issue": 737,
+      "status": "defined (20 death seeds, full ctl/trapoff)",
+      "what": "The #1067 trap rules, shipped on (PR #1086, 91dd0d0a): ctl, trapoff, way, recover, noleave.",
+      "profiles": [
+        "reborn-trap-ctl",
+        "reborn-trap-trapoff",
+        "reborn-trap-way",
+        "reborn-trap-recover",
+        "reborn-trap-noleave"
+      ],
+      "runs": []
+    },
+    "reborn-t1134": {
+      "issue": 738,
+      "status": "defined (pilot, verysmall)",
+      "what": "Phase threshold 50, confusion CLW cure, retreat breaker, prepared remedy 50 on track-p 1c071812 (borg-reborn-rs #1134): ctl, phase50, conf, osc, prep50, all.",
+      "profiles": [
+        "reborn-t1134-ctl",
+        "reborn-t1134-phase50",
+        "reborn-t1134-conf",
+        "reborn-t1134-osc",
+        "reborn-t1134-prep50",
+        "reborn-t1134-all"
+      ],
+      "runs": []
+    },
+    "reborn-mixed40": {
+      "issue": 732,
+      "status": "defined (pilot, verysmall, small-rest)",
+      "what": "Mixed exploration, C's leave-when-done and the old bfs stay (#1098, PR #1117) on 40c3bcc8: ctl, cexit, bfs-stay, mixed, nobfs, mixed-alone, mixed-tight, mixed-loose.",
+      "profiles": [
+        "reborn-mx40-ctl",
+        "reborn-mx40-cexit",
+        "reborn-mx40-bfs-stay",
+        "reborn-mx40-mixed",
+        "reborn-mx40-nobfs",
+        "reborn-mx40-mixed-alone",
+        "reborn-mx40-mixed-tight",
+        "reborn-mx40-mixed-loose"
+      ],
+      "runs": []
+    },
+    "reborn-trackp-353f5c09": {
+      "issue": 695,
+      "status": "defined (verysmall, small-rest, medium, big, full)",
+      "what": "Baseline ladder of track-p at its current head 353f5c09 (2026-11-23): shipped settings, classes-1800 starts 1-1800.",
+      "profiles": [
+        "reborn-head-shipped"
+      ],
+      "runs": []
+    },
+    "reborn-dp": {
+      "issue": 745,
+      "status": "defined (pilots, x8 verysmall-medium, normal verysmall-big)",
+      "what": "deal_with_poison (#1140, PR #1146, 1909efb9) in poison-x8 and the normal world: ctl, deal.",
+      "profiles": [
+        "reborn-dp-ctl",
+        "reborn-dp-deal",
+        "reborn-dp-ctl-x8",
+        "reborn-dp-deal-x8"
+      ],
+      "runs": []
     }
   }
 }

@@ -6,7 +6,8 @@
 differ, the goals win. Say so in your PR and propose a fix to whichever
 is wrong.*
 
-Track R current state: [R4.5 rebuild handover](docs/handover/2026-11-25-856-r45-rebuild.md) and [fixed-main carry plan](docs/R45-PLAN.md); historical R3 [scoped handover](docs/R366-HANDOVER.md) and
+Track R current state: [R5 preflight](docs/handover/2026-11-26-r5-preflight.md)
+and [R4.5 acceptance](docs/R45-ACCEPTANCE.md); historical R3 [scoped handover](docs/R366-HANDOVER.md) and
 [combined local validation report](docs/R3-EXIT-REPORT.md). New canonical
 validation evidence belongs in borg-cemetery; source receipts pin its bytes.
 
@@ -143,8 +144,8 @@ promoted to `main`.
 | **R2. Fight or flee** | `R2` | danger, caution, escape, recovery ported (#209, 6,500 lines) | `check`: zero mismatches on the full suite; `switch`: 45/45; the measured report (lines, time, mismatches, carry cost); R3–R5 re-estimated from it | **done**: accepted #302/#329; feature-only tags `r2`/`r2.1`; follow-ups retained in R3 preflight |
 | **R3. Attack and defence** | `R3` | `borg_fight_attack.rs`, `borg_fight_defend.rs` (8,200 lines) | as R2 | **done**: owner accepted #427 (2026-11-16); feature-only review ledger `17992dfc`; exact accepted snapshot `02c273db`; #418/#419 remain declared follow-ups |
 | **R4. Items** | `R4` | owned power, wearing/identify, item use and store/home with explicit shared limits | combined parity, coverage, evidence and owner review | **done**: owner accepted corrected snapshot #1093 at `40cbaf27` on 2026-11-23; full #1031 and correction #1041 reviews retained; [acceptance](docs/R4-ACCEPTANCE.md) |
-| **R4.5. Catch up with the core that plays** | `R4.5` | #856: carry accepted main into owned R2/R3 and reconcile affected R4 boundaries | fixed-pin native/check/switch parity under shipped settings; measured carry report and owner milestone review | **in progress — full Zoo parity passed**. Both shadow modes matched the fixed native pin on all 45 starts. The [carry report](docs/R45-CARRY-REPORT.md) records the receiving baseline and evidence. Owner acceptance is pending. |
-| **R5. Paths and the think** | `R5` | flows, and `borg_think_dungeon`'s priority list into modes and goals (7,000 lines) | as R2, and the errands run on the modes frame | paused until accepted R4.5 catch-up |
+| **R4.5. Catch up with the core that plays** | `R4.5` | #856: carry accepted main into owned R2/R3 and reconcile affected R4 boundaries | fixed-pin native/check/switch parity under shipped settings; measured carry report and owner milestone review | **done**. Both shadow modes matched all 45 native starts. The owner accepted `e898abb5` and #1286 merged into the Track R ledger. [Acceptance](docs/R45-ACCEPTANCE.md) |
+| **R5. Paths and the think** | `R5` | flows and `borg_think_dungeon`'s priority list expressed as modes and goals. The [preflight](docs/handover/2026-11-26-r5-preflight.md) inventories 13,984 native source lines before separating what stays native | as R2, and the errands run on the modes frame | **in progress — source refresh and ownership preflight** |
 | **R6. Our perception** (optional) | `R6` | engine reads in place of borg-rs's screen reading | breaks parity on purpose; judged by the zoo | not started |
 
 R2 reforecast (2026-11-15; [measured report](docs/R2-VALIDATION.md)):

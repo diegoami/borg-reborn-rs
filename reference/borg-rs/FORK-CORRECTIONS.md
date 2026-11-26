@@ -297,3 +297,13 @@ perform a trade, alter inventory/knowledge or advance RNG. Native fixture
 checks cover joins, capacity boundaries, sale quantities, owner caps and the
 no-selling option. The test-only Rust learning-key bridge is feature-gated and
 absent from ordinary builds.
+
+## Rubble map bounds in the v15 carry
+
+Donor carry 0142 scans the 3×3 neighborhood when the Borg receives a
+rubble-removal message in darkness. Both Borg-rs ports check each
+coordinate against the current level bounds before indexing the Borg map.
+The guard prevents out-of-range access if the neighborhood crosses a map
+edge. The native dark and lit cases cover the change in an interior
+neighborhood. The independent review verified the guard by inspection.
+[Adoption record](adoption/c-v15r/README.md)
