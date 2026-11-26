@@ -535,6 +535,12 @@ borg_param_power_inventory_clevel_threshold_3 = 7
 # Impact: set to 10, 0 of 6 test games play differently.
 
 borg_param_prepared_recall_depth = 5
+
+# #1281. Check readiness at this percent of the actual dungeon destination
+# before recalling from town. 100 checks the destination. 60 uses the old
+# fraction. The checked depth is rounded down.
+borg_param_town_recall_prepared_depth_percent = 100
+
 # #1217: the folded class files set DL2 one CL above the mixed exploration
 # cap and set separate minimum levels for DL3–4 and DL5–9. The common DL2
 # CL minimum is 0, which disables it for classes without an override.
