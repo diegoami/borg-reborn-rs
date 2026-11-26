@@ -3361,7 +3361,7 @@ digger 500 gold.
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:967` |
 | `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1175` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
 | `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:3058` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
-| `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
+| `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:240` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
 
@@ -5843,26 +5843,58 @@ retired #693 settings load with a warning and use these checks.
 
 | Parameter | Compiled default | Unit | Range | Source |
 |---|---|---|---|---|
-| `prepared_clevel_depth_margin` | 0 | levels | -50–50 | `borg_prepared.rs:747` |
-| `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` |
-| `prepared_dl2_min_clevel` | 0 | level | 0–50 | `borg_prepared.rs:265` |
-| `prepared_dl2_min_hp` | 30 | hp | 0–10000 | `borg_prepared.rs:257` |
-| `prepared_dl34_min_hp` | By class | hp | 0–10000 | `borg_prepared.rs:281` |
-| `prepared_dl34_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:285` |
-| `prepared_cure_min` | 2 | potions | 0–99 | `borg_prepared.rs:293` |
-| `prepared_cure_until_clevel` | 30 | level | 0–50 | `borg_prepared.rs:294` |
-| `prepared_dl59_min_hp` | By class | hp | 0–10000 | `borg_prepared.rs:309` |
-| `prepared_dl59_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:313` |
-| `prepared_mid_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:382` |
-| `prepared_mid_max_depth` | 19 | depth | 0–127 | `borg_prepared.rs:380` |
-| `prepared_mid_caster_max_clevel` | 28 | level | 0–50 | `borg_prepared.rs:378` |
-| `prepared_deep_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:450` |
-| `prepared_deep_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:451` |
-| `prepared_deep_max_clevel` | By class | level | 0–50 | `borg_prepared.rs:449` |
-| `prepared_deep_caster_ramp_max_clevel` | 44 | level | 0–50 | `borg_prepared.rs:457` |
-| `prepared_deep_caster_ramp_base_depth` | 30 | depth | 0–127 | `borg_prepared.rs:458` |
-| `prepared_deep_caster_ramp_depth_per_level` | 2 | levels | 0–127 | `borg_prepared.rs:459` |
-| `prepared_dl34_plus_min_clevel` | 40 | level | 0–50 | `borg_prepared.rs:503` |
+| `prepared_clevel_depth_margin` | 0 | levels | -50–50 | `borg_prepared.rs:862` |
+| `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:240` |
+| `prepared_dl2_min_clevel` | 0 | level | 0–50 | `borg_prepared.rs:277` |
+| `prepared_dl2_min_hp` | 30 | hp | 0–10000 | `borg_prepared.rs:269` |
+| `prepared_dl34_min_hp` | By class | hp | 0–10000 | `borg_prepared.rs:293` |
+| `prepared_dl34_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:297` |
+| `prepared_cure_min` | 2 | potions | 0–99 | `borg_prepared.rs:305` |
+| `prepared_cure_until_clevel` | 30 | level | 0–50 | `borg_prepared.rs:306` |
+| `prepared_dl59_min_hp` | By class | hp | 0–10000 | `borg_prepared.rs:321` |
+| `prepared_dl59_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:325` |
+| `prepared_mid_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:410` |
+| `prepared_mid_max_depth` | 19 | depth | 0–127 | `borg_prepared.rs:408` |
+| `prepared_mid_caster_max_clevel` | 28 | level | 0–50 | `borg_prepared.rs:406` |
+| `prepared_deep_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:510` |
+| `prepared_deep_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:511` |
+| `prepared_deep_max_clevel` | By class | level | 0–50 | `borg_prepared.rs:509` |
+| `prepared_deep_caster_ramp_max_clevel` | 44 | level | 0–50 | `borg_prepared.rs:517` |
+| `prepared_deep_caster_ramp_base_depth` | 30 | depth | 0–127 | `borg_prepared.rs:518` |
+| `prepared_deep_caster_ramp_depth_per_level` | 2 | levels | 0–127 | `borg_prepared.rs:519` |
+| `prepared_dl34_plus_min_clevel` | 40 | level | 0–50 | `borg_prepared.rs:577` |
+
+### Configurable preparedness and restock bands (#1283)
+
+The shared values are in [`harness/borg.txt`](../harness/borg.txt).
+Append `__<class>` to a key to override it for a class. For example,
+`borg_param_prepared_dl20_min_depth__paladin = 18` moves the Paladin's
+Free Action requirement to DL18. Every other class uses DL20. A band's
+`min_depth` is inclusive, and earlier bands remain in force at later depths.
+A cure or Hold Life check with an `until_clevel` applies below that level.
+
+| Check | Depth | Shipped requirement |
+|---|---:|---|
+| Preparedness | 10 | Light radius 2 (Necromancer 0), 2 teleport or staff escapes, 3 CCW below CL30, and See Invisible, Detect Invisible or telepathy |
+| Preparedness | 20 | Free Action |
+| Preparedness | 21 | Fire resistance, 2 of acid/cold/lightning resistance, STR/spell stat/DEX/CON ≥ 7, and the class-level rules above |
+| Preparedness | 26 | Swap-aware cold, lightning and acid resistance, 6 teleport or staff escapes, and 10 CSW/CCW below CL30 |
+| Preparedness | 34 | CL40 |
+| Preparedness | 40 | Poison and confusion resistance plus STR/spell stat/DEX/CON ≥ 16 |
+| Preparedness | 46 | Speed 115, 1 Healing or *Healing*, 500 max HP in ordinary play, STR 18/40, DEX and CON 18/60, spell stat 18/100, Hold Life below CL50 |
+| Preparedness | 56 | 2 Healing or 1 *Healing*, blindness resistance, and telepathy |
+| Preparedness | 60, 81 | Speed 120 and chaos/disenchantment resistance from DL60, then speed 130 from DL81 |
+| Endgame stock | 82 | 10 *Healing*/Life in either home or pack, 30 across both after visiting DL97, and collect reserves from home after visiting DL99 |
+| Restock | 20 | 4 teleport or staff escapes and 4 CSW/CCW below CL30 |
+| Restock | 36 | 2 Teleport or Teleport Level escapes |
+| Restock | 65 | 1 Healing, Rod of Healing or *Healing* |
+| Restock | 100 | 15 *Healing* during the first 10 turns |
+
+The shallower supply floors are also configurable. The preparedness defaults
+are radius 1 and 5 food, 5 fuel at DL2+ without light, and 1 Recall where
+`prepared_recall_depth` applies. Restock checks radius 1, fuel when dark, 3
+food from DL2, 1 Phase Door and 1 cure below CL30 from DL6, and from DL10
+radius 2 (Necromancer 0), 2 cures below CL30 and 2 teleport or staff escapes.
 
 ## Fox Form's study rating (#694)
 

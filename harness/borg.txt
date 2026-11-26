@@ -555,6 +555,104 @@ borg_param_prepared_deep_caster_ramp_base_depth = 30
 borg_param_prepared_deep_caster_ramp_depth_per_level = 2
 borg_param_prepared_dl34_plus_min_clevel = 40
 
+# #1283: Static preparedness and restock groups start at their minimum depth.
+# Shared values apply to all classes except where a __<class> override is set.
+# A zero supply, stat or flag minimum disables its check. Depth 0 starts a
+# group immediately. For Heal or *Healing* alternatives, meeting either
+# minimum passes the group. Speed uses the internal scale (110 is normal).
+# A class override can also move a group's starting depth. Earlier groups
+# still apply at deeper levels. A check with _until_clevel stops at that CL.
+borg_param_prepared_early_min_light_radius = 1
+borg_param_prepared_early_min_food = 5
+borg_param_prepared_early_min_recall = 1
+borg_param_prepared_early_min_fuel = 5
+borg_param_prepared_dl10_min_depth = 10
+borg_param_prepared_dl10_min_light_radius = 2
+borg_param_prepared_dl10_min_light_radius__necromancer = 0
+borg_param_prepared_dl10_min_teleports = 2
+borg_param_prepared_dl10_cure_critical_until_clevel = 30
+borg_param_prepared_dl10_min_cure_critical = 3
+borg_param_prepared_dl10_min_see_invisible_detection_or_esp = 1
+borg_param_prepared_dl20_min_depth = 20
+borg_param_prepared_dl20_min_free_action = 1
+borg_param_prepared_dl21_min_depth = 21
+borg_param_prepared_dl21_min_resist_fire = 1
+borg_param_prepared_dl21_min_strength = 7
+borg_param_prepared_dl21_min_spell_stat = 7
+borg_param_prepared_dl21_min_dexterity = 7
+borg_param_prepared_dl21_min_constitution = 7
+borg_param_prepared_dl21_min_basic_resists = 2
+borg_param_prepared_dl26_min_depth = 26
+borg_param_prepared_dl26_min_resist_cold = 1
+borg_param_prepared_dl26_min_resist_electricity = 1
+borg_param_prepared_dl26_min_resist_acid = 1
+borg_param_prepared_dl26_min_teleports = 6
+borg_param_prepared_dl26_cure_serious_or_critical_until_clevel = 30
+borg_param_prepared_dl26_min_cure_serious_or_critical = 10
+borg_param_prepared_dl34_min_depth = 34
+borg_param_prepared_dl40_min_depth = 40
+borg_param_prepared_dl40_min_resist_poison = 1
+borg_param_prepared_dl40_min_resist_confusion = 1
+borg_param_prepared_dl40_min_strength = 16
+borg_param_prepared_dl40_min_spell_stat = 16
+borg_param_prepared_dl40_min_dexterity = 16
+borg_param_prepared_dl40_min_constitution = 16
+borg_param_prepared_dl46_min_depth = 46
+borg_param_prepared_dl46_min_speed = 115
+borg_param_prepared_dl46_min_star_heal = 1
+borg_param_prepared_dl46_min_heal = 1
+borg_param_prepared_dl46_min_strength = 58
+borg_param_prepared_dl46_min_spell_stat = 118
+borg_param_prepared_dl46_min_dexterity = 78
+borg_param_prepared_dl46_min_constitution = 78
+borg_param_prepared_dl46_hold_life_until_clevel = 50
+borg_param_prepared_dl46_min_hold_life = 1
+borg_param_prepared_dl46_min_max_hp = 500
+borg_param_prepared_dl56_min_depth = 56
+borg_param_prepared_dl56_min_star_heal = 1
+borg_param_prepared_dl56_min_heal = 2
+borg_param_prepared_dl56_min_resist_blindness = 1
+borg_param_prepared_dl56_min_esp = 1
+borg_param_prepared_dl60_min_depth = 60
+borg_param_prepared_dl60_min_speed = 120
+borg_param_prepared_dl60_min_resist_chaos = 1
+borg_param_prepared_dl60_min_resist_disenchantment = 1
+borg_param_prepared_dl81_min_depth = 81
+borg_param_prepared_dl81_min_speed = 130
+borg_param_prepared_endgame_stock_min_depth = 82
+borg_param_prepared_endgame_min_home_or_pack_heals = 10
+borg_param_prepared_endgame_total_heals_min_max_depth = 97
+borg_param_prepared_endgame_min_total_heals = 30
+borg_param_prepared_endgame_collect_heals_min_max_depth = 99
+
+# Static restock floors, also checked when evaluating preparedness.
+borg_param_restock_dl1_min_light_radius = 1
+borg_param_restock_dl1_min_fuel = 1
+borg_param_restock_dl2_min_depth = 2
+borg_param_restock_dl2_min_fuel = 2
+borg_param_restock_dl2_min_food = 3
+borg_param_restock_dl6_min_depth = 6
+borg_param_restock_dl6_min_phase_door = 1
+borg_param_restock_dl6_cures_until_clevel = 30
+borg_param_restock_dl6_min_cures = 1
+borg_param_restock_dl10_min_depth = 10
+borg_param_restock_dl10_min_light_radius = 2
+borg_param_restock_dl10_min_light_radius__necromancer = 0
+borg_param_restock_dl10_cures_until_clevel = 30
+borg_param_restock_dl10_min_cures = 2
+borg_param_restock_dl10_min_teleports = 2
+borg_param_restock_dl20_min_depth = 20
+borg_param_restock_dl20_cure_serious_or_critical_until_clevel = 30
+borg_param_restock_dl20_min_cure_serious_or_critical = 4
+borg_param_restock_dl20_min_teleports = 4
+borg_param_restock_dl36_min_depth = 36
+borg_param_restock_dl36_min_teleport_or_teleport_level = 2
+borg_param_restock_dl65_min_depth = 65
+borg_param_restock_dl65_min_healing = 1
+borg_param_restock_dl100_min_depth = 100
+borg_param_restock_dl100_arrival_turns = 10
+borg_param_restock_dl100_min_star_heal = 15
+
 # Fleeing: walk to a reachable staircase first, and read Recall only when
 # none is reachable (#539). 0 = the C order, Recall first.
 # Impact: set to 0, 2 of 6 test games play differently.
