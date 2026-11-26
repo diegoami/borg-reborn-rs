@@ -96,7 +96,7 @@ def main() -> int:
         f"[`{upstream[:8]}`](https://github.com/angband/angband/commit/{upstream}) unchanged; "
         "our harness hooks (`engine/patches/`), the `borgh` frontend and the Borg are linked in. "
         f"The Borg plays the borg-rs core vendored at `{core_pin[:8]}` (`borg-core/`) with the "
-        "settings of `harness/borg.txt`.",
+        "settings of `harness/pborg.yaml`.",
         "",
         f"- commit: [`{commit[:12]}`](https://github.com/diegoami/borg-reborn-rs/commit/{commit})",
         "- platforms: " + ("Linux x86_64, Windows x86_64 and macOS arm64 (Apple silicon; it plays "

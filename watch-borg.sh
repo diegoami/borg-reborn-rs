@@ -5,7 +5,7 @@
 # engine, patches, frontend and Borg as harness/build.sh) and opens the game
 # as character NAME (default RustBorg), with its saves and settings in
 # .angband-reborn/ (kept between builds). The first start writes the shipped
-# settings (harness/borg.txt and its scary list, prepared as a run's, #826)
+# settings (harness/pborg.yaml and its scary list, prepared as a run's, #826)
 # into .angband-reborn/user/, so the borg-rs core plays them; later starts
 # keep that pborg.yaml (yours to edit) and say when it differs from the
 # shipped one; --reset-settings writes the shipped one again. Create or load a character, then
@@ -64,11 +64,11 @@ trap 'rm -rf "$SHIPPED"' EXIT
 "$ROOT/harness/prepare-pborg-config.sh" "$SHIPPED"
 if [ "$RESET" = 1 ] || [ ! -e "$DATA/user/pborg.yaml" ]; then
     cp "$SHIPPED/pborg.yaml" "$DATA/user/"
-    echo "Settings: the shipped harness/borg.txt, in $DATA/user/pborg.yaml"
+    echo "Settings: the shipped harness/pborg.yaml, in $DATA/user/pborg.yaml"
 elif cmp -s "$SHIPPED/pborg.yaml" "$DATA/user/pborg.yaml"; then
-    echo "Settings: the shipped harness/borg.txt"
+    echo "Settings: the shipped harness/pborg.yaml"
 else
-    echo "Settings: your $DATA/user/pborg.yaml (it differs from the shipped harness/borg.txt; --reset-settings takes the shipped one)"
+    echo "Settings: your $DATA/user/pborg.yaml (it differs from the shipped harness/pborg.yaml; --reset-settings takes the shipped one)"
 fi
 # Restore shipped scary-list files missing from the user directory.
 for f in "$SHIPPED"/*; do

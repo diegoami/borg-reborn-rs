@@ -57,7 +57,7 @@ class ScaryListHarnessTest(unittest.TestCase):
         self.assert_played(r, out)
         digest = sha(ROOT / 'harness' / SHIPPED)
         self.assertEqual(lines, [f'borg_scary_list: "{SHIPPED}"'])
-        self.assertIn(f'scary list sha256 {digest}\nborg_scary_list: "{SHIPPED}"\n', borg_txt)
+        self.assertIn(f'scary list sha256 {digest}\n', borg_txt)
         self.assertEqual((out / 'user' / SHIPPED).read_bytes(), (ROOT / 'harness' / SHIPPED).read_bytes())
         self.assertEqual((config['borg_scary_list'], config['borg_scary_list_sha256']), (SHIPPED, digest))
 
@@ -66,13 +66,13 @@ class ScaryListHarnessTest(unittest.TestCase):
         self.assert_played(r, out)
         digest = sha(ROOT / 'harness' / C_LIST)
         self.assertEqual(lines, [f'borg_scary_list: "{C_LIST}"'])
-        self.assertIn(f'scary list sha256 {digest}\nborg_scary_list: "{C_LIST}"\n', borg_txt)
+        self.assertIn(f'scary list sha256 {digest}\n', borg_txt)
         self.assertEqual((out / 'user' / C_LIST).read_bytes(), (ROOT / 'harness' / C_LIST).read_bytes())
         self.assertFalse((out / 'user' / SHIPPED).exists(), 'only the selected list is copied')
         self.assertEqual((config['borg_scary_list'], config['borg_scary_list_sha256']), (C_LIST, digest))
 
     def test_none_runs_the_compiled_list_with_no_file_and_no_hash(self):
-        r, out, config, borg_txt, lines = self.run_sh('none', BORG_TXT_SET='borg_scary_list=none')
+        r, out, config, borg_txt, lines = self.run_sh('none', PBORG_SET='borg_scary_list=none')
         self.assert_played(r, out)
         self.assertEqual(lines, ['borg_scary_list: "none"'])
         self.assertNotIn('scary list sha256', borg_txt)
@@ -81,7 +81,7 @@ class ScaryListHarnessTest(unittest.TestCase):
         self.assertNotIn('borg_scary_list_sha256', config)
 
     def test_borg_scary_list_wins_over_none(self):
-        r, out, config, _, lines = self.run_sh('none-override', BORG_TXT_SET='borg_scary_list=none',
+        r, out, config, _, lines = self.run_sh('none-override', PBORG_SET='borg_scary_list=none',
                                                BORG_SCARY_LIST=str(ROOT / 'harness' / C_LIST))
         self.assert_played(r, out)
         self.assertEqual(lines, [f'borg_scary_list: "{C_LIST}"'])

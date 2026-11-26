@@ -195,10 +195,10 @@ jobs:
           if-no-files-found: ignore
       # P3: exercise the actual profile serializer and run_cell at our zoo pin.
       - run: |
-          zoo_pin=$(python3 -c "import json; print(json.load(open('pins.json'))['pins']['borg-zoo']['commit'])")
-          git init -q vendor/borg-zoo
-          git -C vendor/borg-zoo fetch -q --depth 1 https://github.com/diegoami/borg-zoo "$zoo_pin"
-          git -C vendor/borg-zoo checkout -q --detach "$zoo_pin"
+          zoo_pin=$(cat harness/zoo-adapter-pin.txt)
+          git init -q vendor/borg-zoo-adapter
+          git -C vendor/borg-zoo-adapter fetch -q --depth 1 https://github.com/diegoami/borg-zoo "$zoo_pin"
+          git -C vendor/borg-zoo-adapter checkout -q --detach "$zoo_pin"
           echo "BORG_ZOO_CONTRACT_REQUIRED=1" >> "$GITHUB_ENV"
       # Native preference tests use their own death registry. The original
       # core's observation/replay check below must continue to select one of

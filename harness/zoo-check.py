@@ -6,16 +6,15 @@
 The contract it checks is docs/ZOO-INTERFACE.md. Only the Rust Borg is built
 here (docs/SPEC.md §6).
 
-Loads the zoo at its pin (vendor/borg-zoo, scripts/setup.sh), adds in memory
+Loads the Zoo adapter at its pin (vendor/borg-zoo-adapter, scripts/setup.sh), adds in memory
 one specimen per implementation: kind "borg-rs", repository
 diegoami/borg-reborn-rs, ref = this checkout's HEAD. It then calls the zoo's
-own harness.build and harness.run_cell. For a legacy pin it stages YAML
-at the adapter command boundary. It prints one line per cell (outcome, max depth,
+own harness.build and harness.run_cell. It prints one line per cell (outcome, max depth,
 turn, play hash) and exits 1 if a cell is a harness failure or a config error.
 
 Evidence rules (M1 review):
 * the checkout must be clean (the specimen's ref is HEAD, and the adapter
-  checks only the commit); vendor/borg-zoo must be at its pin and clean
+  checks only the commit); vendor/borg-zoo-adapter must be at its pin and clean
   too (re-review N9: tracked changes and untracked files outside its
   .gitignore are refused), since its adapter is the code under check;
   the code imported is then a fresh `git archive` of the pin, so an ignored
@@ -30,7 +29,7 @@ Evidence rules (M1 review):
 import argparse
 import hashlib
 import io
-import json
+import os
 import subprocess
 import sys
 import tarfile
@@ -38,18 +37,19 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-ZOO = ROOT / 'vendor' / 'borg-zoo'
+ZOO = Path(os.environ.get('BORG_ZOO_CONTRACT_REPO', ROOT / 'vendor/borg-zoo-adapter'))
+ZOO_PIN = ROOT / 'harness/zoo-adapter-pin.txt'
 
 
 def zoo_identity_error(zoo, pin):
     """None if the zoo checkout is exactly the pinned commit, else why not."""
     head = subprocess.check_output(['git', '-C', str(zoo), 'rev-parse', 'HEAD'], text=True).strip()
     if head != pin:
-        return f'vendor/borg-zoo is at {head[:12]}, pin {pin[:12]} (scripts/setup.sh --checkout)'
+        return f'Zoo adapter checkout is at {head[:12]}, pin {pin[:12]} (scripts/setup.sh --checkout)'
     dirty = subprocess.check_output(['git', '-C', str(zoo), 'status', '--porcelain', '--untracked-files=all'],
                                     text=True).strip()
     if dirty:
-        return f'vendor/borg-zoo has changes at its pin: {dirty.splitlines()[0].strip()} ...'
+        return f'Zoo adapter checkout has changes at its pin: {dirty.splitlines()[0].strip()} ...'
     return None
 
 
@@ -74,17 +74,6 @@ def import_zoo(tree):
     return catalogue, harness
 
 
-def legacy_zoo_command(command):
-    """Stage YAML at the command boundary of the historical pinned adapter."""
-    def with_pborg_config(binary, destination, *args, **kwargs):
-        user = destination / 'user'
-        with (user / 'pborg.yaml').open('wb') as output:
-            subprocess.run([sys.executable, str(ROOT / 'harness/pborg-config.py'),
-                            str(user / 'borg.txt')], stdout=output, check=True)
-        return command(binary, destination, *args, **kwargs)
-    return with_pborg_config
-
-
 def repatriate(impl, rec, suite, work, cat_mod):
     """Rerun a zoo death through harness/run.sh, check the keys, record the dossier."""
     race, cls = cat_mod.character(suite, rec['seed']) or ('Human', 'Warrior')
@@ -93,7 +82,7 @@ def repatriate(impl, rec, suite, work, cat_mod):
         import shutil
         shutil.rmtree(out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    env = dict(__import__('os').environ, BORG_IMPL=impl)
+    env = dict(os.environ, BORG_IMPL=impl)
     r = subprocess.run([str(ROOT / 'harness/run.sh'), str(out), str(rec['seed']),
                         str(cat_mod.RACES.index(race)), str(cat_mod.CLASSES.index(cls)), str(suite['cap']), 'menu'],
                        env=env, capture_output=True, text=True)
@@ -114,7 +103,7 @@ def main(argv=None):
     head = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip()
     if subprocess.check_output(['git', '-C', str(ROOT), 'status', '--porcelain'], text=True).strip():
         raise SystemExit('zoo-check: the checkout has uncommitted changes; commit first (the cells name HEAD)')
-    pin = json.loads((ROOT / 'pins.json').read_text())['pins']['borg-zoo']['commit']
+    pin = ZOO_PIN.read_text().strip()
     why = zoo_identity_error(ZOO, pin)
     if why:
         raise SystemExit(f'zoo-check: {why}')
@@ -122,11 +111,11 @@ def main(argv=None):
     tree = pinned_tree(ZOO, pin, tmp.name)
     cat_mod, harness = import_zoo(tree)
     from zoo import borgrs
-    if not hasattr(borgrs, 'stage_config'):
-        borgrs.command = legacy_zoo_command(borgrs.command)
     cat = cat_mod.catalogue(tree)
-    settings = (ROOT / 'harness/borg.txt').read_text()
-    scary, _ = borgrs.scary_name({'settings': {}}, settings)
+    settings = subprocess.check_output([sys.executable, str(ROOT / 'harness/pborg-settings.py'),
+                                        str(ROOT / 'harness/pborg.yaml'), 'get', 'borg_scary_list'],
+                                       text=True).strip()
+    scary = settings if settings not in ('', 'none') else None
     scary_lists = {scary: hashlib.sha256((ROOT / 'harness' / scary).read_bytes()).hexdigest()} if scary else {}
     for impl in a.impl:
         cat['specimens']['specimens'][f'reborn-{impl}'] = {

@@ -47,3 +47,10 @@ YAML conversion. A combined build at f8e74d2 reproduced an Elf Druid death
 from seed 1020 with the `reborn` decision core through Zoo bundle export
 and Cemetery import and replay. The death endpoint, all three gameplay
 streams, and both settings files matched.
+
+The YAML migration now starts at the source settings. The package, local
+launchers, harness and Zoo use `harness/pborg.yaml`, including the class
+overrides. New death dossiers retain and verify the effective YAML.
+The legacy converter remains available for imports and pinned historical builds.
+The Zoo YAML adapter is diegoami/borg-zoo#813 and the Cemetery support is
+diegoami/borg-cemetery#161.

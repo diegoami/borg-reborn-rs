@@ -100,10 +100,10 @@ class TownSpareGearTest(unittest.TestCase):
             paths = {name: root / name for name in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            config = (ROOT / "harness/borg.txt").read_text()
-            self.assertIn("\nborg_town_plan = 1\n", config)
+            config = (ROOT / "harness/pborg.yaml").read_text()
+            self.assertIn("\nborg_town_plan: 1\n", config)
             write_pborg_config(paths["user"],
-                config.replace("\nborg_town_plan = 1\n", f"\nborg_town_plan = {planner}\n")
+                config.replace("\nborg_town_plan: 1\n", f"\nborg_town_plan: {planner}\n")
             )
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: value for key, value in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}

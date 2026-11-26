@@ -9,10 +9,7 @@
 # Writes OUTDIR/borg-reborn-rs-VERSION-PLATFORM-ARCH.tar.gz (.zip on Windows)
 # and prints its path. Runs where the build ran: bash with GNU coreutils
 # (macOS: Homebrew's) and Python 3.
-# The package plays what a harness run plays: harness/borg.txt (class files
-# folded in) and its scary list, prepared as harness/run.sh prepares a run's
-# user/pborg.yaml, written into the package's lib/user/, which a game started
-# directly reads (no launcher is shipped).
+# Ship the canonical harness/pborg.yaml and its scary list in lib/user/.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 [ $# -ge 5 ] || { sed -n '2,15p' "$0" >&2; exit 2; }
@@ -52,7 +49,7 @@ done
 ARCH=$(uname -m); [ "$ARCH" != aarch64 ] || ARCH=arm64
 NAME="borg-reborn-rs-$VERSION-$PLATFORM-$ARCH"
 STAGE="$OUT/$NAME"
-rm -rf "$STAGE"; mkdir -p "$STAGE"/borg/plans "$STAGE"/borg/class "$STAGE"/docs "$STAGE"/LICENSES
+rm -rf "$STAGE"; mkdir -p "$STAGE"/borg/plans "$STAGE"/docs "$STAGE"/LICENSES
 
 # The game: each build as its own executable, sharing the game data.
 FIRST=""
@@ -70,13 +67,9 @@ for b in "${BUILDS[@]}"; do
     fi
 done
 
-# The Borg's settings, as harness/run.sh writes a run's user/pborg.yaml
-# before it substitutes the run's race and class (harness/prepare-pborg-config.sh,
-# shared with watch-borg.sh and harness/play.sh).
+# A reference copy sits beside the plans in the package.
 BT="$STAGE/borg/pborg.yaml"
 "$ROOT/harness/prepare-pborg-config.sh" "$STAGE/borg"
-# The class files are already folded into pborg.yaml; shipped for reading.
-cp "$ROOT"/harness/borg_*.txt "$STAGE/borg/class/"
 cp "$ROOT"/harness/plans/* "$STAGE/borg/plans/"
 
 # A game started directly (no -d options: double-clicking angband.exe, or
@@ -141,7 +134,6 @@ ENGINE=$(sed -n 's/^commit=//p' "$ROOT/engine/UPSTREAM")
     echo "                 harness hooks of engine/patches/ and the borgh frontend"
     echo "borg core:       borg-rs, vendored as borg-core/ ($(head -1 "$ROOT/borg-core/PIN"))"
     echo "settings:        borg/pborg.yaml sha256 $(sha "$BT")"
-    echo "                 (from harness/borg.txt sha256 $(sha "$ROOT/harness/borg.txt"))"
     echo "source_sha256:   $SRC"
     echo "executables:     $(for b in "${BUILDS[@]}"; do printf '%s%s ' "${b%%=*}" "$EXE"; done)"
     echo

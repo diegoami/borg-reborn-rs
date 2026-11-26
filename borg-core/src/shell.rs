@@ -277,7 +277,7 @@ fn read_borg_txt(path: &std::path::Path) -> Result<String, String> {
 
 /// Adapt the YAML mapping in memory to the legacy core's line-oriented
 /// validators. No borg.txt is opened or produced by PBorg.
-fn yaml_settings(text: &str) -> Result<String, String> {
+pub(crate) fn yaml_settings(text: &str) -> Result<String, String> {
     use serde_yaml_ng::Value;
     use std::fmt::Write;
 

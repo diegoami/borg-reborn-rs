@@ -1,14 +1,14 @@
-"""Track P3: real pinned zoo profile -> borg.txt -> core parameter parsing.
+"""Track P3: real pinned Zoo profile -> pborg.yaml -> core parameter parsing.
 
 Small contract cells, not a population experiment. Import the zoo's
 committed tree, never its working Python files or cached modules. The run
-uses the pinned adapter, converting its historical settings at the game boundary. The frontend derives
+uses the pinned adapter's YAML path. The frontend derives
 the diagnostic directory from -summary; profile settings alone select the core.
 
 #540: the environment overrides (BORG_CORE, BORG_ERRAND, BORG_ERRAND_BUDGET,
 BORG_STOPSCARED) are the core's own contract. The current adapter clears every
 ambient BORG_* variable, so those tests run the game directly (`direct`): the
-pinned adapter's own borg.txt (`config_text`) and command line (`command`),
+pinned adapter's own YAML (`config_text`) and command line (`command`),
 with the override in the environment.
 """
 import hashlib
@@ -24,7 +24,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 GAME = ROOT / 'build/rust/game'
-ZOO = Path(os.environ.get('BORG_ZOO_CONTRACT_REPO', ROOT / 'vendor/borg-zoo'))
+ZOO = Path(os.environ.get('BORG_ZOO_CONTRACT_REPO', ROOT / 'vendor/borg-zoo-adapter'))
 AVAILABLE = (GAME / 'angband').is_file() and (ZOO / '.git').exists()
 # The adapter's word for a core that stops before play with exit 2: a
 # harness failure, or a configuration error on a specimen that pins a scary
@@ -43,7 +43,7 @@ class CoreProfileContractTest(unittest.TestCase):
         spec = importlib.util.spec_from_file_location('core_profile_zoo_check', ROOT / 'harness/zoo-check.py')
         checker = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(checker)
-        pin = json.loads((ROOT / 'pins.json').read_text())['pins']['borg-zoo']['commit']
+        pin = checker.ZOO_PIN.read_text().strip()
         error = checker.zoo_identity_error(ZOO, pin)
         if error:
             raise AssertionError(error)
@@ -51,14 +51,15 @@ class CoreProfileContractTest(unittest.TestCase):
         tree.mkdir()
         checker.pinned_tree(ZOO, pin, tree)
         cls.catalogue, _ = checker.import_zoo(tree)
-        cls.legacy_zoo_command = staticmethod(checker.legacy_zoo_command)
         cls.adapter = importlib.import_module('zoo.borgrs')
         if not Path(cls.adapter.__file__).resolve().is_relative_to(tree):
             raise AssertionError('adapter did not come from the pinned archive')
         cls.build = cls.root / 'build'
         cls.build.mkdir()
         (cls.build / 'game').symlink_to(GAME, target_is_directory=True)
-        (cls.build / 'borg.txt').write_bytes((ROOT / 'harness/borg.txt').read_bytes())
+        for filename in ('pborg.yaml', 'pborg-settings.py'):
+            (cls.build / filename).write_bytes((ROOT / 'harness' / filename).read_bytes())
+        cls.editor = cls.adapter.yaml_editor(cls.build)
         ident = dict(l.split('=', 1) for l in (GAME.parent / 'BUILD_ID').read_text().splitlines() if '=' in l)
         cls.ref = ident['git_rev']
         cls.binary_sha = hashlib.sha256((GAME / 'angband').read_bytes()).hexdigest()
@@ -73,17 +74,12 @@ class CoreProfileContractTest(unittest.TestCase):
         (cls.build / 'build.json').write_text(json.dumps({
             'source_commit': cls.ref, 'impl': 'rust', 'binary_sha256': cls.binary_sha,
             'scary_lists': cls.scary_lists,
+            'pborg_template_sha256': cls.adapter.sha256(cls.build / 'pborg.yaml'),
         }))
 
     @classmethod
     def tearDownClass(cls):
         cls.tmp.cleanup()
-
-    @staticmethod
-    def write_pborg_config(path, legacy):
-        converted = subprocess.check_output(
-            ['python3', str(ROOT / 'harness/pborg-config.py'), '-'], input=legacy, text=True)
-        (path / 'pborg.yaml').write_text(converted)
 
     def cell(self, name, settings, overrides=None):
         profile = {'description': 'core parameter contract', 'settings': settings}
@@ -101,17 +97,18 @@ class CoreProfileContractTest(unittest.TestCase):
         # No ambient core, errand or parameter override can make this pass.
         env = {k: v for k, v in os.environ.items() if not k.startswith('BORG_')}
         env.update(overrides or {})
-        command = self.legacy_zoo_command(self.adapter.command)
-        with patch.dict(os.environ, env, clear=True), patch.object(self.adapter, 'command', command):
+        with patch.dict(os.environ, env, clear=True):
             record = self.adapter.run_cell(cell, self.build, self.root / 'cells', cat)
         self.assertEqual(record['profile_sha256'], self.catalogue.profile_sha256(profile))
-        config = (out / 'user/borg.txt').read_text()
+        config = (out / 'user/pborg.yaml').read_text()
+        self.assertFalse((out / 'user/borg.txt').exists())
+        self.assertEqual(record['pborg_yaml_sha256'], hashlib.sha256(config.encode()).hexdigest())
         self.assertEqual(record['config_sha256'], hashlib.sha256(config.encode()).hexdigest())
-        self.assertIsNone(self.adapter.check_config(config, profile))
+        self.assertIsNone(self.adapter.check_config(config, profile, yaml_settings=self.editor.settings(config)))
         return out, record
 
     def direct(self, name, settings, overrides):
-        """#540: the pinned adapter's borg.txt and command line for this
+        """#540: the pinned adapter's YAML and command line for this
         profile, run directly with `overrides` in the environment (the
         adapter clears every ambient BORG_* variable). Returns the cell
         directory and the adapter's outcome vocabulary for the exit."""
@@ -124,23 +121,15 @@ class CoreProfileContractTest(unittest.TestCase):
         for d in ('user', 'save', 'archive', 'panic', 'scores'):
             (out / d).mkdir(parents=True)
         text = self.adapter.config_text(self.build, profile, 0, 0)
-        # The scary list the written borg.txt names travels with it, pinned
-        # as the adapter and harness/run.sh pin it (borg-zoo#233, #535): the
-        # exact bytes of the build's copy, its SHA-256 checked against the
-        # specimen and written next to the selecting line.
-        names = [v.strip() for k, _, v in (l.partition('=') for l in text.splitlines())
-                 if k.strip() == 'borg_scary_list' and v.strip() not in ('', 'none')]
+        name, _ = self.adapter.scary_name(profile, text, yaml_settings=self.editor.settings(text))
         scary = None
-        if names:
-            name = names[-1]
+        if name:
             data = (self.build / 'scary_lists' / name).read_bytes()
             sha = hashlib.sha256(data).hexdigest()
             self.assertEqual(sha, self.scary_lists[name], 'the build carries the pinned list')
             (out / 'user' / name).write_bytes(data)
-            text = '\n'.join(l for l in text.splitlines() if l.partition('=')[0].strip() != 'borg_scary_list')
-            text += f'\n# direct (#535): scary list sha256 {sha}\nborg_scary_list = {name}\n'
             scary = {'name': name, 'sha256': sha}
-        self.write_pborg_config(out / 'user', text)
+        (out / 'user/pborg.yaml').write_bytes(text.encode('utf-8'))
         argv = self.adapter.command(self.build / 'game' / 'angband', out, cell, 0, 0, suite, spec)
         env = {k: v for k, v in os.environ.items() if not k.startswith('BORG_')}
         env.update(overrides, TZ='UTC', LANG='C.UTF-8', LC_ALL='C.UTF-8')
@@ -225,8 +214,7 @@ class CoreProfileContractTest(unittest.TestCase):
         # The direct run plays the shipped list, pinned by its hash (#535).
         name = 'scary_monsters.txt'
         self.assertEqual(record['scary_list'], {'name': name, 'sha256': self.scary_lists[name]}, record)
-        self.assertIn(f"scary list sha256 {self.scary_lists[name]}\nborg_scary_list: \"{name}\"\n",
-                      (out / 'user/pborg.yaml').read_text())
+        self.assertEqual(self.editor.settings((out / 'user/pborg.yaml').read_text())['borg_scary_list'], name)
         self.assertEqual((out / 'user' / name).read_bytes(), (ROOT / 'harness' / name).read_bytes())
 
     def test_invalid_errand_profile_is_not_an_unconstrained_core_run(self):

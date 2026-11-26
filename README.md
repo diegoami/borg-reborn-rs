@@ -86,7 +86,7 @@ tools match the pin, and `BORG_CEMETERY_DIR` names a checkout explicitly; see
 builds the game with the X11 window into `build/watch/` (about a minute).
 The game's user directory for watched games is `.angband-reborn/user/`. On
 its first start `watch-borg.sh` writes the shipped settings there
-(`harness/borg.txt` and its scary list, prepared as a headless run's, #826),
+(`harness/pborg.yaml` and its scary list),
 so the borg-rs core plays them. Later starts keep that `pborg.yaml`, yours to
 edit, and say when it differs from the shipped one. After updating the
 repository, take the new shipped settings with:
@@ -138,7 +138,7 @@ A suite of runs: `harness/suite.sh smoke OUTDIR`.
 | Core | What | How to select |
 | --- | --- | --- |
 | **borg-rs** (default) | borg-rs's core in `borg-core/`, with our settings, errands and trace | `borg_reborn_core: "borg-rs"` in `pborg.yaml` (shipped) |
-| reborn (frozen) | this repository's own first-principles core | `BORG_CORE=reborn` in the environment, or `borg_reborn_core = reborn` |
+| reborn (frozen) | this repository's own first-principles core | `BORG_CORE=reborn` in the environment, or `borg_reborn_core: reborn` |
 
 `BORG_CORE` in the environment wins over the file. The reborn core reads
 `harness/profiles/reborn-default.txt`, not `pborg.yaml`, and none of the
@@ -146,8 +146,8 @@ settings below apply to it.
 
 ## 6. Changing what the Borg does
 
-PBorg reads **`user/pborg.yaml`**. Headless and watched launchers prepare it
-from `harness/borg.txt`. For a watched game, edit
+PBorg reads **`user/pborg.yaml`**. The package, harness and Zoo use
+`harness/pborg.yaml` as their source for the shipped settings. For a watched game, edit
 `.angband-reborn/user/pborg.yaml`. CBorg reads its own `user/borg.txt`. Each
 setting is commented: what it does, what raising or lowering it does, and
 how many short test games it changed. The values shipped are the ones the
@@ -159,8 +159,8 @@ and place the resulting file in the game's user directory.
 | --- | --- |
 | the core's built-in settings (`borg_stop_dlevel`, `borg_no_deeper`, `borg_plays_risky`, ...) | their keys in `pborg.yaml` |
 | a named threshold of the core | its `borg_param_<name>` key in `pborg.yaml`; the full list with units, ranges and the code each one reaches is [docs/CALIBRATION.md](docs/CALIBRATION.md) |
-| one class only | `harness/borg_<class>.txt`, then `python3 scripts/borg-class-files.py fold` (folds them into `borg.txt`'s CLASS FILES block); or a YAML entry `borg_param_<name>@<class>: value` |
-| a setting for one run | `BORG_PARAM_<NAME>=value` (or `BORG_PARAM_<NAME>__<CLASS>`) in the environment; `BORG_TXT_SET="name=value;..."` for `harness/run.sh` |
+| one class only | a YAML entry such as `borg_param_<name>__mage: value` |
+| a setting for one run | `BORG_PARAM_<NAME>=value` (or `BORG_PARAM_<NAME>__<CLASS>`) in the environment; `PBORG_SET="name=value;..."` for `harness/run.sh` |
 | the monsters that make a level "scary" | `harness/scary_monsters.txt` (format in its header), selected by `borg_scary_list` |
 | a long-term goal: go to town, dive to a depth, a ladder, a trip plan | an **errand**: `borg_reborn_errand` in `pborg.yaml`, `BORG_ERRAND`, or in the game (below); [docs/ERRANDS.md](docs/ERRANDS.md) |
 | a whole game plan by class and level | a plan file ([docs/GAME-PLAN-LANGUAGE.md](docs/GAME-PLAN-LANGUAGE.md); examples in `harness/plans/`), `borg_plan: FILE` or `BORG_ERRANDS_PLAN` |

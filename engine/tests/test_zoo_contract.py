@@ -24,7 +24,7 @@ STOP_REASONS = {'turns', 'death', 'clevel', 'depth', 'keys', 'stalled', 'borg_st
 class BuildContractTest(unittest.TestCase):
     def test_the_files_the_zoo_copies_exist(self):
         self.assertTrue((ROOT / 'harness/build.sh').is_file())
-        self.assertTrue((ROOT / 'harness/borg.txt').is_file())
+        self.assertTrue((ROOT / 'harness/pborg.yaml').is_file())
 
     def test_another_implementation_fails_loudly(self):
         r = subprocess.run([str(ROOT / 'harness/build.sh')], env=dict(os.environ, BORG_IMPL='c-pristine'),

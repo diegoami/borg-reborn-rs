@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Inventory of harness/borg.txt against the code (#576).
+"""Inventory of harness/pborg.yaml against the code (#576).
 
 For every setting the vendored core declares (borg_init.rs BORG_SETTINGS,
 RETIRED_SETTINGS), every shell key and every parameter of the registry
 (params.rs), report:
 
 - where the code reads it (file and function);
-- its compiled default and the value harness/borg.txt ships, if any;
+- its compiled default and the value harness/pborg.yaml ships, if any;
 - the last borg-zoo definition that set it (optional: --zoo DIR, a borg-zoo
   checkout; "last" is the highest issue number).
 
@@ -104,12 +104,12 @@ def registry():
 def borg_txt():
     """key -> (value, section, line); class lines keep their @class."""
     out, section = {}, ""
-    for n, line in enumerate((ROOT / "harness/borg.txt").read_text().split("\n"), 1):
+    for n, line in enumerate((ROOT / "harness/pborg.yaml").read_text().split("\n"), 1):
         m = re.match(r"^#+\s*(.*?)\s*#*\s*$", line)
         if line.startswith("###") and m:
             section = m.group(1).strip("# ")
             continue
-        m = re.match(r"^\s*([a-z_0-9@]+)\s*=\s*(\S*)", line)
+        m = re.match(r"^([a-z_0-9@]+):\s*(\S*)", line)
         if m:
             out[m.group(1)] = (m.group(2), section, n)
     return out
@@ -163,8 +163,8 @@ def main():
         z = zoo.get(key)
         return f"#{z[0]} {z[1]}" if z else ""
 
-    print("# harness/borg.txt inventory (#576)\n")
-    print(f"`harness/borg.txt`: {len(shipped)} settings. Core settings: {len(settings)}; "
+    print("# harness/pborg.yaml inventory (#576)\n")
+    print(f"`harness/pborg.yaml`: {len(shipped)} settings. Core settings: {len(settings)}; "
           f"retired: {len(retired)}; registry parameters: {len(params)}.\n")
 
     print("## Core settings (borg_init.rs BORG_SETTINGS)\n")

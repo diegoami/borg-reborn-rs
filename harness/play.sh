@@ -53,7 +53,7 @@ for ((c = 1; c <= CHARACTERS; c++)); do
     # #826: the shipped settings, as a run's, so the borg-rs core plays them
     # (without a pborg.yaml the frozen reborn core would; BORG_CORE still wins).
     "$ROOT/harness/prepare-pborg-config.sh" "$DIR/user"
-    core="$(sed -n 's/^borg_reborn_core = //p' "$ROOT/harness/borg.txt" | head -1)"
+    core="$(python3 "$ROOT/harness/pborg-settings.py" "$ROOT/harness/pborg.yaml" get borg_reborn_core)"
     {
         echo "character=$c"
         echo "commit=$(git -C "$ROOT" rev-parse HEAD)"

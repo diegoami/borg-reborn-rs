@@ -219,13 +219,13 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            config = (ROOT / "harness/borg.txt").read_text()
+            config = (ROOT / "harness/pborg.yaml").read_text()
             if case in ("one-step", "two-steps", "blocked", "rising-hold"):
                 # These flight maps model the original descent policy. The
                 # synthetic characters lack supplies for the next depth.
                 # MoreRefusedGatesTest covers the gate with both values.
                 key = "borg_param_stairs_descent_gates_without_upstair"
-                config = re.sub(fr"^{key} = .*$", f"{key} = 0", config, flags=re.M)
+                config = re.sub(fr"^{key}: .*$", f"{key}: 0", config, flags=re.M)
             if weight is not None:
                 # #1061: the stair_scum mode (shipped after these cases) is not
                 # what they test; pin it off.
@@ -233,15 +233,15 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                 # #1140: nor the poison triage (deal_with_poison).
                 for key in ("borg_param_stair_scum", "borg_param_explore_mixed", "borg_param_explore_c_leave_when_done",
                             "borg_param_deal_with_poison"):
-                    config, changed = re.subn(fr"^{key} = .*$", f"{key} = 0", config, flags=re.M)
+                    config, changed = re.subn(fr"^{key}: .*$", f"{key}: 0", config, flags=re.M)
                     if changed == 0:
-                        config += f"\n{key} = 0\n"
+                        config += f"\n{key}: 0\n"
                 caution = {"stairs_flight_threat_weight": weight, "desperate_adjacent_down_distance": 3}
                 for name, value in (caution | settings).items():
                     key = f"borg_param_caution_{name}"
-                    config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
+                    config, changed = re.subn(fr"^{key}: .*$", f"{key}: {value}", config, flags=re.M)
                     if changed == 0:
-                        config += f"\n{key} = {value}\n"
+                        config += f"\n{key}: {value}\n"
             write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
@@ -300,9 +300,9 @@ class HealingRestockTest(unittest.TestCase):
             paths = {name: Path(directory) / name for name in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            config = (ROOT / "harness/borg.txt").read_text()
+            config = (ROOT / "harness/pborg.yaml").read_text()
             if not live:
-                config = config.replace("borg_town_plan = 1", "borg_town_plan = 0")
+                config = config.replace("borg_town_plan: 1", "borg_town_plan: 0")
             write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
@@ -359,7 +359,7 @@ class LeaveLevelUpstairsTest(unittest.TestCase):
             paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            config = (ROOT / "harness/borg.txt").read_text()
+            config = (ROOT / "harness/pborg.yaml").read_text()
             # #1061's stair_scum, #1098's mixed walk and #1140's poison
             # triage are not what the case tests. The prepared_* gates make
             # a birth-level character dive-prone (the incident's CL8 Ranger
@@ -387,17 +387,17 @@ class LeaveLevelUpstairsTest(unittest.TestCase):
             ]
             for key, value in pinned:
                 name = f"borg_param_{key}"
-                config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
+                config, changed = re.subn(fr"^{name}: .*$", f"{name}: {value}", config, flags=re.M)
                 if changed == 0:
-                    config += f"\n{name} = {value}\n"
+                    config += f"\n{name}: {value}\n"
             # the trip policy's own prepared estimate would ascend a birth
             # character regardless of the case's decision state. Replaced in
             # place: a line after the file's formula section is not read as
             # a setting.
             for key, value in (("borg_trip_policy", 0),):
-                config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
+                config, changed = re.subn(fr"^{key}: .*$", f"{key}: {value}", config, flags=re.M)
                 if changed == 0:
-                    config += f"\n{key} = {value}\n"
+                    config += f"\n{key}: {value}\n"
             write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
@@ -430,7 +430,7 @@ class StaleStairMoreTest(unittest.TestCase):
             paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            config = (ROOT / "harness/borg.txt").read_text()
+            config = (ROOT / "harness/pborg.yaml").read_text()
             # The prepared_* gates make a birth-level character fully
             # prepared for its depth and for five deeper, as in
             # LeaveLevelUpstairsTest: prepared for its own depth keeps the
@@ -463,17 +463,17 @@ class StaleStairMoreTest(unittest.TestCase):
             ]
             for key, value in pinned:
                 name = f"borg_param_{key}"
-                config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
+                config, changed = re.subn(fr"^{name}: .*$", f"{name}: {value}", config, flags=re.M)
                 if changed == 0:
-                    config += f"\n{name} = {value}\n"
+                    config += f"\n{name}: {value}\n"
             # the trip policy's own prepared estimate would ascend a birth
             # character regardless of the case's decision state. Replaced in
             # place: a line after the file's formula section is not read as
             # a setting.
             for key, value in (("borg_trip_policy", 0),):
-                config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
+                config, changed = re.subn(fr"^{key}: .*$", f"{key}: {value}", config, flags=re.M)
                 if changed == 0:
-                    config += f"\n{key} = {value}\n"
+                    config += f"\n{key}: {value}\n"
             write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
@@ -509,7 +509,7 @@ class MoreRefusedGatesTest(unittest.TestCase):
             paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            config = (ROOT / "harness/borg.txt").read_text()
+            config = (ROOT / "harness/pborg.yaml").read_text()
             # The prepared_* gates make a birth-level character dive-prone,
             # as in LeaveLevelUpstairsTest. The exploration modes and the
             # poison triage are not what the case tests;
@@ -535,9 +535,9 @@ class MoreRefusedGatesTest(unittest.TestCase):
             ]
             for key, value in pinned:
                 name = f"borg_param_{key}"
-                config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
+                config, changed = re.subn(fr"^{name}: .*$", f"{name}: {value}", config, flags=re.M)
                 if changed == 0:
-                    config += f"\n{name} = {value}\n"
+                    config += f"\n{name}: {value}\n"
             # the trip policy's own prepared estimate would ascend a birth
             # character regardless of the case's decision state, and with
             # the town plan's capability mode the notice does not count
@@ -545,9 +545,9 @@ class MoreRefusedGatesTest(unittest.TestCase):
             # food lever at all). Both replaced in place: a line after the
             # file's formula section is not read as a setting.
             for key, value in (("borg_trip_policy", 0), ("borg_town_plan", 0)):
-                config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
+                config, changed = re.subn(fr"^{key}: .*$", f"{key}: {value}", config, flags=re.M)
                 if changed == 0:
-                    config += f"\n{key} = {value}\n"
+                    config += f"\n{key}: {value}\n"
             write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
@@ -584,7 +584,7 @@ class NoteStandingFlagsTest(unittest.TestCase):
             paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            config = (ROOT / "harness/borg.txt").read_text()
+            config = (ROOT / "harness/pborg.yaml").read_text()
             # The prepared_* gates keep the character's preparedness clean
             # for choose_stairs's own prepared arm. The exploration modes
             # and the poison triage are not what the case tests.
@@ -606,17 +606,17 @@ class NoteStandingFlagsTest(unittest.TestCase):
             ]
             for key, value in pinned:
                 name = f"borg_param_{key}"
-                config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
+                config, changed = re.subn(fr"^{name}: .*$", f"{name}: {value}", config, flags=re.M)
                 if changed == 0:
-                    config += f"\n{name} = {value}\n"
+                    config += f"\n{name}: {value}\n"
             # the trip policy's own prepared estimate would ascend a birth
             # character regardless of the case's decision state. Replaced in
             # place: a line after the file's formula section is not read as
             # a setting.
             for key, value in (("borg_trip_policy", 0),):
-                config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
+                config, changed = re.subn(fr"^{key}: .*$", f"{key}: {value}", config, flags=re.M)
                 if changed == 0:
-                    config += f"\n{key} = {value}\n"
+                    config += f"\n{key}: {value}\n"
             write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
@@ -663,7 +663,7 @@ class DarkVeinLoopTest(unittest.TestCase):
             paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            config = (ROOT / "harness/borg.txt").read_text()
+            config = (ROOT / "harness/pborg.yaml").read_text()
             # #1189 used breadth-first before #1201 switched it off.
             # The legacy Paladin exceeds its shipped depth-adjusted mixed cap.
             pins = [
@@ -678,7 +678,7 @@ class DarkVeinLoopTest(unittest.TestCase):
                     ("borg_param_explore_mix_max_clevel__paladin", 8),
                 ]
             for name, value in pins:
-                config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
+                config, changed = re.subn(fr"^{name}: .*$", f"{name}: {value}", config, flags=re.M)
                 assert changed, f"the shipped file ships {name}"
             write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
@@ -731,7 +731,7 @@ class BreederDoorLoopTest(unittest.TestCase):
             paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            config = (ROOT / "harness/borg.txt").read_text()
+            config = (ROOT / "harness/pborg.yaml").read_text()
             # The exploration modes and the poison triage are not what the
             # case tests.
             pinned = [
@@ -740,13 +740,13 @@ class BreederDoorLoopTest(unittest.TestCase):
             ]
             for key, value in pinned:
                 name = f"borg_param_{key}"
-                config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
+                config, changed = re.subn(fr"^{name}: .*$", f"{name}: {value}", config, flags=re.M)
                 if changed == 0:
-                    config += f"\n{name} = {value}\n"
+                    config += f"\n{name}: {value}\n"
             for key, value in (("borg_trip_policy", 0),):
-                config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
+                config, changed = re.subn(fr"^{key}: .*$", f"{key}: {value}", config, flags=re.M)
                 if changed == 0:
-                    config += f"\n{key} = {value}\n"
+                    config += f"\n{key}: {value}\n"
             write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
@@ -804,7 +804,7 @@ class RecoveryManaLoopTest(unittest.TestCase):
             paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            config = (ROOT / "harness/borg.txt").read_text()
+            config = (ROOT / "harness/pborg.yaml").read_text()
             # The switches under test, replaced in place (they ship 1), and
             # the modes that are not what the case tests.
             pinned = [
@@ -814,7 +814,7 @@ class RecoveryManaLoopTest(unittest.TestCase):
                 ("borg_param_deal_with_poison", 0), ("borg_param_explore_c_leave_when_done", 0),
             ]
             for name, value in pinned:
-                config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
+                config, changed = re.subn(fr"^{name}: .*$", f"{name}: {value}", config, flags=re.M)
                 assert changed, f"the shipped file ships {name}"
             write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")

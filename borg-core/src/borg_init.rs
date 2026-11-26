@@ -1810,7 +1810,7 @@ mod tests {
     #[test]
     fn reborn_profile_sets_the_black_market_limits() {
         use crate::borg_headers::borg_h::{BORG_BLACK_MARKET_MAX_PERCENTAGE, BORG_SUM_EXCLUDED_FROM_BLACK_MARKET, BORG_TOWN_MAX_NON_MISSILE_COPIES};
-        let (cfg, _) = cfg_of(include_bytes!("../../harness/borg.txt"));
+        let (cfg, _) = cfg_of(crate::shell::yaml_settings(include_str!("../../harness/pborg.yaml")).unwrap().as_bytes());
         assert_eq!(cfg[BORG_BLACK_MARKET_MAX_PERCENTAGE as usize], 60);
         assert_eq!(cfg[BORG_SUM_EXCLUDED_FROM_BLACK_MARKET as usize], 500);
         assert_eq!(cfg[BORG_TOWN_MAX_NON_MISSILE_COPIES as usize], 35);

@@ -417,7 +417,7 @@ mod tests {
 
     #[test]
     fn the_switch_ships_off_in_the_code() {
-        assert_eq!(value(Param::loop_breaker), 0, "compiled 0; harness/borg.txt ships 1");
+        assert_eq!(value(Param::loop_breaker), 0, "compiled 0; harness/pborg.yaml ships 1");
         assert_eq!(value(Param::loop_moves), 16, "#1190: the window's moves, #1153's guess");
         assert_eq!(value(Param::loop_grids), 3, "#1190: the window's grids, #1153's guess");
     }

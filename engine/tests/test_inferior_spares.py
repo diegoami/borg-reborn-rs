@@ -25,9 +25,9 @@ class InferiorSparesTest(unittest.TestCase):
             paths = {key: root / key for key in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            config = (ROOT / "harness/borg.txt").read_text()
+            config = (ROOT / "harness/pborg.yaml").read_text()
             if legacy_source == "file":
-                config += "\nborg_param_junk_inferior_sandal_ac_margin = 7\n"
+                config += "\nborg_param_junk_inferior_sandal_ac_margin: 7\n"
             write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: value for key, value in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
@@ -102,10 +102,10 @@ class TownSpareSaleTest(unittest.TestCase):
             paths = {key: root / key for key in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            config = (ROOT / "harness/borg.txt").read_text()
-            default = "\nborg_town_plan = 1\n"
+            config = (ROOT / "harness/pborg.yaml").read_text()
+            default = "\nborg_town_plan: 1\n"
             self.assertIn(default, config)
-            config = config.replace(default, f"\nborg_town_plan = {planner}\n")
+            config = config.replace(default, f"\nborg_town_plan: {planner}\n")
             write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: value for key, value in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
