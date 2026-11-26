@@ -9106,7 +9106,7 @@ identified spares.
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2246` |
-| `junk_gear_alternatives` | 2 | distinct better options | 0–3 | `borg_spare_gear.rs:303` |
+| `junk_gear_alternatives` | 2 | distinct better options | 0–3 | `borg_junk.rs:64` |
 
 The removal establishes the control for the paired pilot of the #1264
 redesign. [Handover](handover/2026-11-25-1265-remove-sandal-flag.md)
