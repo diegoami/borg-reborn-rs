@@ -20,3 +20,8 @@ key streams and resolved native settings byte for byte. The companion
 Zoo adapter and Cemetery replay changes are diegoami/borg-zoo#812 and
 diegoami/borg-cemetery#161. The existing native parameter receipt uses
 its historical origin labels for compatibility.
+
+The four default-borg smoke runs kept identical key and state streams.
+The reference refresh records the PBorg settings startup message. Native
+death tools are pinned to the Cemetery replay support in #161 so the
+harness's PBorg configuration receipt can be verified.
