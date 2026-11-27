@@ -21,7 +21,7 @@ use crate::borg_danger::borg_danger;
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, KC_ENTER};
 use crate::borg_item_use::{
-    borg_activate_item, borg_eat, borg_quaff_crit, borg_quaff_potion, borg_read_scroll,
+    borg_activate_item, borg_eat, borg_quaff_crit, borg_quaff_potion, borg_recover_hunger_with_scroll,
     borg_use_staff_fail, borg_zap_rod,
 };
 use crate::borg_light::{borg_check_light_only, borg_maintain_light, BorgNeed};
@@ -503,7 +503,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     // Satisfy hunger
     if (st.borg.tr(BI_ISHUNGRY) != 0 || st.borg.tr(BI_ISWEAK) != 0)
         && q < param(Param::recover_costly_hunger_chance)
-        && (borg_read_scroll(st, st.item_val.sv_scroll_satisfy_hunger)
+        && (borg_recover_hunger_with_scroll(st)
             || borg_activate_item(st, st.act.satisfy))
     {
         return true;

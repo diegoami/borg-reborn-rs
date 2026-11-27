@@ -43,7 +43,7 @@ use crate::borg_headers::borg_trait_h::{
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, KC_ENTER};
 use crate::borg_item_use::{
-    borg_activate_failure, borg_activate_item, borg_eat, borg_eat_food_any, borg_satisfy_hunger_before_food,
+    borg_activate_failure, borg_activate_item, borg_eat, borg_eat_food_any, borg_try_planned_hunger_spells,
     borg_equips_staff_fail, borg_quaff_crit, borg_quaff_potion, borg_read_scroll, borg_use_staff, borg_use_staff_fail, borg_zap_rod,
 };
 use crate::borg_item_val::borg_lookup_kind;
@@ -3059,8 +3059,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // Prevent starvation
     if st.borg.tr(BI_ISWEAK) != 0 {
         // Attempt to satisfy hunger
-        // borg-reborn-rs (#451): a Remove Hunger scroll goes before any food
-        if borg_satisfy_hunger_before_food(st)
+        if borg_try_planned_hunger_spells(st)
             || borg_eat_food_any(st)
             || borg_spell(st, REMOVE_HUNGER)
             || borg_spell(st, HERBAL_CURING)
