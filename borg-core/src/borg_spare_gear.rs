@@ -497,6 +497,11 @@ fn game_tags_only(desc: &[core::ffi::c_char]) -> bool {
 /// the engine stacks only identical gear (obj-pile.c:object_similar). The
 /// rest leaves at the next safe opportunity.
 pub(crate) fn unknown_rune_excess(st: &BorgState, whole_stack: bool) -> Option<crate::borg_junk::SurplusDrop> {
+    // Review of #1312: while Identify Rune is usable, `borg_test_stuff`
+    // gets its attempt first. The cleanup runs earlier in the dungeon think.
+    if st.borg.tr(BI_AID) > 0 {
+        return None;
+    }
     let pack = inven_wield() as usize;
     let group = |item: &borg_item| (crate::borg_inventory::borg_wield_slot(item), u32::from(item.tval) == TV_DIGGING);
     let spares: Vec<_> = (0..pack).filter(|&slot| unknown_rune_spare(st, slot)).collect();
@@ -1186,6 +1191,7 @@ fn ranked_cleanup_fixture(st: &mut BorgState) {
 
     // #1308: one unknown-rune spare per slot, two for the ring fingers.
     reset(st);
+    st.borg.trait_[BI_AID as usize] = 0;
     let unknown = |item: borg_item| {
         let mut item = borg_item { ident: false, needs_ident: true, ..item };
         for (index, byte) in b"{??}".iter().enumerate() {
@@ -1200,6 +1206,9 @@ fn ranked_cleanup_fixture(st: &mut BorgState) {
     st.items.items[2] = unknown(borg_item { tval: TV_BOW as u8, weight: 5, ..dagger });
     st.items.items[3] = unknown(borg_item { iqty: 3, ..robe });
     let excess = |st: &BorgState, whole| unknown_rune_excess(st, whole).map(|drop| (drop.slot, drop.quantity));
+    st.borg.trait_[BI_AID as usize] = 1;
+    assert_eq!(excess(st, false), None, "identification comes before the cap");
+    st.borg.trait_[BI_AID as usize] = 0;
     assert_eq!(excess(st, false), Some((0, 1)), "the lower-valued unknown dagger leaves");
     st.items.items[0] = empty;
     assert_eq!(excess(st, false), Some((3, 2)), "an unknown stack keeps one copy");
