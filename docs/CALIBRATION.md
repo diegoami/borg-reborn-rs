@@ -5842,7 +5842,7 @@ retired #693 settings load with a warning and use these checks.
 
 | Parameter | Compiled default | Unit | Range | Source |
 |---|---|---|---|---|
-| `prepared_clevel_depth_margin` | 0 | levels | -50–50 | `borg_prepared.rs:896` |
+| `prepared_clevel_depth_margin` | 0 | levels | -50–50 | `borg_prepared.rs:922` |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:240` |
 | `prepared_dl2_min_clevel` | 0 | level | 0–50 | `borg_prepared.rs:277` |
 | `prepared_dl2_min_hp` | 30 | hp | 0–10000 | `borg_prepared.rs:269` |
@@ -5907,12 +5907,12 @@ still run on their existing paths.
 
 | Parameter | Compiled default | Shipped value | Unit | Range | Source |
 |---|---|---|---|---|---|
-| `prepared_dl10_min_light_radius` | 2 (Necromancer 0) | 2 (Necromancer 0) | radius | 0–99 | `borg_prepared.rs:385` |
-| `prepared_dl10_min_teleports` | 2 | 3 | count | 0–999 | `borg_prepared.rs:394` |
+| `prepared_dl10_min_light_radius` | 2 (Necromancer 0) | 2 (Necromancer 0) | radius | 0–99 | `borg_prepared.rs:411` |
+| `prepared_dl10_min_teleports` | 2 | 3 | count | 0–999 | `borg_prepared.rs:420` |
 | `prepared_dl10_cure_critical_until_clevel` | 30 | 30 | level | 0–50 | `borg_prepared.rs:418` |
 | `prepared_dl10_min_cure_critical` | 3 | 3 | count | 0–999 | `borg_prepared.rs:420` |
 | `prepared_dl10_min_see_invisible_detection_or_esp` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:430` |
-| `prepared_dl10_min_depth` | 10 | 10 | depth | 0–127 | `borg_prepared.rs:382` |
+| `prepared_dl10_min_depth` | 10 | 10 | depth | 0–127 | `borg_prepared.rs:408` |
 | `prepared_dl20_min_free_action` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:441` |
 | `prepared_dl20_min_depth` | 20 | 19 | depth | 0–127 | `borg_prepared.rs:438` |
 | `prepared_dl21_min_resist_fire` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:461` |
@@ -5965,15 +5965,15 @@ still run on their existing paths.
 | `prepared_dl100_min_healing_potions` | 5 | 5 | count | 0–999 | `borg_prepared.rs:786` |
 | `prepared_dl100_min_star_heal_or_life` | 15 | 15 | count | 0–999 | `borg_prepared.rs:793` |
 | `prepared_dl100_min_speed_potions` | 10 | 10 | count | 0–999 | `borg_prepared.rs:800` |
-| `restock_dl1_min_light_radius` | 1 | 1 | radius | 0–99 | `borg_prepared.rs:1073` |
-| `restock_dl1_min_fuel` | 1 | 1 | count | 0–999 | `borg_prepared.rs:1083` |
+| `restock_dl1_min_light_radius` | 1 | 1 | radius | 0–99 | `borg_prepared.rs:1099` |
+| `restock_dl1_min_fuel` | 1 | 1 | count | 0–999 | `borg_prepared.rs:1109` |
 | `restock_dl2_min_fuel` | 2 | 2 | count | 0–999 | `borg_prepared.rs:1095` |
-| `restock_dl2_min_food` | 3 | 3 | count | 0–999 | `borg_prepared.rs:1071` |
-| `restock_dl2_min_depth` | 2 | 2 | depth | 0–127 | `borg_prepared.rs:1091` |
-| `restock_dl6_min_phase_door` | 1 | 1 | count | 0–999 | `borg_prepared.rs:1083` |
-| `restock_dl6_cures_until_clevel` | 30 | 30 | level | 0–50 | `borg_prepared.rs:1091` |
-| `restock_dl6_min_cures` | 1 | 1 | count | 0–999 | `borg_prepared.rs:1093` |
-| `restock_dl6_min_depth` | 6 | 6 | depth | 0–127 | `borg_prepared.rs:1080` |
+| `restock_dl2_min_food` | 3 | 3 | count | 0–999 | `borg_prepared.rs:1131` |
+| `restock_dl2_min_depth` | 2 | 2 | depth | 0–127 | `borg_prepared.rs:1117` |
+| `restock_dl6_min_phase_door` | 1 | 1 | count | 0–999 | `borg_prepared.rs:1143` |
+| `restock_dl6_cures_until_clevel` | 30 | 30 | level | 0–50 | `borg_prepared.rs:1151` |
+| `restock_dl6_min_cures` | 1 | 1 | count | 0–999 | `borg_prepared.rs:1153` |
+| `restock_dl6_min_depth` | 6 | 6 | depth | 0–127 | `borg_prepared.rs:1140` |
 | `restock_dl10_min_light_radius` | 2 (Necromancer 0) | 2 (Necromancer 0) | radius | 0–99 | `borg_prepared.rs:1105` |
 | `restock_dl10_cures_until_clevel` | 30 | 30 | level | 0–50 | `borg_prepared.rs:1113` |
 | `restock_dl10_min_cures` | 2 | 2 | count | 0–999 | `borg_prepared.rs:1115` |
@@ -5990,13 +5990,13 @@ still run on their existing paths.
 | `restock_dl100_arrival_turns` | 10 | 10 | turns | 0–10000 | `borg_prepared.rs:1180` |
 | `restock_dl100_min_star_heal` | 15 | 17 | count | 0–999 | `borg_prepared.rs:1182` |
 | `restock_dl100_min_depth` | 100 | 100 | depth | 0–127 | `borg_prepared.rs:1177` |
-| `prepared_endgame_stock_min_depth` | 82 | 82 | depth | 0–127 | `borg_prepared.rs:899` |
-| `prepared_endgame_min_home_or_pack_heals` | 10 | 12 | count | 0–999 | `borg_prepared.rs:900` |
+| `prepared_endgame_stock_min_depth` | 82 | 82 | depth | 0–127 | `borg_prepared.rs:959` |
+| `prepared_endgame_min_home_or_pack_heals` | 10 | 12 | count | 0–999 | `borg_prepared.rs:960` |
 | `prepared_endgame_total_heals_min_max_depth` | 97 | 97 | depth | 0–127 | `borg_prepared.rs:916` |
 | `prepared_endgame_min_total_heals` | 30 | 35 | count | 0–999 | `borg_prepared.rs:918` |
 | `prepared_endgame_collect_heals_min_max_depth` | 99 | 99 | depth | 0–127 | `borg_prepared.rs:936` |
-| `prepared_early_min_light_radius` | 1 | 1 | radius | 0–99 | `borg_prepared.rs:224` |
-| `prepared_early_min_food` | 5 | 5 | count | 0–999 | `borg_prepared.rs:232` |
+| `prepared_early_min_light_radius` | 1 | 1 | radius | 0–99 | `borg_prepared.rs:250` |
+| `prepared_early_min_food` | 5 | 5 | count | 0–999 | `borg_prepared.rs:258` |
 | `prepared_early_min_recall` | 1 | 1 | count | 0–999 | `borg_prepared.rs:243` |
 | `prepared_early_min_fuel` | 5 | 5 | count | 0–999 | `borg_prepared.rs:260` |
 
