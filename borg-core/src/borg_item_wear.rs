@@ -1840,24 +1840,42 @@ pub(crate) mod digger_fixture {
     /// wields for each tunnelling turn lifts it above. borg_can_dig must
     /// count the shovel: at the shipped settings it allows granite, at
     /// `wear_digger_keeps_weapon` 0 it refuses, as before.
+    ///
+    /// Re-review: a missing carried digger is no skill of 0. At 20 twitches
+    /// magma's threshold falls from 10 to 0 (borg_can_dig). The engine
+    /// gives a skill of 5 no chance at magma (player-calcs.c:1656), so
+    /// with the shovel dropped, or at 0, magma must stay refused.
     fn dig_gate(st: &mut BorgState) -> ! {
         use crate::borg_headers::borg_trait_h::BI_DIG;
-        use crate::headers::list_terrain_h::FEAT_GRANITE;
+        use crate::headers::list_terrain_h::{FEAT_GRANITE, FEAT_MAGMA};
         let worn = st.borg.tr(BI_DIG);
         let carried = crate::borg_flow::carried_digger_skill(st);
         let on = param(Param::wear_digger_keeps_weapon) != 0;
         let digs = crate::borg_flow::borg_can_dig(st, false, FEAT_GRANITE as u8);
-        println!("digger-dig-gate: worn skill {worn}, carried {carried}, granite {digs}");
+        println!("digger-dig-gate: worn skill {worn}, carried {carried:?}, granite {digs}");
         assert!(worn < 40, "the worn kit alone must not dig granite");
         assert_eq!(st.borg.tr(BI_DIG), worn, "the trial restores the kit");
         assert_eq!(u32::from(st.items.items[inven_wield() as usize].tval), TV_SWORD, "the dagger stays wielded");
         if on {
-            assert!(carried >= 40, "the shovel lifts the skill to granite's threshold");
+            assert!(carried.is_some_and(|skill| skill >= 40), "the shovel lifts the skill to granite's threshold");
             assert!(digs, "granite is dug with the carried shovel");
         } else {
-            assert_eq!(carried, 0);
+            assert_eq!(carried, None);
             assert!(!digs, "at 0 the inherited check judges the worn kit only");
         }
+        // Twenty twitches, the shovel gone from the Borg's view (or the
+        // flag at 0): no carried digger, and magma at threshold 0.
+        assert!(worn < 10, "the worn kit alone is below magma's threshold");
+        st.borg.times_twitch = 20;
+        let wield = inven_wield() as usize;
+        for item in &mut st.items.items[..wield] {
+            if u32::from(item.tval) == TV_DIGGING { item.iqty = 0; }
+        }
+        st.trait_swap.weapon_swap = 0; // nor is a digger the weapon swap
+        st.borg.time.now += 1; // a new turn for the carried-digger cache
+        assert_eq!(crate::borg_flow::carried_digger_skill(st), None);
+        assert!(!crate::borg_flow::borg_can_dig(st, false, FEAT_MAGMA as u8),
+            "with no carried digger the twitch allowance must not allow magma at skill {worn}");
         println!("digger-dig-gate passed (#1361): {}", if on { "on" } else { "off" });
         std::process::exit(0);
     }

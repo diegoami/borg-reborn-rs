@@ -470,7 +470,9 @@ pub fn borg_can_dig(st: &mut BorgState, check_fail: bool, feat: u8) -> bool {
     // borg-reborn-rs (#1361 review, `wear_digger_keeps_weapon`): the combat
     // weapon stays wielded, and the engine digs with the carried digger.
     // Judge the dig by the skill with that digger in the weapon slot.
-    if carried_digger_skill(st) >= dig_check {
+    // Re-review: no usable carried digger is no answer, not a skill of 0,
+    // which the twitch allowance can bring a threshold down to.
+    if carried_digger_skill(st).is_some_and(|skill| skill >= dig_check) {
         return true;
     }
 
@@ -501,19 +503,19 @@ pub fn borg_can_dig(st: &mut BorgState, check_fail: bool, feat: u8) -> bool {
 /// digger in the weapon slot, the one the engine wields for the turn of a
 /// tunnel command (cmd-cave.c:546-568, player-util.c:744-789: the best
 /// digging skill over the melee weapons, recalculated with each wielded).
-/// 0 with `wear_digger_keeps_weapon` at 0, with no carried digger, or with
-/// a sticky worn weapon, which the engine does not swap out. The kit is
-/// observed again with each digger wielded, so the result is kept for the
-/// rest of the Borg's turn.
-pub(crate) fn carried_digger_skill(st: &mut BorgState) -> i32 {
+/// None with `wear_digger_keeps_weapon` at 0, with no carried digger, or
+/// with a sticky worn weapon, which the engine does not swap out. The kit
+/// is observed again with each digger wielded, so the result is kept for
+/// the rest of the Borg's turn.
+pub(crate) fn carried_digger_skill(st: &mut BorgState) -> Option<i32> {
     use crate::borg_item::inven_wield;
     use crate::headers::list_object_flags_h::OF_STICKY;
     use std::cell::Cell;
     thread_local! {
-        static CACHE: Cell<Option<(i32, i32)>> = const { Cell::new(None) };
+        static CACHE: Cell<Option<(i32, Option<i32>)>> = const { Cell::new(None) };
     }
     if crate::params::value(crate::params::Param::wear_digger_keeps_weapon) == 0 {
-        return 0;
+        return None;
     }
     let now = st.borg.time.now;
     if let Some((time, skill)) = CACHE.get() {
@@ -529,7 +531,7 @@ pub(crate) fn carried_digger_skill(st: &mut BorgState) -> i32 {
             item.iqty > 0 && item.aware && u32::from(item.tval) == TV_DIGGING
         })
         .collect();
-    let mut best = 0;
+    let mut best = None;
     if !diggers.is_empty() && !engine::flag_has(&worn.flags, OF_STICKY as i32) {
         let items = st.items.items.clone();
         let borg = st.borg.clone();
@@ -539,7 +541,7 @@ pub(crate) fn carried_digger_skill(st: &mut BorgState) -> i32 {
         for i in diggers {
             st.items.items[wield] = crate::borg_headers::borg_item_h::borg_item { iqty: 1, ..items[i] };
             crate::borg_trait::borg_notice(st, false);
-            best = best.max(st.borg.tr(BI_DIG));
+            best = best.max(Some(st.borg.tr(BI_DIG)));
             st.items.items = items.clone();
         }
         st.items.items = items;
