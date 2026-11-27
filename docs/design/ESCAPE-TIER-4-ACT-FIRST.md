@@ -98,40 +98,63 @@ All settings default to 0, "retains today's play", like the other escape
 settings, so no shipped run changes until the owner moves a value after a
 zoo result. Staged so each can be measured alone.
 
-### Stage 1: act before 4.2
+### Stage 1: when threatened, do something about it first
 
-- `escape_compromised_act_first` (flag): 1 = in tier 4, when no awake enemy
-  is adjacent (the Phase verdict is `Shoot`, `phase_rule_verdict(st,
-  PhaseSite::Compromised, Some(b_q))`, cached per think), the danger without
-  fear is below `escape_compromised_act_danger_percent` of current HP
-  (default 100: by the Borg's own estimate it survives until it next acts)
-  and HP is at least `escape_compromised_act_hp_percent` of max (default
-  50), the 4.2 rung and the "failed to teleport" flee/leave flags that
-  follow it are skipped. `borg_escape` then returns false, and
-  `borg_caution` reaches `phase_rule_act`: the best attack at range, else a
-  boost (a Potion of Speed first, when held).
-- Before it skips, one refresh per think window: with a monster picture
-  older than `escape_compromised_refresh_age` game turns (default 1000), cast
-  Detect Monsters (the arrival check's own cast); with the #831 unseen
-  mode on, `detect_invisible_now` instead. It counts as acting, not as an
-  escape (like `EscapeAction::Healed`: no `escapes` count, flow intact).
-  Reveal Monsters covers both once known.
-- The tiers above do not change. If the danger grows past the Borg's HP
-  after a turn spent acting, tier 3, 2 or 1 teleports on the next think, as
-  today. Verdicts other than `Shoot` (an enemy adjacent) never use this path.
-- A note per decision: `# Escape 4.2 held: {why}; danger {here} without fear
-  (with fear {b_q}), HP {hp}`.
+The principle (owner): a Borg that feels threatened asks what it can do
+about it (look, heal, shoot, boost), acts, and judges the danger again on
+the next think; the long teleport is for when that has not worked.
+
+- **One flag.** `escape_compromised_act_first` (flag, default 0). With 0
+  nothing below is read and today's play is kept. The settings that follow
+  take effect only with the flag on.
+- **When it applies.** Tier 4 has fired (danger above 60% of current HP),
+  no awake enemy is adjacent (the Phase verdict for this think is `Shoot`:
+  `phase_rule_verdict(st, PhaseSite::Compromised, Some(b_q))`, cached per
+  think), the danger without fear is below
+  `escape_compromised_act_danger_percent` of current HP (default 100: by the
+  Borg's own estimate it survives until it next acts), HP is at least
+  `escape_compromised_act_hp_percent` of max (default 50), and fewer than
+  `escape_compromised_act_rounds` (default 3) rounds have been spent this
+  way in the same episode. The episode ends when the danger falls below the
+  tier's threshold or the level changes. Outside these limits 4.2 runs as
+  today.
+- **The ladder, first one that can act:**
+  1. *Look*: Detect Monsters (the arrival check's own cast) when the monster
+     picture is older than `escape_compromised_refresh_age` game turns
+     (default 1000); with the #831 unseen mode on, `detect_invisible_now`
+     instead (Reveal Monsters covers both once known).
+  2. *Heal*: the quaff `phase_rule_act` already starts with, when hurt.
+  3. *Shoot*: the best attack at range (`borg_attack`; with no enemy
+     adjacent only a ranged one can be chosen).
+  4. *Boost*: `cornered_boost` (Speed first, then Heroism, Berserk Strength,
+     Bless), then `borg_defend`'s resistances and shields, when an awake
+     monster is in view.
+  The existing `phase_rule_act` already does steps 2 to 4 in that order;
+  the new part is step 1 and calling the ladder before 4.2 instead of after
+  every escape has declined. A look counts as acting, not as an escape (like
+  `EscapeAction::Healed`: no `escapes` count, flow intact).
+- **Reevaluate next round.** Every think recomputes the danger and the tier.
+  If it grew past the Borg's HP, tier 3, 2 or 1 teleports as today. If the
+  danger persists, the round cap sends the Borg to 4.2 after
+  `escape_compromised_act_rounds` rounds. If nothing on the ladder can act,
+  4.2 runs at once. Tiers 1 to 3 and verdicts other than `Shoot` (an enemy
+  adjacent) never use this path.
+- A note per decision: `# Escape 4.2 held: {look|heal|shoot|boost}, round
+  {n} of {cap}; danger {here} without fear (with fear {b_q}), HP {hp}` and,
+  when it does not hold, `# Escape 4.2 not held: {why}`.
 
 Effect on the four cases:
 
-- **A:** nothing known to shoot; the refresh shows the picture; with no awake
-  enemy in view `phase_rule_act` does nothing and caution goes on (back
-  away, flow), as for any danger below the emergency tiers.
-- **B:** the refresh would show an ordinary unseen monster (or, with the
-  #831 mode, the detection reveals it), then a shot.
-- **C:** the Borg spends a turn on a refresh or a boost with the group still
-  at range. This is the case at risk: the damage estimate counts the group
-  at 8 without fear, and its speed +20 can close the gap in one turn.
+- **A:** nothing known to shoot; the look shows the picture; with no awake
+  enemy in view the rest of the ladder has nothing to act on, so the round
+  ends in the caution flow (back away, flow); after the cap, or if nothing
+  can act, 4.2 runs.
+- **B:** the look would show an ordinary unseen monster (or, with the #831
+  mode, the detection reveals it); next round a shot at it.
+- **C:** the Borg spends a round on a look or a boost with the group at
+  range. This is the case at risk: the damage estimate counts the group at 8
+  without fear, and its speed +20 can close the gap in one turn; the cap
+  and tier 3 bound it.
 - **D:** 48 is below 68, HP is full and an attack had positive utility one
   decision earlier, so the Borg shoots the tracker.
 
@@ -158,9 +181,12 @@ stage 1 cannot act in a case like A, where nothing is known to act against.
   override may be needed.
 - **A needs its own fix**: a retreat that the next flow undoes
   (`retreat_oscillation_veto` exists, #932). Separate task; not in this plan.
-- **A turn spent on a refresh while the danger is above 60% of HP** costs a
-  turn of that danger. The refresh age and the 50% HP floor bound it; the
-  zoo decides if it pays.
+- **A round spent acting while the danger is above 60% of HP** costs a round
+  of that danger. The refresh age, the 50% HP floor and the round cap bound
+  it; the zoo decides if it pays.
+- **An enemy adjacent and the fight not lost** (verdict `Fight`) has the same
+  fall-through to 4.2 and is left out here: none of the four cases is one.
+  Extend the ladder to it once the `Shoot` case is measured.
 - **Danger 2000** (turn 1,385,545, no monster named after an acolyte died) is
   the `danger_maximum` cap. Its source is not in the log; not in this plan.
 - The case dossier (all 24 escapes, with the context of each) is not in this
@@ -170,7 +196,7 @@ stage 1 cannot act in a case like A, where nothing is known to act against.
 ## Measuring it (borg-zoo, RULES 14 and 20)
 
 Population comparisons go to borg-zoo as a request issue. Proposed arms: the
-shipped settings; stage 1; stages 1 and 2, over all classes (the tier is not
+shipped settings (flag 0); stage 1 (flag 1); stages 1 and 2, over all classes (the tier is not
 Mage-only). The endpoint, its size and the confirmation suite are the zoo's
 to prespecify before the run. Candidate measures: deaths and the depth
 reached per game, escapes by tier and charges and recharges per level
