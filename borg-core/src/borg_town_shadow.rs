@@ -299,6 +299,8 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         (0..st.store.shops[BORG_HOME].ware.len())
             .map(|slot| crate::borg_spare_gear::redundant_home_gear(st, slot)).collect()
     } else { Vec::new() };
+    // #1315: the active swaps as the pack stands, before any try-off.
+    let swap_slots = [st.trait_swap.weapon_swap - 1, st.trait_swap.armour_swap - 1];
     let fact = |st: &BorgState, it: &borg_item, place: Place, slot: usize, power: i64, worn_gain: i64| -> KitItem {
         let (mut need, mut reduction) = ware_role(st, it);
         let consumable = crate::borg_item_id::flavour_sale_type(it.tval);
@@ -349,6 +351,11 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             // may still put the spare at Home to save carried weight.
             home_role = Role::Gear;
         }
+        // #1315: the active weapon or armour swap stays in the pack, where
+        // the swap notice looks for it. Renewable keeps it out of Home and
+        // the protection keeps it from the planner's sale or drop.
+        let active_swap = place == Place::Pack && swap_slots.contains(&(slot as i32));
+        if active_swap { home_role = Role::Renewable; }
         if home_role == Role::LatePotion {
             let home = &st.store.shops[BORG_HOME].ware;
             let earlier = if place == Place::Home { &home[..slot] } else { &home[..] };
@@ -369,7 +376,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             home_role,
             home_room,
             keep_last_book: protects_class_book(it),
-            protect_disposal: protected_supply
+            protect_disposal: protected_supply || active_swap
                 || (place == Place::Home && (crate::borg_town_live::retained_gear(st, it)
                     || (home_policy && it.art_idx != 0 || ranked_item) && !redundant_dagger))
                 || (it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL

@@ -8981,7 +8981,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1103` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1110` |
 
 ## Quiver surplus in town (#1168, #1272)
 
@@ -9323,3 +9323,24 @@ inscriptions, staged loadouts, and active melee swaps retain protection.
 The existing sale and safe drop checks apply. This changes the behaviour
 of the shipped gear policy without adding parameters or changing defaults.
 [Handover](handover/2026-11-26-1304-rogue-spare-gear.md)
+
+## Carried swaps and the Home (#1315)
+
+The weapon and armour swaps are chosen from the pack only
+(`borg_trait_swap.rs`), so a swap stored at Home is never used. The
+ranked Home backup plan no longer stores the active swap, and the live
+planner gives a carried active swap the `Renewable` Home role with
+disposal protection: it is not stored, sold or dropped. A digger skips
+the depth gate below, but its tunnelling bonus reads `pval`, which 4.2
+diggers leave at 0, so in practice no swap is carried below it.
+
+Both swaps were carried only from max depth 50 (C Borg: "they are heavy").
+That depth is now a parameter. The default keeps the earlier play; a lower
+value is a hypothesis for the zoo.
+
+| Parameter | Default | Unit | Range | Read at |
+| --- | --- | --- | --- | --- |
+| `swap_carry_min_depth` | 50 | level | 0–128 | `borg_trait_swap.rs:596` |
+
+Taking a swap out of Home for the coming trip is not implemented (owner
+decision pending in #1315). [Handover](handover/2026-11-27-1315-swap-home.md)

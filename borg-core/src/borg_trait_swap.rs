@@ -591,8 +591,9 @@ pub fn borg_notice_weapon_swap(st: &mut BorgState) {
 
         /* Don't carry swaps until dlevel 50.  They are heavy.
            Unless the item is a digger, then carry it */
+        // borg-reborn-rs (#1315): the depth is `swap_carry_min_depth`.
         let digging = u32::from(item.tval) == TV_DIGGING;
-        if tr(st, BI_MAXDEPTH) < 50 && !digging {
+        if tr(st, BI_MAXDEPTH) < crate::params::value(crate::params::Param::swap_carry_min_depth) && !digging {
             continue;
         }
 
@@ -720,7 +721,7 @@ pub fn borg_notice_armour_swap(st: &mut BorgState) {
         }
 
         /* Dont carry swaps until dlevel 50.  They are heavy */
-        if tr(st, BI_MAXDEPTH) < 50 {
+        if tr(st, BI_MAXDEPTH) < crate::params::value(crate::params::Param::swap_carry_min_depth) {
             continue;
         }
 

@@ -42,6 +42,7 @@ OURS.add('src/borg_spare_gear.rs')
 # borg-rs files that carry our changes (marked `borg-reborn-rs (#2xx)`, or
 # the package rename and lints table in Cargo.toml).
 HOOKED = {
+    'src/borg_trait_swap.rs',  # #1315: swap_carry_min_depth
     'src/borg_inventory.rs', 'src/borg_item_val.rs',  # #1109: known Hard Biscuit fallback when Hungry
     'src/borg_item_enchant.rs', 'src/borg_item_decurse.rs',  # #680 neutral policy extraction
     'src/borg_item_wear.rs', 'src/borg_store_buy.rs',  # #1235: torch wear ties use remaining fuel

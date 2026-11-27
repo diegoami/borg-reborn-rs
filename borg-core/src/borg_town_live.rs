@@ -1083,6 +1083,12 @@ fn release_home_gear(st: &BorgState, slot: usize, quantity: u8) -> Option<TownAc
         |shop| TownAction { code: action::SELL_HOME, at: [shop as i64, slot as i64, i64::from(quantity), 0] }))
 }
 
+/// #1315: the ranked gear step, for the native town fixtures.
+#[cfg(feature = "test-town-loadout")]
+pub(crate) fn organize_gear_for_test(st: &mut BorgState) -> Option<TownAction> {
+    organize_gear(st)
+}
+
 fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
     use crate::borg_spare_gear::{can_rank, cleanup_slot, gear_plan, planned_slot, redundant_copies, GearLocation};
     if preparing_loadout(st) || crate::engine::player_is_shapechanged() { return None; }
@@ -1119,7 +1125,10 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
                     }
                     // A withdrawn inferior variant does not block storing
                     // the selected backup of the same kind.
+                    // #1315: the active swap is carried; a swap at Home is
+                    // never used (borg_trait_swap.rs reads the pack only).
                     if entry.stash > 0 && stash.is_none()
+                        && !crate::borg_junk::is_swap(st, slot as i32)
                         && !sale_rejected(st, BORG_HOME as i16, item)
                         && crate::engine::inven_object(&st.access, slot)
                             .is_some_and(|o| o.store_accepts_quantity(BORG_HOME, i32::from(entry.stash)))
