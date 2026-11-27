@@ -268,7 +268,7 @@ fn protects_arrival_supply(st: &BorgState, item: &borg_item) -> bool {
         TV_FLASK => sval == iv.sv_flask_oil,
         TV_LIGHT => sval == iv.sv_light_torch && item.ego_idx == 0,
         TV_ARROW | TV_BOLT | TV_SHOT => i32::from(item.tval) == st.borg.tr(crate::borg_headers::borg_trait_h::BI_AMMO_TVAL),
-        TV_FOOD | TV_MUSHROOM | TV_POTION | TV_SCROLL => !crate::borg_town_capability::unwanted_home_item(item),
+        TV_FOOD | TV_MUSHROOM | TV_POTION | TV_SCROLL => !crate::borg_town_capability::unwanted_home_item(st, item),
         _ => false,
     }
 }
@@ -393,7 +393,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
                     || (home_policy && it.art_idx != 0 || ranked_item) && !redundant_dagger))
                 || (it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
                     && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis),
-            home_unwanted: crate::borg_town_capability::unwanted_home_item(it),
+            home_unwanted: crate::borg_town_capability::unwanted_home_item(st, it),
             home_limited: crate::borg_town_utility::home_limited_kind(it.tval) && it.aware,
             joins_pack: home_room.is_some_and(|[_, merge, _]| merge >= i32::from(it.iqty)),
             place,

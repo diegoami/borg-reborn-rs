@@ -345,7 +345,7 @@ fn gear(item: &borg_item, worn: &borg_item, can_decurse: bool, gain: i64, tight_
 pub(crate) fn classify(st: &BorgState, item: &borg_item, can_decurse: bool, gain: i64) -> Role {
     // Respect the explicit consumer exclusions before inferring reserve value
     // from effects. Both town cleanup and loadout eviction use this policy.
-    if crate::borg_town_capability::unwanted_home_item(item) {
+    if crate::borg_town_capability::unwanted_home_item(st, item) {
         return Role::Reject;
     }
     if let Some(worn) = gear_slot(item).and_then(|slot| st.items.items.get(slot)) {

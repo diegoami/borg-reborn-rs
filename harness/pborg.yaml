@@ -367,6 +367,17 @@ borg_param_town_restore_stat_min_depth: 0
 
 # Candidate filter for paid offers of mixed gain/loss stat potions.
 borg_param_town_second_stat_potions_by_class: 0
+# #1371 (owner: "do not buy stuff that you are not going to consume. And if
+# you are not going to consume it, dump it"; "a Ranger would choose to drink
+# Nimbleness"): one rule buys, keeps and drinks the five gain-one/lose-one
+# potions. The class must drink it (borg_junk's table) and the expected gain
+# must reach the margin times the expected loss of a random other stat, in
+# engine table steps. Refused offers are skipped, refused copies are sold or
+# dropped in town, accepted copies are drunk on a quiet turn, and known
+# refused or never-used kinds are not picked up. The weights and the margin
+# are neutral hypotheses (per class with __<class>).
+borg_param_town_stat_trade_policy: 1
+borg_param_town_stat_trade_margin_percent: 100
 
 # Staples lose value (#863, owner: "make staple objects start losing value";
 # "it must be a decaying curve"; "Food and Light start decaying from 4, phase

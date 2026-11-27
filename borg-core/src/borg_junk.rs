@@ -344,6 +344,16 @@ fn borg_consume(st: &mut BorgState, i: i32) -> bool {
                 return borg_quaff_potion(st, sval);
             }
 
+            // borg-reborn-rs (#1371): under town_stat_trade_policy the town's
+            // rule decides (`second_stat_potion_wanted`): a refused potion is
+            // not drunk to destroy it, it is sold or dropped.
+            if crate::borg_town_capability::stat_trade_policy() {
+                if let Some(stat) = crate::borg_town_capability::second_stat_kind(st, sval) {
+                    return crate::borg_town_capability::second_stat_potion_wanted(st, stat)
+                        && borg_quaff_potion(st, sval);
+                }
+            }
+
             /* Gain one/lose one potions */
             let (str2, int2, wis2, dex2, con2) = (
                 v.sv_potion_inc_str2,

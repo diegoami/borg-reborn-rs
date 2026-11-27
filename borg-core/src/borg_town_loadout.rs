@@ -158,7 +158,7 @@ fn eviction(st: &BorgState) -> Option<borg_item> {
             let rank = expendable_rank(
                 item,
                 st,
-                crate::borg_town_capability::unwanted_home_item(item),
+                crate::borg_town_capability::unwanted_home_item(st, item),
                 redundant_gear,
             )?;
             Some((rank, *item))
@@ -555,7 +555,7 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
             };
             let second_sight = home_item(TV_MUSHROOM, st.item_val.sv_mush_second_sight);
             let speed = home_item(TV_POTION, st.item_val.sv_potion_speed);
-            assert!(crate::borg_town_capability::unwanted_home_item(second_sight));
+            assert!(crate::borg_town_capability::unwanted_home_item(st, second_sight));
             assert_eq!(borg_town_home::classify(st, second_sight, false, 0), Role::Reject);
             assert_eq!(borg_town_home::classify(st, speed, false, 0), Role::LatePotion);
             assert!(same_item(&eviction(st).expect("the excluded stack makes room"), second_sight));
