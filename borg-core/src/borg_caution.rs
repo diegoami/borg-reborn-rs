@@ -1368,6 +1368,23 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
                     }
                 }
 
+                // borg-reborn-rs (#1353): borg-rs v15R (5e6cd07) makes the
+                // test below act: a faster monster adjacent to the first
+                // step can hit us there, so this direction is given up.
+                if p(Param::caution_retreat_adjacent_faster_upstream) != 0 {
+                    let age = p(Param::caution_retreat_monster_age);
+                    if !borg_surround
+                        && st.kills.kills[1..st.kills.nxt.max(1) as usize].iter().any(|kill| {
+                            kill.r_idx != 0
+                                && borg_timer(st, kill.when) <= age
+                                && engine::distance(kill.pos, loc { x: x1, y: y1 }) <= 1
+                                && i32::from(kill.speed) > st.borg.tr(BI_SPEED)
+                        })
+                    {
+                        break;
+                    }
+                }
+
                 // "Skip this grid if it is adjacent to a monster": the
                 // `break` only leaves this scan, so the test has no effect
                 // (kept, as in C).

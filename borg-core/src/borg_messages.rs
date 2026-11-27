@@ -1167,6 +1167,24 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
 
     // Removed rubble.  Important when out of lite
     if prefix(msg, b"You have removed the ") {
+        // borg-reborn-rs (#1353): borg-rs v15R (5e6cd07): in the dark,
+        // clear the remembered rubble of the 3x3 grids around the borg.
+        if crate::params::value(crate::params::Param::messages_dark_rubble_upstream) != 0 {
+            if st.borg.tr(BI_LIGHT) == 0 {
+                let c = st.borg.c;
+                for y in c.y - 1..=c.y + 1 {
+                    for x in c.x - 1..=c.x + 1 {
+                        if engine::square_in_bounds(x, y) {
+                            let grid = st.cave.grid_mut(x, y);
+                            if grid.feat == FEAT_RUBBLE as u8 {
+                                grid.feat = FEAT_BROKEN as u8;
+                            }
+                        }
+                    }
+                }
+            }
+            return;
+        }
         // remove rubbles from array: the loop runs over 2x2 grids but
         // only ever looks at the goal grid
         let c = st.borg.c;
