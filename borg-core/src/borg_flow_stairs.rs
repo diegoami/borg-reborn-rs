@@ -1516,6 +1516,7 @@ fn run_up_stair_plan_regression(st: &mut BorgState) -> ! {
     use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_LESS};
     use crate::params::{value, Param};
 
+    // engine/angband/src/borg/borg-trait.h:37 at 574b618c, also used in borg_caution.rs.
     const GOAL_BORE: i32 = 6;
     // Route execution lends the engine-registered state. This fixture owns
     // the process and exits before its queued movement can reach the game.

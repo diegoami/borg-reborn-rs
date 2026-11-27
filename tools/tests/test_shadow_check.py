@@ -232,13 +232,18 @@ class ShadowCheckTest(unittest.TestCase):
                 module.check([root], r5=True)
             counts['flow_calls'] -= 1
 
-            del counts['readonly_points']['flow.plan_up_stair']
-            counts['readonly_comparisons'] -= 1
-            counts['comparisons'] -= 1
-            self.write(root, row)
-            module.check([root], r5=True)
-            with self.assertRaisesRegex(ValueError, 'missing read-only root coverage'):
-                module.check([root], r5=True, require_all_entries=True)
+            for point in module.FLOW_POINTS:
+                with self.subTest(missing_root=point):
+                    missing = copy.deepcopy(row)
+                    missing_counts = missing['counts']
+                    del missing_counts['readonly_points'][point]
+                    missing_counts['readonly_comparisons'] -= 1
+                    missing_counts['comparisons'] -= 1
+                    self.write(root, missing)
+                    module.check([root], r5=True)
+                    with self.assertRaisesRegex(ValueError, 'missing read-only root coverage') as error:
+                        module.check([root], r5=True, require_all_entries=True)
+                    self.assertIn(point, str(error.exception))
 
     def test_declared_run_partition_keeps_combined_strict_gate(self):
         with tempfile.TemporaryDirectory() as directory:
