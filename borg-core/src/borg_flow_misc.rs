@@ -90,6 +90,9 @@ pub struct FlowMiscState {
     pub spastic_local: bool,
     /// The square a local search flow tried to enter its target from.
     pub spastic_approach: Option<loc>,
+    /// The rubble grid the last `T`unnel keypress aimed at (#1353): the
+    /// "You have removed the rubble" message clears only this grid.
+    pub dug_rubble: Option<loc>,
 }
 
 /// `borg_timer(t)`: game turns since `t`.
