@@ -34,13 +34,25 @@ session owns the four issues. It writes this note, and not an edit of
 
 **#1373, `item_use_drink_experience`.** `borg_use_things` drinks a known
 Potion of Experience next to the pure stat gains (`drink_permanent_gain`).
+After the issue review: only on a quiet turn (danger here at most a tenth of
+current HP, `quiet_for_a_drink`; `borg_use_things` also runs in the hungry
+path before the caution checks, so the placement alone was no guarantee), and
+only while the engine grants experience: `GAIN_EXP` does nothing at
+`PY_MAX_EXP` whatever the level (`experience_potion_useful`). At the cap the
+planner's `GAIN_EXPERIENCE` weight is 0 too, so it cannot pay for a useless
+copy.
 
 **#1374, `item_use_star_enlightenment`.** The same function drinks a known
 Potion of *Enlightenment* (looked up by name:
-`item_val.sv_potion_enlightenment` is the plain Enlightenment). With the
-parameter on the kind leaves `WORTHLESS` (`worthless`), so the planner values
-its `GAIN_STAT` rows and `unwanted_home_item` no longer sells or drops it.
-One parameter for both, as the issue asks.
+`item_val.sv_potion_enlightenment` is the plain Enlightenment). After the
+issue review it is drunk in any place only while Intelligence or Wisdom is
+below 18/100 or drained (`star_enlightenment_gains`, on `stat_max` and
+`stat_cur`). With both capped and undrained only its mapping and detection are
+left, so it is saved for a dungeon level (drunk on the first quiet turn there)
+and the kind stays on `WORTHLESS`: the planner does not buy it for the map and
+a town drink would waste it. While a stat can gain, the kind leaves
+`WORTHLESS` (`worthless`), so the planner values its `GAIN_STAT` rows and
+`unwanted_home_item` no longer sells or drops it. One parameter for both.
 
 **#1375, `town_refused_kind_policy`.** `refused_kind(st, tval, sval)` in
 `borg_town_capability.rs` is the one predicate: `WORTHLESS` (with Monster
@@ -55,9 +67,11 @@ unconditionally, as before; they were left alone so that 0 keeps today's play.
 
 ## Found
 
-- The Necromancer's Light scroll was already ignored as a kind in the pack in
-  the dungeon (`borg_discard_light_scrolls`, #1273). The gap was town: Home
-  classified it `Renewable` and the planner valued a carried copy.
+- The issue's example for #1375 was wrong, as its review says: a Necromancer
+  already drops a carried Light scroll in the dungeon, by kind
+  (`borg_discard_light_scrolls`, #1273; native test `test_light_scrolls.py`).
+  The gap is town: the planner values a Light scroll in the pack or Home
+  although it never buys one, and the Home classifier says `Renewable`.
 - `engine::player_notice()` cannot be reached from a borg-core unit test (the
   release test binary does not link the engine's `player`), hence the `_at`
   variants. The shop/pack/Home/floor wiring is covered natively, not by unit
@@ -68,8 +82,8 @@ unconditionally, as before; they were left alone so that 0 keeps today's play.
 ## Checked
 
 - `cargo fmt --check -p borg-reborn-rs`, `cargo clippy --workspace
-  --all-targets -- -D warnings`, and `cargo test --release -p borg-core` (1016
-  passed: two new unit tests on top of #1372's 1014) pass. The parameter
+  --all-targets -- -D warnings`, and `cargo test --release -p borg-core` (1017
+  passed: three new unit tests on top of #1372's 1014) pass. The parameter
   citation check passes (2676 parameters).
 - The native case `test_town_drinks_experience_and_star_enlightenment_on_purpose`
   (`test-junk-consumables`).

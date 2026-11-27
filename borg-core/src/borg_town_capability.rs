@@ -973,6 +973,32 @@ fn is_star_enlightenment(tval: u32, sval: i32) -> bool {
     tval == TV_POTION && sval >= 0 && sval == star_enlightenment_sval()
 }
 
+/// borg-reborn-rs (#1374): the Potion of *Enlightenment* would change
+/// Intelligence or Wisdom for good: one is below 18/100 (`player_stat_inc`)
+/// or drained below its maximum (`RESTORE_STAT`). Otherwise its mapping and
+/// detection are all it is worth, and the town's planner does not buy or keep
+/// it for that (`worthless`); a dungeon level is where it is drunk.
+pub(crate) fn star_enlightenment_gains() -> bool {
+    let p = engine::player_notice();
+    star_enlightenment_gains_at(p.stat_max.map(i32::from), p.stat_cur.map(i32::from))
+}
+
+/// `star_enlightenment_gains` at the given maximum and current stats
+/// (strength .. constitution).
+pub(crate) fn star_enlightenment_gains_at(max: [i32; 5], cur: [i32; 5]) -> bool {
+    [1, 2].iter().any(|&s| max[s] < 18 + 100 || cur[s] < max[s])
+}
+
+/// borg-reborn-rs (#1373): `PY_MAX_EXP` (player.h): the experience the engine
+/// stops granting at.
+const PY_MAX_EXP: i32 = 99_999_999;
+
+/// borg-reborn-rs (#1373): a Potion of Experience still adds experience
+/// (`effect_handler_GAIN_EXP`: nothing at `PY_MAX_EXP`, whatever the level).
+pub(crate) fn experience_potion_useful() -> bool {
+    engine::player_notice().exp < PY_MAX_EXP
+}
+
 fn worthless(tval: u32, sval: i32) -> bool {
     use std::sync::OnceLock;
     static KINDS: OnceLock<Vec<(u32, i32)>> = OnceLock::new();
@@ -981,8 +1007,11 @@ fn worthless(tval: u32, sval: i32) -> bool {
         .filter(|&(_, s)| s >= 0).collect())
         .contains(&(tval, sval))
         // borg-reborn-rs (#1374): *Enlightenment* is drunk on purpose
-        // (`borg_use_things`), so it has the value of its stat gains.
-        && !(param(Param::item_use_star_enlightenment) != 0 && is_star_enlightenment(tval, sval)))
+        // (`borg_use_things`) while a stat can gain, so it has the value of
+        // its stat gains; when both are capped and undrained it stays
+        // worthless, so the planner does not pay for its mapping in town.
+        && !(param(Param::item_use_star_enlightenment) != 0 && is_star_enlightenment(tval, sval)
+            && star_enlightenment_gains()))
         // borg-reborn-rs (#504): the cornered mode reads Monster Confusion;
         // without it the core never does.
         || (param(Param::caution_cornered) == 0
@@ -1756,7 +1785,10 @@ fn observe_supplies(st: &BorgState, stock: &Stock, kit: Option<&[KitItem]>, jour
     curve(INVISIBLE, invisible_weight, invisible_demand);
     curve(MANA, if t(BI_MAXSP) > 0 { risk(BORG_TOWN_W_MAGIC) } else { 0 }, t(BI_MAXSP).max(1) * exposure);
     curve(IDENTIFY, if t(BI_ALL_NEED_ID) > 0 { cfg(BORG_TOWN_W_KNOWLEDGE) * UNIT } else { 0 }, -UNIT);
-    curve(GAIN_EXPERIENCE, cfg(BORG_TOWN_W_RESTORE) * UNIT, -UNIT);
+    // borg-reborn-rs (#1373): with the intentional drink, an Experience potion
+    // is worth nothing once the engine grants none (`PY_MAX_EXP`).
+    let exp_useful = param(Param::item_use_drink_experience) == 0 || experience_potion_useful();
+    curve(GAIN_EXPERIENCE, if exp_useful { cfg(BORG_TOWN_W_RESTORE) * UNIT } else { 0 }, -UNIT);
     curve(ACQUIRE, cfg(BORG_TOWN_W_POWER) * exposure, journey.advancement * UNIT);
     // borg-reborn-rs (#487, owner): a digger only clears rubble (the engine
     // swaps it in; a weapon digs rubble too, slower). Below
@@ -3517,6 +3549,19 @@ mod recall_value_tests {
         assert!(!refused(necromancer, &iv, TV_SCROLL, 5), "any other scroll");
         assert!(!refused(necromancer, &iv, TV_POTION, 17), "a potion of the same sval");
         assert!(!refused(mage, &iv, TV_SCROLL, 17) && !refused(mage, &iv, TV_LIGHT, 2), "a class that sees by light");
+    }
+
+    /// #1374 (review): *Enlightenment* is worth a drink in town only while
+    /// Intelligence or Wisdom can change for good.
+    #[test]
+    fn star_enlightenment_is_for_town_only_while_a_stat_can_gain_or_is_drained() {
+        use super::star_enlightenment_gains_at as gains;
+        let capped = [10, 18 + 100, 18 + 100, 10, 10];
+        assert!(!gains(capped, capped), "both capped and undrained: only the mapping is left");
+        assert!(gains([10, 17, 18 + 100, 10, 10], [10, 17, 18 + 100, 10, 10]), "Intelligence below 18/100");
+        assert!(gains(capped, [10, 18 + 100, 18 + 90, 10, 10]), "Wisdom drained below a capped maximum");
+        assert!(!gains([10, 18 + 100, 18 + 100, 3, 3], [3, 18 + 100, 18 + 100, 3, 3]),
+            "other stats do not matter");
     }
 
     #[test]

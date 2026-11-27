@@ -996,8 +996,8 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:2352` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:2077` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2463` |
-| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:3572` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:3565` |
+| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:3617` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:3610` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1557` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1560` |
 | `town_csw_reserve_percent` | 0 | percent | 0–1000 | `borg_town_capability.rs:1858` |
@@ -1196,7 +1196,7 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1470` |
 | `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2685` |
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2685` |
-| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1033` |
+| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1062` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1506` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1487` |
 
@@ -1336,7 +1336,7 @@ The registry now holds **2280** parameters (2276 before; four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:1442` |
+| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:1471` |
 | `town_hunt` | 0 | flag | 0–1 | `borg_town_hunt.rs:22` |
 | `town_hunt_ranged_bonus_percent` | 0 | percent | 0–1000 | `borg_town_hunt.rs:198` |
 | `town_hunt_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_town_hunt.rs:140` |
@@ -3142,7 +3142,7 @@ against 38 (18 games: direction only).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_fear_cure_count` | 0 | count | 0–100 | `borg_town_capability.rs:1457` |
+| `town_fear_cure_count` | 0 | count | 0–100 | `borg_town_capability.rs:1813` |
 | `recover_rest_arms_see_invis` | 1 | flag | 0–1 | `borg_recover.rs:450` |
 
 
@@ -3394,8 +3394,8 @@ digger 500 gold.
 | `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:880` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:1616` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1167` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1322` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:3249` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1351` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:3281` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:240` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -4922,9 +4922,9 @@ not asserted to be accurate engine models.
 
 | Name | Default | Unit | Bounds | Source |
 | --- | ---: | --- | --- | --- |
-| `item_use_idle` | 0 | flag | 0–1 | `borg_item_use.rs:1367` |
-| `item_use_drink_experience` | 0 | flag | 0–1 | `borg_item_use.rs:1037` |
-| `item_use_star_enlightenment` | 0 | flag | 0–1 | `borg_item_use.rs:1040` |
+| `item_use_idle` | 0 | flag | 0–1 | `borg_item_use.rs:1388` |
+| `item_use_drink_experience` | 0 | flag | 0–1 | `borg_item_use.rs:1053` |
+| `item_use_star_enlightenment` | 0 | flag | 0–1 | `borg_item_use.rs:1059` |
 
 The owner set the shipped value to 1. The Borg uses one item
 from the smallest eligible known stack during a quiet dungeon turn. Each
@@ -6671,7 +6671,7 @@ The shipped `harness/borg.txt` sets `town_light_reserve_turns = 20000`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:1452` |
+| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:1481` |
 | `town_lantern_upgrade_power` | 0 | power | 0–100000 | `borg_town_shadow.rs:185` |
 
 The reserve target is the larger of the configured amount and planned
@@ -7482,12 +7482,12 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_decay_percent` | 80 | percent | 0–100 | `borg_town_capability.rs:1579` |
 | `town_staple_clw` | 0 | copies | 0–99 | `borg_town_capability.rs:1583` |
 | `town_staple_csw` | 0 | copies | 0–99 | `borg_town_capability.rs:1584` |
-| `town_staple_ccw` | 0 | copies | 0–99 | `borg_town_capability.rs:1433` |
-| `town_staple_phase` | 0 | copies | 0–99 | `borg_town_capability.rs:1439` |
+| `town_staple_ccw` | 0 | copies | 0–99 | `borg_town_capability.rs:1693` |
+| `town_staple_phase` | 0 | copies | 0–99 | `borg_town_capability.rs:1699` |
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:1384` |
-| `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:1441` |
-| `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:1442` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:3290` |
+| `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:1701` |
+| `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:1702` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:3322` |
 
 ## A monster at 0 HP is alive (#975)
 
@@ -7574,7 +7574,7 @@ lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:3384` |
+| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:3416` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1685` |
 
 ## Grouped monster messages (#915)
@@ -7768,12 +7768,12 @@ Magic Missile) and wands on the worthless list (Darkness, Wonder).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_device_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1436` |
-| `town_device_attack` | 10 | charges | 1–99 | `borg_town_capability.rs:1437` |
-| `town_device_escape` | 5 | charges | 1–99 | `borg_town_capability.rs:1437` |
-| `town_device_detect` | 5 | charges | 1–99 | `borg_town_capability.rs:1438` |
-| `town_device_control` | 5 | charges | 1–99 | `borg_town_capability.rs:1438` |
-| `town_device_escape_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1433` |
+| `town_device_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1661` |
+| `town_device_attack` | 10 | charges | 1–99 | `borg_town_capability.rs:1662` |
+| `town_device_escape` | 5 | charges | 1–99 | `borg_town_capability.rs:1662` |
+| `town_device_detect` | 5 | charges | 1–99 | `borg_town_capability.rs:1663` |
+| `town_device_control` | 5 | charges | 1–99 | `borg_town_capability.rs:1663` |
+| `town_device_escape_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1658` |
 
 ## Black Market access and town reserves (#1103)
 
@@ -7825,17 +7825,26 @@ These are P9 candidates. The shipped settings are neutral during P8.
 
 - **Drink a Potion of Experience on purpose** (#1373,
   `item_use_drink_experience`, shipped 0). `object.txt` gives it `GAIN_EXP`
-  200000 and no downside. The town planner already values it (`GAIN_EXPERIENCE`),
-  but only `borg_junk`'s quaff-to-destroy list drank it. With the flag,
-  `borg_use_things` drinks a known copy next to the pure stat gains, at any
-  depth.
+  200000 and no downside; the engine grants half, 100,000 experience, and
+  nothing at `PY_MAX_EXP` whatever the level (`effect_handler_GAIN_EXP`). The
+  town planner already values it (`GAIN_EXPERIENCE`), but only `borg_junk`'s
+  quaff-to-destroy list drank it. With the flag, `borg_use_things` drinks a
+  known copy next to the pure stat gains, on a quiet turn (danger here at most
+  a tenth of current HP: the function also runs in the hungry path, before the
+  caution checks), while the engine would grant experience. At the cap the
+  planner values the potion at nothing too.
 - **Drink a Potion of \*Enlightenment\*** (#1374,
   `item_use_star_enlightenment`, shipped 0). It restores and gains Intelligence
-  and Wisdom permanently, with no harmful effect, and was on `WORTHLESS`. With
-  the flag, `borg_use_things` drinks a known copy at any depth (`LIGHT_LEVEL`
-  is harmless in town), and the kind leaves `WORTHLESS`: the planner values it
-  through its `GAIN_STAT` rows, and a carried copy is no longer sold or dropped
-  as unwanted. The Rod of Restoration stays on `WORTHLESS`: no zap code.
+  and Wisdom permanently, maps and detects the level, and has no harmful
+  effect; it was on `WORTHLESS`. With the flag, `borg_use_things` drinks a
+  known copy on a quiet turn, at any depth while Intelligence or Wisdom is below
+  18/100 or drained. With both capped and undrained it keeps only its mapping
+  and detection, so it is saved for a dungeon level (it is drunk there on the
+  first quiet turn) and the kind stays `WORTHLESS`: the planner does not buy it
+  for the map and town would waste it. While a stat can gain, the kind leaves
+  `WORTHLESS`: the planner values its `GAIN_STAT` rows and a carried copy is no
+  longer sold or dropped as unwanted. The Rod of Restoration stays on
+  `WORTHLESS`: no zap code.
 - **One predicate for refused kinds** (#1375, `town_refused_kind_policy`,
   shipped 0). `refused_kind(st, tval, sval)` in `borg_town_capability.rs`
   answers for the never-used kinds (#443), the refused gain-one/lose-one
@@ -7843,7 +7852,11 @@ These are P9 candidates. The shipped settings are neutral during P8.
   Wooden Torch and the Scroll of Light (#1273). The shop's offers
   (`supplies_of_kind`), the pack and Home (`unwanted_home_item`,
   `borg_town_home::classify`) and the floor (`refused_take_kind`) ask it, so a
-  carried Light scroll is sold or dropped in town like the other refused kinds.
+  Light scroll in Home or the planner's kit is sold or dropped in town like the
+  other refused kinds. (A Necromancer already drops a carried Light scroll in
+  the dungeon, `borg_discard_light_scrolls`, #1273; the gap was the planner,
+  which valued it although it never bought one, and the Home classifier, which
+  said `Renewable`.)
   The floor skips a kind a dungeon policy still uses: Treasure Detection with
   `item_use_idle`, the junk potions thrown with `attack_throw_junk_potions`.
   The effect-based harmful consumables (#1253, `borg_junk::harmful_item`) stay
@@ -7853,11 +7866,11 @@ These are P9 candidates. The shipped settings are neutral during P8.
 |---|---|---|---|---|
 | `town_black_market_min_gold` | 0 | gold | 0–10000000 | `borg_town_budget.rs:326` |
 | `town_black_market_level_delta` | 0 | gold per level | 0–100000 | `borg_town_budget.rs:327` |
-| `town_restore_life_min_depth` | 12 | level | 1–127 | `borg_town_capability.rs:3566` |
+| `town_restore_life_min_depth` | 12 | level | 1–127 | `borg_town_capability.rs:3611` |
 | `town_restore_life_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1265` |
-| `town_restore_stat_min_depth` | 0 | level | 0–127 | `borg_town_capability.rs:3298` |
+| `town_restore_stat_min_depth` | 0 | level | 0–127 | `borg_town_capability.rs:3330` |
 | `town_restore_stat_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1644` |
-| `town_second_stat_potions_by_class` | 0 | flag | 0–1 | `borg_town_capability.rs:1066` |
+| `town_second_stat_potions_by_class` | 0 | flag | 0–1 | `borg_town_capability.rs:1174` |
 | `town_stat_trade_policy` | 0 | flag | 0–1 | `borg_town_capability.rs:260` |
 | `town_stat_trade_margin_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:337` |
 | `town_stat_trade_weight_str` | 100 | percent | 0–10000 | `borg_town_capability.rs:333` |

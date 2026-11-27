@@ -192,6 +192,17 @@ class JunkConsumablesTest(unittest.TestCase):
         self.assertNotIn("Quaffing Potion of *Enlightenment*", messages)
         self.assertNotIn("You feel more experienced.", messages)
 
+    def test_experience_waits_for_a_quiet_turn(self):
+        # #1373 (review): the drink takes a turn, and borg_use_things also
+        # runs before the caution checks. With a hill giant next to the Borg
+        # (danger above a tenth of its hit points) the potion stays in the pack.
+        kit = [(EXPERIENCE, 1, True, 0), (CURE_LIGHT_WOUNDS, 2, True, 0)]
+        params = {"item_use_drink_experience": 1}
+        messages, frames = self.launch(kit, distance=1, monster="hill_giant", keys=20, params=params)
+        self.assertGreaterEqual(frames[0]["danger"], frames[0]["hp"] // 10)
+        self.assertNotIn("Quaffing Potion of Experience", messages)
+        self.assertNotEqual(frames[0]["check"], "borg_use_things")
+
 
 if __name__ == "__main__":
     unittest.main()
