@@ -713,10 +713,20 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
     let (baseline, _) = evaluate(st, &current, &choices);
     let mut best = current.clone();
     let mut best_power = baseline;
+    // borg-reborn-rs (#1361, `wear_digger_keeps_weapon`): a worn digger
+    // gives way to any combat weapon the plan can wear, whatever their
+    // power. A digger only tunnels, and the engine wields a carried one for
+    // each tunnelling turn by itself (cmd-cave.c:534-583).
+    let digger = |i: usize| u32::from(choices[i].item.tval) == TV_DIGGING;
+    let replace_digger = !ring && slot == pack && digger(0)
+        && crate::params::value(crate::params::Param::wear_digger_keeps_weapon) != 0
+        && (capacity..choices.len()).any(|i| !digger(i) && wear_allowed(&choices, i, 0));
+    if replace_digger { best_power = i32::MIN; }
     // Evaluate both fingers together. A stack with two copies is allowed
     // to supply both, and we keep the current arrangement on a tie.
     for first in 0..choices.len() {
         if !wear_allowed(&choices, first, 0) { continue; }
+        if replace_digger && digger(first) { continue; }
         if ring {
             for second in 0..choices.len() {
                 if !wear_allowed(&choices, second, 1) || first == second && choices[first].item.iqty < 2 { continue; }

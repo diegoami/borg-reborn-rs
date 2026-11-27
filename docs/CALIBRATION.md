@@ -1194,8 +1194,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1316` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1318` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2574` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2574` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2685` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2685` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:839` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1275` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1256` |
@@ -1518,16 +1518,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2581` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2584` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2585` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2580` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2581` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2582` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2583` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2584` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2585` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2586` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2692` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2693` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2694` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2695` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2696` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2697` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2698` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2699` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2700` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2701` |
 
 ## Immobile monsters and blocked stairs (#736)
 
@@ -8216,12 +8216,12 @@ local, a lead only, RULES 14; keys.log sha256 prefixes):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2610` |
-| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2613` |
-| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2614` |
-| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2609` |
-| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2610` |
-| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2611` |
+| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2721` |
+| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2722` |
+| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2723` |
+| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2724` |
+| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2725` |
+| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2726` |
 
 ## Deal with poison (#1140)
 
@@ -8645,7 +8645,7 @@ Checked on the build where the loop reproduces (`433457a4`, with
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1990` |
+| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:2086` |
 
 ## A general movement-loop detector (#1153)
 
@@ -9302,7 +9302,7 @@ identified spares.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2272` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2281` |
 | `junk_gear_alternatives` | 1 | count | 0–3 | `borg_junk.rs:64` |
 | `town_gear_home_backups` | 1 | flag | 0–1 | `borg_town_live.rs:210` |
 
@@ -9506,3 +9506,58 @@ with smoke identical, so it is a hypothesis until the zoo measures it.
 | `swap_digger_tunnel` | 0 | flag | 0–1 | `borg_trait_swap.rs:668` |
 
 [Handover](handover/2026-11-27-1320-digger-tunnel.md)
+
+## A digger does not replace the combat weapon (#1361)
+
+Two paths choose the weapon slot under the ranked gear plan
+(`town_gear_home_backups`). The plan (`borg_spare_gear::gear_plan`) ranks
+weapons by equipment power and skips diggers: a digger in the weapon slot
+is only for tunnelling. The routine trial in `borg_wear_stuff` ranks each
+remaining pack item by the whole kit's power, diggers included. A recorded
+level 27 Priest on a DL5 staircase wielded 2,026 times, alternating
+'Narthanc' and a Shovel of Earthquakes <+4 STR>: the trial wielded the
+shovel, and the rule that wears equipment while a digger is wielded ran the
+plan, which put the dagger back.
+
+With `wear_digger_keeps_weapon`, a digger is a digger: it is wielded only
+when no combat weapon is at hand.
+- The trial skips a digger while a combat weapon is worn. A digger is still
+  worn when the weapon slot is empty or holds another digger.
+- The plan replaces a worn digger with any combat weapon it can wear,
+  whatever their power. In the `digger-only` case a plain Dagger (1d4)
+  (+0,+0) replaces the Shovel of Earthquakes (+18,+11) the moment it enters
+  the pack.
+- The plan still chooses between combat weapons by power.
+- The Borg's own dig check, `borg_can_dig`, judges a dig by the skill with
+  the best carried digger in the weapon slot (`carried_digger_skill`). This
+  mirrors the engine's choice (`player-util.c:744-789`). The inherited check
+  read the worn kit's skill only, which assumed the digger was wielded.
+  With the dagger kept, a Human Priest's worn skill is 5, below granite's
+  40, and 52 with the carried Shovel of Earthquakes (`digger-dig-gate`).
+  The trial re-observes the kit with each carried digger and is kept for
+  the Borg's turn. The carried skill counts only when a usable carried
+  digger exists and the engine gives that skill a chance at the terrain
+  (`engine_dig_chance`, `player-calcs.c:1651-1665`). Without that, the
+  twitch allowance could lower a threshold below what the engine digs: at
+  20 twitches granite's falls to 30, but granite needs skill above 40. Tunnelling
+needs no wield: the engine wields a carried digger for each tunnelling turn
+and puts the weapon back (`cmd-cave.c:534-583`). Without the ranked plan
+the wear trial is unchanged.
+
+The same flag keeps a wielded, uncursed digger in the weapon slot against
+the remove trial (`borg_junk.rs:borg_remove_stuff`). With nothing else to
+wield, that trial ranked bare hands above the shovel only because a carried
+digger earns the tunnelling swap reward (above), and the wear trial then
+put the shovel back on: in the `digger-only` case the Borg took it off and
+on at thinks 57, 60 and 239 until it found a Rapier. A combat weapon
+replaces the digger through the plan.
+
+The default 0 keeps the inherited trial. It ships at 1 in
+`harness/pborg.yaml`, a fix of a loop rather than a tuning, checked by the
+native cases `digger-swap-loop` and `digger-only`.
+
+| Parameter | Default | Unit | Range | Read at |
+| --- | --- | --- | --- | --- |
+| `wear_digger_keeps_weapon` | 0 | flag | 0–1 | `borg_item_wear.rs:907` |
+
+[Handover](handover/2026-11-27-1361-digger-swap-loop.md)

@@ -245,6 +245,7 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
             "healing-restock-town" | "healing-restock-town-legacy-unknown" => {
                 crate::borg_healing_restock::fixture::town(st, &case);
             }
+            "digger-swap-loop" | "digger-only" | "digger-dig-gate" => crate::borg_item_wear::digger_fixture::step(st, &case),
             _ => crate::borg_flow_stairs::run_handoff_regression(st, &case),
         }
     }

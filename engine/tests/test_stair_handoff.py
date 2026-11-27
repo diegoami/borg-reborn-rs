@@ -885,5 +885,73 @@ class TownRecallReadinessTest(unittest.TestCase):
                 self.assertIn(f"town Recall readiness passed: {case}", result.stdout)
 
 
+@unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
+class DiggerSwapLoopTest(unittest.TestCase):
+    """#1361: the routine wear trial and the ranked gear plan must agree on
+    a digger in the weapon slot.
+
+    The recorded level 27 Dwarf Priest wielded 2,026 times on a DL5
+    staircase, alternating 'Narthanc' and a Shovel of Earthquakes. The
+    fixture (engine.rs:setup_test_digger_kit, a constructed kit) gives the
+    Priest on DL5 a shovel whose STR the whole-kit trial prefers and the
+    plan's equipment power does not. It plays live for 60 thinks: the
+    weapon slot must not change and the Borg must leave its starting square.
+    With only the shovel and nothing wielded, the shovel is wielded and
+    kept until a plain Dagger, far weaker, enters the pack at think 260,
+    after the remove trial's chances at thinks 57 and 239; the ranked plan
+    must then wield the dagger and keep it. Without the switch the remove
+    trial takes the shovel off at think 57.
+
+    With the dagger kept, a Human Priest's worn kit cannot dig granite, but
+    the engine digs with the carried shovel: borg_can_dig must allow it
+    (review of #1361), and at 0 refuses it as before.
+    """
+
+    def run_case(self, case, race="5", keys="1500", **params):
+        with tempfile.TemporaryDirectory(prefix="digger-swap-loop-") as directory:
+            paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
+            for path in paths.values():
+                path.mkdir()
+            write_pborg_config(paths["user"])
+            shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
+            env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
+            env.update(BORG_CORE="borg-rs", BORG_CORE_TRACE="off", BORG_TEST_STAIR_HANDOFF=case, **params)
+            return subprocess.run(
+                [str(TEST_GAME), "-mborgh", "-n", *(f"-d{kind}={path}" for kind, path in paths.items()),
+                 "--", "-seed", "101", "-race", race, "-class", "3", "-menu-letters", "-start-depth", "5", "-keys", keys],
+                cwd=TEST_GAME.parent, env=env, capture_output=True, text=True, timeout=60,
+            )
+
+    def test_shipped_the_priest_keeps_the_dagger_and_moves_on(self):
+        result = self.run_case("digger-swap-loop")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr[-3000:])
+        self.assertIn("digger-swap-loop passed (#1361)", result.stdout)
+
+    def test_without_the_switch_the_trial_wields_the_shovel(self):
+        result = self.run_case("digger-swap-loop", BORG_PARAM_WEAR_DIGGER_KEEPS_WEAPON="0")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("digger-swap-loop: 1 weapon changes", result.stderr)
+
+    def test_a_lone_digger_is_wielded_until_a_weapon_arrives(self):
+        result = self.run_case("digger-only", keys="6000")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr[-3000:])
+        self.assertIn("digger-only passed (#1361)", result.stdout)
+
+    def test_without_the_switch_the_remove_trial_takes_off_the_lone_digger(self):
+        result = self.run_case("digger-only", keys="6000", BORG_PARAM_WEAR_DIGGER_KEEPS_WEAPON="0")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("digger-only: think 57 wields the wrong weapon", result.stderr)
+
+    def test_the_carried_shovel_digs_granite_with_the_dagger_kept(self):
+        result = self.run_case("digger-dig-gate", race="0")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr[-3000:])
+        self.assertIn("digger-dig-gate passed (#1361): on", result.stdout)
+
+    def test_without_the_switch_the_worn_kit_alone_judges_the_dig(self):
+        result = self.run_case("digger-dig-gate", race="0", BORG_PARAM_WEAR_DIGGER_KEEPS_WEAPON="0")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr[-3000:])
+        self.assertIn("digger-dig-gate passed (#1361): off", result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
