@@ -39,6 +39,13 @@ excluded such weapons as peers in `redundant_copies`. The release unit test
 `retained_cover_excludes_known_curses_and_randarts` covers the rule. The
 fixture cannot change a birth option, so no native test covers it.
 
+A second review (PR #1314) found that a partly known worn randart still
+counted when ranking the regular backup. A backup whose property it seemed
+to supply lost its distinct rank, and its place, to a stronger plain piece.
+Each plan choice now carries `trusted`, which is false for a partly known
+artifact under randarts. An untrusted worn piece covers nothing when ranking
+backups (`an_untrusted_worn_randart_does_not_make_a_backup_look_covered`).
+
 ## Checked
 
 - Native `ranked-cleanup` cases:
