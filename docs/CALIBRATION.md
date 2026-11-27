@@ -9370,6 +9370,7 @@ removes the cover. This applies to the alternative side only; a spare is
 judged by the rules above. Such gear can take the regular backup's place,
 so a plain spare behind it leaves. The plan never wears, stores or releases
 it on that basis. A hidden curse is an accepted risk: among the standard
-artifacts only Calris has one (`artifact.txt`, air swing). No parameter or
+artifacts only Calris has one (`artifact.txt`, air swing). With
+`birth_randarts` a partly known artifact covers nothing. No parameter or
 default changes.
 [Handover](handover/2026-11-27-1309-observed-cover.md)

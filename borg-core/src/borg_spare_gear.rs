@@ -444,8 +444,15 @@ fn observed_gear(item: &borg_item) -> bool {
 /// an untried activation. A known curse still excludes it. Standard
 /// artifacts carry at most one hidden curse (artifact.txt: Calris).
 fn retained_cover(st: &BorgState, item: &borg_item, worn: bool) -> bool {
+    cover_eligible(item, worn, protected_gear(st, item),
+        engine::player_opt(crate::headers::list_options_h::OPT_birth_randarts))
+}
+
+fn cover_eligible(item: &borg_item, worn: bool, protected: bool, randarts: bool) -> bool {
+    // Review of #1313: a random artifact can carry any curse, so with
+    // randarts a partly known artifact covers nothing, as in #1311.
     observed_gear(item) && !item.one_ring && u32::from(item.tval) != TV_DIGGING
-        && (worn || protected_gear(st, item))
+        && (worn || protected) && !(randarts && item.art_idx != 0)
 }
 
 fn uninspected_gear(item: &borg_item) -> bool {
@@ -549,6 +556,10 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
     let choice = |(source, item): (GearLocation, borg_item)| {
         let observed = !can_rank(&item) && !visible_artifact_weapon(&item)
             && retained_cover(st, &item, matches!(source, GearLocation::Worn(_)));
+        // Review of #1313: nor does a partly known artifact weapon take the
+        // backup's place under randarts.
+        let randart_guess = !can_rank(&item) && visible_artifact_weapon(&item)
+            && engine::player_opt(crate::headers::list_options_h::OPT_birth_randarts);
         let available = match source {
             GearLocation::Home(index) => !crate::borg_town_live::retained_gear(st, &item)
                 && !crate::borg_town_live::buy_rejected(st, crate::borg_store::BORG_HOME as i16, index)
@@ -556,7 +567,8 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
             _ => true,
         };
         GearChoice {
-            source, item, power: i32::MIN, lighter: false, backup: planned_slot(&item) == Some(slot) || observed,
+            source, item, power: i32::MIN, lighter: false,
+            backup: planned_slot(&item) == Some(slot) && !randart_guess || observed,
             observed,
             wearable: available && (can_rank(&item) || matches!(source, GearLocation::Pack(_))
                 && visible_artifact_weapon(&item)
@@ -1299,6 +1311,18 @@ mod tests {
         assert!(!teaches_on_sale(&sling), "a known item teaches nothing");
         let scroll = borg_item { tval: TV_SCROLL as u8, needs_ident: true, ..sling };
         assert!(!teaches_on_sale(&scroll), "flavours follow their own sale policy");
+    }
+
+    #[test]
+    fn retained_cover_excludes_known_curses_and_randarts() {
+        let cloak = borg_item { iqty: 1, aware: true, tval: TV_CLOAK as u8, art_idx: 9, activ_idx: 5,
+            ..crate::borg_item::blank_item() };
+        assert!(cover_eligible(&cloak, false, true, false), "a retained standard artifact covers");
+        assert!(!cover_eligible(&cloak, false, true, true), "a partly known random artifact covers nothing");
+        assert!(!cover_eligible(&borg_item { cursed: true, ..cloak }, false, true, false), "a known curse removes the cover");
+        let plain = borg_item { art_idx: 0, activ_idx: 0, ..cloak };
+        assert!(cover_eligible(&plain, true, false, true), "worn plain gear covers under randarts");
+        assert!(!cover_eligible(&plain, false, false, false), "an unprotected spare is not retained");
     }
 
     #[test]
