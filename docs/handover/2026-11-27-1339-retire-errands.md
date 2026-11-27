@@ -36,7 +36,6 @@ closed as superseded.
   named `none`). The check runs for the borg-rs core only, as the old
   readers did; a reborn-core run ignores a `borg_plan` line, where the old
   `core_is_borg_rs()` exited 2 for it (plans only ever ran on borg-rs).
-  `harness/run.sh` refuses an active `BORG_ERRANDS_PLAN` for every core.
   After the Codex review of #1340: the environment and the file are both
   checked (an empty or `none` variable no longer masks an active
   `borg_plan` line); an explicit `BORG_ERRANDS_PLAN` stops a reborn-core
@@ -45,7 +44,8 @@ closed as superseded.
   environment, the template or `PBORG_SET`, which drops a retired key at
   its off value with a warning) and refuses the rest
   (`engine/tests/test_retired_harness_settings.py`). `harness/run.sh`
-  refuses `BORG_ERRANDS_PLAN` and no longer stages plans or records errand
+  refuses an active `BORG_ERRANDS_PLAN` (any value but empty or `none`) for
+  every core and no longer stages plans or records errand
   variables.
 - **Tests:** `test_shopping.py`, `test_level_up.py` and
   `test_errands_plan.py` are gone. `test_phase_stock.py` lets the Borg shop
