@@ -381,6 +381,9 @@ struct GearChoice {
     /// and covers by its visible properties, but the plan never wears,
     /// stores or releases it.
     observed: bool,
+    /// Review of #1314: false for a partly known artifact under randarts.
+    /// Its visible properties cover nothing, even while it is worn.
+    trusted: bool,
 }
 
 fn backup_counts(choices: &[GearChoice], worn: &[usize], capacity: usize) -> Vec<u8> {
@@ -389,15 +392,17 @@ fn backup_counts(choices: &[GearChoice], worn: &[usize], capacity: usize) -> Vec
         keep[index] += 1;
     }
     let mut ranked: Vec<_> = (0..choices.len()).filter(|&index| choices[index].backup).collect();
+    let nothing = crate::borg_item::blank_item();
     ranked.sort_by_key(|&i| {
+        // Review of #1314: an untrusted worn piece covers nothing.
         let distinct = capacity == 1 && worn.iter().any(|&w| choices[w].item.iqty > 0
-            && !known_properties_cover(&choices[w].item, &choices[i].item));
+            && !known_properties_cover(if choices[w].trusted { &choices[w].item } else { &nothing }, &choices[i].item));
         // A stealth cloak is an alternate exploration kit. Keep the best
         // cloak for that use when the primary supplies no stealth.
         let stealth = crate::headers::list_object_modifiers_h::OBJ_MOD_STEALTH as usize;
         let stealth_backup = distinct && u32::from(choices[i].item.tval) == TV_CLOAK
             && choices[i].item.modifiers[stealth] > 0
-            && worn.iter().all(|&w| choices[w].item.modifiers[stealth] <= 0);
+            && worn.iter().all(|&w| !choices[w].trusted || choices[w].item.modifiers[stealth] <= 0);
         (std::cmp::Reverse(stealth_backup), std::cmp::Reverse(distinct), std::cmp::Reverse(choices[i].power), choices[i].source)
     });
     let mut regular = Vec::new();
@@ -570,6 +575,8 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
             source, item, power: i32::MIN, lighter: false,
             backup: planned_slot(&item) == Some(slot) && !randart_guess || observed,
             observed,
+            trusted: !(item.art_idx != 0 && !can_rank(&item)
+                && engine::player_opt(crate::headers::list_options_h::OPT_birth_randarts)),
             wearable: available && (can_rank(&item) || matches!(source, GearLocation::Pack(_))
                 && visible_artifact_weapon(&item)
                 && !engine::player_opt(crate::headers::list_options_h::OPT_birth_randarts)),
@@ -1314,6 +1321,22 @@ mod tests {
     }
 
     #[test]
+    fn an_untrusted_worn_randart_does_not_make_a_backup_look_covered() {
+        use crate::headers::list_elements_h::ELEM_FIRE;
+        let boots = |source, power: i32| {
+            let item = borg_item { iqty: 1, tval: TV_BOOTS as u8, weight: 20, to_a: power as i16,
+                ..crate::borg_item::blank_item() };
+            GearChoice { source, item, power, lighter: false, backup: true, wearable: true, observed: false, trusted: true }
+        };
+        let mut choices = [boots(GearLocation::Worn(0), 30), boots(GearLocation::Pack(0), 15), boots(GearLocation::Pack(1), 20)];
+        choices[0].item.el_info[ELEM_FIRE as usize].res_level = 1;
+        choices[1].item.el_info[ELEM_FIRE as usize].res_level = 1;
+        assert_eq!(backup_counts(&choices, &[0], 1), [1, 0, 1], "the worn boots cover rFire, so power decides");
+        choices[0].trusted = false;
+        assert_eq!(backup_counts(&choices, &[0], 1), [1, 1, 0], "a partly known randart covers nothing");
+    }
+
+    #[test]
     fn retained_cover_excludes_known_curses_and_randarts() {
         let cloak = borg_item { iqty: 1, aware: true, tval: TV_CLOAK as u8, art_idx: 9, activ_idx: 5,
             ..crate::borg_item::blank_item() };
@@ -1331,7 +1354,7 @@ mod tests {
             let mut item = borg_item { iqty: 1, tval: TV_CLOAK as u8, weight,
                 to_a: power as i16, ..crate::borg_item::blank_item() };
             item.modifiers[crate::headers::list_object_modifiers_h::OBJ_MOD_STEALTH as usize] = stealth;
-            GearChoice { source, item, power, lighter: true, backup: true, wearable: true, observed: false }
+            GearChoice { source, item, power, lighter: true, backup: true, wearable: true, observed: false, trusted: true }
         };
         let choices = [
             cloak(GearLocation::Worn(0), 20, 25, 0),
