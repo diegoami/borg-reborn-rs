@@ -25,11 +25,13 @@ runs `engine/tests/test_zoo_contract.py`.*
 | runs `harness/build.sh` in the checkout, with `BORG_IMPL=<impl>` | `BORG_IMPL=rust` selects the combined build. Measured runs default to PBorg. Other values exit with status 2. |
 | copies `build/<impl>/game/` | `game/angband` and its data `game/lib/`, self-contained (the game finds `./lib/` from its working directory) |
 | reads `build/<impl>/BUILD_ID` (`key=value` lines) | at least `binary_sha256` (equal to the copied binary's SHA-256) and `rustc`; `arg_order` (#855) is `rtl` for a build that plays the references' games (`ltr`: another compiler's order, other games from the same seed; `harness/build.sh` builds one only with `BORG_ALLOW_OTHER_GAMES=1`) |
-| copies `harness/pborg.yaml`, applies its profile's settings directly, and writes the result to the run's `user/pborg.yaml` | the template exists. It derives from borg-rs's settings, turns off stair and town scumming, and adds three PBorg keys (#207, #208; docs/ERRANDS.md): `borg_reborn_core` (`borg-rs`/`1`, the shipped value since #479, or `reborn`/`0`), `borg_reborn_errand` (`none`, or a command line such as `/ladder`) and `borg_reborn_stopscared` (`off`, `flee` or a percentage). A zoo profile selects an arm by setting them. Since #479 (owner, 2026-11-17) the shipped file also sets the borg-zoo#170 speed30 bundle without its plan: `borg_town_plan = 1`, `borg_trip_policy = 1` with `borg_trip_unknown_stacks = 5` (2 since `fba1c6e0`, owner) and `borg_trip_pack_slack = 1`, and 18 `borg_param_*` lines (outmatched healing, speed 30, 16 class attack preferences). Since #485 it sets `attack_arrow_point_blank_divisor = 5` (the general divisor, borg-rs's), `attack_arrow_point_blank_divisor_ranger = 2` and `attack_arrow_point_blank_divisor_rogue = 3` (per-class overrides; 0 = the general divisor); since #491 three more set `town_heal_reserve_hp_percent = 400`, `town_heal_curve_scale_percent = 100` (now 100 and 125, each overridden by a value for every class in the class files, #520) and `town_heal_speed_percent = 66`. Since #493 it also sets `borg_town_w_gold = 0` and `borg_param_town_gold_reserve = 0`, `borg_param_town_gold_reserve_percent = 0` (the explicit gold reserve, off). Since #519 the shipped file has no formula section (Power, Depth, Restock): it was unused with the shipped `borg_uses_dynamic_calcs = FALSE`. A profile that names a key rewrites its line; one that omits it now gets the bundle's value, not borg-core's compiled default. This repository's own core reads nothing else of the file: its parameters come from its profile (`BORG_PROFILE`), with the defaults when none is given |
-| copies `harness/plans/NAME` into the run's `user/` directory, as `user/NAME`, when a profile sets `borg_plan = NAME`, after checking the file against the specimen's pinned hash (`"plans": {NAME: sha256}` in the zoo catalogue; borg-zoo#123, adapter since borg-zoo `26d1044`, PR #125) | the file exists at the specimen's ref. `borg_plan` is a fourth key the shell reads (#305, #352; docs/GAME-PLAN-LANGUAGE.md); a relative name is resolved under the run's user directory. It needs `borg_reborn_core = borg-rs`, no automatic errand and no nonzero `BORG_ERRAND_BUDGET`. With `borg_plan` set the Borg either loads and validates the file or exits 2 before play (missing, unreadable or invalid file, a class without a section, the wrong core): a plan is never silently ignored. Two plans ship: `errands_plan.txt` and `errands_plan_ambitious.txt`. Since 2026-11-16 their phases are `max-depth N` caps (no errand; the core plays as itself under `borg_no_deeper` = N+1); `loop-levels` was removed and fails with exit 2. The zoo records the file's SHA-256 with the cell, and keeps it with the death evidence: a plan death reruns only with the same bytes |
-| generates a **world** (#704) when a profile sets `borg_world = NAME` (borg-zoo PR #486, `dd25ff61`, for borg-zoo#482): it runs the specimen's `scripts/make-world.py` on `harness/worlds/NAME.txt` into the cell, passes `-dgamedata`, `-dpref`, `-dhelp` and `-dscreens` from it, and keeps the key from the Borg, as `harness/run.sh` does. `none` (shipped) = the game's own data. **A loud guard:** a `borg_world` other than `none` that reaches the Borg unconsumed stops the game with exit 2 before play (`errands_plan.rs`, review of #740), so a cell can never play the game's own data under a world's name | the cell records `borg_world`, its config hash and the generated `gamedata/` hash; with `harness/run.sh`, `config.txt` has `borg_world`, `borg_world_sha256` and `borg_world_data_sha256`, and the run's `pborg.yaml` carries both hashes in a comment, so the world is part of `pborg_yaml_sha256`. A world's games compare only with games of the same world. Ships: `breeders-x4`, `breeders-x8` |
+| copies `harness/pborg.yaml`, applies its profile's settings directly, and writes the result to the run's `user/pborg.yaml` | the template exists. It derives from borg-rs's settings, turns off stair and town scumming, and adds the PBorg key `borg_reborn_core` (#207: `borg-rs`/`1`, the shipped value since #479, or `reborn`/`0`); a zoo profile selects the core by setting it. The errand keys `borg_reborn_errand` and `borg_reborn_stopscared` were retired with the errands (#1339, 2026-11-27): written off (`none`, `off`) they are ignored with a warning, at any other value the run exits 2 before play. Since #479 (owner, 2026-11-17) the shipped file also sets the borg-zoo#170 speed30 bundle without its plan: `borg_town_plan = 1`, `borg_trip_policy = 1` with `borg_trip_unknown_stacks = 5` (2 since `fba1c6e0`, owner) and `borg_trip_pack_slack = 1`, and 18 `borg_param_*` lines (outmatched healing, speed 30, 16 class attack preferences). Since #485 it sets `attack_arrow_point_blank_divisor = 5` (the general divisor, borg-rs's), `attack_arrow_point_blank_divisor_ranger = 2` and `attack_arrow_point_blank_divisor_rogue = 3` (per-class overrides; 0 = the general divisor); since #491 three more set `town_heal_reserve_hp_percent = 400`, `town_heal_curve_scale_percent = 100` (now 100 and 125, each overridden by a value for every class in the class files, #520) and `town_heal_speed_percent = 66`. Since #493 it also sets `borg_town_w_gold = 0` and `borg_param_town_gold_reserve = 0`, `borg_param_town_gold_reserve_percent = 0` (the explicit gold reserve, off). Since #519 the shipped file has no formula section (Power, Depth, Restock): it was unused with the shipped `borg_uses_dynamic_calcs = FALSE`. A profile that names a key rewrites its line; one that omits it now gets the bundle's value, not borg-core's compiled default. This repository's own core reads nothing else of the file: its parameters come from its profile (`BORG_PROFILE`), with the defaults when none is given |
+| (until #1339) copied `harness/plans/NAME` into the run's `user/` directory when a profile set `borg_plan = NAME` | the plans were retired on 2026-11-27 (#1339): the directory is gone, and a `borg_plan` other than `none` (or `BORG_ERRANDS_PLAN`) makes the borg-rs core exit 2 before play, so a plan arm on a later specimen is a `config_error`, never an unplanned game. Earlier specimens keep their plans at their own refs ([archive/GAME-PLAN-LANGUAGE.md](archive/GAME-PLAN-LANGUAGE.md)) |
+| generates a **world** (#704) when a profile sets `borg_world = NAME` (borg-zoo PR #486, `dd25ff61`, for borg-zoo#482): it runs the specimen's `scripts/make-world.py` on `harness/worlds/NAME.txt` into the cell, passes `-dgamedata`, `-dpref`, `-dhelp` and `-dscreens` from it, and keeps the key from the Borg, as `harness/run.sh` does. `none` (shipped) = the game's own data. **A loud guard:** a `borg_world` other than `none` that reaches the Borg unconsumed stops the game with exit 2 before play (`config_file::check_world`, review of #740), so a cell can never play the game's own data under a world's name | the cell records `borg_world`, its config hash and the generated `gamedata/` hash; with `harness/run.sh`, `config.txt` has `borg_world`, `borg_world_sha256` and `borg_world_data_sha256`, and the run's `pborg.yaml` carries both hashes in a comment, so the world is part of `pborg_yaml_sha256`. A world's games compare only with games of the same world. Ships: `breeders-x4`, `breeders-x8` |
 
-## Plan specimens (borg-zoo#123)
+## Plan specimens (borg-zoo#123; retired with the plans, #1339)
+
+For specimens before #1339:
 
 - A specimen pins every plan it ships in the catalogue, `"plans": {NAME:
   sha256}`. The zoo build refuses a `harness/plans/NAME` whose SHA-256
@@ -127,11 +129,10 @@ core. Native callers may use the text aliases `borg-rs` and `reborn`.
 An absent selector defaults to reborn. Every other value (including a
 boolean written as `TRUE`, an empty string, or integer 2) fails with exit
 status 2 and source/value diagnostics. `BORG_CORE` takes precedence over
-the file; clear it for profile-only measurement. The vendored core's `borg_reborn_errand` also fails with exit status 2
-for invalid configured command lines; `none`, an empty string, or absence disables errands.
-Clear `BORG_ERRAND` for file-only profile measurement. The pinned adapter
-only serializes booleans/integers, so arbitrary errand commands require a
-native caller; an integer/boolean is not a valid errand. See ERRANDS.md.
+the file; clear it for profile-only measurement. The errand settings
+(`borg_reborn_errand`, `borg_reborn_stopscared`, `borg_plan` and their
+environment variables) were retired (#1339): off they are ignored, on they
+exit with status 2.
 
 **The scary list (#518).** The shipped `harness/pborg.yaml` sets
 `borg_scary_list: scary_monsters.txt`: the borg-rs core reads the named
@@ -169,9 +170,9 @@ the zoo's `catalogue/profiles.json` is:
 ```
 
 A matched control uses the same explicit mode settings and omits the
-parameter override (default6). The specimen's pinned harness/borg.txt
-sets `borg_reborn_errand = none`; a native text errand is not an integer
-zoo setting. Clear ambient `BORG_CORE`, `BORG_ERRAND`, `BORG_PARAM_*` and
+parameter override (default6). (Specimens before #1339 also set
+`borg_reborn_errand = none`; the errands are retired since.) Clear ambient
+`BORG_CORE`, `BORG_PARAM_*` and
 other policy overrides in the runner: environment values take precedence
 over the file. Freeze specimen, profile definitions and their hashes for
 each experiment. Parameter ranges are input bounds, not recommendations.
@@ -350,7 +351,7 @@ For `borg-zoo#536`, use retained cell evidence in both arms.
 
 The vendored core adds optional fields to `trace-core.jsonl` with
 `core-trace@2`. On a think that checked preparedness from a live dive,
-stair, errand or trip caller, `prepared` holds the checks in call order.
+stair or trip caller, `prepared` holds the checks in call order.
 Each has `current_depth`, `proposed_depth`, `source` (call site), and
 `requirement`. A null requirement means prepared. A failure has a stable
 `name`, integer `actual` and `required`, the pass `relation`, and the

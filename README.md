@@ -163,14 +163,11 @@ and place the resulting file in the game's user directory.
 | one class only | a YAML entry such as `borg_param_<name>__mage: value` |
 | a setting for one run | `BORG_PARAM_<NAME>=value` (or `BORG_PARAM_<NAME>__<CLASS>`) in the environment; `PBORG_SET="name=value;..."` for `harness/run.sh` |
 | the monsters that make a level "scary" | `harness/scary_monsters.txt` (format in its header), selected by `borg_scary_list` |
-| a long-term goal: go to town, dive to a depth, a ladder, a trip plan | an **errand**: `borg_reborn_errand` in `pborg.yaml`, `BORG_ERRAND`, or in the game (below); [docs/ERRANDS.md](docs/ERRANDS.md) |
-| a whole game plan by class and level | a plan file ([docs/GAME-PLAN-LANGUAGE.md](docs/GAME-PLAN-LANGUAGE.md); examples in `harness/plans/`), `borg_plan: FILE` or `BORG_ERRANDS_PLAN` |
-| when the Borg hands control back to you | `borg_reborn_stopscared` (off, a percent of HP, or `flee`) |
 
-**In the game**, Ctrl-Z then **/** opens the Borg's command line
-([docs/ERRANDS.md](docs/ERRANDS.md)): `/town`, `/dive 5`, `/ladder`,
-`/explore-level`, `/stopscared flee`, `/stopscared off`, `/stop`, several
-joined with `;`. Ctrl-Z then **?** lists PBorg's other commands
+The errands (`/town`, `/dive N`, `/level-up N`, the ladders, `/stopscared`)
+and the plans (`max-depth N`) were retired on 2026-11-27 (#1339;
+[docs/archive/ERRANDS.md](docs/archive/ERRANDS.md)). **In the game**,
+Ctrl-Z then **?** lists PBorg's commands
 (**$** reloads `pborg.yaml`'s built-in Borg settings; the `borg_param_*` values are read
 once per game process).
 

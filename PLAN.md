@@ -63,7 +63,7 @@ as history; M1's engine tree and harness came from borg-rs and are replaced in E
 The POC showed that a Borg built here from first principles does not beat
 borg-rs. The repository now hosts **borg-rs's decision core**
 (`borg-core/`, vendored at borg-rs v12, now at `8c5d000a`, `borg-core/PIN`;
-docs/SPEC.md §2 amendment) with **errands** around it (docs/ERRANDS.md). The
+docs/SPEC.md §2 amendment) with **errands** around it (docs/archive/ERRANDS.md; retired 2026-11-27, #1339). The
 engine is upstream `574b618c` (#724; `42cd156ac`, the commit borg-rs plays,
 until 2026-11-20, #216). borg-rs's core is the one that plays: shipped in
 `harness/borg.txt` since #479, and the harness default since #606. Our own

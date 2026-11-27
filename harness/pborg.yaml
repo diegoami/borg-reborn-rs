@@ -20,12 +20,12 @@
 #   one class's value (a shell cannot export a name with @). A class's own
 #   setting in the class section wins over the common setting.
 #
-# Sections: the core, the errand and when to stop; run control; Town; Word
+# Sections: the core and when to stop; run control; Town; Word
 # of Recall; descending and the trip policy; Combat; Healing; Fleeing;
 # Cornered; Breeders; Scary monsters; class-specific overrides.
 
 
-### The core, the errand and when to stop ###
+### The core and when to stop ###
 
 # The decision core: "borg-rs" (borg-rs's core, vendored in borg-core/,
 # shipped since #479) or "reborn" (this repository's own Borg, not ready
@@ -35,25 +35,16 @@
 
 borg_reborn_core: "borg-rs"
 
-# An errand over the core (borg-core/src/shell.rs): "none", "/town", "/level-up N",
-# "/walk-back", "/explore-back", "/dive N", "/dive-exploring N",
-# "/explore-level", "/ladder" (the class's ladder in borg-core/ladders.txt)
-# or a plan ("/trips 1*/1,2,1*@3/..."). BORG_ERRAND overrides it; in the
-# game, ^Z / types one. "none" lets the core play as itself.
+# The errands (borg_reborn_errand, BORG_ERRAND), borg_reborn_stopscared and
+# the plans (borg_plan, max-depth) were retired (#1339). A line that names one
+# at its off value ("none", "off") is ignored with a warning; any other value
+# stops the run.
 
-borg_reborn_errand: "none"
-
-# Hand control back to the player when the danger where the Borg stands
-# reaches this percent of its current HP: "off", N (1-1000), or "flee"
-# (100: one turn could kill it). Lower stops it earlier. BORG_STOPSCARED
-# overrides it.
-
-borg_reborn_stopscared: "off"
-
-# Stop at this dungeon level or character level (out of range = never), go
-# no deeper than borg_no_deeper, and stop after killing Morgoth
-# (borg_stop_king). Lowering borg_no_deeper caps the dive: the Borg stays at
-# or above that level and gains less experience.
+# Stop at this dungeon level or character level (out of range = never), stay
+# above borg_no_deeper, and stop after killing Morgoth (borg_stop_king).
+# Lowering borg_no_deeper caps the dive: the Borg is never prepared for that
+# level or deeper (borg_no_deeper = N: DL N-1 at most, as in C) and gains
+# less experience.
 
 borg_stop_dlevel: 128
 borg_stop_clevel: 51

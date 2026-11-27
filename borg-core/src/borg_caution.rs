@@ -4780,11 +4780,6 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // Take stairs down
     if st.borg.stair_more && !recall_restricts(st) {
-        // borg-reborn-rs (#208): /shopping is town-only, even if caution
-        // chooses a direct descent before the ordinary town-leave hook.
-        if crate::shell::shopping_departure(st) {
-            return true;
-        }
         // Usable stairs
         if u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_MORE || on_dnstair {
             if !fresh_emergency && pos_danger <= 0 && crate::borg_ranged::return_to_town(st) {

@@ -22,8 +22,6 @@ The default core (borg-rs's, `borg-core/`; [architecture](architecture/borg-core
 | The screen and the game's memory | the running engine (`engine/angband/`, upstream `574b618c`), through `borg-core/src/engine.rs` | what the C Borg reads: the map as displayed, messages, the character sheet, inventory and stores, and the engine's in-memory data tables (monster races, object kinds, classes and spells, loaded by the engine from [`lib/gamedata/`](../engine/angband/lib/gamedata/)) |
 | `pborg.yaml` | `harness/pborg.yaml`, staged as `user/pborg.yaml` | P-Borg's settings, thresholds, class overrides, core selection and errand |
 | The scary list | `harness/scary_monsters.txt`, named by `borg_scary_list` | which known monsters make a level too dangerous for which characters (replaces the C Borg's compiled list) |
-| Ladders | `borg-core/ladders.txt` (or `BORG_LADDERS`) | the per-class depth ladder of the `/ladder` errand |
-| A plan | `harness/plans/*.txt`, named by `borg_plan` or `BORG_ERRANDS_PLAN` | depth caps by class and character level ([GAME-PLAN-LANGUAGE.md](GAME-PLAN-LANGUAGE.md)) |
 
 The knowledge itself (which monster is dangerous, which item is worth
 buying, when to flee) is in the core's code and in those settings: the C

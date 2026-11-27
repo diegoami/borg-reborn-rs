@@ -858,20 +858,7 @@ pub fn borg_prepared(st: &mut BorgState, depth: i32) -> Option<Reason> {
         return Some(Reason::threshold(format!("kit score {score}% of {need}%"), name, score, need));
     }
 
-    // borg-reborn-rs (#447): the optional plan applies before either calculation mode.
-    prepared_with_limit(depth, crate::errands_plan::plan_cap(), || {
-        borg_prepared_calculated(st, depth)
-    })
-}
-
-/// Keep the guard ahead of calculation dispatch, without requiring an engine
-/// link in the regression that verifies calculations cannot bypass it (#447).
-pub(crate) fn prepared_with_limit(depth: i32, limit: Option<i32>, calculate: impl FnOnce() -> Option<Reason>) -> Option<Reason> {
-    if let Some(limit) = limit.filter(|limit| depth >= *limit) {
-        Some(Reason::new(ReasonMessage::Formatted(format!("No deeper {limit}.").into_bytes()), "plan_depth_limit", depth, limit, "<"))
-    } else {
-        calculate()
-    }
+    borg_prepared_calculated(st, depth)
 }
 
 fn borg_prepared_calculated(st: &mut BorgState, depth: i32) -> Option<Reason> {
@@ -1329,7 +1316,7 @@ mod tests {
         ] {
             st.borg.trait_[index as usize] = actual;
         }
-        let shipped = crate::shell::yaml_settings(include_str!("../../harness/pborg.yaml")).unwrap();
+        let shipped = crate::config_file::yaml_settings(include_str!("../../harness/pborg.yaml")).unwrap();
         let ranger = CLASSES.iter().position(|class| *class == "ranger").unwrap();
         let ranger_value = test_class_values(&shipped, ranger);
         st.borg.trait_[BI_CLASS as usize] = ranger as i32;
@@ -1361,7 +1348,7 @@ mod tests {
         use super::*;
         use crate::params::test_class_values;
 
-        let shipped = crate::shell::yaml_settings(include_str!("../../harness/pborg.yaml")).unwrap();
+        let shipped = crate::config_file::yaml_settings(include_str!("../../harness/pborg.yaml")).unwrap();
         let value = test_class_values(&shipped, CLASS_WARRIOR as usize);
         let mut st = BorgState::default();
         st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();

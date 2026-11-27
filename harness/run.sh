@@ -30,10 +30,6 @@
 #     CHECKPOINT_EVERY=N fixed game-turn capture cadence (0 = off).
 #     RUN_TIMEOUT_SECONDS=N optional wall timeout per child (0 = off).
 #     SAVE_ROOT=DIR fixture root for save=NAME (default harness/saves).
-#     BORG_ERRANDS_PLAN=FILE an errands plan (docs/GAME-PLAN-LANGUAGE.md;
-#            needs the borg-rs core, the default). It is copied to OUTDIR/user and
-#            selected in the run's pborg.yaml with a line naming its SHA-256,
-#            so the plan's bytes are part of pborg_yaml_sha256 (#352).
 #     BORG_SCARY_LIST=FILE the named scary monsters as data (#518; read by
 #            the borg-rs core with caution_scary_named_monsters = 1). It wins
 #            over the list pborg.yaml names (harness/NAME, shipped:
@@ -67,26 +63,12 @@ CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-0}"
 [[ "$CHECKPOINT_EVERY" =~ ^(0|[1-9][0-9]{0,8}|1000000000)$ ]] || {
     echo "run.sh: CHECKPOINT_EVERY must be 0..1000000000" >&2; exit 2; }
 BIN="${ANGBAND_BIN:-$ROOT/build/$IMPL/game/angband}"
-# The game reads BORG_LADDERS from its own directory: a relative path is
-# made absolute here, so the file hashed below is the file it reads
-# (re-review #227, 7). A missing file is refused rather than silently
-# replaced by the built-in ladders.
-if [ -n "${BORG_LADDERS:-}" ]; then
-    [ -f "$BORG_LADDERS" ] || { echo "run.sh: BORG_LADDERS=$BORG_LADDERS: no such file" >&2; exit 2; }
-    BORG_LADDERS="$(realpath "$BORG_LADDERS")"; export BORG_LADDERS
+# The errands, their ladders and the plans were retired (#1339): a plan
+# would change the arm, so asking for one stops the run.
+if [ -n "${BORG_ERRANDS_PLAN:-}" ]; then
+    echo "run.sh: BORG_ERRANDS_PLAN: the plans were retired (#1339)" >&2; exit 2
 fi
-# An errands plan (#305, #352), resolved here like BORG_LADDERS. The game
-# reads the run's own copy through pborg.yaml, never this path.
-PLAN=""
-if [ -n "${BORG_ERRANDS_PLAN+set}" ]; then
-    [ -n "$BORG_ERRANDS_PLAN" ] && [ -f "$BORG_ERRANDS_PLAN" ] || {
-        echo "run.sh: BORG_ERRANDS_PLAN=$BORG_ERRANDS_PLAN: no such file" >&2; exit 2; }
-    [ "${BORG_CORE:-borg-rs}" = borg-rs ] || {
-        echo "run.sh: BORG_ERRANDS_PLAN needs the borg-rs core" >&2; exit 2; }
-    PLAN="$(realpath "$BORG_ERRANDS_PLAN")"
-    unset BORG_ERRANDS_PLAN
-fi
-# The named scary monsters as data (#518), pinned like the plan.
+# The named scary monsters as data (#518), pinned by its SHA-256.
 SCARY=""
 if [ -n "${BORG_SCARY_LIST+set}" ]; then
     [ -n "$BORG_SCARY_LIST" ] && [ -f "$BORG_SCARY_LIST" ] || {
@@ -262,7 +244,7 @@ if [ -n "$OVERRIDES" ]; then
 fi
 SELECTED_PLAN="$(get_setting borg_plan)"
 if [ -n "$SELECTED_PLAN" ]; then
-    echo "run.sh: $PBORG_TEMPLATE selects a plan; harness runs select plans with BORG_ERRANDS_PLAN" >&2
+    echo "run.sh: $PBORG_TEMPLATE selects a plan; the plans were retired (#1339)" >&2
     exit 2
 fi
 # The selected scary list travels with the run. Its SHA-256 is in the YAML
@@ -309,13 +291,6 @@ if [ -n "$WORLD_SRC" ]; then
     printf '\n# harness/run.sh (#704): world %s, config sha256 %s, data sha256 %s\n' \
         "$WORLD_NAME" "$WORLD_SHA" "$WORLD_DATA_SHA" >> "$SETTINGS"
 fi
-if [ -n "$PLAN" ]; then
-    cp "$PLAN" "$OUT/user/errands_plan.txt"
-    PLAN_SHA="$(sha256sum < "$PLAN" | cut -d' ' -f1)"
-    PLAN_NAME="${PLAN#"$ROOT"/}"
-    update_settings --set borg_plan=errands_plan.txt
-    printf '\n# harness/run.sh (#352): errands plan sha256 %s\n' "$PLAN_SHA" >> "$SETTINGS"
-fi
 {
     echo "flags=$FLAGS"
     [ -z "$START_MONSTERS" ] || echo "start_monsters=$START_MONSTERS"
@@ -341,23 +316,16 @@ fi
         echo "profile_sha256=$(sha256sum < "$PROFILE" | cut -d' ' -f1)"
     fi
     if [ "$CHECKPOINT_EVERY" != 0 ]; then echo "checkpoint_every=$CHECKPOINT_EVERY"; fi
-    # The settings the environment gives the Borg (docs/ERRANDS.md): they
-    # change play, so the record says them, and tools/rerun-death.py sets
-    # them again (review #227, finding 8). Only those set, empty ones too
-    # (an empty BORG_ERRAND turns off the YAML fallback; re-review 6):
-    # a run without any keeps the record it always had.
-    for v in BORG_CORE BORG_CORE_OVERRIDES BORG_ERRAND BORG_STOPSCARED BORG_ERRAND_BUDGET BORG_LADDERS; do
+    # The core the environment selects: it changes play, so the record says
+    # it, and tools/rerun-death.py sets it again (review #227, finding 8).
+    # Only those set; a run without any keeps the record it always had. (The
+    # errand variables went with the errands, #1339.)
+    for v in BORG_CORE BORG_CORE_OVERRIDES; do
         if [ -n "${!v+set}" ]; then echo "$(echo "$v" | tr '[:upper:]' '[:lower:]')=${!v}"; fi
     done
     if [ -z "${BORG_CORE+set}" ]; then
         core="$(get_setting borg_reborn_core)"
         echo "borg_core=${core:-reborn}"
-    fi
-    if [ -n "${BORG_LADDERS:-}" ]; then echo "borg_ladders_sha256=$(sha256sum < "$BORG_LADDERS" | cut -d' ' -f1)"; fi
-    # The plan named relative to the checkout (no machine paths in dossiers).
-    if [ -n "$PLAN" ]; then
-        echo "borg_errands_plan=$PLAN_NAME"
-        echo "borg_errands_plan_sha256=$PLAN_SHA"
     fi
     # The scary list (#518): its name, and hash when one was copied.
     echo "borg_scary_list=${SCARY_NAME:-none}"
@@ -416,10 +384,6 @@ elif summary.get('synthetic') or summary.get('start_depth'):
 PYSYNTHETIC
 if [ -n "$START_BUILD_SHA" ]; then
     [ "$(sha256sum < "$OUT/start.build" | cut -d' ' -f1)" = "$START_BUILD_SHA" ] || { echo 'run.sh: start-build changed during execution' >&2; exit 1; }
-fi
-# The game preserves the plan it parsed as BORG_RUN_DIR/errands_plan.txt.
-if [ -n "$PLAN" ] && ! cmp -s "$OUT/user/errands_plan.txt" "$OUT/errands_plan.txt"; then
-    echo "run.sh: the game did not load the plan: $OUT" >&2; exit 1
 fi
 # Review of #741: a start-monsters run that placed fewer monsters than it
 # asked for is measuring another colony than its label says; say so.

@@ -23,8 +23,6 @@ copies that a live tool still produces are in `reference/`. Which is which:
 
 | Document | What |
 | --- | --- |
-| [ERRANDS.md](ERRANDS.md) | Errands: giving the core a goal (`/town`, `/dive N`, `/ladder`, `/stopscared`, ...) in the game, in `borg.txt` or in the environment |
-| [GAME-PLAN-LANGUAGE.md](GAME-PLAN-LANGUAGE.md) | Plans: depth caps by class and character level |
 | [CALIBRATION.md](CALIBRATION.md) | Every named setting (`borg_param_*`) of the shipped core: default, unit, range, the code it reaches, the evidence |
 | [PHASE-DOOR.md](PHASE-DOOR.md) | Where the core decides to use Phase Door, and the settings it reads |
 | [GUIDED-DEBUGGING.md](GUIDED-DEBUGGING.md) | The owner's workflow for a recorded game with a problem |
