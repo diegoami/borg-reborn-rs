@@ -314,6 +314,7 @@ jobs:
       - run: python3 engine/tests/test_stair_handoff.py MoreRefusedGatesTest
       - run: python3 engine/tests/test_stair_handoff.py NoteStandingFlagsTest
       - run: python3 engine/tests/test_stair_handoff.py BreederDoorLoopTest
+      - run: python3 engine/tests/test_stair_handoff.py DiggerSwapLoopTest
       - run: python3 engine/tests/test_stair_handoff.py StaleKoboldDoorTest
       - run: python3 engine/tests/test_stair_handoff.py StairScumLootRoutesTest
       # A test build's deaths are not natural deaths of an arm: own registry.

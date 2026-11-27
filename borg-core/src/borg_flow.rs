@@ -43,7 +43,7 @@ use crate::headers::list_mon_race_flags_h::RF_UNIQUE;
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_terrain_h::{
     FEAT_CLOSED, FEAT_GRANITE, FEAT_LAVA, FEAT_LESS, FEAT_MORE, FEAT_NONE, FEAT_OPEN, FEAT_PASS_RUBBLE,
-    FEAT_PERM, FEAT_QUARTZ, FEAT_QUARTZ_K, FEAT_RUBBLE, FEAT_SECRET,
+    FEAT_MAGMA, FEAT_MAGMA_K, FEAT_PERM, FEAT_QUARTZ, FEAT_QUARTZ_K, FEAT_RUBBLE, FEAT_SECRET,
 };
 use crate::headers::list_tvals_h::{TV_DIGGING, TV_SHOT, TV_STAFF};
 use crate::headers::ui_event_h::keycode_t;
@@ -467,6 +467,18 @@ pub fn borg_can_dig(st: &mut BorgState, check_fail: bool, feat: u8) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#1361 review, `wear_digger_keeps_weapon`): the combat
+    // weapon stays wielded, and the engine digs with the carried digger.
+    // Judge the dig by the skill with that digger in the weapon slot.
+    // Re-review: no usable carried digger is no answer, not a skill of 0,
+    // which the twitch allowance can bring a threshold down to. Second
+    // re-review: the twitch allowance can also bring a threshold below
+    // what the engine digs at all, so the carried skill must also give
+    // the terrain a chance.
+    if carried_digger_skill(st).is_some_and(|skill| skill >= dig_check && engine_dig_chance(skill, feat) > 0) {
+        return true;
+    }
+
     if (feat == FEAT_RUBBLE || feat == FEAT_PASS_RUBBLE) && st.borg.tr(BI_ISWEAK) == 0 {
         return true;
     }
@@ -488,6 +500,84 @@ pub fn borg_can_dig(st: &mut BorgState, check_fail: bool, feat: u8) -> bool {
     }
 
     false
+}
+
+/// borg-reborn-rs (#1361 re-review): the engine's chance, out of 1600 per
+/// turn, that digging skill `skill` opens terrain `feat`
+/// (player-calcs.c:1651-1665: calc_digging_chances, indexed by the
+/// terrain's `digging` class in terrain.txt: rubble 1, magma 2, quartz 3,
+/// granite 4, closed and secret doors 5; cmd-cave.c:579-580). 0 for
+/// terrain that is not dug.
+pub(crate) fn engine_dig_chance(skill: i32, feat: u32) -> i32 {
+    let chance = if feat == FEAT_RUBBLE || feat == FEAT_PASS_RUBBLE {
+        skill * 8
+    } else if feat == FEAT_MAGMA || feat == FEAT_MAGMA_K {
+        (skill - 10) * 4
+    } else if feat == FEAT_QUARTZ || feat == FEAT_QUARTZ_K {
+        (skill - 20) * 2
+    } else if feat == FEAT_GRANITE {
+        skill - 40
+    } else if feat == FEAT_CLOSED || feat == FEAT_SECRET {
+        (skill * 4 - 119) / 3
+    } else {
+        0
+    };
+    chance.max(0)
+}
+
+/// borg-reborn-rs (#1361 review): the digging skill with the best carried
+/// digger in the weapon slot, the one the engine wields for the turn of a
+/// tunnel command (cmd-cave.c:546-568, player-util.c:744-789: the best
+/// digging skill over the melee weapons, recalculated with each wielded).
+/// None with `wear_digger_keeps_weapon` at 0, with no carried digger, or
+/// with a sticky worn weapon, which the engine does not swap out. The kit
+/// is observed again with each digger wielded, so the result is kept for
+/// the rest of the Borg's turn.
+pub(crate) fn carried_digger_skill(st: &mut BorgState) -> Option<i32> {
+    use crate::borg_item::inven_wield;
+    use crate::headers::list_object_flags_h::OF_STICKY;
+    use std::cell::Cell;
+    thread_local! {
+        static CACHE: Cell<Option<(i32, Option<i32>)>> = const { Cell::new(None) };
+    }
+    if crate::params::value(crate::params::Param::wear_digger_keeps_weapon) == 0 {
+        return None;
+    }
+    let now = st.borg.time.now;
+    if let Some((time, skill)) = CACHE.get() {
+        if time == now {
+            return skill;
+        }
+    }
+    let wield = inven_wield() as usize;
+    let worn = st.items.items[wield];
+    let diggers: Vec<usize> = (0..wield)
+        .filter(|&i| {
+            let item = &st.items.items[i];
+            item.iqty > 0 && item.aware && u32::from(item.tval) == TV_DIGGING
+        })
+        .collect();
+    let mut best = None;
+    if !diggers.is_empty() && !engine::flag_has(&worn.flags, OF_STICKY as i32) {
+        let items = st.items.items.clone();
+        let borg = st.borg.clone();
+        let traits = st.traits.clone();
+        let home = st.home.clone();
+        let do_spell = std::mem::replace(&mut st.think.do_spell, false);
+        for i in diggers {
+            st.items.items[wield] = crate::borg_headers::borg_item_h::borg_item { iqty: 1, ..items[i] };
+            crate::borg_trait::borg_notice(st, false);
+            best = best.max(Some(st.borg.tr(BI_DIG)));
+            st.items.items = items.clone();
+        }
+        st.items.items = items;
+        st.borg = borg;
+        st.traits = traits;
+        st.home = home;
+        st.think.do_spell = do_spell;
+    }
+    CACHE.set(Some((now, best)));
+    best
 }
 
 /// Clear the "flow" information.
@@ -2398,6 +2488,25 @@ pub fn borg_free_flow(st: &mut BorgState) {
 
 #[cfg(test)]
 mod tests {
+    /// #1361 re-review: the engine's digging chances by terrain
+    /// (player-calcs.c:1655-1664). Granite needs skill above 40; the
+    /// re-review's plain shovel at 31 has none.
+    #[test]
+    fn engine_dig_chance_follows_calc_digging_chances() {
+        use super::engine_dig_chance as chance;
+        use crate::headers::list_terrain_h::*;
+        assert_eq!(chance(31, FEAT_GRANITE), 0);
+        assert_eq!(chance(40, FEAT_GRANITE), 0);
+        assert_eq!(chance(41, FEAT_GRANITE), 1);
+        assert_eq!(chance(5, FEAT_MAGMA), 0);
+        assert_eq!(chance(11, FEAT_MAGMA_K), 4);
+        assert_eq!(chance(25, FEAT_QUARTZ), 10);
+        assert_eq!(chance(2, FEAT_RUBBLE), 16);
+        assert_eq!(chance(30, FEAT_CLOSED), 0);
+        assert_eq!(chance(31, FEAT_SECRET), 1);
+        assert_eq!(chance(100, FEAT_PERM), 0);
+    }
+
     use super::*;
 
     #[test]

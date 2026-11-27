@@ -45,7 +45,7 @@ HOOKED = {
     'src/borg_trait_swap.rs',  # #1315: swap_carry_min_depth; #1320: swap_digger_tunnel
     'src/borg_inventory.rs', 'src/borg_item_val.rs',  # #1109: known Hard Biscuit fallback when Hungry
     'src/borg_item_enchant.rs', 'src/borg_item_decurse.rs',  # #680 neutral policy extraction
-    'src/borg_item_wear.rs', 'src/borg_store_buy.rs',  # #1235: torch wear ties use remaining fuel
+    'src/borg_item_wear.rs', 'src/borg_store_buy.rs',  # #1235: torch wear ties use remaining fuel; #1361: wear_digger_keeps_weapon
     'src/borg_item_decurse.rs', 'src/borg_item_analyze.rs',  # #830: can_decurse and borg_object_value_known are shared with the cursed-equipment module; the swap decurse reads a scroll only for an item worth its price
     'src/borg_think_store.rs', 'src/borg_home_power.rs',  # #433 inventory parameters
     'src/borg_reincarnate.rs',  # #447: refresh plan cap after reincarnation
@@ -64,7 +64,7 @@ HOOKED = {
     'src/borg_magic.rs', 'src/borg_magic_play.rs',  # #694: Fox Form's study rating (magic_fox_form_study_rating)
     'src/borg_trait.rs',  # #451: Remove Hunger scrolls counted beside the rations under the town plan
     'src/borg_town_budget.rs',  # #493: explicit gold reserve in Budget::of
-    'src/borg_junk.rs',  # #470: discard Deep Descent on sight
+    'src/borg_junk.rs',  # #470: discard Deep Descent on sight; #1361: the remove trial keeps a wielded digger
     'src/borg_item.rs',  # #775: defer uninscribing carried items until normal form
     'src/borg_flow_kill.rs',  # #503: no breeder scary level without an easy escape; melee classes hunt breeders; named scary monsters behind a flag
     'src/borg_flow_stairs.rs',  # #557: no flight down a staircase while rising
