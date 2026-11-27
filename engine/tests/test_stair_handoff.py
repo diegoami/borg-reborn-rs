@@ -135,6 +135,8 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                     self.assertEqual(row["mode"], shadow)
                     self.assertEqual(row["counts"]["readonly_points"]["flow.select_step"], 8)
                     self.assertEqual(row["counts"]["flow_calls"], 8)
+            elif case == "stair-preview-wipe":
+                self.assertIn("stair preview wipe passed", result.stdout)
             else:
                 self.assertIn(f"emergency stair handoff passed: {case}", result.stdout)
             settings = {row["name"]: row for row in json.loads((root / "params-core.json").read_text())}
@@ -157,6 +159,9 @@ class EmergencyStairHandoffTest(unittest.TestCase):
         for shadow in ("off", "check", "switch"):
             with self.subTest(shadow=shadow):
                 self.run_case("flow-step", 0, shadow=shadow)
+
+    def test_stair_preview_consumes_wipe_and_restores_cached_danger(self):
+        self.run_case("stair-preview-wipe", 0)
 
 
 if __name__ == "__main__":
