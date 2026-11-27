@@ -1345,10 +1345,12 @@ borg_param_junk_inferior_spares: 1
 # Let a needed resupply exceed the ordinary town weight limit.
 borg_param_junk_exploration_first: 1
 
-# #1276: count better options across worn gear, pack and Home before
-# releasing the last copy of a spare. Ties keep one equivalent option.
-# Choose 3 for more backups, or 0 for the earlier cleanup.
-borg_param_junk_gear_alternatives: 2
+# #1310: with town_gear_home_backups, the regular backups kept per slot
+# (each a pair for rings). A backup beyond the first stays only with a
+# property nothing better gives, and only at Home. 0 restores the earlier
+# cleanup. With town_gear_home_backups 0 it is the #1276 cutoff of better
+# options instead (2 before #1310).
+borg_param_junk_gear_alternatives: 1
 
 # #1278: wear upgrades and store one regular backup per slot, plus a
 # useful lighter alternative. Keep up to two Home backups for rings.

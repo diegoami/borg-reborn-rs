@@ -1,9 +1,11 @@
 # A spare dungeon book is a scarce Home reserve
 
 Issue #1318, stacked on #1317 (both touch the native town fixture). The
-manual says to keep a spare of each spellbook you rely on, because fire
-destroys books (ch. 11 §7, §12.12 item 4). A dungeon book cannot be
-bought back.
+manual says to keep a spare of each spellbook you rely on (ch. 11 §7,
+§12.12 item 4). Elements do not destroy dungeon books: `init.c:268-273`
+gives them `EL_INFO_IGNORE` for the base elements (review of #1323). A
+dungeon book cannot be bought back, and scarcity is the reason for the
+reserve.
 
 ## Found
 
@@ -26,14 +28,23 @@ bought back.
   `Ordinary`. Town books are unchanged.
 - One spare is the reserve. In `kit_of`, another copy when Home already
   holds that book becomes `Renewable`, mirroring how a `LatePotion`
-  duplicate becomes `Scarce`.
+  duplicate becomes `Scarce`. A single carried copy is the one the Borg
+  reads and keeps its earlier role (`Ordinary`), so it is never stashed as
+  a spare.
+- Review of #1323: the one-copy rule also holds inside a stack. The
+  reserved stack, the one `keep_last_book` marks, is the only stack that is
+  both `Scarce` and `keep_last_book`. From it the planner deposits one copy
+  at a time, and `prune_low_priority_home` releases a Home stack's copies
+  above one. Unit test `one_dungeon_book_copy_is_the_home_reserve`: from a
+  carried stack of three, one copy is stored; a Home stack of three drops
+  two; a single Home copy is kept.
 - Native case `reserve-book` (Priest fixture). Home holds
   [Healing and Sanctuary] and the Mage's [Arcane Control], and the pack
   carries a second [Healing and Sanctuary]. The case checks:
   - the Priest book classifies `Scarce`, the Mage book does not, and the
     carried town book stays `Renewable`;
-  - in the live planner's kit, the Home copy is `Scarce` and the carried
-    second copy `Renewable`.
+  - in the live planner's kit, the Home copy is `Scarce` and the single
+    carried copy keeps `Ordinary`.
 - Unit test `a_spare_dungeon_book_survives_an_incoming_common_item`.
 - `town_keep_last_class_book`'s citation moves with the new code.
 

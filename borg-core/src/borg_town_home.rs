@@ -123,8 +123,10 @@ fn consumable(st: &BorgState, item: &borg_item) -> Role {
     }
     // #1318: town books are Bookseller staples (store.c:208-230 adds every
     // book whose class_book has no `dungeon` flag), so the check above makes
-    // them renewable. A dungeon book the class can browse is never sold in
-    // a regular shop and fire destroys books, so one spare is a scarce reserve.
+    // them renewable. A dungeon book the class can browse is never sold in a
+    // regular shop, so one spare is a scarce reserve. (Elements do not
+    // destroy it: init.c:268-273 gives dungeon books EL_INFO_IGNORE for the
+    // base elements.)
     if is_book(tval) {
         return if supply == NormalStock::Unlisted && item.kind != 0 && !item.cursed
             && engine::obj_kind_can_browse(item.kind as usize)

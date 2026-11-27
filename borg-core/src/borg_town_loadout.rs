@@ -591,8 +591,8 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
                 let role = |place: Place, kind: u32| kit.iter()
                     .find(|k| k.place == place && k.kind == kind).map(|k| k.home_role);
                 assert_eq!(role(Place::Home, u32::from(priest.kind)), Some(Role::Scarce));
-                assert_eq!(role(Place::Pack, u32::from(priest.kind)), Some(Role::Renewable),
-                    "a second copy beside the Home reserve is ordinary stock");
+                assert_eq!(role(Place::Pack, u32::from(priest.kind)), Some(Role::Ordinary),
+                    "a single carried copy is the one the Borg reads, not a spare");
             }
             println!("#1239 town loadout passed: {case}");
             std::process::exit(0);

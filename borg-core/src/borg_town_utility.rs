@@ -366,6 +366,13 @@ fn usable_floor(u: &Utility, item: &KitItem, held: i32, minimum: i32) -> i32 {
     minimum.max(1).max(u.capability.as_ref().map_or(0, |model| model.home_stock_floor(item, held)))
 }
 
+/// #1318 (review of #1323): the reserved stack of a scarce dungeon book,
+/// the one stack per kind `keep_last_book` protects. One copy is the Home
+/// reserve; further copies in the same stack are surplus.
+fn reserved_scarce_book(item: &KitItem) -> bool {
+    item.home_role == Role::Scarce && item.keep_last_book
+}
+
 fn home_disposal_copies(input: &StepInput, u: &Utility, item: &KitItem) -> i32 {
     if input.urgent.iter().any(|purchase| {
         let candidate = &input.candidates[purchase.candidate];
@@ -455,11 +462,13 @@ fn prune_low_priority_home(
     let mut stock: Vec<_> = input.kit.iter().enumerate().filter(|(i, item)| {
         item.place == Place::Home && out[*i] == Disposition::Keep
             && (item.home_role == Role::Reject || item.home_role == Role::Renewable
-                || input.revision < 23 && item.home_role == Role::Common)
+                || input.revision < 23 && item.home_role == Role::Common
+                || reserved_scarce_book(item) && item.qty > 1)
     }).collect();
     stock.sort_by_key(|(_, item)| (item.home_role != Role::Reject, item.qty, item.slot));
     for (i, item) in stock {
-        if item.just_bought || item.protect_disposal || item.keep_last_book || item.unknown_flavour
+        let book_surplus = reserved_scarce_book(item) && item.qty > 1;
+        if item.just_bought || item.protect_disposal || item.keep_last_book && !book_surplus || item.unknown_flavour
             || input.revision >= 23 && item.unknown && item.home_role != Role::Reject
         {
             continue;
@@ -484,7 +493,7 @@ fn prune_low_priority_home(
             *j != i && other.place == Place::Home && other.kind == item.kind
                 && out[*j] == Disposition::Keep
         }).map(|(_, other)| other.qty).sum();
-        let surplus = item.qty - (needed - other_home).max(0);
+        let surplus = if book_surplus { item.qty - 1 } else { item.qty - (needed - other_home).max(0) };
         // An unsellable common stack that would merge with a needed carried
         // stack is safer left in Home. Reject gear has no carried reserve.
         let mut qty = home_disposal_copies(input, u, item).min(surplus);
@@ -735,7 +744,10 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
             u.capability.as_ref().map_or(0, |model| model.reserve_keep(whole))
         } else { 0 };
         if reserve >= whole.qty { continue; }
-        let book_floor = i32::from(whole.keep_last_book && whole.qty > 1);
+        // #1318 (review of #1323): from the reserved scarce book stack, one
+        // copy goes to Home at a time; the rest stay carried.
+        let book_floor = if reserved_scarce_book(whole) { whole.qty - 1 }
+            else { i32::from(whole.keep_last_book && whole.qty > 1) };
         let floor = capped_floor.max(restore_keep).max(reserve).max(book_floor)
             .max(if surplus(whole) { keep_min } else { 0 });
         let qty = whole.qty - floor;
@@ -1379,30 +1391,48 @@ mod tests {
         }
     }
 
-    /// #1317: a resist swap stored at Home has no power below the swap
-    /// depth (`borg_trait_swap.rs`). Supplies below their share may replace
-    /// unprotected gear, but never gear the ranked plan protects.
+    /// #1317 (review of #1322): a resist swap stored at Home adds no power
+    /// below the swap depth (`borg_trait_swap.rs`). At a full Home below the
+    /// supply share, an incoming priority potion replaces expendable stock;
+    /// the swap, protected by the ranked plan as `kit_of` marks it, stays.
     #[test]
-    fn supplies_never_replace_protected_gear_without_power() {
+    fn a_priority_potion_replaces_expendable_stock_not_a_zero_power_resist_swap() {
         use crate::borg_town_record::PLAN_SCHEMA;
         let st = state(10, 23, 160);
         let stock = KitItem { need: -1, reduction: 0, ..recall(Place::Home) };
-        let swap = KitItem { home_role: Role::Gear, power: 0, kind: 1, slot: 0, ..stock };
-        let filler = KitItem { home_role: Role::Gear, power: 50, ..stock };
-        let mut kit = vec![swap];
-        kit.extend((1..24).map(|slot| KitItem { kind: 1 + u32::from(slot), slot, ..filler }));
+        let swap = KitItem { home_role: Role::Gear, power: 0, protect_disposal: true, kind: 1, slot: 0, ..stock };
+        let common = KitItem { home_role: Role::Common, kind: 2, slot: 1, qty: 3, sell_shop: 4, ..stock };
+        let filler = KitItem { home_role: Role::Gear, power: -50, protect_disposal: true, ..stock };
+        let mut kit = vec![swap, common];
+        kit.extend((2..24).map(|slot| KitItem { kind: 1 + u32::from(slot), slot, ..filler }));
+        let potion = KitItem { place: Place::Pack, home_role: Role::LatePotion, kind: 99, slot: 0, sell_shop: -1, ..stock };
+        kit.push(potion);
+        let mut inp = input(&kit);
+        inp.revision = PLAN_SCHEMA;
+        inp.home_slots = 0;
         let out = vec![Disposition::Keep; kit.len()];
-        let replace = |kit: &[KitItem]| {
-            let mut inp = input(kit);
+        let u = Utility::of(&st, &kit, false);
+        assert_eq!(home_supply_balance(&inp, &out), Some((0, 8)), "below the supply share");
+        assert_eq!(home_replacement(&inp, &u, &out, potion.kind, Role::LatePotion.rank(), 1), Some(1),
+            "the Common stack is the replacement, not the swap");
+        let mut u = Utility::of(&st, &kit, false);
+        let (actions, _, _) = dispositions(&inp, &mut u, &st);
+        assert_eq!((actions[0], actions[1], actions[24]), (Disposition::Keep, Disposition::Sell, Disposition::Store),
+            "{actions:?}");
+        assert!(actions[2..24].iter().all(|&a| a == Disposition::Keep), "{actions:?}");
+
+        // With no expendable stock left, the zero-power swap is promoted
+        // unless the ranked plan protects it: the case this guards.
+        kit[1] = KitItem { kind: 2, slot: 1, ..filler };
+        for (protected, expected) in [(true, None), (false, Some(0))] {
+            kit[0].protect_disposal = protected;
+            let mut inp = input(&kit);
             inp.revision = PLAN_SCHEMA;
             inp.home_slots = 0;
-            let u = Utility::of(&st, kit, false);
-            assert_eq!(home_supply_balance(&inp, &out), Some((0, 8)));
-            home_replacement(&inp, &u, &out, 100, Role::LatePotion.rank(), 1)
-        };
-        assert_eq!(replace(&kit), Some(0), "an unprotected swap without power is promoted");
-        kit[0].protect_disposal = true;
-        assert_ne!(replace(&kit), Some(0), "the ranked plan's protection keeps the swap");
+            let u = Utility::of(&st, &kit, false);
+            assert_eq!(home_replacement(&inp, &u, &out, potion.kind, Role::LatePotion.rank(), 1), expected,
+                "protected {protected}");
+        }
     }
 
     /// #1318: a spare dungeon book is Scarce. An incoming intermittent
@@ -1423,6 +1453,35 @@ mod tests {
         let u = Utility::of(&st, &kit, false);
         assert_eq!(home_replacement(&inp, &u, &out, 100, Role::Common.rank(), 0), None);
         assert_eq!(home_replacement(&inp, &u, &out, 100, Role::Renewable.rank(), 0), None);
+    }
+
+    /// #1318 (review of #1323): from the reserved stack of a scarce dungeon
+    /// book, one copy goes to Home; a Home stack of several keeps one.
+    #[test]
+    fn one_dungeon_book_copy_is_the_home_reserve() {
+        use crate::borg_town_record::PLAN_SCHEMA;
+        let st = state(10, 23, 160);
+        let book = KitItem { home_role: Role::Scarce, keep_last_book: true, need: -1, reduction: 0,
+            kind: 7, slot: 0, qty: 3, sell_shop: -1, power: 10, ..recall(Place::Pack) };
+        let solve = |kit: &[KitItem], home_slots: i32| {
+            let mut inp = input(kit);
+            inp.revision = PLAN_SCHEMA;
+            inp.home_slots = home_slots;
+            // Over the weight allowance, the weight-driven storing applies.
+            inp.limits.weight = -1000;
+            let mut u = Utility::of(&st, kit, false);
+            dispositions(&inp, &mut u, &st)
+        };
+        let (actions, _, copies) = solve(&[book], 5);
+        assert_eq!(actions, [Disposition::Store], "the spare goes to Home");
+        assert_eq!(copies, [1], "one copy, not the stack less one");
+
+        let home = KitItem { place: Place::Home, home_room: Some([3, 3, 3]), ..book };
+        let (actions, _, copies) = solve(&[home], 5);
+        assert_eq!(actions, [Disposition::Drop], "copies beyond the reserve leave Home");
+        assert_eq!(copies, [2]);
+        let (actions, _, _) = solve(&[KitItem { qty: 1, ..home }], 5);
+        assert_eq!(actions, [Disposition::Keep], "a single Home copy is the reserve");
     }
 
     #[test]

@@ -107,8 +107,8 @@ class TownLoadoutTest(unittest.TestCase):
         self.run_case("reserve-swap")
 
     def test_one_dungeon_book_spare_is_a_scarce_reserve(self):
-        # #1318: a Priest dungeon book at Home is Scarce; the Mage one and a
-        # second carried copy are not.
+        # #1318: a Priest dungeon book at Home is Scarce; the Mage one and the
+        # single carried copy are not.
         self.run_case("reserve-book")
 
     def test_the_active_swap_stays_in_the_pack(self):
