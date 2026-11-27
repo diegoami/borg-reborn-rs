@@ -387,7 +387,8 @@ pub fn text_mbstowcs(dst: &mut [wchar_t], src: &[u8], n: i32) -> usize {
 // ---------------------------------------------------------------------------
 // Messages and events
 
-/// `msg("%s", text)`. May wait for a key (lends the state).
+/// `msg("%s", text)` logs the message and dispatches `EVENT_MESSAGE`.
+/// Lends the state because the display handler can wait at a `-more-` prompt.
 pub fn msg(st: &mut BorgState, text: &[u8]) {
     let c = CString::new(text).expect("no NUL in message");
     // SAFETY: format string and argument are valid C strings.
