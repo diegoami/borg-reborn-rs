@@ -142,7 +142,14 @@ the next think; the long teleport is for when that has not worked.
       temporary haste (`player-calcs.c`: `TMD_FAST` and `TMD_SPRINT` give
       +10 and can expire on the next world tick) and with Slow kept
       (`TMD_SLOW` gives -10); the Borg acts at most every `T =
-      ceil(100 / rate_min)` ticks;
+      ceil(100 / rate_min)` ticks. **A Slow the held turn itself can bring
+      counts too:** when the Borg lacks Free Action (`TIMED_INC:SLOW` has
+      `fail:1:FREE_ACT` in `player_timed.txt`) and any awake known monster
+      whose race has the `SLOW` spell has a line of sight to the Borg or is
+      within reach in the wait, the rate is taken as slowed (-10 more, once:
+      Slow does not stack). A Borg at 110 would go from 10 to 5 a tick and
+      from `T` = 10 to 20, which turns a speed-140 monster's bound from 4 to
+      8;
     - the monster's rate is the *maximum*: its `mspeed` (the tracked
       `kill.speed` is the raw one) plus the engine's timed adjustment
       (`mon-move.c`: +10 with `MON_TMD_FAST`, minus 2 per slow level, which
@@ -159,7 +166,11 @@ the next think; the long teleport is for when that has not worked.
     offset of (3,3), though a monster steps there in 3 moves). The hold is
     refused when that distance is at most `moves + 1`. For the recorded
     spiders (20 against 10, no haste: `moves` = 3) that is 4 grids; the
-    nearest were 2. **When a rate cannot be established** (a monster whose
+    nearest were 2. **Paralysis** is not a rate: when the Borg lacks Free
+    Action and any awake known monster in line of sight or within reach has
+    the `HOLD` spell or a `PARALYZE` blow (`monster_spell.txt`, `monster.txt`),
+    no deadline for the Borg's next action can be set and the hold is
+    declined. **When a rate cannot be established** (a monster whose
     speed is not known, a timed state the Borg cannot read) the hold is
     declined and 4.2 runs as today. This is a fixed rule, not a setting. The
     danger sum does not certify it: its reach test simulates one step of the
@@ -284,15 +295,16 @@ improvement is claimed here.
   above, including the reach rule at the recorded spider positions, the
   diagonal (3,3) offset, a speed-119 Borg against a speed-140 monster (the
   rounded ratio gives 2 actions, the bound 3), and a hasted Borg whose haste
-  lapses), wrapped
+  lapses, and a Borg that starts unslowed with a `SLOW` caster in line of
+  sight, which must budget the slowed rate), wrapped
   around 4.2 and the flee/leave flags; `may_hold` on `borg_escape`; the look
   as a new `EscapeAction` that is not counted as an escape;
   `staff_reserved` in 4.2, 5.2, 6.2 and tier 8.
 - `borg-core/src/params.rs`: the settings above, each citing the line that
   reads it (`scripts/check-param-citations.py`), with their `harness/pborg.yaml`
   entries: the two switches at 0 and stage 1's four limits at their working
-  values, 100, 50, 3 and 1,000 (a zero there would disable every hold, so it
-  is never the shipped value), and the entries in `docs/CALIBRATION.md`.
+  values, 100, 50, 3 and 1,000 (a zero danger ceiling or a zero round cap
+  would disable every hold, so neither is ever the shipped value), and the entries in `docs/CALIBRATION.md`.
 - `docs/PHASE-DOOR.md`: one line pointing the compromised site here.
 - Default off keeps `harness/reference/smoke-borg-rs` unchanged; check it with
   the smoke diff, as the other settings do.
