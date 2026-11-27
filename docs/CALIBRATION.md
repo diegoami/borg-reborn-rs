@@ -9420,8 +9420,8 @@ The weapon and armour swaps are chosen from the pack only
 ranked Home backup plan no longer stores the active swap, and the live
 planner leaves a carried active swap out of its kit, so no disposition
 stores, sells or drops it. A digger skips
-the depth gate below, but its tunnelling bonus reads `pval`, which 4.2
-diggers leave at 0, so in practice no swap is carried below it.
+the depth gate below. Its tunnelling bonus read `pval`, which 4.2 diggers
+leave at 0, so before #1320 no swap was carried below it in practice.
 
 Both swaps were carried only from max depth 50 (C Borg: "they are heavy").
 That depth is now a parameter. The default keeps the earlier play; a lower
@@ -9433,3 +9433,30 @@ value is a hypothesis for the zoo.
 
 Taking a swap out of Home for the coming trip is not implemented (owner
 decision pending in #1319). [Handover](handover/2026-11-27-1315-swap-home.md)
+
+## The digger as the tunnelling swap (#1320)
+
+Between max depth 25 and 40, with under 100,000 gold, `weapon_value`
+(`borg_trait_swap.rs`) adds `digger * 3500 + 1000` to a carried digger's
+value as the weapon swap. The C Borg takes `digger` from the item's `pval`
+(`borg-trait-swap.c:274`). 4.2 objects leave `pval` at 0 and keep digging
+power elsewhere, so the reward never applied, and a digger became the swap
+only by its melee value. A plain Shovel at max depth 30 got swap value -1.
+
+With `swap_digger_tunnel`, `digger` is the digging power the engine adds
+when the digger is wielded (`player-calcs.c:1959-1969`). That is the item's
+DIG_1/2/3 level plus its known tunnelling modifier: a Shovel 1, a Pick 2, a
+Mattock 3 (`object.txt`), and *of Digging* adds TUNNEL[d4]
+(`ego_item.txt`). The other gates are unchanged:
+- a digger is not noticed while the wielded weapon digs;
+- it is not noticed while Stone to Mud is castable at 40% fail or better;
+- a worthless or cursed one is skipped.
+
+The default 0 keeps the C reading. It ships at 1 in `harness/pborg.yaml`,
+with smoke identical, so it is a hypothesis until the zoo measures it.
+
+| Parameter | Default | Unit | Range | Read at |
+| --- | --- | --- | --- | --- |
+| `swap_digger_tunnel` | 0 | flag | 0–1 | `borg_trait_swap.rs:650` |
+
+[Handover](handover/2026-11-27-1320-digger-tunnel.md)

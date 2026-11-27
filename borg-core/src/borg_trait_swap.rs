@@ -57,7 +57,7 @@ use crate::headers::list_object_flags_h::{
     OF_LIGHT_2, OF_LIGHT_3, OF_PROT_BLIND, OF_PROT_CONF, OF_PROT_FEAR, OF_REGEN, OF_SEE_INVIS,
     OF_SLOW_DIGEST, OF_TELEPATHY,
 };
-use crate::headers::list_object_modifiers_h::OBJ_MOD_INFRA;
+use crate::headers::list_object_modifiers_h::{OBJ_MOD_INFRA, OBJ_MOD_TUNNEL};
 use crate::headers::list_tvals_h::{
     TV_AMULET, TV_BOOTS, TV_CLOAK, TV_CROWN, TV_DIGGING, TV_DRAG_ARMOR, TV_GLOVES, TV_HAFTED,
     TV_HARD_ARMOR, TV_HELM, TV_LIGHT, TV_POLEARM, TV_RING, TV_SHIELD, TV_SOFT_ARMOR, TV_SWORD,
@@ -567,6 +567,23 @@ fn armour_value(st: &BorgState, item: &borg_item) -> i32 {
     v
 }
 
+/// borg-reborn-rs (#1320): the digging power a digger gives when wielded,
+/// as the engine counts it: its DIG_1/2/3 level plus its known tunnelling
+/// modifier (player-calcs.c:1959-1969). A Shovel is 1, a Pick 2, a Mattock 3
+/// (object.txt), and "of Digging" adds TUNNEL[d4] (ego_item.txt).
+pub(crate) fn digger_power(item: &borg_item) -> i16 {
+    let level = if of_has(item, OF_DIG_1) {
+        1
+    } else if of_has(item, OF_DIG_2) {
+        2
+    } else if of_has(item, OF_DIG_3) {
+        3
+    } else {
+        0
+    };
+    level + item.modifiers[OBJ_MOD_TUNNEL as usize]
+}
+
 /// Notice the player swap weapon.
 ///
 /// Diggers are looked at at any depth, other weapons from max depth 50 on
@@ -627,7 +644,10 @@ pub fn borg_notice_weapon_swap(st: &mut BorgState) {
                 && !of_has(wield, OF_DIG_2)
                 && !of_has(wield, OF_DIG_3)
             {
-                st.trait_swap.weapon_swap_digger = item.pval;
+                // borg-reborn-rs (#1320): C reads `pval`, which 4.2 diggers
+                // leave at 0, so the tunnelling reward never applied.
+                st.trait_swap.weapon_swap_digger =
+                    if crate::params::value(crate::params::Param::swap_digger_tunnel) != 0 { digger_power(&item) } else { item.pval };
             }
         }
 
@@ -829,6 +849,26 @@ mod tests {
         // and clear() wipes it again (the 0132 reset blocks)
         f.clear();
         assert!(!f.resist_fear);
+    }
+
+    #[test]
+    fn digger_power_is_the_dig_level_plus_the_tunnel_modifier() {
+        // #1320: a 4.2 digger has pval 0; its power is a flag plus a modifier.
+        let set = |item: &mut borg_item, flag: u32| {
+            let bit = flag as i32 - crate::engine::FLAG_START;
+            item.flags[(bit / 8) as usize] |= 1 << (bit % 8);
+        };
+        let mut shovel = crate::borg_item::blank_item();
+        shovel.tval = TV_DIGGING as u8;
+        set(&mut shovel, OF_DIG_1);
+        assert_eq!((shovel.pval, digger_power(&shovel)), (0, 1));
+        shovel.modifiers[OBJ_MOD_TUNNEL as usize] = 3;
+        assert_eq!(digger_power(&shovel), 4, "a Shovel of Digging (+3)");
+        let mut mattock = crate::borg_item::blank_item();
+        mattock.tval = TV_DIGGING as u8;
+        set(&mut mattock, OF_DIG_3);
+        assert_eq!(digger_power(&mattock), 3);
+        assert_eq!(digger_power(&crate::borg_item::blank_item()), 0);
     }
 
     #[test]
