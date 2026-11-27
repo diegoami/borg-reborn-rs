@@ -22,7 +22,6 @@ gave is covered by determinism and the Borg's own logs.*
 | `calibrate.py` | T4.7 (#124): the reborn core's predicted damage against damage taken, per think window (docs/M4-CALIBRATION.md) |
 | `progress.py` | How much a suite's runs played, not only whether they lived: frozen windows and progress per run (#201) |
 | `shopping-audit.py` | Read only: what a run's Borg bought, used, stored, sold and left unspent, from its `messages.log` and `state.log` |
-| `try-errands-plan.py` | Runs an errands plan outside the measured harness, for bounded diagnostics (docs/GAME-PLAN-LANGUAGE.md) |
 | `tests/` | Unit tests of the above (`python3 -m unittest discover -s tools/tests`) |
 
 To watch the Borg play: `./watch-borg.sh` at the repository's root.

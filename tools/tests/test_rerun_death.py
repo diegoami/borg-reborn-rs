@@ -38,7 +38,14 @@ class PlanTest(unittest.TestCase):
         self.assertEqual(p['keys_sha256'], 'k' * 64)
 
     def test_the_runs_settings_come_back(self):
-        # Review #227, finding 8: an errand run reruns as itself.
+        # Review #227, finding 8: the planner restores a run's settings. Since
+        # #1339 the errands, /stopscared and the plans are retired, so on a
+        # current build a restored active BORG_ERRAND or BORG_STOPSCARED stops
+        # the game at start (exit 2, check_retired_errand_settings) instead of
+        # replaying the death without its errand: it fails loudly, and the
+        # death replays at its own build (identity.git_rev). The cemetery-owned
+        # planner may refuse such a dossier itself; until it does, this test
+        # pins what it restores.
         with tempfile.TemporaryDirectory() as t:
             p = rd.plan(dossier(t, config_extra='borg_core=borg-rs\nborg_errand=/dive 3; /walk-back\n'
                                                  'borg_stopscared=50\n'))

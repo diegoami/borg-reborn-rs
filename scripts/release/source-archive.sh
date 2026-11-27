@@ -31,7 +31,7 @@ mv "$STAGE/cargo-vendor.config.toml" "$STAGE/.cargo/config.toml"
     echo "borg-reborn-rs $VERSION source"
     echo "commit: $(git -C "$ROOT" rev-parse HEAD)"
     echo "engine: upstream Angband $(sed -n 's/^commit=//p' "$ROOT/engine/UPSTREAM") (engine/angband/, unchanged)"
-    echo "borg-core: borg-rs $(head -1 "$ROOT/borg-core/PIN") (vendored, docs/ERRANDS.md)"
+    echo "borg-core: borg-rs $(head -1 "$ROOT/borg-core/PIN") (vendored, docs/architecture/borg-core.md)"
     echo "cargo-vendor/: the crates of Cargo.lock, selected by .cargo/config.toml"
     echo
     echo "Build (cmake, a C compiler, Rust, libssl-dev; X11 also libx11-dev):"

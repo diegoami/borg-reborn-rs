@@ -734,10 +734,6 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
     if crate::borg_healing_restock::returning(st) {
         return crate::borg_healing_restock::follow_return(st);
     }
-    // borg-reborn-rs (#208): in town, an errand's trip starts by the stairs.
-    if let Some(r) = crate::shell::on_leave_level(st, bored) {
-        return r;
-    }
     let mut g = 0;
     let mut try_not_to_descend = false;
 
@@ -969,8 +965,7 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
     }
 
     /* Climb if deeper than I want to be */
-    // borg-reborn-rs (#447): use the same overlay as preparedness.
-    let n = crate::errands_plan::effective_no_deeper(st.cfg(BORG_NO_DEEPER));
+    let n = st.cfg(BORG_NO_DEEPER);
     if g == 0 && st.borg.tr(BI_CDEPTH) > n {
         borg_note(st, &format!("# Going up a bit (No Deeper than {n})."));
         g = -1;
@@ -1041,15 +1036,6 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
     }
 
     /* Go Up */
-    // borg-reborn-rs (#208, review #227): with its own reasons weighed, a
-    // core that is bored and free to go either way follows the errand.
-    if let Some(r) = crate::shell::on_leave_choice(
-        st,
-        bored && !st.borg.goal.rising && !need_restock && prep_cur_depth.is_none(),
-    ) {
-        return r;
-    }
-
     // borg-reborn-rs (#1173): did this call already try the up stairs? The
     // exhausted-dive fallback below must not repeat a failed one.
     let mut up_tried = false;

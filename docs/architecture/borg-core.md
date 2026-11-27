@@ -15,8 +15,8 @@ Our own crate `borg-reborn-rs/` is the shell around it: the engine
 boundary (`borg-reborn-rs/src/engine.rs`) and the selector between this
 core and our own "reborn" core. The shared Ctrl-Z prompt sends PBorg
 commands to `do_cmd_pborg` in `borg-reborn-rs/src/engine.rs`. When
-`core_is_borg_rs()` selects the vendored core, the shell applies the
-configured fear setting and errand, then forwards the command key to
+`core_is_borg_rs()` selects the vendored core, it refuses a retired
+errand, fear or plan setting (#1339), then forwards the command key to
 `borg_rs::do_cmd_borg_key()`.
 
 ## 1. What it is and where it comes from
@@ -38,9 +38,11 @@ refresh goes in its own PR, with a parity check against a fresh build of
 borg-rs at the new revision (the script's docstring).
 
 The declared lists are the authority on what is ours. Today `OURS` holds
-`PIN`, `ladders.txt` and eight modules: `shell.rs`, `params.rs`,
-`core_trace.rs`, `attack_preference.rs`, `errands_plan.rs`,
-`scary_list.rs`, `borg_lightless.rs`, `borg_town_hunt.rs`. `HOOKED` holds
+`PIN` and our modules, among them `config_file.rs` (the run's
+`pborg.yaml`), `params.rs`, `core_trace.rs`, `attack_preference.rs`,
+`scary_list.rs`, `borg_lightless.rs` and `borg_town_hunt.rs`
+(`shell.rs`, `errands_plan.rs` and `ladders.txt` went with the errands,
+#1339). `HOOKED` holds
 53 borg-rs files (2026-11-21; the set grows with each task that hooks
 the core), from `Cargo.toml` (package rename, a lints table
 that allows clippy on borg-rs's code) and `lib.rs` (our module
@@ -102,7 +104,7 @@ code.
 | formulas, init, log | `borg_formulas.rs`, `borg_formulas_calc.rs` (the FORMULA SECTION of borg.txt), `borg_init.rs` (reads borg.txt), `borg_log.rs`, `borg_util.rs`, `cctype.rs` | `borg-formulas*.c`, `borg-init.c`, `borg-log.c`, `borg-util.c`, `<ctype.h>` |
 | engine boundary | `engine.rs` (3,646 lines, the only place with `unsafe` besides `headers`; `lib.rs:17` denies it elsewhere), `headers/` (the engine's raw C declarations), `borg_headers/` (the Borg's own headers, not FFI), `borg_io.rs` (screen reads, messages, key queue) | the engine's headers, `borg-io.c` |
 | regression entry | `regress.rs` (engine-free entry points for `harness/regress/`) | borg-rs |
-| errands | `shell.rs` **O** (#208), `errands_plan.rs` **O** (#305) | ours |
+| configuration | `config_file.rs` **O** (#1339; the readers the errand shell held) | ours |
 | calibration | `params.rs` **O** (#219), `attack_preference.rs` **O** (#403, class/family attack ranking) | ours |
 | trace | `core_trace.rs` **O** (#222) | ours |
 | scary monsters | `scary_list.rs` **O** (#518) | ours |
@@ -186,7 +188,7 @@ second half): `borg_init.rs` reads `borg_<name>@<class>` or
 (`record_class_commons`) and applies the class's lines in
 `apply_class_settings` (`borg_init.rs:831`), at file load
 (`borg_init.rs:755`) and at birth (`borg_init.rs:975`). Respawn settings
-and the shell's keys have no class value.
+and the core selector have no class value.
 
 **Compiled defaults versus shipped values (#479).** The compiled core
 keeps neutral defaults that reproduce the vendored policy. The behaviour we
@@ -220,7 +222,8 @@ the think sequence; engine turn and the core's clock; context (town, store
 or dungeon, depth, HP and SP); the danger at the Borg's position and its
 avoidance; `check`, the root priority check that returned (for example
 `borg_caution`, `borg_recover`, `borg_attack`) with `check_source`; the
-goals (leaving, fleeing, fleeing to town, rising); the errand; the queued
+goals (leaving, fleeing, fleeing to town, rising); `errand` (always null
+since the errands were retired, #1339; kept in the schema); the queued
 keys and whether the think acted; and `attacks`, every attack ranking of
 the think with its candidates and winner ([ATTACK-PREFERENCES.md](../ATTACK-PREFERENCES.md)).
 Later additions record live preparedness checks (#795,
@@ -229,8 +232,8 @@ Later additions record live preparedness checks (#795,
 How a check is named: each successful return in `borg_think.rs` and
 `borg_think_dungeon.rs` goes through the `choice!` macro
 (`core_trace.rs:271`; 124 uses), which records the name and its
-`file!():line!()` and returns the original `true`; store and errand
-returns call `core_trace::selected` (`borg_think.rs:240`, `:279`).
+`file!():line!()` and returns the original `true`; store returns call
+`core_trace::selected` (`borg_think.rs:240`, `:279`).
 
 **It never changes play.** No trace value feeds back into a decision;
 the extra danger evaluation is read-only and draws no RNG; full-suite
@@ -238,66 +241,18 @@ parity guards that. A write failure exits 2. A death dossier keeps the last
 200 lines as `trace-core-tail.jsonl`. CI asserts the schema and that no
 row is `unclassified`.
 
-## 5. Our shell and errands around the core
+## 5. Our additions around the core
 
-### Errands
-
-[ERRANDS.md](../ERRANDS.md) is the user's guide;
-`borg-core/src/shell.rs` the code (#208). An errand gives the core a job;
-on a level of the plan the core plays as itself, no level is forced past
-`borg_prepared`, fear overrides the plan, and with no errand and
-`/stopscared` off every hook returns at once, so play is borg-rs's byte for
-byte (`shell.rs`, module comment).
-
-| setting | environment | pborg.yaml key |
-|---|---|---|
-| errand | `BORG_ERRAND` | `borg_reborn_errand` (shipped `none`) |
-| fear | `BORG_STOPSCARED` | `borg_reborn_stopscared` (shipped `off`) |
-| budget | `BORG_ERRAND_BUDGET` (game turns) | |
-| outcome | `BORG_ERRAND_OUT` (one JSON line per errand that ends, `shell.rs:1280`) | |
-| ladders | `BORG_LADDERS` (else `borg-core/ladders.txt`, `shell.rs:262`) | |
-
-The shell reads these on each `^Z` entry
-(`borg-reborn-rs/src/borg.rs:343`, `:379`) and validates them strictly:
-a bad value exits 2.
-
-### The `^Z /` command line
-
-Our one entry in the C Borg's `^Z` menu is `/`
-(`borg-core/src/borg_commands.rs:109`), which prompts for a line
-(`borg_cmd_errand`, `shell.rs:551`). The other `^Z` keys are the C Borg's.
-`Command::parse` (`shell.rs:136`) accepts, with the slash optional:
-
-| command | kind |
-|---|---|
-| `/town`, `/shopping`, `/walk-back`, `/explore-back`, `/explore-level` | errand |
-| `/dive N`, `/dive-exploring N` | errand, N ≥ 1 |
-| `/ladder`, `/trips 1*/1,2,1*@3/...` | errand that never ends |
-| `/stopscared off\|flee\|N` (1–1000; `true`/`on`/`yes` = `flee` = 100) | setting |
-| `/explored N\|off` (1–100) | setting |
-| `/stall N\|off` | setting |
-| `/stop` (or `none`) | clears the errand |
-
-Commands on one line are separated by `;` (`parse_line`, `shell.rs:521`).
-
-The shell's hooks in the vendored core, all marked `borg-reborn-rs
-(#208)`: `before_dungeon_think` (`borg_think.rs:278`), `steer`
-(`borg_think_dungeon.rs:819`), `on_leave_level` and `on_leave_choice`
-(`borg_think_dungeon_util.rs:733`, `:1019`), `shopping_departure`
-(`borg_caution.rs:2764`).
-
-### Plans
-
-An errands plan ([GAME-PLAN-LANGUAGE.md](../GAME-PLAN-LANGUAGE.md),
-`errands_plan.rs`, #305) is a plain-text file of class sections and
-character-level ranges, one `max-depth N` per phase (the core plays as
-itself under a depth cap; `loop-levels` was removed 2026-11-16). It is
-selected by `borg_plan: FILE` in the run's YAML (resolved under the
-user directory) or `BORG_ERRANDS_PLAN`, read once and validated before play
-(`errands_plan::initialize`, `borg_init.rs:995`). Two plans ship in
-[`harness/plans/`](../../harness/plans/README.md): `errands_plan.txt` and
-`errands_plan_ambitious.txt`. A plan with the reborn core exits 2
-(`borg-reborn-rs/src/borg.rs:319`).
+The errand shell (`shell.rs`, #208: `/town`, `/level-up`, `/dive`, the
+ladders and trips, `/stopscared`, the `^Z /` command line) and the plans
+(`errands_plan.rs`, #305: `max-depth N`) were retired on 2026-11-27
+(#1339; [archive/ERRANDS.md](../archive/ERRANDS.md),
+[archive/GAME-PLAN-LANGUAGE.md](../archive/GAME-PLAN-LANGUAGE.md)). Their
+hooks are gone from `borg_think.rs`, `borg_think_dungeon.rs`,
+`borg_think_dungeon_util.rs`, `borg_caution.rs`, `borg_prepared.rs`,
+`borg_reincarnate.rs` and `borg_commands.rs`. Their settings, written off,
+are ignored with a warning, and at any other value stop the run
+(`check_retired_errand_settings`, `borg-reborn-rs/src/borg.rs`).
 
 ### The scary list
 
@@ -314,17 +269,16 @@ An unknown monster or class stops the run (`scary_list::selected`,
 
 ## 6. How a run is wired
 
-P-Borg reads `user/pborg.yaml` through `shell::borg_txt_contents`. The
-shell passes the settings to the core's validators in memory. Invalid YAML
+P-Borg reads `user/pborg.yaml` through `config_file::borg_txt_contents`,
+which passes the settings to the core's validators in memory. Invalid YAML
 or an unreadable file exits with status 2. Ctrl-Z then **$** reloads the
 built-in settings. The parameter registry and core selection are loaded once
 per process.
 
 [`harness/run.sh`](../../harness/run.sh) copies the defaults from
 `harness/pborg.yaml` and applies the run's race, class, cheat-death flag and
-any `PBORG_SET` overrides. It stages the named scary list and errands plan
-beside the YAML. `config.txt` records `pborg_yaml_sha256` for the effective
-settings. The YAML includes the data hashes for the list, plan and generated
+any `PBORG_SET` overrides. It stages the named scary list beside the YAML. `config.txt` records `pborg_yaml_sha256` for the effective
+settings. The YAML includes the data hashes for the list and generated
 world when present.
 
 `BORG_CORE` overrides the YAML's `borg_reborn_core` selector. The shipped
