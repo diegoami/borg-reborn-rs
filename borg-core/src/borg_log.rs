@@ -253,6 +253,7 @@ pub fn borg_write_map(st: &mut BorgState, ask: bool) {
     let path = engine::path_build_archive(1024, &buf);
     buf2[..path.len()].copy_from_slice(&path);
 
+    // borg-reborn-rs (#1303): every write requires an open file.
     let path = if ask {
         if !engine::get_string(st, c"Borg map File: ", &mut buf2, 70) {
             return;
@@ -264,7 +265,9 @@ pub fn borg_write_map(st: &mut BorgState, ask: bool) {
     };
 
     let Some(mut borg_map_file) = engine::file_open(path, WriteMode::Write) else {
-        engine::msg(st, b"Cannot open that file.");
+        if ask {
+            engine::msg(st, b"Cannot open that file.");
+        }
         return;
     };
     let f = &mut borg_map_file;
