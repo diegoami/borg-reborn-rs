@@ -195,6 +195,12 @@ const WEAR_FOR_DEPARTURE: i64 = -2;
 const DROP_SURPLUS: i64 = -4;
 const WEAR_UPGRADE: i64 = -5;
 
+/// #1316: Home backups that add a missing protection do not count against
+/// `junk_gear_alternatives`.
+pub(crate) fn home_backup_protections() -> bool {
+    gear_home_backups() && crate::params::value(crate::params::Param::town_home_backup_protections) != 0
+}
+
 pub(crate) fn gear_home_backups() -> bool {
     crate::params::value(crate::params::Param::town_gear_home_backups) > 0
         && crate::borg_junk::gear_alternatives() > 0

@@ -9032,7 +9032,7 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:455` |
+| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:461` |
 
 ### Recall-first trial
 
@@ -9268,7 +9268,7 @@ identified spares.
 |---|---:|---|---|---|
 | `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2272` |
 | `junk_gear_alternatives` | 1 | count | 0–3 | `borg_junk.rs:64` |
-| `town_gear_home_backups` | 1 | flag | 0–1 | `borg_town_live.rs:198` |
+| `town_gear_home_backups` | 1 | flag | 0–1 | `borg_town_live.rs:205` |
 
 The removal establishes the control for the paired pilot of the #1264
 redesign. [Handover](handover/2026-11-25-1265-remove-sandal-flag.md)
@@ -9393,3 +9393,22 @@ is still the #1276 cutoff of better options. That policy shipped with 2.
 | `junk_gear_alternatives` | 1 | count | 0–3 | `borg_junk.rs:64` |
 
 [Handover](handover/2026-11-27-1310-home-backups.md)
+
+## Protection backups beyond the count (#1316)
+
+With `town_home_backup_protections` on, a further Home backup whose known
+properties add a resistance, Free Action, See Invisible, Hold Life,
+protection from blindness or confusion, or telepathy is kept without
+counting against `junk_gear_alternatives`, if no kept piece of its slot
+and no worn item gives that protection. It stays only at Home, or in the
+pack while the remembered Home has a free stack. Other distinct properties
+(a slay, a stat, stealth) still need a count. The late-game swap kit needs
+several such pieces per slot (strategy manual §12.7–12.9). Shipped on, a
+hypothesis until the zoo measures it (borg-zoo#816 compares 1 and 2
+backups per slot).
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `town_home_backup_protections` | 0 | flag | 0–1 | `borg_town_live.rs:201` |
+
+[Handover](handover/2026-11-27-1316-distinct-backups.md)
