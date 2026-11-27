@@ -8981,7 +8981,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1133` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1139` |
 
 ## Quiver surplus in town (#1168, #1272)
 
@@ -9032,7 +9032,7 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:461` |
+| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:466` |
 
 ### Recall-first trial
 
@@ -9268,7 +9268,7 @@ identified spares.
 |---|---:|---|---|---|
 | `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2272` |
 | `junk_gear_alternatives` | 1 | count | 0–3 | `borg_junk.rs:64` |
-| `town_gear_home_backups` | 1 | flag | 0–1 | `borg_town_live.rs:205` |
+| `town_gear_home_backups` | 1 | flag | 0–1 | `borg_town_live.rs:210` |
 
 The removal establishes the control for the paired pilot of the #1264
 redesign. [Handover](handover/2026-11-25-1265-remove-sandal-flag.md)
@@ -9409,6 +9409,27 @@ backups per slot).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_home_backup_protections` | 0 | flag | 0–1 | `borg_town_live.rs:201` |
+| `town_home_backup_protections` | 0 | flag | 0–1 | `borg_town_live.rs:206` |
 
 [Handover](handover/2026-11-27-1316-distinct-backups.md)
+
+## Carried swaps and the Home (#1315)
+
+The weapon and armour swaps are chosen from the pack only
+(`borg_trait_swap.rs`), so a swap stored at Home is never used. The
+ranked Home backup plan no longer stores the active swap, and the live
+planner leaves a carried active swap out of its kit, so no disposition
+stores, sells or drops it. A digger skips
+the depth gate below, but its tunnelling bonus reads `pval`, which 4.2
+diggers leave at 0, so in practice no swap is carried below it.
+
+Both swaps were carried only from max depth 50 (C Borg: "they are heavy").
+That depth is now a parameter. The default keeps the earlier play; a lower
+value is a hypothesis for the zoo.
+
+| Parameter | Default | Unit | Range | Read at |
+| --- | --- | --- | --- | --- |
+| `swap_carry_min_depth` | 50 | level | 0–128 | `borg_trait_swap.rs:596` |
+
+Taking a swap out of Home for the coming trip is not implemented (owner
+decision pending in #1319). [Handover](handover/2026-11-27-1315-swap-home.md)

@@ -517,7 +517,7 @@ impl Swap {
 pub(crate) fn fixture(st: &mut BorgState, case: &str) {
     use std::sync::atomic::{AtomicU8, Ordering::Relaxed};
     static SETUP: AtomicU8 = AtomicU8::new(0);
-    assert!(matches!(case, "trim" | "arrival" | "arrival-shop" | "restore" | "no-storage" | "reserve-overlap" | "reserve-swap" | "reserve-book" | "reserve-overweight" | "reserve-overweight-shop"));
+    assert!(matches!(case, "trim" | "arrival" | "arrival-shop" | "restore" | "no-storage" | "reserve-overlap" | "reserve-swap" | "reserve-book" | "swap-spare" | "reserve-overweight" | "reserve-overweight-shop"));
     let shop_reserve = case == "reserve-overweight-shop";
     let reserve = shop_reserve || case == "reserve-overweight";
     let overlap = matches!(case, "reserve-overlap" | "reserve-swap" | "reserve-book");
@@ -534,7 +534,7 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
         };
         engine::setup_test_town_loadout(
             st, excess, !shop && !reserve && case != "no-storage", false,
-            if shop || shop_reserve { 500 } else { 0 }, shop || overlap, !shop_reserve, case == "reserve-swap", case == "reserve-book",
+            if shop || shop_reserve { 500 } else { 0 }, shop || overlap, !shop_reserve, case == "reserve-swap", case == "reserve-book", case == "swap-spare",
         );
         crate::borg_item::borg_find_all_items(st);
         crate::borg_trait::borg_notice(st, true);
@@ -594,6 +594,53 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
                 assert_eq!(role(Place::Pack, u32::from(priest.kind)), Some(Role::Ordinary),
                     "a single carried copy is the one the Borg reads, not a spare");
             }
+            println!("#1239 town loadout passed: {case}");
+            std::process::exit(0);
+        }
+        if case == "swap-spare" {
+            use crate::borg_town_dispose::Place;
+            let slot = st.items.items[..wield].iter()
+                .position(|it| it.iqty > 0 && u32::from(it.tval) == TV_SHIELD)
+                .expect("the carried Leather Shield");
+            // Below swap_carry_min_depth no swap is noticed. Make the shield
+            // the active armour swap directly, as a deeper Borg would carry it.
+            st.trait_swap.armour_swap = slot as i32 + 1;
+            assert!(crate::borg_junk::is_swap(st, slot as i32));
+            let kind = u32::from(st.items.items[slot].kind);
+            let in_kit = |st: &mut BorgState| crate::borg_town_shadow::kit_for_test(st).iter()
+                .any(|k| k.place == Place::Pack && k.kind == kind);
+            // Every planner disposition acts on a kit stack, so a swap left
+            // out of the kit cannot be stored, sold or dropped there.
+            assert!(!in_kit(st), "the active swap is left out of the planner's kit");
+            // The overweight Priest is under pack pressure: the full live plan
+            // does not move the swap either.
+            let targets = |a: TownAction| matches!(a.code, action::STORE | action::SELL | action::DROP)
+                && a.at[1] == slot as i64;
+            let plan = crate::borg_town_shadow::live_plan(st).action;
+            assert!(!targets(plan), "the live plan moves the active swap: {:?}", (plan.code, plan.at));
+            // Second review of #1324: copy-limit cleanup runs before the
+            // planner. At one copy per kind, the worn and carried shields
+            // make one excess copy: a plain spare is stored, the swap is not.
+            let limit = crate::borg_headers::borg_h::BORG_TOWN_MAX_NON_MISSILE_COPIES as usize;
+            let configured = st.core.cfg[limit];
+            st.core.cfg[limit] = 1;
+            let overflow = crate::borg_town_live::overflow_action_for_test(st);
+            assert!(!overflow.is_some_and(targets), "copy cleanup moves the active swap: {:?}", overflow.map(|a| (a.code, a.at)));
+            st.trait_swap.armour_swap = 0;
+            let overflow = crate::borg_town_live::overflow_action_for_test(st);
+            assert!(overflow.is_some_and(targets), "the fixture exercises copy cleanup: {:?}", overflow.map(|a| (a.code, a.at)));
+            st.trait_swap.armour_swap = slot as i32 + 1;
+            st.core.cfg[limit] = configured;
+            st.trait_swap.armour_swap = 0;
+            assert!(in_kit(st), "an ordinary spare is in the kit");
+            st.trait_swap.armour_swap = slot as i32 + 1;
+            // The same shield, not the swap, is the ranked plan's stash.
+            st.trait_swap.armour_swap = 0;
+            let stored = |a: Option<TownAction>| a.is_some_and(|a| a.code == action::STORE && a.at[1] == slot as i64);
+            assert!(stored(crate::borg_town_live::organize_gear_for_test(st)), "the fixture exercises the stash");
+            st.trait_swap.armour_swap = slot as i32 + 1;
+            let organized = crate::borg_town_live::organize_gear_for_test(st);
+            assert!(!stored(organized), "the active swap is not stored at Home: {:?}", organized.map(|a| (a.code, a.at)));
             println!("#1239 town loadout passed: {case}");
             std::process::exit(0);
         }
