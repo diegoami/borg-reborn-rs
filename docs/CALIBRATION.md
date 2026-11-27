@@ -9328,7 +9328,8 @@ of the shipped gear policy without adding parameters or changing defaults.
 
 Dungeon cleanup releases gear that ranks below both the worn piece and a
 planned upgrade, even when the wear routine cannot make that upgrade on the
-current level. The active weapon and armour swap stays in the ranked plan
+current level. Until the upgrade is worn, gear that beats the worn piece
+stays, in the dungeon and in town. The active weapon and armour swap stays in the ranked plan
 and in the backup cutoff. A Home or stacked pack alternative covers an
 unresolved melee spare whatever the carried weight or the free pack slots.
 Those limits apply to the actual wear or withdrawal. The ranked plan alone
