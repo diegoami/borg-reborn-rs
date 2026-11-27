@@ -25,8 +25,9 @@ rule that re-equips a combat weapon while a digger is wielded.
   - the Priest had another ranged attack, since `borg_ranged::wear_coverage`
     vetoes losing Narthanc's Fire Bolt.
 
-  The recorded save's kit is not available to this session (see *Not
-  checked*), so this is a constructed equivalent, not the recorded kit.
+  The fixture was built before the recorded save reached this session, so
+  it is a constructed equivalent, not the recorded kit. The save itself is
+  replayed under *Checked*.
 - A second disagreement with a lone digger: `borg_remove_stuff` took the
   wielded shovel off to bare hands (power with 1,371,215, without
   1,377,180). In the pack the shovel earns the tunnelling swap reward of
@@ -54,6 +55,11 @@ rule that re-equips a combat weapon while a digger is wielded.
     in the weapon slot (`carried_digger_skill`), since the weapon now stays
     wielded and the engine digs with the carried digger. Without this, a
     weak-digging Priest would refuse a dig the engine makes.
+  - From the Codex re-review (P2): a missing carried digger is no skill
+    rather than a skill of 0. `carried_digger_skill` returns `None` when
+    the flag is 0, when no digger is carried and when the worn weapon is
+    sticky. At 20 twitches magma's threshold falls to 0, and a skill of 0
+    had allowed a dig the engine gives no chance (`player-calcs.c:1656`).
   - The default 0 keeps both inherited trials. It ships at 1 in
     `harness/pborg.yaml`.
 - `docs/CALIBRATION.md`: a new section and its parameter row. The citation
@@ -72,7 +78,8 @@ rule that re-equips a combat weapon while a digger is wielded.
   - `digger-dig-gate`, a Human Priest with the same kit and Narthanc
     wielded. The worn skill is 5, below granite's 40, and the carried
     shovel's is 52. At 1, `borg_can_dig` allows granite. At 0 it refuses
-    it, as before.
+    it, as before. Then, with the shovel gone and 20 twitches, magma must be
+    refused at both values. The reading at `9224054a` fails this at both.
 - `engine/tests/test_stair_handoff.py DiggerSwapLoopTest`, also added to CI.
   It runs both cases at the shipped settings, and runs each with the flag at
   0, where each must fail. In `digger-swap-loop` the trial wields the shovel.
@@ -89,6 +96,9 @@ rule that re-equips a combat weapon while a digger is wielded.
 - The four cargo commands and the citation check pass.
 - The shipped smoke suite is 4 of 4 identical to `smoke-borg-rs`, so it
   needs no re-record.
+- After the re-review fix and a merge of `track-p` (the errands'
+  retirement, #1339), every check in this section was rerun with the same
+  results. `cargo test --release -p borg-core` now runs 1006 tests.
 - **The recorded save**, from the canonical case, borg-cemetery#164
   (`incidents/2026-11-27-watch-dwarf-priest-shovel-loop-5153079`, archive
   SHA-256 `eb5e20c2…`, internal checksums verified). This branch's shipped
