@@ -44,8 +44,11 @@ class SurvivalIncidentTest(unittest.TestCase):
                     data = source.read(name)
                     self.assertEqual(hashlib.sha256(data).hexdigest(), point['sha256'])
                     (out / 'starting.save').write_bytes(data)
-                    (out / 'user/errands_plan.txt').write_bytes(source.read('errands_plan.txt'))
-                    settings = source.read('borg.txt').decode()
+                    # #1339: the plans are retired; the recording's
+                    # `borg_plan` line (its max-depth plan) is left out.
+                    settings = ''.join(line for line in
+                                       source.read('borg.txt').decode().splitlines(keepends=True)
+                                       if not line.startswith('borg_plan'))
                     if disable_tiers:
                         settings += ('\nborg_param_caution_clw_max_level = 1\n'
                                      'borg_param_caution_clw_max_loss = 0\n'
@@ -57,7 +60,6 @@ class SurvivalIncidentTest(unittest.TestCase):
                     env = {k:v for k,v in os.environ.items()
                            if not k.startswith(('BORG_', 'BORGH_', 'ANGBAND_'))}
                     env.update(BORG_CORE='borg-rs', BORG_RUN_DIR=str(out / 'diagnostics'),
-                               BORG_ERRANDS_PLAN=str(out / 'user/errands_plan.txt'),
                                TZ='UTC', LANG='C.UTF-8', LC_ALL='C.UTF-8')
                     argv = [str(GAME), '-mborgh']
                     argv += [f'-d{k}={out / k}' for k in ['user','save','archive','panic','scores']]

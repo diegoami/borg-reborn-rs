@@ -46,7 +46,7 @@ yet.
 
 | file | what |
 | --- | --- |
-| `borg-reborn-rs-V-linux-x86_64.tar.gz` | `angband` (X11, curses and headless frontends), `angband-headless` (headless only, no X11 library), upstream's `lib/`, the Borg's settings (`lib/user/borg.txt`, read by the game, as `harness/run.sh` prepares a run's, with its scary list; `borg/` holds the same for reference, with the class files and the errands plans), `PLAYING.txt`, `README.md`, the Angband manual as HTML, `LICENSES/`, each binary's `BUILD_ID` and `RELEASE.txt` (commit, upstream commit, borg-rs pin, settings hash), `SHA256SUMS` of every file |
+| `borg-reborn-rs-V-linux-x86_64.tar.gz` | `angband` (X11, curses and headless frontends), `angband-headless` (headless only, no X11 library), upstream's `lib/`, the Borg's settings (`lib/user/borg.txt`, read by the game, as `harness/run.sh` prepares a run's, with its scary list; `borg/` holds the same for reference, with the class files; the errands plans it also held were retired, #1339), `PLAYING.txt`, `README.md`, the Angband manual as HTML, `LICENSES/`, each binary's `BUILD_ID` and `RELEASE.txt` (commit, upstream commit, borg-rs pin, settings hash), `SHA256SUMS` of every file |
 | `borg-reborn-rs-V-macos-arm64.tar.gz` | only with the `macos` input: as Linux's, with one `angband` (curses and headless frontends; OpenSSL linked in, the system's curses) |
 | `borg-reborn-rs-V-windows-x86_64.zip` | as Linux's, with one static `angband.exe` (curses and headless frontends, OpenSSL and ncurses linked in) |
 | `borg-reborn-rs-V-src.tar.gz` | the committed tree at the release commit plus `cargo-vendor/` (the crates of `Cargo.lock`, each with its licence) and `.cargo/config.toml`, so it builds offline; `SOURCE.txt` says how |

@@ -20,9 +20,10 @@ faithful Rust port of the C Borg. On **2026-11-14 the owner repivoted**
 - the repository now hosts **borg-rs's decision core**, vendored at a pin
   in `borg-core/` with our declared files and hooks around it
   ([borg-core.md](borg-core.md));
-- **errands** run over that core: goals such as "go to town", "dive to
+- **errands** ran over that core: goals such as "go to town", "dive to
   10", a ladder or a trip plan, given in the game or in `borg.txt`
-  ([ERRANDS.md](../ERRANDS.md), [GAME-PLAN-LANGUAGE.md](../GAME-PLAN-LANGUAGE.md));
+  ([ERRANDS.md](../archive/ERRANDS.md), [GAME-PLAN-LANGUAGE.md](../archive/GAME-PLAN-LANGUAGE.md));
+  they and the plans were retired on 2026-11-27 (#1339);
 - our own core (`borg-reborn-rs/`, `BORG_CORE=reborn`) is **frozen**, and
   its milestones M5–M7 are paused with their issues kept. Since #479 the
   borg-rs core is the one shipped in `harness/borg.txt`, and since #606 it

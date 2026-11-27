@@ -40,7 +40,7 @@ class VendorTest(unittest.TestCase):
                                       'angband/src/borg/borg-init.c': 'int x;\n'}, 'pin')
         files = {'src/a.rs': LINES.replace('line 2\n', 'line 2 // borg-reborn-rs (#208) hook\n'),
                  'src/b.rs': 'b\n', 'pborg.yaml': '# PBorg settings. Place this file at user/pborg.yaml.\nborg_stop_clevel: 1\n', 'c-reference/borg.txt': 'x = 1\n',
-                 'c-reference/borg-init.c': 'int x;\n', 'src/shell.rs': 'ours\n', 'ladders.txt': 'l\n',
+                 'c-reference/borg-init.c': 'int x;\n', 'src/config_file.rs': 'ours\n',
                  'PIN': self.pin + '\n'}
         for rel, text in files.items():
             (core / rel).parent.mkdir(parents=True, exist_ok=True)
@@ -57,7 +57,7 @@ class VendorTest(unittest.TestCase):
         self.assertEqual(bv.check(self.repo), [])
         d = bv.delta(self.repo)
         self.assertIn('+line 2 // borg-reborn-rs (#208) hook', d)
-        self.assertIn('+++ b/borg-core/src/shell.rs', d)
+        self.assertIn('+++ b/borg-core/src/config_file.rs', d)
         (self.core / 'src/b.rs').write_text('changed\n')
         self.assertEqual(bv.check(self.repo), ['src/b.rs: differs from borg-rs at the pin, and not declared hooked'])
 
@@ -69,7 +69,7 @@ class VendorTest(unittest.TestCase):
         self.assertIn('line 2 // borg-reborn-rs (#208) hook', a, 'our hook stays')
         self.assertIn('line 6 upstream', a, "borg-rs's change comes in")
         self.assertEqual((self.core / 'src/c.rs').read_text(), 'new file\n')
-        self.assertEqual((self.core / 'src/shell.rs').read_text(), 'ours\n')
+        self.assertEqual((self.core / 'src/config_file.rs').read_text(), 'ours\n')
         self.assertEqual((self.core / 'PIN').read_text().strip(), new)
 
     def test_a_file_removed_on_both_sides_is_no_conflict(self):

@@ -253,23 +253,9 @@ extern "C" fn do_cmd_pborg(cmd: u8) {
     // The decision core (#207, the option-C pilot): borg-rs's, vendored at
     // its pin in `borg-core/`, when `BORG_CORE=borg-rs`; ours otherwise.
     if crate::borg::core_is_borg_rs() {
-        // An errand or a setting for the core (#208): `BORG_ERRAND` (`/dive
-        // 2`, `/town`, `/ladder`, `trips:...`: borg-core/src/shell.rs), with
-        // an optional budget in game turns (`BORG_ERRAND_BUDGET`), and
-        // `BORG_STOPSCARED`. The environment first, else the run's borg.txt
-        // (`borg_reborn_errand`, `borg_reborn_stopscared`: the zoo). In the
-        // game, `^Z /` types one.
-        if let Some(c) = crate::borg::configured_stopscared() {
-            borg_rs::shell::apply(c, 0);
-        }
-        if let Some(line) = crate::borg::configured_errand() {
-            let budget = crate::borg::configured_errand_budget();
-            // Configuration errors must not silently change the measured arm.
-            if let Err(error) = borg_rs::shell::apply_line(&line, budget) {
-                eprintln!("borg-reborn-rs: invalid configured errand: {error}");
-                std::process::exit(2);
-            }
-        }
+        // borg-reborn-rs (#1339): the errands, `/stopscared` and the plans
+        // are retired; a setting that would select one stops the run.
+        crate::borg::check_retired_errand_settings();
         borg_rs::do_cmd_borg_key(cmd);
         return;
     }
