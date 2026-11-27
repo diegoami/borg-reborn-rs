@@ -29,6 +29,16 @@ equipment routine audit of `8d85f44f`.
 - `static_gear_covers` takes the observed flag. The `junk_gear_alternatives
   = 0` comparison keeps requiring fully known candidates.
 
+## Review fix (owner, PR #1313)
+
+With `birth_randarts`, a partly known artifact no longer covers through the
+retained-cover path, and a partly known artifact weapon no longer takes the
+regular backup's place. A random artifact can carry any curse, so the
+accepted-risk argument holds only for the standard artifacts. #1311 already
+excluded such weapons as peers in `redundant_copies`. The release unit test
+`retained_cover_excludes_known_curses_and_randarts` covers the rule. The
+fixture cannot change a birth option, so no native test covers it.
+
 ## Checked
 
 - Native `ranked-cleanup` cases:
