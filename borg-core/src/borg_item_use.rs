@@ -265,6 +265,7 @@ fn neutral_food_slot(
 
             let mut nutrition = 0;
             for (effect, subtype, amount) in effects(item.kind as usize) {
+                // effects.c:effect_subtype:191-201 at 574b618c.
                 match (u32::from(effect), subtype) {
                     (EF_NOURISH, 0) => nutrition += amount.max(0), // INC_BY
                     (EF_NOURISH, 3) => nutrition += (amount - HUNGRY_PERCENT).max(0), // INC_TO
@@ -278,23 +279,19 @@ fn neutral_food_slot(
         .map(|(slot, _, _)| slot)
 }
 
-fn borg_consume_planned_neutral_food(st: &mut BorgState) -> bool {
-    let hunger_scroll = (st.cfg(crate::borg_headers::borg_h::BORG_TOWN_PLAN) == 1
-        && can_read_scroll(st))
+fn borg_consume_neutral_food(st: &mut BorgState) -> bool {
+    let allow_scroll = st.cfg(crate::borg_headers::borg_h::BORG_TOWN_PLAN) == 1;
+    consume_neutral_food_stack(st, allow_scroll)
+}
+
+/// Recovery can use a readable Remove Hunger scroll under either town policy.
+pub(crate) fn borg_recover_hunger(st: &mut BorgState) -> bool {
+    consume_neutral_food_stack(st, true) || borg_activate_item(st, st.act.satisfy)
+}
+
+fn consume_neutral_food_stack(st: &mut BorgState, allow_scroll: bool) -> bool {
+    let hunger_scroll = (allow_scroll && can_read_scroll(st))
         .then_some(st.item_val.sv_scroll_satisfy_hunger);
-    borg_consume_neutral_food(st, hunger_scroll)
-}
-
-/// Recovery already tries readable Remove Hunger scrolls under either town
-/// policy. Compare neutral food in the pack whenever that option is available.
-pub(crate) fn borg_recover_hunger_with_scroll(st: &mut BorgState) -> bool {
-    let sval = st.item_val.sv_scroll_satisfy_hunger;
-    can_read_scroll(st)
-        && borg_slot(st, TV_SCROLL as i32, sval) >= 0
-        && borg_consume_neutral_food(st, Some(sval))
-}
-
-fn borg_consume_neutral_food(st: &mut BorgState, hunger_scroll: Option<i32>) -> bool {
     let pack_size = usize::from(engine::z_info().pack_size);
     let slot = neutral_food_slot(&st.items.items[..pack_size], hunger_scroll, |kind| {
         engine::kind_effect_values(kind, st.borg.tr(BI_CLEVEL))
@@ -312,7 +309,7 @@ fn borg_consume_neutral_food(st: &mut BorgState, hunger_scroll: Option<i32>) -> 
 
 /// Prevent starvation by any means possible.
 pub fn borg_eat_food_any(st: &mut BorgState) -> bool {
-    if borg_consume_planned_neutral_food(st) {
+    if borg_consume_neutral_food(st) {
         return true;
     }
     let pack_size = usize::from(engine::z_info().pack_size);
@@ -1114,7 +1111,7 @@ pub(crate) fn borg_eat_when_hungry(st: &mut BorgState) -> bool {
     /* Attempt to satisfy hunger */
     borg_spell(st, REMOVE_HUNGER)
         || borg_spell(st, HERBAL_CURING)
-        || borg_consume_planned_neutral_food(st)
+        || borg_consume_neutral_food(st)
         || borg_quaff_potion(st, st.item_val.sv_potion_slime_mold)
         || borg_eat(st, food, st.item_val.sv_food_pint)
         || borg_eat(st, food, st.item_val.sv_food_waybread)
@@ -1256,6 +1253,9 @@ mod tests {
         pack[1].iqty = 2;
         assert_eq!(neutral_food_slot(&pack, Some(7), effects), Some(2));
         assert_eq!(neutral_food_slot(&pack, None, effects), Some(0));
+        pack[2].iqty = 0;
+        assert_eq!(neutral_food_slot(&pack, Some(7), effects), Some(0));
+        pack[2].iqty = 1;
         pack[0].iqty = 3;
         pack[1].iqty = 1;
         assert_eq!(neutral_food_slot(&pack, Some(7), effects), Some(1));
