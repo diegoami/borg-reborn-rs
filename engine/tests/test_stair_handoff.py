@@ -109,6 +109,8 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                 "caution_stairs_flight_threat_weight": weight,
                 "caution_desperate_adjacent_down_distance": 3,
             }
+            if case == "down-stair-plan":
+                overrides.update(caution_rising_hold_flee_descent=1, caution_recall_wait_as_usual=0)
             for name, value in overrides.items():
                 key = f"borg_param_{name}"
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
@@ -125,11 +127,12 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             shadow_cases = {
-                "flow-step": ("flow direction selection passed", "flow.select_step", 8),
-                "up-stair-plan": ("up-stair plan passed", "flow.plan_up_stair", 10 if weight else 8),
+                "flow-step": ("flow direction selection passed", "readonly_points", "flow.select_step", 8),
+                "up-stair-plan": ("up-stair plan passed", "readonly_points", "flow.plan_up_stair", 10 if weight else 8),
+                "down-stair-plan": ("down-stair plan passed", "root_points", "flow.plan_down_stair", 8 if weight else 6),
             }
             if case in shadow_cases:
-                message, point, count = shadow_cases[case]
+                message, points, point, count = shadow_cases[case]
                 self.assertIn(message, result.stdout)
                 stats = root / "shadow-stats.jsonl"
                 if shadow == "off":
@@ -138,7 +141,7 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                     self.assertEqual((root / "shadow.jsonl").read_bytes(), b"")
                     row = json.loads(stats.read_text().splitlines()[-1])
                     self.assertEqual(row["mode"], shadow)
-                    self.assertEqual(row["counts"]["readonly_points"][point], count)
+                    self.assertEqual(row["counts"][points][point], count)
                     self.assertEqual(row["counts"]["flow_calls"], count)
             elif case == "stair-preview-wipe":
                 self.assertIn("stair preview wipe passed", result.stdout)
@@ -173,6 +176,12 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             for weight in (0, 5):
                 with self.subTest(shadow=shadow, weight=weight):
                     self.run_case("up-stair-plan", weight, shadow=shadow)
+
+    def test_down_stair_plan_preserves_refusals_weight_and_move_cap(self):
+        for shadow in ("off", "check", "switch"):
+            for weight in (0, 5):
+                with self.subTest(shadow=shadow, weight=weight):
+                    self.run_case("down-stair-plan", weight, shadow=shadow)
 
 
 if __name__ == "__main__":

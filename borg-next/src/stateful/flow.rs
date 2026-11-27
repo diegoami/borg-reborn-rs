@@ -1,6 +1,8 @@
-//! Committed direction selection and up-stair route policy.
+//! Committed direction selection and stair route policy.
 
-use borg_rs::decision_api::borg_flow_stairs::UpStairPlan;
+use borg_rs::decision_api::borg_flow_stairs::{
+    more_refused, rising_holds_flee_descent, StairPlan, GOAL_FLEE,
+};
 use borg_rs::decision_api::engine;
 use borg_rs::decision_api::headers::list_options_h::OPT_birth_force_descend;
 use borg_rs::decision_api::headers::z_type_h::loc;
@@ -75,18 +77,40 @@ pub(super) fn select_step(state: &BorgState) -> i32 {
     direction
 }
 
-pub(super) fn plan_up_stair(state: &BorgState, why: i32) -> UpStairPlan {
+pub(super) fn plan_up_stair(state: &BorgState, why: i32) -> StairPlan {
     borg_rs::decision_tape::mark("policy::flow.plan_up_stair", String::new());
     if engine::player_opt(OPT_birth_force_descend) || state.stairs.less.num == 0 {
-        return UpStairPlan::Refused;
+        return StairPlan::Refused;
     }
 
     let leaving = state.borg.goal.fleeing || state.borg.goal.leaving;
     let weight = crate::stateful::caution::stair_flight_weight(why, leaving);
     if weight <= 0 {
-        return UpStairPlan::Unweighted;
+        return StairPlan::Unweighted;
     }
     let character = crate::Read::new(state).character();
     let avoid = character.clevel() <= 35 && character.light() != 0 && !state.borg.status.desperate;
-    UpStairPlan::Weighted { weight, avoid }
+    StairPlan::Weighted { weight, avoid }
+}
+
+pub(super) fn plan_down_stair(state: &mut BorgState, why: i32, brave: bool) -> StairPlan {
+    borg_rs::decision_tape::mark("policy::flow.plan_down_stair", String::new());
+    if state.stairs.more.num == 0 {
+        return StairPlan::Refused;
+    }
+    if why == GOAL_FLEE && rising_holds_flee_descent(state) {
+        return StairPlan::Refused;
+    }
+    if more_refused(state, brave) {
+        return StairPlan::Refused;
+    }
+    let weight = crate::stateful::caution::stair_flight_weight(why, false);
+    if weight > 0 {
+        StairPlan::Weighted {
+            weight,
+            avoid: false,
+        }
+    } else {
+        StairPlan::Unweighted
+    }
 }

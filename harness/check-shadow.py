@@ -38,7 +38,8 @@ R45_ADDED = (
     'caution.fight_before_flight', 'caution.recall_wait_no_explore', 'caution.lightless_self_care',
     'attack.attack_on_sight', 'recovery.holding_for_monster', 'store.sell_selected_quantity',
 )
-FLOW_POINTS = ('flow.select_step', 'flow.plan_up_stair')
+FLOW_READONLY_POINTS = ('flow.select_step', 'flow.plan_up_stair')
+DOWN_STAIR_POINT = 'flow.plan_down_stair'
 R2_PORTED = ['danger.wall_like', 'danger', 'danger.one_monster', 'caution', 'escape', 'recovery']
 NUMERIC = ('comparisons', 'danger_calls', 'danger_comparisons',
            'monster_comparisons', 'wall_comparisons', 'stateful_comparisons',
@@ -84,7 +85,7 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
     if receiving_surface:
         allowed = tuple(name for name in allowed if name not in R45_RETIRED) + R45_ADDED
     if r5:
-        allowed += FLOW_POINTS
+        allowed += (*FLOW_READONLY_POINTS, DOWN_STAIR_POINT)
     fields = NUMERIC + (() if legacy_r2 else ('attack_calls', 'pure_attack_comparisons')) + (('defence_calls',) if complete else ()) + (('item_use_calls',) if item_surface else ()) + (('readonly_comparisons',) if r4_item_use else ()) + (('power_calls',) if power_surface else ()) + (('equipment_calls',) if equipment_surface else ()) + (('store_calls',) if store_surface else ())
     if r5:
         fields += ('flow_calls',)
@@ -95,7 +96,7 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
     if store_surface:
         readonly_allowed = readonly_allowed | {'store.town_strategy_disabled','store.borg_power_home','store.borg_min_item_quantity'}
     if r5:
-        readonly_allowed.update(FLOW_POINTS)
+        readonly_allowed.update(FLOW_READONLY_POINTS)
     readonly_totals = dict.fromkeys(readonly_allowed, 0)
     for path in files:
         previous, last, file_mode = 0, None, None

@@ -148,7 +148,8 @@ crate::decision_tape::engine("borg_flow_misc::borg_extract_dir",format!("{:?}",(
 }
 }
 pub mod borg_flow_stairs {
-    pub use crate::decisions::UpStairPlan;
+    pub use crate::borg_flow_stairs::GOAL_FLEE;
+    pub use crate::decisions::StairPlan;
 
     pub fn bounded_desperate_flight(st: &mut crate::state::BorgState, up: bool, max_moves: i32, ranged_reach: i32) -> bool {
         crate::decision_tape::effect(st, "borg_flow_stairs::bounded_desperate_flight", format!("{:?}", (up, max_moves, ranged_reach,)), |st| crate::borg_flow_stairs::bounded_desperate_flight(st, up, max_moves, ranged_reach))
@@ -160,6 +161,10 @@ pub mod borg_flow_stairs {
 
     pub fn more_refused(st: &mut crate::state::BorgState, brave: bool) -> bool {
         crate::decision_tape::effect(st, "borg_flow_stairs::more_refused", format!("{:?}", (brave,)), |st| crate::borg_flow_stairs::more_refused(st, brave))
+    }
+
+    pub fn rising_holds_flee_descent(st: &mut crate::state::BorgState) -> bool {
+        crate::decision_tape::effect(st, "borg_caution::rising_holds_flee_descent", String::new(), crate::borg_caution::rising_holds_flee_descent)
     }
 
     pub fn resume_known_up_stair_flight(st: &mut crate::state::BorgState, danger: i32) -> bool {

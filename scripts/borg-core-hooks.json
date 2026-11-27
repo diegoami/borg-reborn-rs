@@ -314,7 +314,7 @@
     },
     "src/borg_flow_stairs.rs": {
       "donor_blob": "cfc8b5b2e21dd2a374f7fe4e749c96754505b6bb",
-      "receiving_sha256": "5698fb728ca80e4c0db1a19805478c0c812a1b38440a5b91611e2e9f4eb4f005"
+      "receiving_sha256": "f977cbfd214c2893f0f0a70125c550f4a7a65552c310086c7749ff74054b1141"
     },
     "src/borg_flow_take.rs": {
       "donor_blob": "f19b4b2933fbf4ccab7476b39e6abb17a5a07a87",

@@ -16,11 +16,11 @@ RECEIPT = ROOT / 'docs/R45-PORT-SOURCE.json'
 # The R5 review compared the refactored selector and its helpers with the
 # native implementation. Pin the reviewed files alongside the R4.5 receipt.
 R5_RECEIVING_FILES = {
-    'borg-core/src/decision_api.rs': '8992cde396058357d357c14340989ff83664a87b17ce54c50465207156733738',
-    'borg-core/src/decisions.rs': '6104dbff68cbdfb55c8a4a900a2aefd3cd4a3547453bbd066e200c2725f7425f',
+    'borg-core/src/decision_api.rs': '78b1f0c778d0ef323f35516ed1a4cfb65c47cb0a53f6603cf8d6c4a6e6c3b70e',
+    'borg-core/src/decisions.rs': 'b6afa85fc2af722559514e7c04d0bc9c8b86f350b13ebda07555fd8b1adb3183',
     'borg-core/src/memory.rs': 'd147735a90b4016613343659e3a2250aa93140a43d017f81c470669082d892fe',
-    'borg-next/src/stateful/flow.rs': '0f6c5ad01d6244c3945b1b03c64e6e80f70a28b87f26b9b8bd53438c926bac62',
-    'borg-next/src/stateful/mod.rs': 'f212715c2afbd9d74053a677a8ef1df90d68ff33d08fde3e8a823255935fd104',
+    'borg-next/src/stateful/flow.rs': 'bf5b2111a33e5d1de3906c2434195249b2640c6ff64c237eacc09cf148459c0d',
+    'borg-next/src/stateful/mod.rs': 'e3d6b9a82a50992fa0ca9e9c5930dfe2084ea8a28892cefc491e21ce1ce5294d',
 }
 MODULES = {
     'caution': 'borg_caution', 'escape': 'borg_escape', 'recovery': 'borg_recover',
