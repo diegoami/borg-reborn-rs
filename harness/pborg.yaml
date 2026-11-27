@@ -2350,6 +2350,12 @@ borg_kills_uniques: false
 
 borg_uses_swaps: true
 
+# #1315: the max depth from which the weapon and armour swaps are carried
+# (C Borg: 50, "they are heavy"). A digger skips this gate. Lower carries a
+# resist swap sooner, at two pack slots. A hypothesis.
+
+borg_param_swap_carry_min_depth: 50
+
 # Open chests whose trap difficulty is within this of its disarming skill.
 # Higher opens riskier chests.
 # Impact: set to 14, 0 of 6 test games play differently.

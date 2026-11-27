@@ -299,6 +299,8 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         (0..st.store.shops[BORG_HOME].ware.len())
             .map(|slot| crate::borg_spare_gear::redundant_home_gear(st, slot)).collect()
     } else { Vec::new() };
+    // #1315: the active swaps as the pack stands, before any try-off.
+    let swap_slots = [st.trait_swap.weapon_swap - 1, st.trait_swap.armour_swap - 1];
     let fact = |st: &BorgState, it: &borg_item, place: Place, slot: usize, power: i64, worn_gain: i64| -> KitItem {
         let (mut need, mut reduction) = ware_role(st, it);
         let consumable = crate::borg_item_id::flavour_sale_type(it.tval);
@@ -443,7 +445,11 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
 
     let mut kit = Vec::new();
     for (slot, &it) in items.iter().enumerate().take(pack_end) {
-        if it.iqty == 0 {
+        // #1315 (review of #1324): the active weapon or armour swap stays
+        // in the pack, where the swap notice looks for it. Left out of the
+        // kit, no disposition can store, sell or drop it; its weight and
+        // slot still count in the limits, which read the pack itself.
+        if it.iqty == 0 || swap_slots.contains(&(slot as i32)) {
             continue;
         }
         if u32::from(it.tval) == crate::headers::list_tvals_h::TV_LIGHT {

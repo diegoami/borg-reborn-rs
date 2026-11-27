@@ -1974,6 +1974,7 @@ pub(crate) fn setup_test_town_loadout(
     recall_at_home: bool,
     swap_ring: bool,
     dungeon_books: bool,
+    swap_spare: bool,
 ) {
     use crate::headers::list_tvals_h::*;
     use crate::headers::object_h::{object, object_kind, OBJ_NOTICE_ASSESSED};
@@ -2100,8 +2101,18 @@ pub(crate) fn setup_test_town_loadout(
             home_carry(make(TV_MAGIC_BOOK, c"[Arcane Control]", 1, None, None));
             inven_carry(player, make(TV_PRAYER_BOOK, c"[Healing and Sanctuary]", 1, None, None), false, false);
         }
+        if swap_spare {
+            // #1315: a carried runner-up shield the ranked plan would store,
+            // and one free Home stack for it.
+            // Review of #1324: the worn piece's kind, with a known -1 armour
+            // bonus, so the copy limit counts both and the stacks differ.
+            let shield = make(TV_SHIELD, c"Leather Shield", 1, None, None);
+            (*shield).to_a = -1;
+            (*(*shield).known).to_a = -1;
+            inven_carry(player, shield, false, false);
+        }
         // Distinct known bonuses keep the inert Home filler in separate stacks.
-        let home_space = (*home).stock_size - i16::from(pack_whip);
+        let home_space = (*home).stock_size - i16::from(pack_whip) - i16::from(swap_spare);
         while i16::from((*home).stock_num) < home_space {
             let count = i16::from((*home).stock_num);
             home_carry(make(TV_ARROW, c"Arrow", 1, None, Some(1 + count)));
