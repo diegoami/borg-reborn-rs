@@ -8981,7 +8981,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1103` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1111` |
 
 ## Quiver surplus in town (#1168, #1272)
 
@@ -9266,8 +9266,8 @@ identified spares.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2261` |
-| `junk_gear_alternatives` | 2 | distinct better options | 0–3 | `borg_junk.rs:64` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2272` |
+| `junk_gear_alternatives` | 1 | count | 0–3 | `borg_junk.rs:64` |
 | `town_gear_home_backups` | 1 | flag | 0–1 | `borg_town_live.rs:198` |
 
 The removal establishes the control for the paired pilot of the #1264
@@ -9323,3 +9323,73 @@ inscriptions, staged loadouts, and active melee swaps retain protection.
 The existing sale and safe drop checks apply. This changes the behaviour
 of the shipped gear policy without adding parameters or changing defaults.
 [Handover](handover/2026-11-26-1304-rogue-spare-gear.md)
+
+## Gear cleanup routines agree (#1307)
+
+Dungeon cleanup releases gear that ranks below both the worn piece and a
+planned upgrade, even when the wear routine cannot make that upgrade on the
+current level. Until the upgrade is worn, gear that beats the worn piece
+stays, in the dungeon and in town. The active weapon and armour swap stays in the ranked plan
+and in the backup cutoff. A Home or stacked pack alternative covers an
+unresolved melee spare whatever the carried weight or the free pack slots.
+Those limits apply to the actual wear or withdrawal. The ranked plan alone
+keeps permanent lights, so one permanent backup stays. The fuelled light
+reserve still releases fuelled lights that a permanent light covers. With
+`birth_randarts` a partly known artifact weapon no longer counts as a
+better peer. No parameter or default changes.
+[Handover](handover/2026-11-27-1307-gear-routines.md)
+
+## Gear with unknown runes (#1308)
+
+The game marks gear `{??}` while one of its runes is unknown. An apparently
+plain item carries the mark only while it has a property the player has not
+learned, so the mark is evidence of a hidden ego, modifier, resistance or
+curse. Under the ranked Home backup policy the pack carries at most one
+unknown-rune spare per equipment slot, two for rings, chosen by visible
+value. A stack keeps one copy. The rest leaves at the next safe opportunity,
+in the dungeon as well as in town. Artifacts, known activations, known
+curses, swaps, staged loadouts and inscriptions other than the game's own
+tags keep their protections. While Identify Rune is usable (a scroll the
+Borg can read now, or the spell with the mana to cast it now) the cap waits,
+so the identification attempt comes first.
+
+In town a spare with unknown runes goes to a shop that accepts it, even when
+the shop pays nothing under `birth_no_selling`. The sale teaches every rune
+of the item. The Borg offers the largest quantity a shop takes. When no
+shop takes any, the spare waits rather than going to the floor. Fully known spares still drop when the sale pays nothing. An
+unknown-rune spare is never stored at Home. The ordinary town planner keeps
+it until it is identified or released. No parameter or default changes.
+[Handover](handover/2026-11-27-1308-unknown-rune-spares.md)
+
+## Retained, partly known gear covers spares (#1309)
+
+Gear the Borg keeps whatever the plan says covers spares by its visible
+properties, even with unknown runes or an untried activation: the worn
+piece, an artifact, an item with a known activation, or a staged loadout.
+Those properties are a lower bound on what the item gives. A known curse
+removes the cover. This applies to the alternative side only; a spare is
+judged by the rules above. Such gear can take the regular backup's place,
+so a plain spare behind it leaves. The plan never wears, stores or releases
+it on that basis. A hidden curse is an accepted risk: among the standard
+artifacts only Calris has one (`artifact.txt`, air swing). With
+`birth_randarts` a partly known artifact covers nothing. No parameter or
+default changes.
+[Handover](handover/2026-11-27-1309-observed-cover.md)
+
+## Home backups per slot (#1310)
+
+With `town_gear_home_backups` on, `junk_gear_alternatives` is the number
+of regular backups the ranked plan keeps per equipment slot, each a pair for
+the ring fingers. The shipped value is 1, the policy of #1278. A backup
+beyond the first stays only when it supplies a known property that no worn
+piece and no better kept backup gives. It stays only at Home, or in the
+pack while the remembered Home has a free stack to store it. Diggers keep
+the earlier cutoff of two better options. The unresolved gear rules keep
+their two-alternative evidence. With `town_gear_home_backups` 0 the value
+is still the #1276 cutoff of better options. That policy shipped with 2.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `junk_gear_alternatives` | 1 | count | 0–3 | `borg_junk.rs:64` |
+
+[Handover](handover/2026-11-27-1310-home-backups.md)

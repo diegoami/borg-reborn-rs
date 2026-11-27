@@ -115,7 +115,8 @@ class TownSpareSaleTest(unittest.TestCase):
                        BORG_PARAM_TOWN_GEAR_HOME_BACKUPS="0")
             if ranked_home or gear_case:
                 env.update(BORG_TEST_INFERIOR_SPARE_SALE=gear_case or "ranked-home",
-                           BORG_PARAM_JUNK_EXPLORATION_FIRST="1", BORG_PARAM_JUNK_GEAR_ALTERNATIVES="2",
+                           BORG_PARAM_JUNK_EXPLORATION_FIRST="1",
+                           BORG_PARAM_JUNK_GEAR_ALTERNATIVES="1" if gear_case else "2",
                            BORG_PARAM_CAUTION_TOWN_NEVER_SCARY="1", BORG_PARAM_TOWN_GEAR_HOME_BACKUPS=str(int(bool(gear_case))))
             messages = root / "messages.log"
             run = subprocess.run(

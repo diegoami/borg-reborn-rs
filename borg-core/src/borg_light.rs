@@ -1015,9 +1015,10 @@ pub(crate) fn surplus_light(st: &BorgState) -> Option<usize> {
             || item.cursed || item.curses.contains(&true) || item.art_idx != 0
             || item.desc.contains(&(b'{' as core::ffi::c_char))
         { return false; }
-        if permanent_light(item) {
-            // A distinct permanent light can still serve as the backup.
-            return worn.kind == item.kind && worn.weight <= item.weight && covers_spare_light(worn, item);
+        // #1307: the ranked gear plan owns permanent lights, so both
+        // routines keep the same backup.
+        if has_flag(item, OF_NO_FUEL) {
+            return false;
         }
         covers_spare_light(worn, item)
             || pack.iter().any(|light| permanent_light(light) && covers_spare_light(light, item))
