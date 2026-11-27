@@ -494,11 +494,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         kit.push(fact(st, it, Place::Home, slot, if gear { equipped_gain } else { gain }, equipped_gain));
     }
 
-    // Reserve one stack per book kind, preferring a copy already safe at Home.
-    let mut reserved_books = std::collections::BTreeSet::new();
-    for stack in kit.iter_mut().rev().filter(|stack| stack.keep_last_book) {
-        stack.keep_last_book = reserved_books.insert(stack.kind);
-    }
+    reserve_books(&mut kit);
 
     st.borg = borg;
     st.traits = traits;
@@ -1110,6 +1106,25 @@ mod knowledge_only_purchase_tests {
             assert_eq!(copies_bought(configured(), utility), 1, "the configured weight would buy it (utility {utility})");
             assert_eq!(copies_bought(effective_params(configured()), utility), 0, "utility {utility}");
         }
+    }
+}
+
+/// Reserve one stack per book kind, preferring a copy already safe at Home.
+/// #1318 (review of #1323): a scarce dungeon book's reserve is the stack its
+/// role made `Scarce`, so the role and the last-book protection are the same
+/// stack and the other Home stacks of that book can be pruned.
+pub(crate) fn reserve_books(kit: &mut [KitItem]) {
+    let mut reserved = std::collections::BTreeSet::new();
+    for stack in kit.iter().filter(|stack| stack.keep_last_book && stack.home_role == Role::Scarce) {
+        reserved.insert(stack.kind);
+    }
+    let mut chosen = std::collections::BTreeSet::new();
+    for stack in kit.iter_mut().rev().filter(|stack| stack.keep_last_book) {
+        stack.keep_last_book = if reserved.contains(&stack.kind) {
+            stack.home_role == Role::Scarce && chosen.insert(stack.kind)
+        } else {
+            chosen.insert(stack.kind)
+        };
     }
 }
 
