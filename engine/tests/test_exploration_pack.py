@@ -49,11 +49,13 @@ class ExplorationPackTest(unittest.TestCase):
                 env["BORG_TEST_EXPLORATION_PACK"] = fixture
             if fixture == "weight-blocked-upgrade":
                 env["BORG_PARAM_TOWN_SHOP_OVERLOADED"] = "2"
-            if fixture == "ranked-cleanup":
+            if fixture in ("ranked-cleanup", "protection-backup"):
                 # #1307: the shipped ranked policy with Home backups.
                 env["BORG_PARAM_JUNK_GEAR_ALTERNATIVES"] = "1"
                 env["BORG_PARAM_TOWN_GEAR_HOME_BACKUPS"] = "1"
                 env["BORG_PARAM_TOWN_SHOP_OVERLOADED"] = "2"
+            if fixture == "protection-backup":
+                env["BORG_PARAM_TOWN_HOME_BACKUP_PROTECTIONS"] = "1"
             result = subprocess.run(
                 [str(game), "-mborgh", "-n", *(f"-d{name}={path}" for name, path in paths.items()),
                  "--", "-seed", "101", "-race", "0", "-class", "0", "-start-depth", "3",
@@ -81,6 +83,10 @@ class ExplorationPackTest(unittest.TestCase):
 
     def test_ranked_cleanup_routines_do_not_block_each_other(self):
         self.run_case(harmful=False, fixture="ranked-cleanup")
+
+    def test_a_trailing_protection_backup_is_judged_against_the_real_kit(self):
+        # #1316 (review of #1325): the last trial must not count as worn.
+        self.run_case(harmful=False, fixture="protection-backup")
 
     def test_weight_blocked_home_upgrade_leaves_the_carried_upgrade_available(self):
         self.run_case(harmful=False, fixture="weight-blocked-upgrade")

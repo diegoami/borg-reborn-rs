@@ -1,7 +1,8 @@
 # Protection backups do not count against the Home backup limit
 
-Issue #1316, stacked on #1314 (#1310), which another session owns. This
-PR targets the #1314 branch until that merges.
+Issue #1316. Written on #1314 (#1310), which another session owned. That
+stack landed in `track-p` through #1321, and this branch now merges
+`track-p` and targets it.
 
 The owner did not pick between the issue's options before the work
 started. This implements option (c), the one the session recommended,
@@ -23,6 +24,17 @@ shipped 1).
   as in #1314. With the flag 0, play is #1314's.
 - The flag is read through `borg_town_live::home_backup_protections`,
   which also requires `gear_home_backups()`.
+- Review of #1325: the worn kit is built from the equipment snapshot
+  `gear_plan` takes before its trials. The trials leave the last candidate
+  in the slot, so a trailing rNexus piece looked worn and covered itself.
+  Native case `protection-backup` (`test_exploration_pack.py`), at one
+  backup per slot:
+  - the worn Free Action robe stays;
+  - the rFire robe at Home is the regular backup;
+  - the carried rNexus robe, the last candidate and the only rNexus
+    source, is kept.
+
+  Against the earlier line the case fails: the rNexus robe is released.
 - Unit test `protection_backups_do_not_count_against_the_limit`:
   - at one backup per slot, rNexus and rPois boots both stay at Home
     beside Free Action boots, and plain boots leave;

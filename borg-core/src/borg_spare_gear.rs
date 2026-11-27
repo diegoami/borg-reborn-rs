@@ -752,9 +752,11 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
     let home_room = st.store.shops[crate::borg_store::BORG_HOME].ware.iter().any(|ware| ware.iqty == 0);
     // #1316: what the worn equipment gives, every slot, for the protection
     // exemption.
+    // Review of #1325: from the snapshot taken before the trials, which
+    // leave the last candidate in the equipment slots.
     let worn_kit = crate::borg_town_live::home_backup_protections().then(|| {
         let wield = inven_wield() as usize;
-        combined_properties(st.items.items[wield..quiver_start() as usize].iter().filter(|item| item.iqty > 0))
+        combined_properties(items[wield..quiver_start() as usize].iter().filter(|item| item.iqty > 0))
     });
     let keep = backup_counts(&choices, &best, capacity, extra, home_room, worn_kit.as_ref());
     let beats_worn: Vec<bool> = (0..choices.len()).map(|i| {
@@ -1015,6 +1017,45 @@ pub(crate) fn inspection_pending(st: &BorgState, item: &borg_item) -> bool {
 #[cfg(feature = "test-town-loadout")]
 pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
     let wield = inven_wield() as usize;
+    if case == "protection-backup" {
+        // #1316 (review of #1325): the trials leave the last candidate, a
+        // carried rNexus robe, in the body slot. The worn kit must come from
+        // the real equipment, so that robe still adds a missing protection.
+        use crate::headers::list_elements_h::{ELEM_FIRE, ELEM_NEXUS};
+        use crate::headers::list_object_flags_h::OF_FREE_ACT;
+        use GearLocation::{Home, Pack};
+        let body = wield + 6;
+        let home = crate::borg_store::BORG_HOME;
+        let empty = crate::borg_item::blank_item();
+        let robe = borg_item { iqty: 1, aware: true, ident: true, value: 800,
+            tval: TV_SOFT_ARMOR as u8, ac: 2, weight: 20, ..empty };
+        st.items.items[..wield].fill(empty);
+        st.store.shops[home].ware.fill(empty);
+        st.trait_swap.weapon_swap = 0;
+        st.trait_swap.armour_swap = 0;
+        // The worn Free Action robe stays best; the rFire robe at Home is the
+        // regular backup; the carried rNexus robe is the extra.
+        let mut worn = borg_item { to_a: 6, ..robe };
+        let bit = (OF_FREE_ACT as i32 - engine::FLAG_START) as usize;
+        worn.flags[bit / 8] |= 1 << (bit % 8);
+        st.items.items[body] = worn;
+        let mut fire = borg_item { to_a: 4, ..robe };
+        fire.el_info[ELEM_FIRE as usize].res_level = 1;
+        st.store.shops[home].ware[0] = fire;
+        let mut nexus = robe;
+        nexus.el_info[ELEM_NEXUS as usize].res_level = 1;
+        st.items.items[0] = nexus;
+        assert!(crate::borg_town_live::home_backup_protections());
+        assert_eq!(crate::borg_junk::gear_alternatives(), 1, "one regular backup per slot");
+        let plan = gear_plan(st, body, true);
+        assert_eq!(plan.upgrade, None, "the worn robe stays");
+        let entry = |source| plan.stock.iter().find(|entry| entry.source == source).map(|e| e.release);
+        assert_eq!(entry(Home(0)), Some(0), "the rFire robe is the regular backup");
+        assert_eq!(entry(Pack(0)), Some(0), "the only rNexus source is kept beyond the count");
+        assert_eq!(st.items.items[body].to_a, 6, "the plan restores the worn robe");
+        println!("#1264 exploration pack passed: {case}");
+        std::process::exit(0);
+    }
     if matches!(case, "ranked-gear" | "weight-blocked-upgrade") {
         use GearLocation::{Home, Pack};
         let worn_slot = wield + 6;
