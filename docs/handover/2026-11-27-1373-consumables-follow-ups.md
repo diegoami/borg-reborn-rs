@@ -73,8 +73,10 @@ unconditionally, as before; they were left alone so that 0 keeps today's play.
   citation check passes (2676 parameters).
 - The native case `test_town_drinks_experience_and_star_enlightenment_on_purpose`
   (`test-junk-consumables`).
-- Smoke: every new parameter, and `town_stat_trade_policy`, ships 0, so
-  shipped play is unchanged and `smoke-borg-rs` is not re-recorded.
+- Smoke: every new parameter, and `town_stat_trade_policy`, ships 0.
+  `scripts/rerecord-smoke-borg-rs.sh` reported 4/4 games identical to
+  `smoke-borg-rs` (default core), so nothing is re-recorded. The unit tests,
+  scripts and tools tests, and the native cases passed as well.
 
 ## Not checked
 
