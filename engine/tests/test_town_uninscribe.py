@@ -23,7 +23,7 @@ class TownUninscribeTest(unittest.TestCase):
             env.update(
                 BORG_CORE='borg-rs',
                 BORG_CORE_TRACE='off',
-                BORG_TXT_SET='borg_reborn_errand=none;borg_respawn_winners=FALSE;'
+                BORG_TXT_SET='borg_respawn_winners=FALSE;'
                              'borg_param_caution_stairs_flight_ignore_danger=1',
                 BORG_DEATH_RECORDS_DIR=str(Path(tmp) / 'deaths'),
             )

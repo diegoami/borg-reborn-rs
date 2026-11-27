@@ -5,8 +5,8 @@ committed tree, never its working Python files or cached modules. The run
 uses the pinned adapter's YAML path. The frontend derives
 the diagnostic directory from -summary; profile settings alone select the core.
 
-#540: the environment overrides (BORG_CORE, BORG_ERRAND, BORG_ERRAND_BUDGET,
-BORG_STOPSCARED) are the core's own contract. The current adapter clears every
+#540: the environment overrides (BORG_CORE; and, since #1339, the retired BORG_ERRAND,
+BORG_STOPSCARED and BORG_ERRANDS_PLAN) are the core's own contract. The adapter clears every
 ambient BORG_* variable, so those tests run the game directly (`direct`): the
 pinned adapter's own YAML (`config_text`) and command line (`command`),
 with the override in the environment.
@@ -94,7 +94,7 @@ class CoreProfileContractTest(unittest.TestCase):
         }
         cell = {'suite': 'contract', 'specimen': 'reborn', 'profile': name, 'seed': 29}
         out = self.root / 'cells' / self.catalogue.cell_key(cell)
-        # No ambient core, errand or parameter override can make this pass.
+        # No ambient core or parameter override can make this pass.
         env = {k: v for k, v in os.environ.items() if not k.startswith('BORG_')}
         env.update(overrides or {})
         with patch.dict(os.environ, env, clear=True):
@@ -217,116 +217,54 @@ class CoreProfileContractTest(unittest.TestCase):
         self.assertEqual(self.editor.settings((out / 'user/pborg.yaml').read_text())['borg_scary_list'], name)
         self.assertEqual((out / 'user' / name).read_bytes(), (ROOT / 'harness' / name).read_bytes())
 
-    def test_invalid_errand_profile_is_not_an_unconstrained_core_run(self):
-        for value in [2, True]:
-            with self.subTest(value=value):
-                out, record = self.cell(f'invalid-errand-{value}', {
-                    'borg_reborn_core': 1, 'borg_reborn_errand': value,
-                })
+    # #1339: the errands, /stopscared and the plans were retired. Off, their
+    # settings load (a pborg.yaml line with a warning); on, the run stops.
+    def test_retired_settings_that_would_select_a_feature_stop_the_run(self):
+        # (A zoo profile carries plain values only: `ladder`, not `/dive 2`.)
+        for setting, value in [('borg_reborn_errand', 'ladder'), ('borg_reborn_errand', 2),
+                               ('borg_reborn_stopscared', 50)]:
+            with self.subTest(setting=setting, value=value):
+                out, record = self.cell(f'retired-{setting}-{value}',
+                                        {'borg_reborn_core': 1, setting: value})
                 self.assertIn(record['outcome'], REFUSED, record)
                 self.assertIn('exit code 2', record['error'])
-                self.assertIn('pborg.yaml borg_reborn_errand: invalid errand selector',
-                              (out / 'stderr.log').read_text())
+                stderr = (out / 'stderr.log').read_text()
+                self.assertIn(f'pborg.yaml {setting}:', stderr)
+                self.assertIn('retired (#1339)', stderr)
                 self.assertFalse((out / 'trace-core.jsonl').exists())
-
-    def test_errand_environment_precedence_and_invalid_command_lines(self):
-        for value in ['; ;', 'true', 'dvie 2', '/town; typo']:
-            with self.subTest(value=value):
-                out, record = self.direct('invalid-errand-env-' + str(len(value)),
-                                       {'borg_reborn_core': 1}, {'BORG_ERRAND': value})
+        for variable, value in [('BORG_ERRAND', '/town'), ('BORG_STOPSCARED', 'flee'),
+                                ('BORG_ERRANDS_PLAN', 'errands_plan.txt')]:
+            with self.subTest(variable=variable):
+                out, record = self.direct('retired-env-' + variable.lower(),
+                                       {'borg_reborn_core': 1}, {variable: value})
                 self.assertEqual(record['outcome'], 'harness_failure', record)
-                self.assertIn('exit code 2', record['error'])
-                self.assertIn('BORG_ERRAND: invalid errand selector',
+                self.assertIn(f'{variable}: {value!r}'.replace("'", '"'),
                               (out / 'stderr.log').read_text())
-        for name, value in [('none', 'none'), ('empty', ''), ('command', '/dive 2')]:
-            out, record = self.direct('valid-errand-env-' + name,
-                                   {'borg_reborn_core': 1, 'borg_reborn_errand': 7},
-                                   {'BORG_ERRAND': value})
+
+    def test_retired_settings_left_off_are_ignored(self):
+        out, record = self.cell('retired-off-file', {
+            'borg_reborn_core': 1, 'borg_reborn_errand': 'none', 'borg_reborn_stopscared': 'off',
+        })
+        self.assertEqual(record['outcome'], 'turn_cap', record)
+        stderr = (out / 'stderr.log').read_text()
+        self.assertIn('pborg.yaml borg_reborn_errand is retired and ignored', stderr)
+        self.assertIn('pborg.yaml borg_reborn_stopscared is retired and ignored', stderr)
+        for name, overrides in [('none', {'BORG_ERRAND': 'none'}), ('empty', {'BORG_ERRAND': ''}),
+                                ('fear-off', {'BORG_STOPSCARED': 'off'})]:
+            out, record = self.direct('retired-off-env-' + name, {'borg_reborn_core': 1}, overrides)
             self.assertEqual(record['outcome'], 'turn_cap', record)
             self.assertTrue((out / 'params-core.json').exists())
 
-    def test_original_core_ignores_vendored_errand_configuration(self):
+    def test_original_core_ignores_retired_errand_settings(self):
         out, record = self.direct('original-ignores-errand',
                                {'borg_reborn_core': 0, 'borg_reborn_errand': 7},
-                               {'BORG_ERRAND': 'dvie 2'})
+                               {'BORG_ERRAND': 'dvie 2', 'BORG_STOPSCARED': 'bogus'})
         self.assertEqual(record['outcome'], 'turn_cap', record)
         self.assertTrue((out / 'params.json').exists())
         self.assertFalse((out / 'params-core.json').exists())
 
-    def test_invalid_stopscared_settings_fail_with_source_and_value(self):
-        for value in [0, -1, 1001]:
-            out, record = self.cell(f'invalid-fear-file-{value}', {
-                'borg_reborn_core': 1, 'borg_reborn_stopscared': value,
-            })
-            self.assertIn(record['outcome'], REFUSED, record)
-            self.assertIn('exit code 2', record['error'])
-            self.assertIn('pborg.yaml borg_reborn_stopscared: invalid stopscared value',
-                          (out / 'stderr.log').read_text())
-        for value in ['bogus', '0', '1001', 'off; /dive 2']:
-            out, record = self.direct('invalid-fear-env-' + str(len(value)),
-                                   {'borg_reborn_core': 1}, {'BORG_STOPSCARED': value})
-            self.assertEqual(record['outcome'], 'harness_failure', record)
-            self.assertIn('exit code 2', record['error'])
-            self.assertIn('BORG_STOPSCARED: invalid stopscared value',
-                          (out / 'stderr.log').read_text())
-
-    def test_valid_fear_overrides_and_original_core_isolation(self):
-        for name, value in [('off', 'off'), ('none', 'none'), ('empty', '')]:
-            out, record = self.direct('valid-fear-' + name,
-                                   {'borg_reborn_core': 1, 'borg_reborn_stopscared': 1001},
-                                   {'BORG_STOPSCARED': value})
-            self.assertEqual(record['outcome'], 'turn_cap', record)
-            self.assertTrue((out / 'params-core.json').exists())
-        _, record = self.cell('valid-fear-file-false', {
-            'borg_reborn_core': 1, 'borg_reborn_stopscared': False,
-        })
-        self.assertEqual(record['outcome'], 'turn_cap', record)
-        out, record = self.direct('original-ignores-fear',
-                               {'borg_reborn_core': 0, 'borg_reborn_stopscared': 1001},
-                               {'BORG_STOPSCARED': 'bogus'})
-        self.assertEqual(record['outcome'], 'turn_cap', record)
-        self.assertTrue((out / 'params.json').exists())
-
-    def test_non_utf8_fear_environment_is_not_silently_ignored(self):
-        out, record = self.direct('invalid-fear-bytes', {'borg_reborn_core': 1},
+    def test_non_utf8_retired_environment_is_not_silently_ignored(self):
+        out, record = self.direct('retired-bytes', {'borg_reborn_core': 1},
                                {'BORG_STOPSCARED': os.fsdecode(b'\xff')})
         self.assertEqual(record['outcome'], 'harness_failure', record)
-        self.assertIn('exit code 2', record['error'])
-        self.assertIn('BORG_STOPSCARED: invalid non-UTF-8 stopscared value',
-                      (out / 'stderr.log').read_text())
-
-    def test_invalid_errand_budget_cannot_become_unbounded(self):
-        values = ['bogus', '', '-1', '9223372036854775808', '1.5']
-        for i, value in enumerate(values):
-            out, record = self.direct(f'invalid-budget-{i}', {'borg_reborn_core': 1},
-                                   {'BORG_ERRAND': '/dive 2', 'BORG_ERRAND_BUDGET': value})
-            self.assertEqual(record['outcome'], 'harness_failure', record)
-            self.assertIn('exit code 2', record['error'])
-            self.assertIn('BORG_ERRAND_BUDGET: invalid budget',
-                          (out / 'stderr.log').read_text())
-        out, record = self.direct('invalid-budget-bytes', {'borg_reborn_core': 1},
-                               {'BORG_ERRAND': '/dive 2',
-                                'BORG_ERRAND_BUDGET': os.fsdecode(b'\xff')})
-        self.assertEqual(record['outcome'], 'harness_failure', record)
-        self.assertIn('BORG_ERRAND_BUDGET: invalid non-UTF-8 budget',
-                      (out / 'stderr.log').read_text())
-
-    def test_valid_budget_and_inactive_core_isolation(self):
-        for value in ['0', 'none', '9223372036854775807']:
-            _, record = self.direct('valid-budget-' + value, {'borg_reborn_core': 1},
-                                  {'BORG_ERRAND': '/dive 2', 'BORG_ERRAND_BUDGET': value})
-            self.assertEqual(record['outcome'], 'turn_cap', record)
-        out, record = self.direct('finite-budget', {'borg_reborn_core': 1},
-                               {'BORG_ERRAND': '/dive 2', 'BORG_ERRAND_BUDGET': '1'})
-        # The core's own stop, read from its summary (#540: run directly).
-        self.assertEqual(record['outcome'], 'borg_stopped', record)
-        summary = json.loads((out / 'summary.json').read_text())
-        self.assertEqual(summary['stop_reason'], 'borg_stopped')
-        self.assertLess(summary['game_turns'], 300)
-        for name, settings, errand in [
-            ('original', {'borg_reborn_core': 0}, '/dive 2'),
-            ('inactive', {'borg_reborn_core': 1}, 'none'),
-        ]:
-            _, record = self.direct('ignored-budget-' + name, settings,
-                                  {'BORG_ERRAND': errand, 'BORG_ERRAND_BUDGET': 'bogus'})
-            self.assertEqual(record['outcome'], 'turn_cap', record)
+        self.assertIn('BORG_STOPSCARED: invalid non-UTF-8 value', (out / 'stderr.log').read_text())

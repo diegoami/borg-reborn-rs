@@ -113,8 +113,9 @@ pub(crate) mod borg_util;
 pub(crate) mod engine;
 pub(crate) mod state;
 pub mod regress;
-// borg-reborn-rs (#208): the errands' API.
-pub mod shell;
+// borg-reborn-rs (#1339): the run's configuration file (the errands of
+// #208, whose module held it, are retired).
+pub mod config_file;
 // borg-reborn-rs (#219): calibration registry.
 pub(crate) mod params;
 // borg-reborn-rs (#222): observational decision tracing.
@@ -127,8 +128,6 @@ pub fn do_cmd_borg_key(cmd: u8) {
     engine::do_cmd_borg_key(cmd)
 }
 
-// Owner-requested class/level errand-plan POC (#305).
-pub mod errands_plan;
 pub mod scary_list;
 mod borg_fast_fragile;
 mod borg_unseen_belief;

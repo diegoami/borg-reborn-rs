@@ -705,8 +705,8 @@ pub fn borg_init_txt_file(st: &mut BorgState) -> bool {
         st.init.init_failure = true;
     }
 
-    let text = crate::shell::borg_txt_contents()
-        .unwrap_or_else(|error| crate::shell::config_file_error(error));
+    let text = crate::config_file::borg_txt_contents()
+        .unwrap_or_else(|error| crate::config_file::config_file_error(error));
     let mut file = ConfigLines { st, lines: text.lines() };
     let (formulas_found, old_formulas_found) = read_txt_settings(&mut file);
     let warning = finish_txt_settings(&mut file, formulas_found, old_formulas_found);
@@ -955,8 +955,8 @@ pub fn borg_prepare_race_class_info(st: &mut BorgState) {
 /// Initialize the Borg (`borg_init`).
 pub fn borg_init(st: &mut BorgState) {
     // borg-reborn-rs (#219): validate once before RNG or decisions.
-    // borg-reborn-rs (#305): opt-in separate plan file, validated before play.
-    crate::errands_plan::initialize();
+    // borg-reborn-rs (#704, #1339): a world nothing loaded stops the game.
+    crate::config_file::check_world();
     crate::params::initialize();
     // borg-reborn-rs (#518): a scary list is read and checked before play.
     let _ = crate::scary_list::selected();
@@ -1757,7 +1757,7 @@ mod tests {
     /// The parity YAML carries the same settings as the donor's C reference.
     #[test]
     fn donor_yaml_matches_the_c_reference_and_names_every_setting() {
-        let yaml = crate::shell::yaml_settings(include_str!("../pborg.yaml")).unwrap();
+        let yaml = crate::config_file::yaml_settings(include_str!("../pborg.yaml")).unwrap();
         let harness = borg_txt_settings(&yaml);
         let mut shipped = borg_txt_settings(include_str!("../c-reference/borg.txt"));
         for (_, value) in &mut shipped {
@@ -1784,7 +1784,7 @@ mod tests {
     /// default is a product choice, and it is listed.
     #[test]
     fn the_borg_txt_values_follow_the_declaration() {
-        let yaml = crate::shell::yaml_settings(include_str!("../pborg.yaml")).unwrap();
+        let yaml = crate::config_file::yaml_settings(include_str!("../pborg.yaml")).unwrap();
         let harness = borg_txt_settings(&yaml);
         // the configured values are compared case-insensitively: one of the
         // borg.txt lines says "false" in lower case
@@ -1816,7 +1816,7 @@ mod tests {
     #[test]
     fn reborn_profile_sets_the_black_market_limits() {
         use crate::borg_headers::borg_h::{BORG_BLACK_MARKET_MAX_PERCENTAGE, BORG_SUM_EXCLUDED_FROM_BLACK_MARKET, BORG_TOWN_MAX_NON_MISSILE_COPIES};
-        let (cfg, _) = cfg_of(crate::shell::yaml_settings(include_str!("../../harness/pborg.yaml")).unwrap().as_bytes());
+        let (cfg, _) = cfg_of(crate::config_file::yaml_settings(include_str!("../../harness/pborg.yaml")).unwrap().as_bytes());
         assert_eq!(cfg[BORG_BLACK_MARKET_MAX_PERCENTAGE as usize], 60);
         assert_eq!(cfg[BORG_SUM_EXCLUDED_FROM_BLACK_MARKET as usize], 500);
         assert_eq!(cfg[BORG_TOWN_MAX_NON_MISSILE_COPIES as usize], 35);

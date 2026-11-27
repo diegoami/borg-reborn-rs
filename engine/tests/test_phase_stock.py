@@ -1,4 +1,8 @@
-"""Native M13 shopping from a Mage who already knows Phase Door."""
+"""Native M13 shopping from a Mage who already knows Phase Door.
+
+The Borg shops in town as it always does; the `/shopping` errand that used
+to stop it there was retired (#1339), so the run ends at its turn or key cap.
+"""
 import hashlib
 import json
 import os
@@ -35,7 +39,7 @@ class PhaseStockTest(unittest.TestCase):
             (out / 'user/pborg.yaml').write_bytes(config)
             env = {k: v for k, v in os.environ.items()
                    if not k.startswith(('BORG_', 'BORGH_', 'ANGBAND_'))}
-            env.update(BORG_CORE='borg-rs', BORG_ERRAND='/shopping',
+            env.update(BORG_CORE='borg-rs',
                        BORG_RUN_DIR=str(out / 'diagnostics'),
                        BORG_TOWN_PLAN_RECORD=str(out / 'town-plan.jsonl'),
                        TZ='UTC', LANG='C.UTF-8', LC_ALL='C.UTF-8')
@@ -51,8 +55,7 @@ class PhaseStockTest(unittest.TestCase):
             summary = json.loads((out / 'summary.json').read_text())
             self.assertEqual(summary['loaded_turn'], FIXTURE['turn'])
             self.assertFalse(summary['dead'], summary)
-            self.assertEqual(summary['stop_reason'], 'borg_stopped')
-            self.assertEqual(summary['depth'], 0)
+            self.assertIn(summary['stop_reason'], ('turns', 'keys'), summary)
             self.assertIn('You bought a Scroll of Phase Door for 15 gold.',
                           (out / 'messages.log').read_text())
             plans = [json.loads(line) for line in (out / 'town-plan.jsonl').read_text().splitlines()]

@@ -49,7 +49,7 @@ done
 ARCH=$(uname -m); [ "$ARCH" != aarch64 ] || ARCH=arm64
 NAME="borg-reborn-rs-$VERSION-$PLATFORM-$ARCH"
 STAGE="$OUT/$NAME"
-rm -rf "$STAGE"; mkdir -p "$STAGE"/borg/plans "$STAGE"/docs "$STAGE"/LICENSES
+rm -rf "$STAGE"; mkdir -p "$STAGE"/borg "$STAGE"/docs "$STAGE"/LICENSES
 
 # The game: each build as its own executable, sharing the game data.
 FIRST=""
@@ -67,10 +67,10 @@ for b in "${BUILDS[@]}"; do
     fi
 done
 
-# A reference copy sits beside the plans in the package.
+# A reference copy of the settings in the package (the plans beside it were
+# retired, #1339).
 BT="$STAGE/borg/pborg.yaml"
 "$ROOT/harness/prepare-pborg-config.sh" "$STAGE/borg"
-cp "$ROOT"/harness/plans/* "$STAGE/borg/plans/"
 
 # A game started directly (no -d options: double-clicking angband.exe, or
 # ./angband) uses lib/user, lib/save, lib/scores, lib/panic and
