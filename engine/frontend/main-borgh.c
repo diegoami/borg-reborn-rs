@@ -193,6 +193,7 @@ static struct timeval start_tv;
 static bool finished = false;
 static bool borg_started = false;
 static bool opt_cborg = false;
+static bool test_map_export = false;
 static bool opt_borg_help = false;
 static int startup_acks = 0;	/* "-more-" prompts answered before the Borg's first key */
 
@@ -936,12 +937,15 @@ static errr term_xtra_borgh(int n, int v)
 		 */
 		if (script_pos < script_len) {
 			if (!v) return 0;
-			/* Loading can trigger msg_flush() after the splash. Leave
-			 * the start marker queued while any such prompt is open. */
-			if (opt_load && script[script_pos] == SCRIPT_START_BORG
+			/* Keep scripted input queued while msg_flush() waits for
+			 * acknowledgment during load or the map export test. */
+			bool load_start = opt_load && script[script_pos] == SCRIPT_START_BORG;
+			if ((load_start || (test_map_export && borg_started))
 					&& !inkey_flag && more_prompt_shown()) {
-				if (getenv("BORGH_DEBUG"))
-					fprintf(stderr, "borgh: acknowledging load -more- prompt\n");
+				if (getenv("BORGH_DEBUG")) {
+					fprintf(stderr, "borgh: acknowledging %s -more- prompt\n",
+						load_start ? "load" : "map export");
+				}
 				Term_keypress(ESCAPE, 0);
 				return 0;
 			}
@@ -1287,6 +1291,25 @@ errr init_borgh(int argc, char *argv[])
 	if (opt_cborg) {
 		script_add('B');                      /* switch PBorg to CBorg */
 		script_add(KTRL('Z'));                /* open CBorg's commands */
+	}
+	/* #1303: drive the real P-Borg filename prompt before starting play. */
+	const char *map_export = getenv("BORGH_TEST_MAP_EXPORT");
+	if (map_export) {
+		if (opt_cborg) quit("borgh: the map export test requires P-Borg");
+		test_map_export = true;
+		script_add('l');
+		if (streq(map_export, "cancel")) {
+			script_add('\\');
+			script_add(ESCAPE);
+		} else if (streq(map_export, "open_failure")) {
+			script_add('.'); /* A directory cannot be opened for writing. */
+			script_add(KC_ENTER);
+		} else if (streq(map_export, "success")) {
+			script_add(KC_ENTER); /* Accept the default archive path. */
+		} else {
+			quit("borgh: unknown map export test case");
+		}
+		script_add(KTRL('Z'));
 	}
 	script_add('z');                          /* activate selected Borg */
 
