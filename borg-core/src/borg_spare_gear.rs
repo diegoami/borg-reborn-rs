@@ -480,7 +480,11 @@ fn game_tags_only(desc: &[core::ffi::c_char]) -> bool {
 pub(crate) fn unknown_rune_excess(st: &BorgState, whole_stack: bool) -> Option<crate::borg_junk::SurplusDrop> {
     // Review of #1312: while Identify Rune is usable, `borg_test_stuff`
     // gets its attempt first. The cleanup runs earlier in the dungeon think.
-    if st.borg.tr(BI_AID) > 0 {
+    // Usable means a scroll in the pack (borg_trait.rs adds 1000 to BI_AID
+    // for a learned spell) or the spell with the mana to cast it now.
+    if st.borg.tr(BI_AID) % 1000 > 0
+        || crate::borg_magic::borg_spell_okay(st, crate::borg_headers::borg_magic_h::IDENTIFY_RUNE)
+    {
         return None;
     }
     let pack = inven_wield() as usize;
@@ -1204,6 +1208,9 @@ fn ranked_cleanup_fixture(st: &mut BorgState) {
     let excess = |st: &BorgState, whole| unknown_rune_excess(st, whole).map(|drop| (drop.slot, drop.quantity));
     st.borg.trait_[BI_AID as usize] = 1;
     assert_eq!(excess(st, false), None, "identification comes before the cap");
+    st.borg.trait_[BI_AID as usize] = 1000;
+    assert!(!crate::borg_magic::borg_spell_okay(st, crate::borg_headers::borg_magic_h::IDENTIFY_RUNE));
+    assert_eq!(excess(st, false), Some((0, 1)), "a spell the Borg cannot cast now does not hold the cap");
     st.borg.trait_[BI_AID as usize] = 0;
     assert_eq!(excess(st, false), Some((0, 1)), "the lower-valued unknown dagger leaves");
     st.items.items[0] = empty;
