@@ -13,10 +13,12 @@ from rust_ports import functions, mask_non_code, without_test_items
 ROOT = Path(__file__).resolve().parents[1]
 TARGET = '24be98732748230062882fe2b7d9601dba5e2cc0'
 RECEIPT = ROOT / 'docs/R45-PORT-SOURCE.json'
-# R5 adds an immutable request and its dispatch. Keep checking the exact
-# receiving bytes for those files alongside the unchanged R4.5 policy.
-R5_DISPATCH = {
+# The R5 review compared the refactored selector and its helpers with the
+# native implementation. Pin the reviewed files alongside the R4.5 receipt.
+R5_RECEIVING_FILES = {
     'borg-core/src/decisions.rs': '911740a6d1f693a65ebc35270ea207e7ee4499418edf23727e2aa6fe888def72',
+    'borg-core/src/memory.rs': 'd147735a90b4016613343659e3a2250aa93140a43d017f81c470669082d892fe',
+    'borg-next/src/stateful/flow.rs': 'f3ec95bddecfac6e9221b883227754e4b00777d87017eebfbca9bedc7558e015',
     'borg-next/src/stateful/mod.rs': 'fcef991129cd4b2d9a0eb5bea75483633a85357925b71db9d6dd257245c862d0',
 }
 MODULES = {
@@ -119,7 +121,7 @@ def normalize(body, traits):
     return code, literals
 
 
-def measure(root):
+def measure(root, *, receiving_r5=False):
     projections = trait_projections((root / 'borg-next/src/lib.rs').read_text())
     rewrites = {name: reason for reason, names in REWRITES.items() for name in names}
     active = {}
@@ -170,6 +172,9 @@ def measure(root):
     for path in ('borg-next/src/lib.rs', 'borg-next/src/stateful/mod.rs', 'borg-core/src/decision_api.rs',
                  'borg-core/src/decisions.rs', 'borg-core/src/threat_facts.rs'):
         active[path] = digest((root / path).read_text())
+    if receiving_r5:
+        for path in R5_RECEIVING_FILES:
+            active[path] = hashlib.sha256((root / path).read_bytes()).hexdigest()
     return {'schema': 'borg-reborn-rs/r45-port-source@1', 'receiving_main': TARGET,
             'pinned_native_files': pinned, 'receiving_files': active, 'modules': modules}
 
@@ -179,15 +184,15 @@ def main():
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--write', action='store_true', help='record after reviewing receiving source changes')
     mode.add_argument('--receiving-r5', action='store_true',
-                      help='verify prior policy while allowing the R5 dispatch additions')
+                      help='verify the reviewed R5 files alongside the R4.5 receipt')
     args = parser.parse_args()
-    actual = measure(ROOT)
+    actual = measure(ROOT, receiving_r5=args.receiving_r5)
     if args.write:
         RECEIPT.write_text(json.dumps(actual, indent=2) + '\n')
     else:
         expected = json.loads(RECEIPT.read_text())
         if args.receiving_r5:
-            expected['receiving_files'].update(R5_DISPATCH)
+            expected['receiving_files'].update(R5_RECEIVING_FILES)
         if actual != expected:
             raise SystemExit('receiving proof differs from its recorded source or reviewed rewrites')
     counts = Counter('reviewed rewrite' if 'rewrite' in row else 'normalized match'

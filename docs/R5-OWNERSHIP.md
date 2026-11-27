@@ -165,7 +165,7 @@ keys, return value, state and dependency/RNG order. Run small exact
 off/check/switch smoke when a new entry is wired. Use Zoo for the full
 45-start comparison, with accepted native and a newly pinned candidate
 built under the shipped settings. [Existing stair cases](../engine/tests/test_stair_handoff.py#L57) ·
-[Weighted route controls](../borg-core/src/borg_flow.rs#L1895) ·
+[Weighted route controls](../borg-core/src/borg_flow.rs#L1968) ·
 [Shadow gate](../harness/check-r45-suite.py)
 
 This task is a source audit. The control list describes validation for
