@@ -371,13 +371,24 @@ borg_param_town_second_stat_potions_by_class: 0
 # you are not going to consume it, dump it"; "a Ranger would choose to drink
 # Nimbleness"): one rule buys, keeps and drinks the five gain-one/lose-one
 # potions. The class must drink it (borg_junk's table) and the expected gain
-# must reach the margin times the expected loss of a random other stat, in
-# engine table steps. Refused offers are skipped, refused copies are sold or
-# dropped in town, accepted copies are drunk on a quiet turn, and known
-# refused or never-used kinds are not picked up. The weights and the margin
-# are neutral hypotheses (per class with __<class>).
-borg_param_town_stat_trade_policy: 1
+# at the permanent stats must reach the margin times the expected loss of a
+# random other stat, in engine table steps. Refused offers are skipped,
+# refused copies are sold or dropped in town, accepted copies are drunk on a
+# quiet turn, and known refused kinds are not walked to. The weights and the
+# margin are neutral hypotheses (per class with __<class>). Shipped 0 until
+# P8 is promoted (PLAN.md: no new capability in P8; review of #1372): turn it
+# on in P9 after its own zoo comparison.
+borg_param_town_stat_trade_policy: 0
 borg_param_town_stat_trade_margin_percent: 100
+# #1375: one predicate for the kinds a character refuses (the never-used
+# kinds, the refused stat trades, an Unlight class's Light scroll and torch)
+# across the shop, the pack and Home, and the floor. Off until P9.
+borg_param_town_refused_kind_policy: 0
+# #1373, #1374: drink a known Potion of Experience, and a known Potion of
+# *Enlightenment* (which then also leaves the never-used kinds), on purpose.
+# Off until P9.
+borg_param_item_use_drink_experience: 0
+borg_param_item_use_star_enlightenment: 0
 
 # Staples lose value (#863, owner: "make staple objects start losing value";
 # "it must be a decaying curve"; "Food and Light start decaying from 4, phase

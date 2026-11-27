@@ -1027,6 +1027,23 @@ fn drink_wanted_second_stat_potion(st: &mut BorgState) -> bool {
     borg_quaff_potion(st, sval)
 }
 
+/// borg-reborn-rs (#1373, #1374): quaff a known Potion of Experience
+/// (`item_use_drink_experience`; `object.txt`: `GAIN_EXP` 200000, no
+/// downside) and a known Potion of *Enlightenment*
+/// (`item_use_star_enlightenment`: it restores and gains Intelligence and
+/// Wisdom, with `LIGHT_LEVEL`, which is harmless in town), at any depth like
+/// Augmentation: the pure stat gains above take no danger check either.
+fn drink_permanent_gain(st: &mut BorgState) -> bool {
+    if param(Param::item_use_drink_experience) != 0 && borg_quaff_potion(st, st.item_val.sv_potion_inc_exp) {
+        return true;
+    }
+    if param(Param::item_use_star_enlightenment) != 0 {
+        let sval = crate::borg_town_capability::star_enlightenment_sval();
+        return sval >= 0 && borg_quaff_potion(st, sval);
+    }
+    false
+}
+
 /// Use things in a useful, but non-essential, manner.
 pub fn borg_use_things(st: &mut BorgState) -> bool {
     /* Quaff experience restoration potion */
@@ -1049,6 +1066,14 @@ pub fn borg_use_things(st: &mut BorgState) -> bool {
         || borg_quaff_potion(st, st.item_val.sv_potion_inc_dex)
         || borg_quaff_potion(st, st.item_val.sv_potion_inc_con)
     {
+        return true;
+    }
+
+    // borg-reborn-rs (#1373, #1374): a Potion of Experience and a Potion of
+    // *Enlightenment* have no harmful effect and their benefit is the drink
+    // (`GAIN_EXP`; `GAIN_STAT` for Intelligence and Wisdom). Carrying one is
+    // the defect #1371 fixed for Nimbleness.
+    if drink_permanent_gain(st) {
         return true;
     }
 
