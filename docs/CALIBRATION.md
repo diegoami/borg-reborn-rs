@@ -34,7 +34,9 @@ each behind a switch whose 0 is borg-rs at the pin:
   `break` only left its own scan;
 - without light, "You have removed the" turns the rubble grid the Borg just
   dug into broken door (the dig records its target), instead of a 2x2 loop
-  that read only the goal grid. borg-rs v15R clears the 3x3 around the Borg,
+  that read only the goal grid (no grid is recorded while confused, and "You are
+  confused." drops the record: a confused tunnel goes in another direction,
+  `player-util.c:1369-1372`). borg-rs v15R clears the 3x3 around the Borg,
   which also unblocks other remembered rubble after one dig (one dig removes
   one grid, `cmd-cave.c:590-595`); the review of #1355 found it, so this
   carry is narrower than v15R.
@@ -1517,8 +1519,8 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2581` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2578` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2579` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2584` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2585` |
 | `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2580` |
 | `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2581` |
 | `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2582` |
@@ -8215,8 +8217,8 @@ local, a lead only, RULES 14; keys.log sha256 prefixes):
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2610` |
-| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2607` |
-| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2608` |
+| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2613` |
+| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2614` |
 | `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2609` |
 | `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2610` |
 | `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2611` |
@@ -8970,7 +8972,7 @@ messages lose the false "PAIN:You" notes. Neither is measured (RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `messages_player_not_pain` | 0 | flag | 0–1 | `borg_messages.rs:1322` |
+| `messages_player_not_pain` | 0 | flag | 0–1 | `borg_messages.rs:1354` |
 | `trait_speed_timed` | 0 | flag | 0–1 | `borg_trait.rs:885` |
 
 ## #1004: keeping a first spellbook before its first spell

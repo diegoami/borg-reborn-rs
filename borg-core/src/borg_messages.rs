@@ -1165,6 +1165,13 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
         return;
     }
 
+    // A confused Borg's tunnel goes in another direction (#1353)
+    if prefix(msg, b"You are confused.")
+        && crate::params::value(crate::params::Param::messages_dark_rubble_upstream) != 0
+    {
+        dug_rubble_message(st, msg);
+    }
+
     // Removed rubble.  Important when out of lite
     if prefix(msg, b"You have removed the ") {
         // borg-reborn-rs (#1353): borg-rs v15R (5e6cd07) clears the remembered
@@ -1172,9 +1179,10 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
         // (cmd-cave.c:590-595), so only the grid the Borg dug becomes broken
         // door; the other remembered rubble stays blocked (review of #1355).
         if crate::params::value(crate::params::Param::messages_dark_rubble_upstream) != 0 {
-            let dug = st.flow_misc.dug_rubble.take();
             if st.borg.tr(BI_LIGHT) == 0 {
-                clear_dug_rubble(st, dug);
+                dug_rubble_message(st, msg);
+            } else {
+                st.flow_misc.dug_rubble = None;
             }
             return;
         }
@@ -1285,6 +1293,21 @@ fn clear_dug_rubble(st: &mut BorgState, dug: Option<loc>) {
     let grid = st.cave.grid_mut(d.x, d.y);
     if grid.feat == FEAT_RUBBLE as u8 {
         grid.feat = FEAT_BROKEN as u8;
+    }
+}
+
+/// The two messages that decide a dug grid (#1353, review of #1355). A
+/// confused tunnel goes in another direction and says "You are confused."
+/// first (`player_confuse_dir`, player-util.c:1369-1372; `do_cmd_tunnel`,
+/// cmd-cave.c:673-676), so the recorded target is not the grid dug: it is
+/// dropped, and the "You have removed the rubble" that follows clears
+/// nothing. Called with the flag on, for these two messages only.
+fn dug_rubble_message(st: &mut BorgState, msg: &[u8]) {
+    if prefix(msg, b"You are confused.") {
+        st.flow_misc.dug_rubble = None;
+    } else if prefix(msg, b"You have removed the ") {
+        let dug = st.flow_misc.dug_rubble.take();
+        clear_dug_rubble(st, dug);
     }
 }
 
@@ -1851,15 +1874,35 @@ mod tests {
         st.cave.grid_mut(40, 19).feat = FEAT_RUBBLE as u8; // north, still there
         st.flow_misc.dug_rubble = Some(loc { x: 41, y: 20 });
 
-        let dug = st.flow_misc.dug_rubble.take();
-        clear_dug_rubble(&mut st, dug);
+        dug_rubble_message(&mut st, b"You have removed the rubble.");
         assert_eq!(st.cave.grid(41, 20).feat, FEAT_BROKEN as u8);
         assert_eq!(st.cave.grid(40, 19).feat, FEAT_RUBBLE as u8, "not dug");
+        assert!(st.flow_misc.dug_rubble.is_none(), "the dig is used up");
 
         // no recorded dig, or one that is not next to the Borg: nothing moves
-        clear_dug_rubble(&mut st, None);
+        dug_rubble_message(&mut st, b"You have removed the rubble.");
         clear_dug_rubble(&mut st, Some(loc { x: 40, y: 18 }));
         assert_eq!(st.cave.grid(40, 19).feat, FEAT_RUBBLE as u8);
+    }
+
+    /// #1353 (second review of #1355): a confused tunnel aimed east and sent
+    /// north says "You are confused." and then removes the north rubble. The
+    /// east grid, which the Borg aimed at, stays rubble.
+    #[test]
+    fn a_redirected_dark_dig_clears_no_remembered_rubble() {
+        use crate::borg_headers::borg_trait_h::BI_MAX;
+        let mut st = BorgState::default();
+        st.cave = crate::borg_cave::CaveState::empty_for_test();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        st.borg.c = loc { x: 40, y: 20 };
+        st.cave.grid_mut(41, 20).feat = FEAT_RUBBLE as u8; // east, aimed at
+        st.cave.grid_mut(40, 19).feat = FEAT_RUBBLE as u8; // north, really dug
+        st.flow_misc.dug_rubble = Some(loc { x: 41, y: 20 });
+
+        dug_rubble_message(&mut st, b"You are confused.");
+        dug_rubble_message(&mut st, b"You have removed the rubble.");
+        assert_eq!(st.cave.grid(41, 20).feat, FEAT_RUBBLE as u8, "aimed at, not dug");
+        assert_eq!(st.cave.grid(40, 19).feat, FEAT_RUBBLE as u8, "left to the map scan");
     }
 
     #[test]
