@@ -517,9 +517,10 @@ impl Swap {
 pub(crate) fn fixture(st: &mut BorgState, case: &str) {
     use std::sync::atomic::{AtomicU8, Ordering::Relaxed};
     static SETUP: AtomicU8 = AtomicU8::new(0);
-    assert!(matches!(case, "trim" | "arrival" | "arrival-shop" | "restore" | "no-storage" | "reserve-overlap" | "reserve-overweight" | "reserve-overweight-shop"));
+    assert!(matches!(case, "trim" | "arrival" | "arrival-shop" | "restore" | "no-storage" | "reserve-overlap" | "reserve-swap" | "reserve-overweight" | "reserve-overweight-shop"));
     let shop_reserve = case == "reserve-overweight-shop";
     let reserve = shop_reserve || case == "reserve-overweight";
+    let overlap = matches!(case, "reserve-overlap" | "reserve-swap");
     if SETUP.load(Relaxed) == 1 { return; }
     let wield = inven_wield() as usize;
     if SETUP.load(Relaxed) == 0 {
@@ -533,7 +534,7 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
         };
         engine::setup_test_town_loadout(
             st, excess, !shop && !reserve && case != "no-storage", false,
-            if shop || shop_reserve { 500 } else { 0 }, shop || case == "reserve-overlap", !shop_reserve,
+            if shop || shop_reserve { 500 } else { 0 }, shop || overlap, !shop_reserve, case == "reserve-swap",
         );
         crate::borg_item::borg_find_all_items(st);
         crate::borg_trait::borg_notice(st, true);
@@ -544,7 +545,7 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
             SETUP.store(2, Relaxed);
             return;
         }
-        if case == "reserve-overlap" {
+        if overlap {
             use crate::borg_town_home::{self, Role};
             assert!(borg_town_home::enabled(st));
             let home_item = |tval, sval| {
@@ -558,6 +559,22 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
             assert_eq!(borg_town_home::classify(st, second_sight, false, 0), Role::Reject);
             assert_eq!(borg_town_home::classify(st, speed, false, 0), Role::LatePotion);
             assert!(same_item(&eviction(st).expect("the excluded stack makes room"), second_sight));
+            if case == "reserve-swap" {
+                // #1317: under the shipped ranked gear policy known Home gear
+                // is protected from Home replacement and from the loadout's
+                // eviction, whatever its power (a unit test in
+                // borg_town_utility covers a swap with no power).
+                let ring = *st.store.shops[BORG_HOME].ware.iter()
+                    .find(|it| it.iqty > 0 && u32::from(it.tval) == TV_RING)
+                    .expect("the fixture ring is known at Home");
+                assert!(crate::borg_junk::gear_alternatives() > 0, "shipped ranked gear policy");
+                assert!(borg_town_home::classify(st, &ring, false, 0).gear());
+                let kit = crate::borg_town_shadow::kit_for_test(st);
+                let fact = kit.iter().find(|k| k.place == crate::borg_town_dispose::Place::Home
+                    && k.kind == u32::from(ring.kind)).expect("the ring is in the Home kit");
+                assert!(fact.home_role.gear() && fact.protect_disposal,
+                    "role {:?}, protected {}, power {}", fact.home_role, fact.protect_disposal, fact.power);
+            }
             println!("#1239 town loadout passed: {case}");
             std::process::exit(0);
         }

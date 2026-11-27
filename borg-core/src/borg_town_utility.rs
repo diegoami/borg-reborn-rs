@@ -1379,6 +1379,32 @@ mod tests {
         }
     }
 
+    /// #1317: a resist swap stored at Home has no power below the swap
+    /// depth (`borg_trait_swap.rs`). Supplies below their share may replace
+    /// unprotected gear, but never gear the ranked plan protects.
+    #[test]
+    fn supplies_never_replace_protected_gear_without_power() {
+        use crate::borg_town_record::PLAN_SCHEMA;
+        let st = state(10, 23, 160);
+        let stock = KitItem { need: -1, reduction: 0, ..recall(Place::Home) };
+        let swap = KitItem { home_role: Role::Gear, power: 0, kind: 1, slot: 0, ..stock };
+        let filler = KitItem { home_role: Role::Gear, power: 50, ..stock };
+        let mut kit = vec![swap];
+        kit.extend((1..24).map(|slot| KitItem { kind: 1 + u32::from(slot), slot, ..filler }));
+        let out = vec![Disposition::Keep; kit.len()];
+        let replace = |kit: &[KitItem]| {
+            let mut inp = input(kit);
+            inp.revision = PLAN_SCHEMA;
+            inp.home_slots = 0;
+            let u = Utility::of(&st, kit, false);
+            assert_eq!(home_supply_balance(&inp, &out), Some((0, 8)));
+            home_replacement(&inp, &u, &out, 100, Role::LatePotion.rank(), 1)
+        };
+        assert_eq!(replace(&kit), Some(0), "an unprotected swap without power is promoted");
+        kit[0].protect_disposal = true;
+        assert_ne!(replace(&kit), Some(0), "the ranked plan's protection keeps the swap");
+    }
+
     #[test]
     fn the_last_empty_slot_goes_to_scarce_stock_ahead_of_a_normal_shop_spare() {
         use crate::borg_town_record::PLAN_SCHEMA;

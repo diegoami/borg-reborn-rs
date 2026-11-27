@@ -35,11 +35,11 @@ class TownLoadoutTest(unittest.TestCase):
                 BORG_CORE="borg-rs",
                 BORG_TEST_TOWN_LOADOUT=case,
                 BORG_PARAM_TOWN_SHOP_OVERLOADED="2" if arrival else "1",
-                BORG_PARAM_JUNK_EXPLORATION_FIRST="1" if reserve else "0",
+                BORG_PARAM_JUNK_EXPLORATION_FIRST="1" if reserve or case == "reserve-swap" else "0",
                 BORG_PARAM_TOWN_LOADOUT_POWER_LOSS="3000",
                 BORG_PARAM_TOWN_QUIVER_TRIM_RESERVE__PRIEST=ammo_reserve,
                 BORG_PARAM_TOWN_RECALL_URGENT_DEPTH="5",
-                BORG_PARAM_TOWN_HOME_RESERVE="1" if reserve or case in ("reserve-overlap", "arrival-shop") else "0",
+                BORG_PARAM_TOWN_HOME_RESERVE="1" if reserve or case in ("reserve-overlap", "reserve-swap", "arrival-shop") else "0",
                 BORG_PARAM_CAUTION_TOWN_NEVER_SCARY="1",
                 BORG_PARAM_CAUTION_SCARY_NAMED_MONSTERS="0",
                 BORG_PARAM_CAUTION_SCARY_DAMAGE_PERCENT="0",
@@ -101,6 +101,10 @@ class TownLoadoutTest(unittest.TestCase):
 
     def test_excluded_effect_item_is_evicted_ahead_of_a_priority_potion(self):
         self.run_case("reserve-overlap")
+
+    def test_resist_swap_at_home_is_never_replacement_stock(self):
+        # #1317: a Ring of Resist Poison with no carried power stays protected.
+        self.run_case("reserve-swap")
 
 
 if __name__ == "__main__":
