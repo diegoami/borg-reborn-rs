@@ -380,6 +380,27 @@ struct GearChoice {
     observed: bool,
 }
 
+/// The known benefits any of `items` gives, as one item. Drawbacks are left
+/// out, so a kept piece's curse never makes a candidate look distinct.
+fn combined_properties<'a>(items: impl Iterator<Item = &'a borg_item>) -> borg_item {
+    let mut combined = crate::borg_item::blank_item();
+    for item in items {
+        for (have, gives) in combined.flags.iter_mut().zip(&item.flags) { *have |= gives; }
+        for (have, gives) in combined.modifiers.iter_mut().zip(&item.modifiers) { *have = (*have).max(*gives); }
+        for (have, gives) in combined.el_info.iter_mut().zip(&item.el_info) {
+            have.res_level = have.res_level.max(gives.res_level);
+            have.flags |= gives.flags;
+        }
+        for (have, gives) in combined.brands.iter_mut().zip(&item.brands) { *have |= gives; }
+        for (have, gives) in combined.slays.iter_mut().zip(&item.slays) { *have = (*have).max(*gives); }
+    }
+    for flag in [OF_IMPAIR_HP, OF_IMPAIR_MANA, OF_AFRAID, OF_NO_TELEPORT, OF_AGGRAVATE, OF_DRAIN_EXP, OF_STICKY, OF_FRAGILE] {
+        let bit = (flag as i32 - engine::FLAG_START) as usize;
+        combined.flags[bit / 8] &= !(1 << (bit % 8));
+    }
+    combined
+}
+
 /// #1310: `extra` further backups beyond the regular `capacity` stay only
 /// when each supplies a known property that no worn piece and no better
 /// kept backup gives, and only at Home, or in the pack while Home has room
@@ -426,8 +447,11 @@ fn backup_counts(choices: &[GearChoice], worn: &[usize], capacity: usize, extra:
         if extras == extra { break; }
         let item = &choices[index].item;
         let at_home = matches!(choices[index].source, GearLocation::Home(_));
-        let covered = (0..choices.len()).any(|kept| kept != index && keep[kept] > 0
-            && choices[kept].item.iqty > 0 && known_properties_cover(&choices[kept].item, item));
+        // Review of #1314: a property counts as covered when any kept piece
+        // gives it, so test the combined coverage of the kept gear.
+        let kept = (0..choices.len()).filter(|&kept| kept != index && keep[kept] > 0 && choices[kept].item.iqty > 0)
+            .map(|kept| &choices[kept].item);
+        let covered = known_properties_cover(&combined_properties(kept), item);
         if keep[index] == 0 && !covered && (at_home || home_room) {
             keep[index] = 1;
             extras += 1;
@@ -1335,6 +1359,14 @@ mod tests {
         assert_eq!(backup_counts(&choices, &[0], 1, 1, false), [1, 1, 0, 0], "no Home room for a carried extra");
         assert_eq!(backup_counts(&choices, &[0], 1, 1, true), [1, 1, 1, 0]);
         assert_eq!(backup_counts(&choices, &[0], 1, 2, true), [1, 1, 1, 0], "no distinct property, no extra");
+
+        // Worn Free Action and a kept rNexus backup together cover boots
+        // with both.
+        choices[0].item.flags[bit / 8] |= 1 << (bit % 8);
+        choices[1].item.flags[bit / 8] &= !(1 << (bit % 8));
+        choices[1].item.el_info[ELEM_NEXUS as usize].res_level = 1;
+        choices[2].item.flags[bit / 8] |= 1 << (bit % 8);
+        assert_eq!(backup_counts(&choices, &[0], 1, 1, true), [1, 1, 0, 0], "every property is already kept");
     }
 
     #[test]
