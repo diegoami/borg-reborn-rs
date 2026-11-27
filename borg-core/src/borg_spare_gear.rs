@@ -419,6 +419,10 @@ pub(crate) fn planned_slot(item: &borg_item) -> Option<usize> {
         && u32::from(item.tval) != TV_DIGGING).then(|| ranked_slot(item)).flatten()
 }
 
+fn protected_gear(st: &BorgState, item: &borg_item) -> bool {
+    item.art_idx != 0 || item.activ_idx != 0 || crate::borg_town_live::retained_gear(st, item)
+}
+
 fn uninspected_gear(item: &borg_item) -> bool {
     if !item.aware || item.iqty == 0 || !item.needs_ident || item.art_idx != 0 || item.ego_idx != 0
         || item.cursed || item.curses.contains(&true) || !(armour(item) || melee_weapon(item)) { return false; }
@@ -466,8 +470,8 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
         .collect();
     let can_identify = st.borg.tr(BI_AID) > 0;
     let uninspected: Vec<_> = st.items.items[..pack].iter().copied().enumerate()
-        .filter(|(_, item)| include_home && uninspected_cleanup_slot(item, can_identify) == Some(slot)
-            && !crate::borg_town_live::retained_gear(st, item))
+        .filter(|(_, item)| uninspected_cleanup_slot(item, can_identify) == Some(slot)
+            && !protected_gear(st, item))
         .collect();
     if choices.len() == capacity && uninspected.is_empty() {
         return GearPlan { upgrade: None, stock: Vec::new() };
@@ -594,9 +598,8 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
         .map(|(target, &i)| (choices[i].source, destinations[target]));
     let mut stock: Vec<_> = choices.iter().zip(&keep).enumerate().skip(capacity).map(|(index, (entry, &keep))| {
         let item = entry.item;
-        let protected = item.art_idx != 0 || item.activ_idx != 0
-            || item.desc.contains(&(b'{' as core::ffi::c_char))
-            || crate::borg_town_live::retained_gear(st, &item);
+        let protected = protected_gear(st, &item)
+            || item.desc.contains(&(b'{' as core::ffi::c_char));
         GearStock {
             source: entry.source,
             stash: keep - best.iter().filter(|&&i| i == index).count() as u8,
@@ -831,6 +834,43 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
         let plan = gear_plan(st, worn_slot, true);
         assert!(plan.stock.iter().any(|entry| entry.source == Pack(0) && entry.release == 5),
             "two retained alternatives cover the uninspected armour");
+        st.store.shops[home].ware[1] = empty;
+        let plan = gear_plan(st, worn_slot, true);
+        assert!(plan.stock.iter().any(|entry| entry.source == Pack(0) && entry.release == 4),
+            "keep one unresolved armour copy when fewer than two alternatives cover it");
+
+        let weapon = borg_item { iqty: 1, aware: true, ident: true, weight: 40,
+            tval: TV_SWORD as u8, dd: 2, ds: 6, to_h: 10, to_d: 20, ..empty };
+        st.items.items[wield] = weapon;
+        st.store.shops[home].ware[1] = borg_item { to_d: 19, ..weapon };
+        let mut spare = borg_item { iqty: 2, ident: false, needs_ident: true, to_h: 0, to_d: 0, ..weapon };
+        for (index, byte) in b"{??}".iter().enumerate() {
+            spare.desc[index] = *byte as core::ffi::c_char;
+        }
+        st.items.items[0] = spare;
+        let release = |st: &mut BorgState, include_home| {
+            gear_plan(st, wield, include_home).stock.iter()
+                .find(|entry| entry.source == Pack(0)).map_or(0, |entry| entry.release)
+        };
+        assert_eq!(release(st, true), 2, "worn weapon and Home backup cover the stack");
+        assert_eq!(release(st, false), 0, "one alternative is insufficient");
+        st.items.items[0].activ_idx = 1;
+        assert_eq!(release(st, true), 0, "protect a known activation despite unresolved runes");
+        st.items.items[0].activ_idx = 0;
+        st.borg.trait_[BI_AID as usize] = 1;
+        assert_eq!(release(st, true), 0, "give identification priority");
+        st.borg.trait_[BI_AID as usize] = 0;
+
+        let undead = crate::headers::list_mon_race_flags_h::RF_UNDEAD as usize;
+        st.items.items[0].slays[undead] = 3;
+        st.items.items[wield].slays[undead] = 3;
+        st.store.shops[home].ware[1].slays[undead] = 3;
+        assert_eq!(release(st, true), 2, "both alternatives cover the slay damage");
+        st.store.shops[home].ware[1].dd = 1;
+        st.store.shops[home].ware[1].ds = 2;
+        st.store.shops[home].ware[1].to_d = 10;
+        assert_eq!(release(st, true), 0,
+            "keep the spare when the Home backup wins on base damage but loses against undead");
         println!("#1264 exploration pack passed: {case}");
         std::process::exit(0);
     }

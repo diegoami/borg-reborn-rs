@@ -39,19 +39,30 @@ def check(binary, fixture, run):
     summary = run / "summary.json"
     env = {key: value for key, value in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
     env.update(TZ="UTC", LC_ALL="C.UTF-8")
-    subprocess.run(
-        [str(binary), "-mborgh", *(f"-d{kind}={path}" for kind, path in paths.items()),
-         "--", "-seed", "1", "-race", "6", "-class", "6", "-load", str(paths["save"] / "normal.save"),
-         "-keep-load-rng", "-exact-turns", "-turns", str(STOP_TURN), "-msglog", str(messages),
-         "-summary", str(summary)],
-        cwd=binary.parent, env=env, check=True, timeout=120,
-    )
+    states = run / "states.log"
+    try:
+        subprocess.run(
+            [str(binary), "-mborgh", *(f"-d{kind}={path}" for kind, path in paths.items()),
+             "--", "-seed", "1", "-race", "6", "-class", "6", "-load", str(paths["save"] / "normal.save"),
+             "-keep-load-rng", "-exact-turns", "-turns", str(STOP_TURN), "-msglog", str(messages),
+             "-summary", str(summary), "-statelog", str(states)],
+            cwd=binary.parent, env=env, check=True, timeout=300,
+        )
+    except subprocess.TimeoutExpired as error:
+        last_turn = START_TURN
+        if states.exists():
+            with states.open() as state_log:
+                for line in state_log:
+                    turn, _, rest = line.partition(" ")
+                    if turn.isdecimal() and rest.endswith("\n"):
+                        last_turn = int(turn)
+        raise AssertionError(f"Replay timed out at last logged turn {last_turn:,} of {STOP_TURN:,}") from error
     receipt = json.loads(summary.read_text())
     assert receipt["loaded_turn"] == START_TURN and receipt["stop_reason"] == "turns", receipt
     log = messages.read_text(errors="replace")
     assert "Initializing PBorg... (pborg.yaml)" in log
     sandals = re.findall(r"You drop (\d+) Pairs of Leather Sandals \[1,\+0\] \{borg ignore(?: surplus)?\}", log)
-    assert sum(map(int, sandals)) in (6, 7), sandals
+    assert sum(map(int, sandals)) == 7, sandals
     assert not re.search(r"You have (?:[2-9]|\d{2,}) Pairs of Leather Sandals \[1,\+0\]", log)
     for weapon, bonus in WEAPONS.items():
         description = rf"{weapon}s? [^\n]*\({re.escape(bonus)}\)"

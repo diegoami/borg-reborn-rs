@@ -34,11 +34,19 @@ plain sandal that was already at Home.
 
 When identification is unavailable, two distinct retained alternatives
 can release an unresolved weapon if both cover the observed combat and
-swap benefits. An unresolved armour stack can trim to one copy while
-identification is still possible. The engine checks armour properties
-before stacking. The native fixture verifies this for a valuable stack
-and also verifies release of the last copy when two retained
-alternatives cover it and identification is unavailable.
+swap benefits. Unresolved armour stacks trim to one copy when identification is
+possible or when fewer than two retained alternatives cover them.
+The engine checks armour properties before stacking. With no usable
+identification and two covering alternatives, the last copy can leave too.
+
+This narrows the unresolved-rune protection described in the earlier
+gear work. Apparent plain gear showing only the game's `{??}` marker
+can take the observed cleanup path. Artifacts, known activations,
+custom inscriptions and staged loadouts retain their protections.
+Native CI covers the armour quantities, melee release and insufficient
+coverage, including a backup whose base damage wins but slay damage loses.
+[#1278](https://github.com/diegoami/borg-reborn-rs/issues/1278)
+[#1279](https://github.com/diegoami/borg-reborn-rs/issues/1279)
 
 Replay with `python3 engine/tests/check_rogue_spare_gear.py /path/to/extracted-bundle`.
 The script checks the source hashes, pack releases, and pickup messages.
