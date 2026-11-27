@@ -124,15 +124,20 @@ the next think; the long teleport is for when that has not worked.
   after the retreat step). `borg_escape` gains a `may_hold` argument, false
   for the #934 poisoned-and-no-cure call (`poisoned_escape_first`), which asks
   for an escape before the retreat and must get a real answer.
-- **When it applies.** Tier 4 has fired, no awake enemy is adjacent (the
-  Phase verdict for this think is `Shoot`:
-  `phase_rule_verdict(st, PhaseSite::Compromised, Some(b_q))`, cached per
-  think), and all of:
+- **When it applies.** Tier 4 has fired and the Phase verdict for this think
+  (`phase_rule_verdict(st, PhaseSite::Compromised, Some(b_q))`, cached per
+  think) is `Shoot` (no awake enemy adjacent) or `Fight` (an enemy adjacent
+  and the fight not judged lost: the rule's own note says "other escapes,
+  else fight"). It is not `Phase` (an enemy adjacent and the fight judged
+  lost): there the escape belongs, 4.1's Phase Door and then 4.2 run as
+  today. And all of:
   - the danger without fear is below `escape_compromised_act_danger_percent`
     of current HP (default 100: by the Borg's own estimate it survives until
     it next acts);
   - HP is at least `escape_compromised_act_hp_percent` of max (default 50);
-  - **no awake known monster can reach the Borg before its next action**.
+  - **no awake known monster that is not already adjacent can reach the Borg
+    before its next action** (a monster already adjacent is priced by the
+    danger sum above; the rule is for the others).
     The energy schedule (`game-world.c`: `turn_energy`, `extract_energy`;
     speed 110 gives 10 a tick, 120 gives 20, 130 gives 30, 140 gives 38)
     gives a conservative bound on a monster's actions between two Borg
@@ -185,15 +190,20 @@ the next think; the long teleport is for when that has not worked.
   risky-play adjustment are the same), when the level changes, and when any
   other escape acts (including a call that bypassed tier 4).
 - **The ladder, first one that can act:**
-  1. *Look*, when the monster picture is older than
+  1. *Look*, with nothing adjacent (a turn spent on a detection beside an
+     enemy is a free hit) and when the monster picture is older than
      `escape_compromised_refresh_age` game turns (default 1000): with the #831
      unseen mode on, `detect_invisible_now`, within #831's own freshness
      (`unseen_fresh`) and read limit (`recover_unseen_detect_reads`); where
      that has nothing to use (case B: Reveal Monsters not learned, no scroll),
      or the mode is off, Detect Monsters (the panel check's own cast).
   2. *Heal*: the quaff `phase_rule_act` already starts with, when hurt.
-  3. *Shoot*: the best attack at range (`borg_attack`; it needs a target in
-     view, so a look does not promise a shot).
+  3. *Attack*: the best attack by the Borg's own ranking (`borg_attack`),
+     melee included: with an enemy adjacent it is whichever the Borg ranks
+     highest, a melee blow when that is the best, never a ranged attack
+     forced over a better melee one; with nothing adjacent only a ranged
+     attack is possible, and it needs a target in view, so a look does not
+     promise a shot.
   4. *Boost*: `cornered_boost` (Speed first, then Heroism, Berserk Strength,
      Bless), then `borg_defend`'s resistances and shields, when an awake
      monster is in view.
@@ -208,9 +218,9 @@ the next think; the long teleport is for when that has not worked.
 - **Reevaluate next round.** Every think recomputes the danger and the tier.
   If it grew past the Borg's HP, tier 3, 2 or 1 teleports as today. If the
   danger persists, the round cap sends the Borg to 4.2 after
-  `escape_compromised_act_rounds` rounds. Tiers 1 to 3 and verdicts other
-  than `Shoot` (an enemy adjacent) never use this path.
-- A note per decision: `# Escape 4.2 held: {look|heal|shoot|boost}, round
+  `escape_compromised_act_rounds` rounds. Tiers 1 to 3 and the `Phase`
+  verdict never use this path.
+- A note per decision: `# Escape 4.2 held: {look|heal|attack|boost}, round
   {n} of {cap}; danger {here} without fear (with fear {b_q}), HP {hp}` and,
   when it does not hold, `# Escape 4.2 not held: {why}`.
 
@@ -226,6 +236,9 @@ Effect on the four cases:
 - **C:** the nearest spiders are 2 grids away with two moves to the Borg's
   one, inside `moves + 1`, so the reach rule refuses and 4.2 runs as today.
   Whether a group a little farther off needs a rule of its own is open.
+- **An enemy adjacent and the fight not lost** (`Fight`): instead of the long
+  teleport the Borg attacks with whatever it ranks best, melee included. None
+  of the four recorded cases is one.
 - **D:** the monster picture is 2,300 game turns old, so the first round is a
   look (Detect Monsters). A shot is possible the round after; the last
   positive attack decision was five thinks before the escape, with movement
@@ -265,9 +278,12 @@ stage 1 cannot act in a case like A, where nothing is known to act against.
 - **A round spent acting while the danger is above 60% of HP** costs a round
   of that danger. The refresh age, the 50% HP floor and the round cap bound
   it; the zoo decides if it pays.
-- **An enemy adjacent and the fight not lost** (verdict `Fight`) has the same
-  fall-through to 4.2 and is left out here: none of the four cases is one.
-  Extend the ladder to it once the `Shoot` case is measured.
+- **The `Fight` case has no recorded example.** It is in the plan because
+  the rule's own note promises "else fight" and the code teleports first. Its
+  entry limits are the same; the Borg's melee-or-ranged ranking is the
+  existing one and is not changed here. With `escape_phase_lost_test` 0 (the
+  shipped value) a `Fight` verdict means the damage-only danger is below the
+  Borg's HP; with 1 or 2 it means the fight comparison says the Borg wins.
 - **Danger 2000** (turn 1,385,545, no monster named after an acolyte died) is
   the `danger_maximum` cap. Its source is not in the log; not in this plan.
 - The case dossier (all 24 escapes, with the context of each) is not in this
@@ -295,8 +311,10 @@ improvement is claimed here.
   above, including the reach rule at the recorded spider positions, the
   diagonal (3,3) offset, a speed-119 Borg against a speed-140 monster (the
   rounded ratio gives 2 actions, the bound 3), and a hasted Borg whose haste
-  lapses, and a Borg that starts unslowed with a `SLOW` caster in line of
-  sight, which must budget the slowed rate), wrapped
+  lapses, a Borg that starts unslowed with a `SLOW` caster in line of
+  sight, which must budget the slowed rate, and an adjacent enemy with the
+  fight not lost, where melee ranks best and the attack chosen is the melee
+  one), wrapped
   around 4.2 and the flee/leave flags; `may_hold` on `borg_escape`; the look
   as a new `EscapeAction` that is not counted as an escape;
   `staff_reserved` in 4.2, 5.2, 6.2 and tier 8.
