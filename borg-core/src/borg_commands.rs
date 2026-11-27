@@ -107,7 +107,7 @@ const BORG_COMMANDS: [BorgCommand; 31] = [
     BorgCommand { selection: b'v', description: "version", function: borg_cmd_version },
     // borg-reborn-rs (#208): the errands' command line.
     BorgCommand { selection: b'/', description: "errand (/dive N, /town, ...)", function: crate::shell::borg_cmd_errand },
-    BorgCommand { selection: b'B', description: "switch to CBorg", function: |_| engine::switch_borg() },
+    BorgCommand { selection: b'B', description: "switch to CBorg", function: borg_cmd_switch_borg },
 ];
 
 /// The area of the two menus (`region area = { 21, 5, 1, 10 }`).
@@ -210,6 +210,10 @@ fn borg_cmd_help(st: &mut BorgState) {
 
     // Refresh the screen
     engine::term_load();
+}
+
+fn borg_cmd_switch_borg(_st: &mut BorgState) {
+    engine::switch_borg();
 }
 
 /// `format("Command '%c' %s", selection, description)`
