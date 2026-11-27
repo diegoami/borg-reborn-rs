@@ -1963,6 +1963,138 @@ pub(crate) fn carry_test_potion(st: &mut BorgState, sval: i32) {
     });
 }
 
+/// borg-reborn-rs (#1361): the recorded level 27 Dwarf Priest's weapons on
+/// a dungeon level, in a constructed kit (the recorded save is not public).
+/// The gear is replaced by a Wooden Torch, Soft Leather Armour of fire
+/// resistance, a Sling and Iron Shots, rations, a prayer book loaded to
+/// slow the STR 10 Priest, and a Shovel of Earthquakes (1d2) (+18,+11)
+/// <+4 STR, +1 TUNNEL> in the pack; with `weapon`, 'Narthanc' is wielded,
+/// as on the recorded save. The shovel's STR lifts the slowness, so the
+/// full power trial prefers it, while the ranked plan's equipment power
+/// prefers the dagger. All runes are known, as for a character of that
+/// level.
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn setup_test_digger_kit(st: &mut BorgState, weapon: bool) {
+    use crate::headers::list_tvals_h::{TV_BOW, TV_DIGGING, TV_FOOD, TV_LIGHT, TV_PRAYER_BOOK, TV_SHOT, TV_SOFT_ARMOR};
+    use crate::headers::object_h::{artifact, ego_item, object, object_kind, OBJ_NOTICE_ASSESSED};
+    use crate::headers::player_h::player;
+    use crate::headers::z_rand_h::{aspect, MINIMISE};
+    use crate::headers::list_object_modifiers_h::OBJ_MOD_TUNNEL;
+    use crate::headers::list_stats_h::OBJ_MOD_STR;
+
+    extern "C" {
+        static player_exp: [i32; 50];
+        fn lookup_kind(tval: i32, sval: i32) -> *mut object_kind;
+        fn lookup_artifact_name(name: *const c_char) -> *const artifact;
+        fn lookup_ego_item(name: *const c_char, tval: i32, sval: i32) -> *mut ego_item;
+        fn make_fake_artifact(obj: *mut object, art: *const artifact) -> bool;
+        fn ego_apply_magic(obj: *mut object, level: i32);
+        fn object_new() -> *mut object;
+        fn object_prep(obj: *mut object, kind: *mut object_kind, level: i32, roll: aspect);
+        fn object_copy(dest: *mut object, src: *const object);
+        fn object_free(obj: *mut object);
+        fn object_flavor_aware(p: *mut player, obj: *mut object);
+        fn gear_object_for_use(p: *mut player, obj: *mut object, qty: i32, message: bool, none_left: *mut bool) -> *mut object;
+        fn inven_carry(p: *mut player, obj: *mut object, absorb: bool, message: bool);
+        fn inven_wield(obj: *mut object, slot: i32);
+        fn wield_slot(obj: *const object) -> i32;
+        fn player_learn_all_runes(p: *mut player);
+        fn update_stuff(p: *mut player);
+        fn weight_remaining(p: *mut player) -> i32;
+    }
+
+    // SAFETY: test-only setup on the engine thread, on the first dungeon
+    // think. The kinds, the artifact and the ego come from the live tables;
+    // the engine owns the objects once they enter the gear.
+    lend(st, || unsafe {
+        while !(*player).gear.is_null() {
+            let first = (*player).gear;
+            let detached = gear_object_for_use(player, first, i32::from((*first).number), false, &mut false);
+            object_free((*detached).known);
+            object_free(detached);
+        }
+        (*player).lev = 27;
+        (*player).max_lev = 27;
+        (*player).exp = player_exp[25] * i32::from((*player).expfact) / 100;
+        (*player).max_exp = (*player).exp;
+        // Inside weapon_value's max depth 25-40 tunnelling band (#1320).
+        (*player).max_depth = 27;
+        (*player).stat_cur = [10, 10, 18, 14, 17];
+        (*player).stat_max = (*player).stat_cur;
+        player_learn_all_runes(player);
+
+        let know = |obj: *mut object| {
+            let known = object_new();
+            object_copy(known, obj);
+            (*obj).known = known;
+            (*known).notice |= OBJ_NOTICE_ASSESSED as u8;
+            (*obj).notice |= OBJ_NOTICE_ASSESSED as u8;
+            object_flavor_aware(player, obj);
+            obj
+        };
+        let plain = |tval: u32, name: &CStr, qty: u8| {
+            let kind = lookup_kind(tval as i32, lookup_sval(tval as i32, name.to_str().unwrap()));
+            assert!(!kind.is_null(), "unknown fixture item {name:?}");
+            let obj = object_new();
+            object_prep(obj, kind, 0, MINIMISE);
+            (*obj).number = qty;
+            if tval == TV_LIGHT { (*obj).timeout = 4500; }
+            know(obj)
+        };
+        let wear = |obj: *mut object| {
+            inven_carry(player, obj, false, false);
+            inven_wield(obj, wield_slot(obj));
+        };
+        wear(plain(TV_LIGHT, c"Wooden Torch", 1));
+        let armour = plain(TV_SOFT_ARMOR, c"Soft Leather Armour", 1);
+        // Fire resistance from the armour, so Narthanc's is not needed.
+        let fire = crate::headers::list_elements_h::ELEM_FIRE as usize;
+        (*armour).el_info[fire].res_level = 1;
+        (*(*armour).known).el_info[fire].res_level = 1;
+        wear(armour);
+        inven_carry(player, plain(TV_FOOD, c"Ration of Food", 5), false, false);
+        // A launcher, so Narthanc's Fire Bolt is not the only ranged attack
+        // (borg_ranged::wear_coverage would veto the shovel).
+        wear(plain(TV_BOW, c"Sling", 1));
+        inven_carry(player, plain(TV_SHOT, c"Iron Shot", 30), false, false);
+
+        // ego_item.txt: of Earthquakes is IMPACT, STR[d4], TUNNEL[d6] and
+        // ACID_3; the recorded one is (+18,+11) <+4, +1>.
+        let sval = lookup_sval(TV_DIGGING as i32, "Shovel");
+        let shovel = object_new();
+        object_prep(shovel, lookup_kind(TV_DIGGING as i32, sval), 27, MINIMISE);
+        (*shovel).ego = lookup_ego_item(c"of Earthquakes".as_ptr(), TV_DIGGING as i32, sval);
+        assert!(!(*shovel).ego.is_null());
+        ego_apply_magic(shovel, 27);
+        (*shovel).to_h = 18;
+        (*shovel).to_d = 11;
+        (*shovel).modifiers[OBJ_MOD_STR as usize] = 4;
+        (*shovel).modifiers[OBJ_MOD_TUNNEL as usize] = 1;
+        inven_carry(player, know(shovel), false, false);
+
+        if weapon {
+            let art = lookup_artifact_name(c"Narthanc".as_ptr());
+            assert!(!art.is_null());
+            let dagger = object_new();
+            assert!(make_fake_artifact(dagger, art));
+            wear(know(dagger));
+        }
+        update_stuff(player);
+        // player-calcs.c:2224-2226 slows a player carrying more than half
+        // the limit, 100 * adj_str_wgt[STR], by one per tenth of it;
+        // weight_remaining is 60 * adj_str_wgt less the load less one.
+        // The carried prayer book brings the load to 75% of the limit.
+        let total = (*(*player).upkeep).total_weight;
+        let adj = (weight_remaining(player) + total + 1) / 60;
+        let book = plain(TV_PRAYER_BOOK, c"[Novice's Handbook]", 1);
+        (*book).weight = (75 * adj - total) as i16;
+        (*(*book).known).weight = (*book).weight;
+        inven_carry(player, book, false, false);
+        (*(*player).upkeep).update |= 1; // PU_BONUS (player-calcs.h:36).
+        update_stuff(player);
+    });
+}
+
 #[cfg(feature = "test-town-loadout")]
 pub(crate) fn setup_test_town_loadout(
     st: &mut BorgState,

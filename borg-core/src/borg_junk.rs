@@ -2175,6 +2175,15 @@ pub fn borg_remove_stuff(st: &mut BorgState) -> bool {
             continue;
         }
 
+        // borg-reborn-rs (#1361, `wear_digger_keeps_weapon`): bare hands
+        // rank above a wielded digger here only because a carried digger
+        // earns the tunnelling swap reward, which the wear trial then
+        // undoes. A better weapon replaces the digger through the wear
+        // paths instead.
+        if crate::borg_item_wear::keeps_wielded_digger(i, item) {
+            continue;
+        }
+
         /* Take off the item */
         st.items.items[hole as usize] = st.items.items[i as usize];
 

@@ -901,6 +901,24 @@ pub(crate) fn wear_ranked_upgrade(st: &mut BorgState, source: usize, target: usi
     true
 }
 
+/// #1361: `item` is a digger and `worn`, in its slot, a combat weapon it
+/// must not replace outside tunnelling.
+fn digger_waits_for_tunnelling(item: &borg_item, worn: &borg_item) -> bool {
+    param(Param::wear_digger_keeps_weapon) != 0
+        && u32::from(item.tval) == TV_DIGGING
+        && worn.iqty > 0
+        && u32::from(worn.tval) != TV_DIGGING
+}
+
+/// #1361: `item`, worn in `slot`, is an uncursed digger in the weapon slot,
+/// which the remove trial leaves in place.
+pub(crate) fn keeps_wielded_digger(slot: i32, item: &borg_item) -> bool {
+    param(Param::wear_digger_keeps_weapon) != 0
+        && slot == inven_wield()
+        && u32::from(item.tval) == TV_DIGGING
+        && !item.cursed
+}
+
 pub(crate) fn ranked_wear_safe(st: &mut BorgState) -> bool {
     !engine::player_is_shapechanged() && danger_here(st) == 0
 }
@@ -1016,6 +1034,18 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
 
         /* Cannot wear this item */
         if slot < 0 {
+            continue;
+        }
+
+        // borg-reborn-rs (#1361, `wear_digger_keeps_weapon`): under the
+        // ranked gear plan a digger in the weapon slot is only for
+        // tunnelling (borg_spare_gear::inferior), and the plan, which skips
+        // diggers, restores the combat weapon. This trial, on the whole
+        // kit's power, could prefer the digger again, one wield per turn.
+        // The engine wields a carried digger for each tunnelling turn by
+        // itself (cmd-cave.c:534-583). A digger is still worn when the
+        // weapon slot is empty or holds another digger.
+        if ranked && digger_waits_for_tunnelling(item, &st.items.items[slot as usize]) {
             continue;
         }
 
@@ -1771,5 +1801,70 @@ mod tests {
         // neither candidate: the sentinel is returned, and the acceptance
         // threshold rejects it, so no key is queued from it
         assert_eq!(backup_swap_choice(0, 0, 9999, 9999), (9999, -1));
+    }
+}
+
+/// borg-reborn-rs (#1361): the recorded Dwarf Priest's weapons, played live
+/// on a dungeon level. `digger-swap-loop` wields 'Narthanc' with a Shovel of
+/// Earthquakes in the pack, as on the recorded save, where the routine wear
+/// trial wielded the shovel and the ranked gear plan put the dagger back,
+/// one wield per turn. The Borg must keep the dagger and leave the square it
+/// started on. `digger-only` carries the shovel with nothing wielded: the
+/// Borg must wield it, once, and keep it.
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) mod digger_fixture {
+    use super::*;
+    use crate::borg_headers::borg_trait_h::BI_CDEPTH;
+    use std::cell::Cell;
+
+    thread_local! {
+        static START: Cell<Option<(i32, i32, i32)>> = const { Cell::new(None) };
+        static THINKS: Cell<u32> = const { Cell::new(0) };
+        static WIELDS: Cell<u32> = const { Cell::new(0) };
+        static WORN: Cell<u8> = const { Cell::new(0) };
+    }
+
+    /// Thinks watched after the setup: the recorded loop wields on every
+    /// eligible think, so a loop shows within a few of them.
+    const WATCH: u32 = 60;
+
+    pub(crate) fn step(st: &mut BorgState, case: &str) {
+        let weapon = case == "digger-swap-loop";
+        let wield = inven_wield() as usize;
+        // main-borgh.c:borgh_key checks the synthetic start (max depth
+        // included) at the first key, so the kit replaces the gear after it.
+        if THINKS.get() == 0 && START.get().is_none() {
+            THINKS.set(u32::MAX);
+            return;
+        }
+        if START.get().is_none() {
+            THINKS.set(0);
+            assert_eq!(st.borg.tr(BI_CDEPTH), 5, "the fixture starts on DL5");
+            engine::setup_test_digger_kit(st, weapon);
+            crate::borg_item::borg_find_all_items(st);
+            crate::borg_trait::borg_notice(st, true);
+            let worn = st.items.items[wield];
+            assert_eq!(worn.tval as u32, if weapon { TV_SWORD } else { 0 });
+            START.set(Some((st.borg.tr(BI_CDEPTH), st.borg.c.x, st.borg.c.y)));
+            WORN.set(worn.tval);
+            return;
+        }
+        let worn = st.items.items[wield].tval;
+        if worn != WORN.replace(worn) {
+            WIELDS.set(WIELDS.get() + 1);
+            println!("{case}: think {} wields tval {worn}", THINKS.get());
+        }
+        let limit = u32::from(!weapon);
+        assert!(WIELDS.get() <= limit, "{case}: {} weapon changes in {} thinks", WIELDS.get(), THINKS.get());
+        THINKS.set(THINKS.get() + 1);
+        if THINKS.get() < WATCH { return; }
+        let start = START.get().unwrap();
+        let moved = start != (st.borg.tr(BI_CDEPTH), st.borg.c.x, st.borg.c.y);
+        assert!(moved, "{case}: still on the starting square after {WATCH} thinks");
+        let expect = if weapon { TV_SWORD } else { TV_DIGGING };
+        assert_eq!(u32::from(worn), expect, "{case}: the weapon kept");
+        assert_eq!(WIELDS.get(), limit);
+        println!("{case} passed (#1361)");
+        std::process::exit(0);
     }
 }

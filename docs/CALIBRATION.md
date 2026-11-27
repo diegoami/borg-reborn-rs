@@ -9266,7 +9266,7 @@ identified spares.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2272` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2281` |
 | `junk_gear_alternatives` | 1 | count | 0–3 | `borg_junk.rs:64` |
 | `town_gear_home_backups` | 1 | flag | 0–1 | `borg_town_live.rs:210` |
 
@@ -9470,3 +9470,40 @@ with smoke identical, so it is a hypothesis until the zoo measures it.
 | `swap_digger_tunnel` | 0 | flag | 0–1 | `borg_trait_swap.rs:668` |
 
 [Handover](handover/2026-11-27-1320-digger-tunnel.md)
+
+## A digger does not replace the combat weapon (#1361)
+
+Two paths choose the weapon slot under the ranked gear plan
+(`town_gear_home_backups`). The plan (`borg_spare_gear::gear_plan`) ranks
+weapons by equipment power and skips diggers: a digger in the weapon slot
+is only for tunnelling. The routine trial in `borg_wear_stuff` ranks each
+remaining pack item by the whole kit's power, diggers included. A recorded
+level 27 Priest on a DL5 staircase wielded 2,026 times, alternating
+'Narthanc' and a Shovel of Earthquakes <+4 STR>: the trial wielded the
+shovel, and the rule that wears equipment while a digger is wielded ran the
+plan, which put the dagger back.
+
+With `wear_digger_keeps_weapon`, the trial skips a digger while a combat
+weapon is worn. A digger is still worn when the weapon slot is empty or
+holds another digger, and the plan still chooses between weapons. Tunnelling
+needs no wield: the engine wields a carried digger for each tunnelling turn
+and puts the weapon back (`cmd-cave.c:534-583`). Without the ranked plan
+the wear trial is unchanged.
+
+The same flag keeps a wielded, uncursed digger in the weapon slot against
+the remove trial (`borg_junk.rs:borg_remove_stuff`). With nothing else to
+wield, that trial ranked bare hands above the shovel only because a carried
+digger earns the tunnelling swap reward (above), and the wear trial then
+put the shovel back on: in the `digger-only` case the Borg took it off and
+on at thinks 57, 60 and 239 until it found a Rapier. A better weapon still
+replaces the digger through the wear paths.
+
+The default 0 keeps the inherited trial. It ships at 1 in
+`harness/pborg.yaml`, a fix of a loop rather than a tuning, checked by the
+native cases `digger-swap-loop` and `digger-only`.
+
+| Parameter | Default | Unit | Range | Read at |
+| --- | --- | --- | --- | --- |
+| `wear_digger_keeps_weapon` | 0 | flag | 0–1 | `borg_item_wear.rs:907` |
+
+[Handover](handover/2026-11-27-1361-digger-swap-loop.md)
