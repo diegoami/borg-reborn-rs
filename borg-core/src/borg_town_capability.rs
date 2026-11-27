@@ -101,7 +101,7 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// `PY_FOOD_HUNGRY`, and the core reads a Remove Hunger scroll then. A
 /// `NOURISH:INC_TO` food (Remove Hunger 50, Honey-cake and Draught 60,
 /// Waybread 75: object.txt) is worth what it adds from there.
-const HUNGRY_PERCENT: i64 = 15;
+pub(crate) const HUNGRY_PERCENT: i64 = 15;
 
 pub const NAMES: [&str; 63] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
@@ -632,9 +632,9 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     // as food let the planner sell the rations the core then missed
     // ("restock food < 3"); the core seldom read it (6 of 253 bought).
     // borg-reborn-rs (#451): now borg_trait counts the scroll beside the
-    // rations under this plan (with_remove_hunger) and the core reads it
-    // before any food (borg_satisfy_hunger_before_food), so the scroll
-    // supplies nutrition, as much as it adds to a hungry stomach. No other
+    // rations under this plan (with_remove_hunger). The core considers
+    // readable scrolls alongside neutral food, so the scroll supplies
+    // nutrition, as much as it adds to a hungry stomach. No other
     // non-food kind does: a potion's nourishment (Cure Light Wounds and the
     // like, 1) is not a meal.
     let hunger_scroll = tval == TV_SCROLL && i32::from(item.sval) == st.item_val.sv_scroll_satisfy_hunger;
