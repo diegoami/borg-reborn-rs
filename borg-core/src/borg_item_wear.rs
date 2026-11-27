@@ -1812,6 +1812,7 @@ mod tests {
 /// started on. `digger-only` carries the shovel with nothing wielded: the
 /// Borg must wield it and keep it until a plain Dagger, far weaker, enters
 /// the pack at think `DAGGER_AT`; then it must wield the dagger and keep it.
+/// `digger-dig-gate` checks the dig gate with the dagger kept (`dig_gate`).
 #[cfg(feature = "test-stair-handoff")]
 pub(crate) mod digger_fixture {
     use super::*;
@@ -1828,11 +1829,41 @@ pub(crate) mod digger_fixture {
     /// Thinks watched after the setup: the recorded loop wields on every
     /// eligible think, so a loop shows within a few of them.
     const WATCH: u32 = 60;
-    /// `digger-only`: the think at which the dagger enters the pack.
-    const DAGGER_AT: u32 = 30;
+    /// `digger-only`: the think at which the dagger enters the pack. With
+    /// the flag at 0 the remove trial took the lone shovel off at thinks
+    /// 57 and 239 (review of #1361: the lone-shovel phase must cover them).
+    const DAGGER_AT: u32 = 260;
+
+    /// Review of #1361 (`digger-dig-gate`, a Human Priest): with the dagger
+    /// kept, the worn kit's digging skill is below granite's threshold
+    /// (borg_flow.rs:BORG_DIG_HARD, 40), and the carried shovel the engine
+    /// wields for each tunnelling turn lifts it above. borg_can_dig must
+    /// count the shovel: at the shipped settings it allows granite, at
+    /// `wear_digger_keeps_weapon` 0 it refuses, as before.
+    fn dig_gate(st: &mut BorgState) -> ! {
+        use crate::borg_headers::borg_trait_h::BI_DIG;
+        use crate::headers::list_terrain_h::FEAT_GRANITE;
+        let worn = st.borg.tr(BI_DIG);
+        let carried = crate::borg_flow::carried_digger_skill(st);
+        let on = param(Param::wear_digger_keeps_weapon) != 0;
+        let digs = crate::borg_flow::borg_can_dig(st, false, FEAT_GRANITE as u8);
+        println!("digger-dig-gate: worn skill {worn}, carried {carried}, granite {digs}");
+        assert!(worn < 40, "the worn kit alone must not dig granite");
+        assert_eq!(st.borg.tr(BI_DIG), worn, "the trial restores the kit");
+        assert_eq!(u32::from(st.items.items[inven_wield() as usize].tval), TV_SWORD, "the dagger stays wielded");
+        if on {
+            assert!(carried >= 40, "the shovel lifts the skill to granite's threshold");
+            assert!(digs, "granite is dug with the carried shovel");
+        } else {
+            assert_eq!(carried, 0);
+            assert!(!digs, "at 0 the inherited check judges the worn kit only");
+        }
+        println!("digger-dig-gate passed (#1361): {}", if on { "on" } else { "off" });
+        std::process::exit(0);
+    }
 
     pub(crate) fn step(st: &mut BorgState, case: &str) {
-        let weapon = case == "digger-swap-loop";
+        let weapon = case != "digger-only";
         let wield = inven_wield() as usize;
         // main-borgh.c:borgh_key checks the synthetic start (max depth
         // included) at the first key, so the kit replaces the gear after it.
@@ -1848,6 +1879,7 @@ pub(crate) mod digger_fixture {
             crate::borg_trait::borg_notice(st, true);
             let worn = st.items.items[wield];
             assert_eq!(worn.tval as u32, if weapon { TV_SWORD } else { 0 });
+            if case == "digger-dig-gate" { dig_gate(st); }
             START.set(Some((st.borg.tr(BI_CDEPTH), st.borg.c.x, st.borg.c.y)));
             WORN.set(worn.tval);
             return;
@@ -1872,10 +1904,11 @@ pub(crate) mod digger_fixture {
             crate::borg_trait::borg_notice(st, true);
         }
         THINKS.set(think + 1);
-        if THINKS.get() < WATCH { return; }
+        let watch = if weapon { WATCH } else { DAGGER_AT + 30 };
+        if THINKS.get() < watch { return; }
         let start = START.get().unwrap();
         let moved = start != (st.borg.tr(BI_CDEPTH), st.borg.c.x, st.borg.c.y);
-        assert!(moved, "{case}: still on the starting square after {WATCH} thinks");
+        assert!(moved, "{case}: still on the starting square after {watch} thinks");
         assert_eq!(u32::from(worn), TV_SWORD, "{case}: the combat weapon is wielded");
         assert_eq!(WIELDS.get(), limit);
         println!("{case} passed (#1361)");

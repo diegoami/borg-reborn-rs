@@ -49,6 +49,11 @@ rule that re-equips a combat weapon while a digger is wielded.
     with any combat weapon it can wear, whatever their power. The owner's
     rule, from the PR discussion: "Digger is digger". A digger is wielded
     only when no combat weapon is at hand.
+  - From the Codex (GPT-6) review on the PR (P2): `borg_can_dig`
+    (`borg_flow.rs`) counts the digging skill with the best carried digger
+    in the weapon slot (`carried_digger_skill`), since the weapon now stays
+    wielded and the engine digs with the carried digger. Without this, a
+    weak-digging Priest would refuse a dig the engine makes.
   - The default 0 keeps both inherited trials. It ships at 1 in
     `harness/pborg.yaml`.
 - `docs/CALIBRATION.md`: a new section and its parameter row. The citation
@@ -60,20 +65,26 @@ rule that re-equips a combat weapon while a digger is wielded.
   - `digger-swap-loop`: Narthanc is wielded and the shovel carried. The
     weapon slot must not change, and the Borg must leave its starting square.
   - `digger-only`: only the shovel is carried and nothing is wielded. It
-    must be wielded and kept. At think 30 a plain Dagger (1d4) (+0,+0),
-    far below the shovel in power, enters the pack. The plan must then
-    wield the dagger, at think 31, and keep it.
+    must be wielded and kept through think 260. With the flag at 0 the
+    remove trial took it off at thinks 57 and 239 (review P3). At think 260
+    a plain Dagger (1d4) (+0,+0), far below the shovel in power, enters the
+    pack. The plan must then wield the dagger, at think 263, and keep it.
+  - `digger-dig-gate`, a Human Priest with the same kit and Narthanc
+    wielded. The worn skill is 5, below granite's 40, and the carried
+    shovel's is 52. At 1, `borg_can_dig` allows granite. At 0 it refuses
+    it, as before.
 - `engine/tests/test_stair_handoff.py DiggerSwapLoopTest`, also added to CI.
   It runs both cases at the shipped settings, and runs each with the flag at
   0, where each must fail. In `digger-swap-loop` the trial wields the shovel.
-  In `digger-only` the remove trial takes the shovel off at think 57 and
-  the dagger is never worn.
+  In `digger-only` the remove trial takes the shovel off at think 57. The
+  dig-gate case runs at both values and checks each one's answer.
 - `scripts/borg-core-vendor.py`: the `HOOKED` notes for `borg_item_wear.rs`
   and `borg_junk.rs` name the change.
 
 ## Checked
 
-- `DiggerSwapLoopTest`: 4 of 4 pass.
+- `DiggerSwapLoopTest`: 6 of 6 pass. A mutation check with the remove
+  guard alone disabled fails `digger-only` at think 57 (review P3).
 - The other native suites of CI's list pass on the same test build.
 - The four cargo commands and the citation check pass.
 - The shipped smoke suite is 4 of 4 identical to `smoke-borg-rs`, so it
@@ -101,6 +112,8 @@ rule that re-equips a combat weapon while a digger is wielded.
 - No zoo run. The trial change applies only while a digger and a combat
   weapon are both carried. The remove change applies only to a wielded
   digger.
+- No live dig in a test. `digger-dig-gate` checks the Borg's gate, and the
+  digging itself is the engine's swap (`cmd-cave.c:546-571`).
 
 ## Left
 

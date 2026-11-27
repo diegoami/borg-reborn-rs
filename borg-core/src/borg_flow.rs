@@ -467,6 +467,13 @@ pub fn borg_can_dig(st: &mut BorgState, check_fail: bool, feat: u8) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#1361 review, `wear_digger_keeps_weapon`): the combat
+    // weapon stays wielded, and the engine digs with the carried digger.
+    // Judge the dig by the skill with that digger in the weapon slot.
+    if carried_digger_skill(st) >= dig_check {
+        return true;
+    }
+
     if (feat == FEAT_RUBBLE || feat == FEAT_PASS_RUBBLE) && st.borg.tr(BI_ISWEAK) == 0 {
         return true;
     }
@@ -488,6 +495,61 @@ pub fn borg_can_dig(st: &mut BorgState, check_fail: bool, feat: u8) -> bool {
     }
 
     false
+}
+
+/// borg-reborn-rs (#1361 review): the digging skill with the best carried
+/// digger in the weapon slot, the one the engine wields for the turn of a
+/// tunnel command (cmd-cave.c:546-568, player-util.c:744-789: the best
+/// digging skill over the melee weapons, recalculated with each wielded).
+/// 0 with `wear_digger_keeps_weapon` at 0, with no carried digger, or with
+/// a sticky worn weapon, which the engine does not swap out. The kit is
+/// observed again with each digger wielded, so the result is kept for the
+/// rest of the Borg's turn.
+pub(crate) fn carried_digger_skill(st: &mut BorgState) -> i32 {
+    use crate::borg_item::inven_wield;
+    use crate::headers::list_object_flags_h::OF_STICKY;
+    use std::cell::Cell;
+    thread_local! {
+        static CACHE: Cell<Option<(i32, i32)>> = const { Cell::new(None) };
+    }
+    if crate::params::value(crate::params::Param::wear_digger_keeps_weapon) == 0 {
+        return 0;
+    }
+    let now = st.borg.time.now;
+    if let Some((time, skill)) = CACHE.get() {
+        if time == now {
+            return skill;
+        }
+    }
+    let wield = inven_wield() as usize;
+    let worn = st.items.items[wield];
+    let diggers: Vec<usize> = (0..wield)
+        .filter(|&i| {
+            let item = &st.items.items[i];
+            item.iqty > 0 && item.aware && u32::from(item.tval) == TV_DIGGING
+        })
+        .collect();
+    let mut best = 0;
+    if !diggers.is_empty() && !engine::flag_has(&worn.flags, OF_STICKY as i32) {
+        let items = st.items.items.clone();
+        let borg = st.borg.clone();
+        let traits = st.traits.clone();
+        let home = st.home.clone();
+        let do_spell = std::mem::replace(&mut st.think.do_spell, false);
+        for i in diggers {
+            st.items.items[wield] = crate::borg_headers::borg_item_h::borg_item { iqty: 1, ..items[i] };
+            crate::borg_trait::borg_notice(st, false);
+            best = best.max(st.borg.tr(BI_DIG));
+            st.items.items = items.clone();
+        }
+        st.items.items = items;
+        st.borg = borg;
+        st.traits = traits;
+        st.home = home;
+        st.think.do_spell = do_spell;
+    }
+    CACHE.set(Some((now, best)));
+    best
 }
 
 /// Clear the "flow" information.
