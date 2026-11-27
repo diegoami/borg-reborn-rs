@@ -53,6 +53,9 @@ pub(crate) struct Recovery {
     failed: HashMap<(Grid, Step), usize>,
     door_attempts: usize,
     pending: Option<(Grid, Step)>,
+    /// borg-reborn-rs (#1359): with `lightless_fallback`, recovery gave up on
+    /// this level and the ordinary think (borg-rs's) plays instead of a stop.
+    gave_up: bool,
 }
 
 pub(crate) fn update(st: &mut BorgState) -> bool {
@@ -71,7 +74,23 @@ pub(crate) fn update(st: &mut BorgState) -> bool {
             ..Recovery::default()
         };
     }
-    needs_light
+    if !needs_light || st.think_dungeon.lightless.gave_up {
+        return false;
+    }
+    // #1359: a monster in contact is the ordinary think's (caution, attack),
+    // as in borg-rs; recovery's routes treat monsters as walls.
+    !(param(Param::lightless_fallback) != 0 && monster_adjacent(st))
+}
+
+/// #1359: a living monster seen in the last two game turns next to the Borg.
+fn monster_adjacent(st: &BorgState) -> bool {
+    let c = st.borg.c;
+    let now = st.borg.time.now;
+    st.kills.kills[1..st.kills.nxt.max(1) as usize].iter().any(|kill| {
+        kill.r_idx != 0
+            && now.wrapping_sub(kill.when) <= 2
+            && engine::distance(kill.pos, c) <= 1
+    })
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -188,6 +207,13 @@ fn terrain(st: &mut BorgState, at: Grid, up_allowed: bool, seek_recall_light: bo
 }
 
 fn handoff(st: &mut BorgState, reason: &str) {
+    // borg-reborn-rs (#1359): with `lightless_fallback`, give the level back
+    // to the ordinary think instead of stopping the Borg.
+    if param(Param::lightless_fallback) != 0 {
+        crate::borg_io::borg_note(st, &format!("# Lightless recovery gives up ({reason}); ordinary play"));
+        st.think_dungeon.lightless.gave_up = true;
+        return;
+    }
     st.think_dungeon.lightless = Recovery::default();
     borg_oops(st, reason);
     // Return a key to the caller so its empty-queue abort does not replace
