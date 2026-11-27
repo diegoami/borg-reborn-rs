@@ -526,14 +526,22 @@ fn unload_arrival_kit(st: &mut BorgState) -> Option<bool> {
     }
     let allowance = crate::borg_town_budget::Facts::of(st).allowance();
     let lighten = allowance < crate::borg_town_utility::departure_room().weight;
-    let drop = crate::borg_junk::surplus_drop(st, lighten);
+    let mut drop = crate::borg_junk::surplus_drop(st, lighten);
+    let mut sale = None;
+    if let Some(surplus) = drop.filter(|drop| drop.sell_first) {
+        if crate::borg_spare_gear::teaches_on_sale(&st.items.items[surplus.slot]) {
+            // Review of #1312: give what a shop takes, never drop it.
+            sale = unknown_rune_gift(st, surplus.slot, surplus.quantity);
+            if sale.is_none() { drop = None; }
+        } else {
+            sale = spare_sale(st, surplus.slot, &st.items.items[surplus.slot], surplus.quantity);
+        }
+    }
     let trim = drop.is_none().then(|| enchanted_quiver_trim(st, 0)).flatten();
     if lighten || drop.is_some() || trim.is_some() {
-        if let Some(drop) = drop.filter(|drop| drop.sell_first) {
-            if let Some(sale) = spare_sale(st, drop.slot, &st.items.items[drop.slot], drop.quantity) {
-                st.think.town_live.arrival_sale_planned = true;
-                return Some(set_action(st, sale));
-            }
+        if let Some(sale) = sale {
+            st.think.town_live.arrival_sale_planned = true;
+            return Some(set_action(st, sale));
         }
         if st.borg.in_shop {
             clear(st);
@@ -1091,7 +1099,7 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
     let groups: std::collections::BTreeSet<_> = st.items.items[..pack].iter()
         .filter_map(|item| cleanup_slot(st, item))
         .chain(st.store.shops[BORG_HOME].ware.iter().filter_map(planned_slot)).collect();
-    let mut release_pack = crate::borg_junk::surplus_light_drop(st).map(|drop| pack_gear_disposal(st, drop.slot, drop.quantity));
+    let mut release_pack = crate::borg_junk::surplus_light_drop(st).and_then(|drop| pack_gear_disposal(st, drop.slot, drop.quantity));
     let mut release_home = None;
     let mut stash = None;
     for group in groups {
@@ -1110,12 +1118,15 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
             }
             _ => {}
         }
+        // Review of #1311: the planned upgrade was not made on this pass, so
+        // gear that beats the worn piece stays.
+        let pending = plan.upgrade.is_some();
         for entry in plan.stock {
             match entry.source {
                 GearLocation::Pack(slot) => {
                     let item = &st.items.items[slot];
-                    if entry.release > 0 && release_pack.is_none() {
-                        release_pack = Some(pack_gear_disposal(st, slot, entry.release));
+                    if entry.release > 0 && release_pack.is_none() && !(pending && entry.beats_worn) {
+                        release_pack = pack_gear_disposal(st, slot, entry.release);
                     }
                     // A withdrawn inferior variant does not block storing
                     // the selected backup of the same kind.
@@ -1128,7 +1139,7 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
                             at: [BORG_HOME as i64, slot as i64, i64::from(entry.stash), 0] });
                     }
                 }
-                GearLocation::Home(slot) if release_home.is_none() => {
+                GearLocation::Home(slot) if release_home.is_none() && !(pending && entry.beats_worn) => {
                     release_home = release_home_gear(st, slot, entry.release);
                 }
                 _ => {}
@@ -1137,13 +1148,14 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
     }
     if release_pack.is_none() {
         release_pack = crate::borg_junk::unplanned_pack_excess(st, false)
-            .map(|drop| pack_gear_disposal(st, drop.slot, drop.quantity));
+            .or_else(|| crate::borg_spare_gear::unknown_rune_excess(st, false))
+            .and_then(|drop| pack_gear_disposal(st, drop.slot, drop.quantity));
     }
     if release_home.is_none() {
         for slot in 0..st.store.shops[BORG_HOME].ware.len() {
             let item = &st.store.shops[BORG_HOME].ware[slot];
             if !can_rank(item) || planned_slot(item).is_some() { continue; }
-            let quantity = redundant_copies(st, GearLocation::Home(slot), crate::borg_junk::gear_alternatives());
+            let quantity = redundant_copies(st, GearLocation::Home(slot), crate::borg_junk::unplanned_gear_cutoff());
             release_home = release_home_gear(st, slot, quantity);
             if release_home.is_some() { break; }
         }
@@ -1151,14 +1163,28 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
     release_pack.or(release_home).or(stash)
 }
 
-fn pack_gear_disposal(st: &BorgState, slot: usize, quantity: u8) -> TownAction {
-    spare_sale(st, slot, &st.items.items[slot], quantity).unwrap_or(TownAction {
+fn pack_gear_disposal(st: &BorgState, slot: usize, quantity: u8) -> Option<TownAction> {
+    let item = &st.items.items[slot];
+    if crate::borg_spare_gear::teaches_on_sale(item) {
+        return unknown_rune_gift(st, slot, quantity);
+    }
+    Some(spare_sale(st, slot, item, quantity).unwrap_or(TownAction {
         code: DROP_SURPLUS, at: [-1, slot as i64, i64::from(quantity), 0],
-    })
+    }))
+}
+
+/// Review of #1312: gear with unknown runes never goes to the floor in town.
+/// Offer the largest quantity a shop accepts. With no taker, defer.
+fn unknown_rune_gift(st: &BorgState, slot: usize, quantity: u8) -> Option<TownAction> {
+    let item = &st.items.items[slot];
+    (1..=quantity).rev().find_map(|copies| spare_sale(st, slot, item, copies))
 }
 
 fn spare_sale(st: &BorgState, slot: usize, item: &borg_item, quantity: u8) -> Option<TownAction> {
-    if item.value <= 0 {
+    // #1308: a shop that accepts gear with unknown runes teaches every rune
+    // on the sale, even when it pays nothing (store.c:532-534, 1948-1952).
+    let teaches = crate::borg_spare_gear::teaches_on_sale(item);
+    if item.value <= 0 && !teaches {
         return None;
     }
     let native = crate::engine::inven_object(&st.access, slot)?;
@@ -1167,7 +1193,7 @@ fn spare_sale(st: &BorgState, slot: usize, item: &borg_item, quantity: u8) -> Op
         !sale_rejected(st, shop as i16, item)
             && crate::borg_store_sell::borg_store_buys(item, shop as i32)
             && native.store_accepts_quantity(shop, quantity)
-            && (crate::borg_junk::gear_alternatives() == 0 || native.sale_quote(shop, quantity) > 0)
+            && (crate::borg_junk::gear_alternatives() == 0 || teaches || native.sale_quote(shop, quantity) > 0)
     })?;
     Some(TownAction { code: action::SELL, at: [shop as i64, slot as i64, i64::from(quantity), 0] })
 }

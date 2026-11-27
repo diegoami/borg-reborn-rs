@@ -349,6 +349,14 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             // may still put the spare at Home to save carried weight.
             home_role = Role::Gear;
         }
+        // #1308: an unknown-rune spare is carried until identified or given
+        // to a shop, never stored. Its unknown runes still protect it from
+        // the planner's own sale or drop.
+        if ranked_gear && crate::borg_town_live::gear_home_backups() && place == Place::Pack
+            && crate::borg_spare_gear::teaches_on_sale(it) && it.art_idx == 0 && it.activ_idx == 0 && !it.cursed
+        {
+            home_role = Role::Renewable;
+        }
         if home_role == Role::LatePotion {
             let home = &st.store.shops[BORG_HOME].ware;
             let earlier = if place == Place::Home { &home[..slot] } else { &home[..] };

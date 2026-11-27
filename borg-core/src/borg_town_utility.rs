@@ -1379,30 +1379,48 @@ mod tests {
         }
     }
 
-    /// #1317: a resist swap stored at Home has no power below the swap
-    /// depth (`borg_trait_swap.rs`). Supplies below their share may replace
-    /// unprotected gear, but never gear the ranked plan protects.
+    /// #1317 (review of #1322): a resist swap stored at Home adds no power
+    /// below the swap depth (`borg_trait_swap.rs`). At a full Home below the
+    /// supply share, an incoming priority potion replaces expendable stock;
+    /// the swap, protected by the ranked plan as `kit_of` marks it, stays.
     #[test]
-    fn supplies_never_replace_protected_gear_without_power() {
+    fn a_priority_potion_replaces_expendable_stock_not_a_zero_power_resist_swap() {
         use crate::borg_town_record::PLAN_SCHEMA;
         let st = state(10, 23, 160);
         let stock = KitItem { need: -1, reduction: 0, ..recall(Place::Home) };
-        let swap = KitItem { home_role: Role::Gear, power: 0, kind: 1, slot: 0, ..stock };
-        let filler = KitItem { home_role: Role::Gear, power: 50, ..stock };
-        let mut kit = vec![swap];
-        kit.extend((1..24).map(|slot| KitItem { kind: 1 + u32::from(slot), slot, ..filler }));
+        let swap = KitItem { home_role: Role::Gear, power: 0, protect_disposal: true, kind: 1, slot: 0, ..stock };
+        let common = KitItem { home_role: Role::Common, kind: 2, slot: 1, qty: 3, sell_shop: 4, ..stock };
+        let filler = KitItem { home_role: Role::Gear, power: -50, protect_disposal: true, ..stock };
+        let mut kit = vec![swap, common];
+        kit.extend((2..24).map(|slot| KitItem { kind: 1 + u32::from(slot), slot, ..filler }));
+        let potion = KitItem { place: Place::Pack, home_role: Role::LatePotion, kind: 99, slot: 0, sell_shop: -1, ..stock };
+        kit.push(potion);
+        let mut inp = input(&kit);
+        inp.revision = PLAN_SCHEMA;
+        inp.home_slots = 0;
         let out = vec![Disposition::Keep; kit.len()];
-        let replace = |kit: &[KitItem]| {
-            let mut inp = input(kit);
+        let u = Utility::of(&st, &kit, false);
+        assert_eq!(home_supply_balance(&inp, &out), Some((0, 8)), "below the supply share");
+        assert_eq!(home_replacement(&inp, &u, &out, potion.kind, Role::LatePotion.rank(), 1), Some(1),
+            "the Common stack is the replacement, not the swap");
+        let mut u = Utility::of(&st, &kit, false);
+        let (actions, _, _) = dispositions(&inp, &mut u, &st);
+        assert_eq!((actions[0], actions[1], actions[24]), (Disposition::Keep, Disposition::Sell, Disposition::Store),
+            "{actions:?}");
+        assert!(actions[2..24].iter().all(|&a| a == Disposition::Keep), "{actions:?}");
+
+        // With no expendable stock left, the zero-power swap is promoted
+        // unless the ranked plan protects it: the case this guards.
+        kit[1] = KitItem { kind: 2, slot: 1, ..filler };
+        for (protected, expected) in [(true, None), (false, Some(0))] {
+            kit[0].protect_disposal = protected;
+            let mut inp = input(&kit);
             inp.revision = PLAN_SCHEMA;
             inp.home_slots = 0;
-            let u = Utility::of(&st, kit, false);
-            assert_eq!(home_supply_balance(&inp, &out), Some((0, 8)));
-            home_replacement(&inp, &u, &out, 100, Role::LatePotion.rank(), 1)
-        };
-        assert_eq!(replace(&kit), Some(0), "an unprotected swap without power is promoted");
-        kit[0].protect_disposal = true;
-        assert_ne!(replace(&kit), Some(0), "the ranked plan's protection keeps the swap");
+            let u = Utility::of(&st, &kit, false);
+            assert_eq!(home_replacement(&inp, &u, &out, potion.kind, Role::LatePotion.rank(), 1), expected,
+                "protected {protected}");
+        }
     }
 
     #[test]
