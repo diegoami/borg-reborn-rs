@@ -9356,3 +9356,17 @@ of the item. Fully known spares still drop when the sale pays nothing. An
 unknown-rune spare is never stored at Home. The ordinary town planner keeps
 it until it is identified or released. No parameter or default changes.
 [Handover](handover/2026-11-27-1308-unknown-rune-spares.md)
+
+## Retained, partly known gear covers spares (#1309)
+
+Gear the Borg keeps whatever the plan says covers spares by its visible
+properties, even with unknown runes or an untried activation: the worn
+piece, an artifact, an item with a known activation, or a staged loadout.
+Those properties are a lower bound on what the item gives. A known curse
+removes the cover. This applies to the alternative side only; a spare is
+judged by the rules above. Such gear can take the regular backup's place,
+so a plain spare behind it leaves. The plan never wears, stores or releases
+it on that basis. A hidden curse is an accepted risk: among the standard
+artifacts only Calris has one (`artifact.txt`, air swing). No parameter or
+default changes.
+[Handover](handover/2026-11-27-1309-observed-cover.md)
