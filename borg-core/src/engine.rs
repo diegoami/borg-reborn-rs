@@ -3291,6 +3291,15 @@ pub fn term_load() {
     }
 }
 
+/// Switch the Borg selected by the shared Ctrl-Z prompt.
+pub fn switch_borg() {
+    extern "C" {
+        fn borg_switch_selection();
+    }
+    // SAFETY: a call on the engine thread with no arguments.
+    unsafe { borg_switch_selection() }
+}
+
 /// `Term_flush()`: discard pending keypresses.
 pub fn term_flush() {
     // SAFETY: plain call on the active term.

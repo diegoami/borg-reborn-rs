@@ -1,19 +1,20 @@
-Share the Ctrl-Z prompt between the C and Rust Borgs. Guarded by BORG_HARNESS.
+Share the Ctrl-Z prompt and Borg switching between the C and Rust Borgs. Guarded by BORG_HARNESS.
 
 --- a/src/cmd-misc.c
 +++ b/src/cmd-misc.c
-@@ -24,6 +24,10 @@
+@@ -24,6 +24,11 @@
  #include "game-input.h"
  #include "init.h"
  #include "mon-lore.h"
 +#ifdef BORG_HARNESS
 +#include "ui-output.h"
++#include "ui-term.h"
 +#include "z-textblock.h"
 +#endif
  #include "mon-util.h"
  #include "player-calcs.h"
  #include "player-history.h"
-@@ -109,6 +113,62 @@
+@@ -109,6 +114,100 @@
  
  extern void do_cmd_borg(void);
  
@@ -38,45 +39,83 @@ Share the Ctrl-Z prompt between the C and Rust Borgs. Guarded by BORG_HARNESS.
 +			"Hi, I am the P-Borg, a partial rewrite of the original Borg "
 +			"in Rust, whose main focus is survivability.\n\n"
 +			"You are more likely to get bored than to die with us.\n\n"
-+			"This build uses the borg-rs decision core by default.");
++			"P-Borg includes the borg-rs port of C-Borg and the reborn rewrite.");
 +		textui_textblock_show(greeting, SCREEN_REGION, "P-Borg");
 +		textblock_free(greeting);
 +		pborg_introduced = true;
 +	}
 +}
 +
-+static void do_cmd_selected_borg(void)
++void borg_switch_selection(void)
 +{
-+	const char *prompt = use_cborg
-+		? "CBorg command (? for help, B for PBorg): "
-+		: "PBorg command (? for help, B for CBorg): ";
-+	/* Keep interactive greetings out of deterministic replays. */
-+	bool interactive = !streq(ANGBAND_SYS, "borgh");
-+	char cmd;
++	use_cborg = !use_cborg;
++}
 +
-+	if (!get_com(prompt, &cmd))
-+		return;
++static void run_selected_borg_command(char cmd)
++{
 +	if (cmd == 'B') {
-+		use_cborg = !use_cborg;
-+		if (interactive)
-+			greet_selected_borg();
-+		else
-+			msg("%s selected. Press Ctrl-Z for commands.", use_cborg ? "CBorg" : "PBorg");
++		borg_switch_selection();
 +		return;
 +	}
-+	if (interactive && cmd == 'z')
++	/* Keep interactive greetings out of deterministic replays. */
++	if (cmd == 'z' && !streq(ANGBAND_SYS, "borgh"))
 +		greet_selected_borg();
 +	if (use_cborg)
 +		do_cmd_cborg_key((unsigned char)cmd);
 +	else
 +		do_cmd_pborg((unsigned char)cmd);
 +}
++
++/* The fallback help mirrors borg-reborn-rs/src/borg.rs's command():
++ * z starts the core. B and ? are shared prompt commands. */
++void do_cmd_reborn_borg_help(void)
++{
++	char cmd;
++	bool accepted;
++
++	Term_save();
++	Term_clear();
++	Term_putstr(2, 2, -1, COLOUR_WHITE, "Command 'z' activate borg");
++	Term_putstr(2, 3, -1, COLOUR_WHITE, "Command 'B' switch to CBorg");
++	do {
++		accepted = get_com("PBorg command (? for help): ", &cmd);
++	} while (accepted && cmd == '?');
++	Term_load();
++
++	if (!accepted)
++		return;
++	if (cmd == 'B' || cmd == 'z')
++		run_selected_borg_command(cmd);
++	else
++		msg("That is not a legal Borg command.");
++}
++
++static void do_cmd_selected_borg(void)
++{
++	const char *prompt = use_cborg
++		? "CBorg command (? for help): "
++		: "PBorg command (? for help): ";
++	bool was_cborg = use_cborg;
++	char cmd;
++
++	if (!get_com(prompt, &cmd))
++		return;
++	run_selected_borg_command(cmd);
++	/* A command entered in help may have switched Borgs. Greet after help
++	 * has restored the game screen. */
++	if (use_cborg != was_cborg) {
++		if (!streq(ANGBAND_SYS, "borgh"))
++			greet_selected_borg();
++		else
++			msg("%s selected. Press Ctrl-Z for commands.", use_cborg ? "CBorg" : "PBorg");
++	}
++}
 +#endif
 +
  /*
   * Verify use of "borg" mode
   */
-@@ -131,7 +191,11 @@
+@@ -131,7 +230,11 @@
  	}
  
  	/* Okay */
@@ -90,7 +129,25 @@ Share the Ctrl-Z prompt between the C and Rust Borgs. Guarded by BORG_HARNESS.
  #endif /* ALLOW_BORG */
 --- a/src/borg/borg-commands.c
 +++ b/src/borg/borg-commands.c
-@@ -1554,7 +1554,11 @@
+@@ -96,6 +96,9 @@
+ static void borg_cmd_respawn(void);
+ static void borg_cmd_version(void);
+ extern void do_cmd_borg(void);
++#ifdef BORG_HARNESS
++extern void borg_switch_selection(void);
++#endif
+ static struct borg_commands borg_commands[] = {
+     { '?', "borg command help", borg_cmd_help },
+     { '$', "reload borg.txt file", borg_cmd_init_txt_file },
+@@ -126,4 +129,7 @@
+     { 'o', "object details", borg_cmd_object_desc },
+     { 'R', "respawn", borg_cmd_respawn },
+     { 'v', "version", borg_cmd_version },
++#ifdef BORG_HARNESS
++    { 'B', "switch to PBorg", borg_switch_selection },
++#endif
+ };
+@@ -1554,7 +1560,11 @@
  /*
   * Interact with the Borg
   */
@@ -102,7 +159,7 @@ Share the Ctrl-Z prompt between the C and Rust Borgs. Guarded by BORG_HARNESS.
  {
      int  i;
      char cmd = 0;
-@@ -1574,6 +1578,11 @@
+@@ -1574,6 +1584,11 @@
      borg.c = player->grid;
  
      /* Get a "Borg command", or abort */
@@ -114,7 +171,7 @@ Share the Ctrl-Z prompt between the C and Rust Borgs. Guarded by BORG_HARNESS.
      if (!get_com("Borg command (? for help): ", &cmd)) {
          /* Restore the screen */
          Term_load();
-@@ -1611,4 +1620,11 @@
+@@ -1611,4 +1626,11 @@
      return;
  }
  
@@ -123,6 +180,6 @@ Share the Ctrl-Z prompt between the C and Rust Borgs. Guarded by BORG_HARNESS.
 +{
 +    do_cmd_cborg_key(-1);
 +}
- #endif
-+
 +#endif
++
+ #endif

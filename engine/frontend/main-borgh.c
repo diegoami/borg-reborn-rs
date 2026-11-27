@@ -40,6 +40,7 @@
  *
  * Usage: angband -mborgh -n -u<name> -d... -- [options]
  *   -cborg           switch to CBorg through the normal command prompt
+ *   -borg-help       exercise the help-screen Borg switch in both directions
  *   -seed N       seed the game RNG (also settable with $ANGBAND_SEED)
  *   -race N       race index (0-based, as in p_race.txt); explicit only
  *   -class N      class index (0-based, as in class.txt); explicit only
@@ -193,6 +194,7 @@ static bool finished = false;
 static bool borg_started = false;
 static bool opt_cborg = false;
 static bool test_map_export = false;
+static bool opt_borg_help = false;
 static int startup_acks = 0;	/* "-more-" prompts answered before the Borg's first key */
 
 /* Scripted keys (before the Borg is running) */
@@ -1077,6 +1079,8 @@ errr init_borgh(int argc, char *argv[])
 			borgh_seed_set = true;
 		} else if (streq(argv[i], "-cborg")) {
 			opt_cborg = true;
+		} else if (streq(argv[i], "-borg-help")) {
+			opt_borg_help = true;
 		} else if (streq(argv[i], "-race")) {
 			opt_race = (int)arg_long(argc, argv, &i);
 		} else if (streq(argv[i], "-class")) {
@@ -1276,6 +1280,14 @@ errr init_borgh(int argc, char *argv[])
 	script_add(KC_ENTER);                     /* final confirm */
 	}
 	script_add(SCRIPT_START_BORG);            /* Ctrl-Z */
+	if (opt_borg_help) {
+		for (int i = 0; i < 2; i++) {
+			script_add('?');          /* open the selected Borg's help */
+			script_add('?');          /* ask for help from that prompt */
+			script_add('B');          /* switch from help */
+			script_add(KTRL('Z'));
+		}
+	}
 	if (opt_cborg) {
 		script_add('B');                      /* switch PBorg to CBorg */
 		script_add(KTRL('Z'));                /* open CBorg's commands */

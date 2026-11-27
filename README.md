@@ -4,8 +4,9 @@
 
 An automatic player (a "Borg") for [Angband](https://github.com/angband/angband)
 4.2.6, in Rust. Press **Ctrl-Z** to open the Borg prompt. PBorg is selected
-at startup. Press **B** at the prompt to switch Borgs and **Ctrl-Z**, **z**
-to start the selected Borg. The game engine is upstream Angband at
+at startup. Press **?** to see the commands, including **B** to switch Borgs.
+Press **Ctrl-Z** then **z** to start the selected Borg. The game engine is
+upstream Angband at
 `574b618c3bfec595f3503a58f8e488b1c4ae3a46`. PBorg plays with the
 **borg-rs core**: a line-by-line Rust translation of the original C Borg,
 vendored in `borg-core/`, with named settings, errands and a decision trace

@@ -170,8 +170,9 @@ every field.
   name and the layout are part of the zoo contract (§4).
 - **Combined build (#1288):** `BORG_IMPL=rust` links the Rust staticlib and
   the native C Borg into one executable. Ctrl-Z opens PBorg by default.
-  `B` switches between PBorg and CBorg for the session. The harness retains
-  `BORG_IMPL=rust` and the `build/rust/` layout for the Zoo.
+  The prompt points to `?`, which lists `B` for switching between PBorg
+  and CBorg for the session (#1301). The harness retains `BORG_IMPL=rust`
+  and the `build/rust/` layout for the Zoo.
 - **Identity:** `BUILD_ID` holds the hashes of the build's inputs (engine
   tree, patches, frontend, Borg sources, Cargo.lock), the binary's
   `binary_sha256` and the implementation. A run records it.
