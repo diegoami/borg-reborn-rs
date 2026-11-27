@@ -567,12 +567,19 @@ fn armour_value(st: &BorgState, item: &borg_item) -> i32 {
     v
 }
 
-/// borg-reborn-rs (#1320): the digging power a digger gives when wielded,
-/// as the engine counts it: its DIG_1/2/3 level plus its known tunnelling
-/// modifier (player-calcs.c:1959-1969). A Shovel is 1, a Pick 2, a Mattock 3
-/// (object.txt), and "of Digging" adds TUNNEL[d4] (ego_item.txt).
+/// borg-reborn-rs (#1320): the digging power a digger gives when wielded:
+/// for a digger only, its DIG_1/2/3 level, plus its tunnelling modifier
+/// (player-calcs.c:1959-1969). A Shovel is 1, a Pick 2, a Mattock 3
+/// (object.txt); "of Digging" adds TUNNEL[d4] and "of Earthquakes"
+/// TUNNEL[d6] (ego_item.txt), so the power reaches 9. The modifier is the
+/// item's actual one, which the Borg reads for every modifier
+/// (`borg_item_analyze.rs`, as C's borg-item-analyze.c:492-494). The engine
+/// counts it only once the player knows the tunnelling rune
+/// (player-calcs.c:1967-1968).
 pub(crate) fn digger_power(item: &borg_item) -> i16 {
-    let level = if of_has(item, OF_DIG_1) {
+    let level = if u32::from(item.tval) != TV_DIGGING {
+        0
+    } else if of_has(item, OF_DIG_1) {
         1
     } else if of_has(item, OF_DIG_2) {
         2
@@ -582,6 +589,17 @@ pub(crate) fn digger_power(item: &borg_item) -> i16 {
         0
     };
     level + item.modifiers[OBJ_MOD_TUNNEL as usize]
+}
+
+/// borg-reborn-rs (#1320 review): `weapon_value` of `item` with the digger
+/// power set to `digger`, for the native fixture.
+#[cfg(feature = "test-town-loadout")]
+pub(crate) fn weapon_value_for_test(st: &mut BorgState, item: &borg_item, digger: i16) -> i32 {
+    let kept = st.trait_swap.weapon_swap_digger;
+    st.trait_swap.weapon_swap_digger = digger;
+    let v = weapon_value(st, item);
+    st.trait_swap.weapon_swap_digger = kept;
+    v
 }
 
 /// Notice the player swap weapon.
@@ -869,6 +887,13 @@ mod tests {
         set(&mut mattock, OF_DIG_3);
         assert_eq!(digger_power(&mattock), 3);
         assert_eq!(digger_power(&crate::borg_item::blank_item()), 0);
+        // the engine counts the DIG level only for a digger (player-calcs.c:1959)
+        let mut sword = crate::borg_item::blank_item();
+        sword.tval = TV_SWORD as u8;
+        set(&mut sword, OF_DIG_2);
+        assert_eq!(digger_power(&sword), 0);
+        sword.modifiers[OBJ_MOD_TUNNEL as usize] = 2;
+        assert_eq!(digger_power(&sword), 2);
     }
 
     #[test]

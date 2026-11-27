@@ -9429,7 +9429,7 @@ value is a hypothesis for the zoo.
 
 | Parameter | Default | Unit | Range | Read at |
 | --- | --- | --- | --- | --- |
-| `swap_carry_min_depth` | 50 | level | 0–128 | `borg_trait_swap.rs:596` |
+| `swap_carry_min_depth` | 50 | level | 0–128 | `borg_trait_swap.rs:631` |
 
 Taking a swap out of Home for the coming trip is not implemented (owner
 decision pending in #1319). [Handover](handover/2026-11-27-1315-swap-home.md)
@@ -9443,11 +9443,21 @@ value as the weapon swap. The C Borg takes `digger` from the item's `pval`
 power elsewhere, so the reward never applied, and a digger became the swap
 only by its melee value. A plain Shovel at max depth 30 got swap value -1.
 
-With `swap_digger_tunnel`, `digger` is the digging power the engine adds
-when the digger is wielded (`player-calcs.c:1959-1969`). That is the item's
-DIG_1/2/3 level plus its known tunnelling modifier: a Shovel 1, a Pick 2, a
-Mattock 3 (`object.txt`), and *of Digging* adds TUNNEL[d4]
-(`ego_item.txt`). The other gates are unchanged:
+With `swap_digger_tunnel`, `digger` is the digging power a wielded digger
+gives (`player-calcs.c:1959-1969`). That is its DIG_1/2/3 level plus its
+tunnelling modifier: a Shovel 1, a Pick 2, a Mattock 3 (`object.txt`).
+*Of Digging* adds TUNNEL[d4] and *of Earthquakes* TUNNEL[d6]
+(`ego_item.txt`), so `digger` is 1–3 without an ego and up to 9 with one.
+The reward is then 4,500 to 32,500, against 11,500 at most for the pval
+scale the C constants were set for.
+
+The Borg reads the item's actual tunnelling modifier, as it reads every
+modifier (`borg_item_analyze.rs`, as the C Borg's
+`borg-item-analyze.c:492-494`). The engine counts it only once the
+tunnelling rune is known (`player-calcs.c:1967-1968`), so an unidentified
+digger ego is valued on a number the player has not seen.
+
+The other gates are unchanged:
 - a digger is not noticed while the wielded weapon digs;
 - it is not noticed while Stone to Mud is castable at 40% fail or better;
 - a worthless or cursed one is skipped.
@@ -9457,6 +9467,6 @@ with smoke identical, so it is a hypothesis until the zoo measures it.
 
 | Parameter | Default | Unit | Range | Read at |
 | --- | --- | --- | --- | --- |
-| `swap_digger_tunnel` | 0 | flag | 0–1 | `borg_trait_swap.rs:650` |
+| `swap_digger_tunnel` | 0 | flag | 0–1 | `borg_trait_swap.rs:668` |
 
 [Handover](handover/2026-11-27-1320-digger-tunnel.md)

@@ -610,7 +610,12 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
             let (swap, value, digger) = (st.trait_swap.weapon_swap, st.trait_swap.weapon_swap_value, st.trait_swap.weapon_swap_digger);
             if on {
                 assert_eq!((swap, digger), (slot as i32 + 1, 1), "the Shovel is the tunnelling swap (value {value})");
-                assert!(value > 4500, "the reward 1 * 3500 + 1000 is counted: {value}");
+                // The swap value is the Shovel's value with its power, and
+                // exactly the reward 1 * 3500 + 1000 above its melee value.
+                assert_eq!(crate::borg_trait_swap::weapon_value_for_test(st, &shovel, 1), value);
+                let melee = crate::borg_trait_swap::weapon_value_for_test(st, &shovel, 0);
+                assert_eq!(value - melee, 4500, "melee {melee}, swap {value}");
+                assert!(melee <= 1000, "without the reward the Shovel is no swap: {melee}");
             } else {
                 assert_eq!((swap, value, digger), (0, -1, 0), "C's pval reading: no reward, no swap");
             }
