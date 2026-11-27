@@ -29,6 +29,8 @@ DARKNESS_WAND = (23, 19)
 CONTEMPLATION = (26, 19)
 NIMBLENESS = (26, 20)
 SECOND_SIGHT = (29, 1)
+EXPERIENCE = (26, 7)
+STAR_ENLIGHTENMENT = (26, 23)
 
 
 @unittest.skipUnless(GAME.is_file(), "test-junk-consumables build required")
@@ -166,6 +168,29 @@ class JunkConsumablesTest(unittest.TestCase):
         self.assertNotIn("Quaffing Potion of Nimbleness", messages)
         self.assertNotIn("Selling Potion of Contemplation", messages)
         self.assertIn("You had 2 Mushrooms of Second Sight", messages)
+
+    def test_town_drinks_experience_and_star_enlightenment_on_purpose(self):
+        # #1373, #1374. Both have no harmful effect and their benefit is the
+        # drink. Experience was drunk only by junk cleanup; *Enlightenment*
+        # was on WORTHLESS, so a carried copy was sold or dropped.
+        kit = [(EXPERIENCE, 1, True, 0), (STAR_ENLIGHTENMENT, 1, True, 0),
+               (CURE_LIGHT_WOUNDS, 2, True, 0)]
+        params = {"item_use_drink_experience": 1, "item_use_star_enlightenment": 1}
+        messages, frames = self.launch(kit, keys=120, params=params)
+        self.assertEqual(frames[1]["check"], "borg_use_things")
+        self.assertIn("# Quaffing Potion of Experience.", messages)
+        self.assertIn("You feel more experienced.", messages)
+        self.assertIn("# Quaffing Potion of *Enlightenment*.", messages)
+        self.assertIn("You feel very smart!", messages)
+        self.assertIn("You feel very wise!", messages)
+        self.assertNotIn("Selling Potion of *Enlightenment*", messages)
+        self.assertNotIn("Quaffing Potion of Cure Light Wounds", messages)
+
+        # The earlier play, the control: the kinds are not drunk on purpose.
+        messages, _ = self.launch(kit, keys=120)
+        self.assertNotIn("Quaffing Potion of Experience", messages)
+        self.assertNotIn("Quaffing Potion of *Enlightenment*", messages)
+        self.assertNotIn("You feel more experienced.", messages)
 
 
 if __name__ == "__main__":
