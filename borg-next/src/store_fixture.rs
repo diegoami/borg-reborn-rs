@@ -1,5 +1,5 @@
 //! R437 copied-memory controls. Queued commands are never consumed by the engine.
-use crate::shadow::Mode;
+use crate::shadow::{Mode, DIAGNOSTIC_SCHEMA};
 use borg_rs::decision_api::{
     borg_cave::{BorgGrid, AUTO_MAX_Y},
     borg_headers::borg_h::{
@@ -823,5 +823,5 @@ fn record(
 }
 
 fn context(mode: Mode, label: &str, readonly: bool) -> serde_json::Value {
-    serde_json::json!({"schema":"borg-reborn-rs/shadow@9","mode":mode,"point":format!("fixture.store.{label}"),"readonly":readonly,"synthetic":true})
+    serde_json::json!({"schema":DIAGNOSTIC_SCHEMA,"mode":mode,"point":format!("fixture.store.{label}"),"readonly":readonly,"synthetic":true})
 }
