@@ -1351,6 +1351,9 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     if case == "flow-step" {
         borg_flow::run_step_selection_regression(st);
     }
+    if case == "stair-preview-wipe" {
+        run_stair_preview_wipe_regression(st);
+    }
 
     fn observe_move(st: &mut BorgState, direction: u8, expected: loc) {
         assert_eq!(st.io.queued_keys(), [u32::from(direction)], "movement from ({}, {})", st.borg.c.x, st.borg.c.y);
@@ -1426,5 +1429,60 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     println!("emergency stair handoff passed: {case}");
     // This test-only process owns a fabricated Borg observation. End before
     // its queued keys can be applied to the live engine's unrelated cave.
+    std::process::exit(0);
+}
+
+#[cfg(feature = "test-stair-handoff")]
+fn run_stair_preview_wipe_regression(live: &BorgState) -> ! {
+    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_MORE};
+
+    let mut st = live.clone();
+    crate::borg_cave::borg_init_cave(&mut st);
+    st.borg.c = loc { x: 40, y: 20 };
+    st.borg.status.desperate = false;
+    st.borg.avoidance = 89;
+    for (index, value) in [(BI_CLEVEL, 12), (BI_CURHP, 89), (BI_LIGHT, 1)] {
+        st.borg.trait_[index as usize] = value;
+    }
+    st.stairs.less.num = 0;
+    st.stairs.more.num = 0;
+    for x in 39..=41 {
+        st.cave.grid_mut(x, 20).feat = FEAT_FLOOR as u8;
+    }
+    st.cave.grid_mut(42, 20).feat = FEAT_MORE as u8;
+    borg_io::borg_flush(&mut st);
+    borg_flow::borg_flow_clear(&mut st);
+
+    st.flow.data_know[20][39..=41].fill(1);
+    borg_flow::borg_flow_enqueue_grid(&mut st, 20, 39);
+    borg_flow::borg_flow_enqueue_grid(&mut st, 20, 40);
+    st.flow.tail = 1;
+    st.flow.hunting = true;
+    st.flow.data_flow[20][40] = 17;
+    st.flow.data_cost[20][40] = 9;
+    // The marked floor between the Borg and stair is the only route.
+    st.flow.data_icky[20][41] = 1;
+    st.danger.wipe = true;
+    let saved = st.flow.clone();
+
+    assert_eq!(stair_steps_around(&mut st), [255; 8]);
+    assert!(st.danger.wipe, "a preview with no stairs leaves the wipe pending");
+    assert!(st.flow == saved, "the no-stair preview leaves the workspace intact");
+
+    st.stairs.more.num = 1;
+    st.stairs.more.x[0] = 42;
+    st.stairs.more.y[0] = 20;
+    assert_eq!(stair_steps_around(&mut st), [255, 255, 1, 3, 255, 255, 255, 255]);
+    assert!(st.flow == saved, "the preview restores the flow workspace and cached classifications");
+    assert!(!st.borg.status.desperate, "the preview restores the caller's desperation flag");
+    assert!(!st.danger.wipe, "the preview consumes the wipe");
+
+    borg_flow::borg_flow_clear(&mut st);
+    assert_eq!((st.flow.head, st.flow.tail, st.flow.cost_at(20, 40)), (0, 0, 255));
+    assert_eq!((st.flow.data_know[20][41], st.flow.data_icky[20][41]), (1, 1));
+    assert_eq!(stair_steps_around(&mut st), [255; 8], "the restored veto still blocks the route");
+    assert!(st.io.queued_keys().is_empty());
+
+    println!("stair preview wipe passed");
     std::process::exit(0);
 }
