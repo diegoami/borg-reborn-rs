@@ -162,11 +162,16 @@ require copied-state controls for
 representative failed attempts, normal/urgent/errand precedence, repeated
 flow calls, and bravery restore. Compare selected action and trace, queued
 keys, return value, state and dependency/RNG order. Run small exact
-off/check/switch smoke when a new entry is wired. Use Zoo for the full
-45-start comparison, with accepted native and a newly pinned candidate
-built under the shipped settings. [Existing stair cases](../engine/tests/test_stair_handoff.py#L57) ·
+off/check/switch smoke when a new entry is wired. Check each active arm with
+`harness/check-shadow.py --r5 --expect-mode MODE ARM_ROOT`, using `check`
+or `switch` for `MODE`. Compare each arm against off with
+`harness/diff --suite smoke --expect-impl rust OFF_ROOT ARM_ROOT`. Use Zoo
+for the full 45-start comparison, with accepted native and a newly pinned
+candidate built under the shipped settings.
+[Existing stair cases](../engine/tests/test_stair_handoff.py#L57) ·
 [Weighted route controls](../borg-core/src/borg_flow.rs#L1968) ·
-[Shadow gate](../harness/check-r45-suite.py)
+[R5 shadow reader](../harness/check-shadow.py) ·
+[Exact gameplay diff](../harness/diff)
 
 This task is a source audit. The control list describes validation for
 future code ports. A later main carry needs its own receiving pin and a
