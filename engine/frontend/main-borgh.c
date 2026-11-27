@@ -935,13 +935,15 @@ static errr term_xtra_borgh(int n, int v)
 		 */
 		if (script_pos < script_len) {
 			if (!v) return 0;
-			/* Loading can trigger msg_flush() after the splash. Leave
-			 * the start marker queued while any such prompt is open. */
-			if (((opt_load && script[script_pos] == SCRIPT_START_BORG)
-					|| (test_map_export && borg_started))
+			/* Keep scripted input queued while msg_flush() waits for
+			 * acknowledgment during load or the map export test. */
+			bool load_start = opt_load && script[script_pos] == SCRIPT_START_BORG;
+			if ((load_start || (test_map_export && borg_started))
 					&& !inkey_flag && more_prompt_shown()) {
-				if (getenv("BORGH_DEBUG"))
-					fprintf(stderr, "borgh: acknowledging scripted -more- prompt\n");
+				if (getenv("BORGH_DEBUG")) {
+					fprintf(stderr, "borgh: acknowledging %s -more- prompt\n",
+						load_start ? "load" : "map export");
+				}
 				Term_keypress(ESCAPE, 0);
 				return 0;
 			}
