@@ -251,7 +251,6 @@ pub(crate) fn preferred_elemental_dagger(st: &BorgState) -> Option<u8> {
 pub(crate) fn redundant_elemental_dagger(st: &BorgState, item: &borg_item, preferred: Option<u8>) -> bool {
     preferred.is_some_and(|artifact| artifact != item.art_idx)
         && elemental_dagger(item).is_some_and(|resist| st.borg.tr(resist) > 0)
-        && !crate::borg_town_live::retained_gear(st, item)
 }
 
 pub(crate) fn gear_slot(item: &borg_item) -> Option<usize> {

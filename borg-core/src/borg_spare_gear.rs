@@ -294,14 +294,13 @@ fn redundant_static_gear(st: &BorgState, spare: &borg_item, spare_slot: usize, a
 pub(crate) fn redundant_carried_launcher(st: &BorgState, slot: usize) -> bool {
     let spare = &st.items.items[slot];
     u32::from(spare.tval) == TV_BOW && !crate::borg_junk::is_swap(st, slot as i32)
-        && !crate::borg_town_live::retained_gear(st, spare)
         && redundant_static_gear(st, spare, slot, false)
 }
 
 pub(crate) fn redundant_home_gear(st: &mut BorgState, slot: usize) -> bool {
     let spare = st.store.shops[crate::borg_store::BORG_HOME].ware[slot];
     crate::borg_junk::gear_alternatives() == 0 && crate::borg_junk::exploration_first()
-        && !crate::borg_town_live::retained_gear(st, &spare)
+        && !crate::borg_town_live::retained_home_gear(st, slot)
         && if melee_weapon(&spare) { redundant_melee(st, slot, true) }
             else { redundant_static_gear(st, &spare, slot, true) }
 }
@@ -497,8 +496,9 @@ pub(crate) fn planned_slot(item: &borg_item) -> Option<usize> {
         && u32::from(item.tval) != TV_DIGGING).then(|| ranked_slot(item)).flatten()
 }
 
-fn protected_gear(st: &BorgState, item: &borg_item) -> bool {
-    item.art_idx != 0 || item.activ_idx != 0 || crate::borg_town_live::retained_gear(st, item)
+fn protected_gear(st: &BorgState, item: &borg_item, source: GearLocation) -> bool {
+    item.art_idx != 0 || item.activ_idx != 0
+        || matches!(source, GearLocation::Home(slot) if crate::borg_town_live::retained_home_gear(st, slot))
 }
 
 fn observed_gear(item: &borg_item) -> bool {
@@ -518,8 +518,8 @@ fn melee_cover_choice(entry: &GearChoice, kept: u8) -> bool {
         && (kept > 0 || entry.item.art_idx != 0 || entry.observed)
 }
 
-fn retained_cover(st: &BorgState, item: &borg_item, worn: bool) -> bool {
-    cover_eligible(item, worn, protected_gear(st, item),
+fn retained_cover(st: &BorgState, item: &borg_item, source: GearLocation) -> bool {
+    cover_eligible(item, matches!(source, GearLocation::Worn(_)), protected_gear(st, item, source),
         engine::player_opt(crate::headers::list_options_h::OPT_birth_randarts))
 }
 
@@ -547,7 +547,7 @@ pub(crate) fn unknown_rune_spare(st: &BorgState, slot: usize) -> bool {
     let item = &st.items.items[slot];
     if item.iqty == 0 || !item.aware || !item.needs_ident || item.art_idx != 0 || item.activ_idx != 0
         || item.one_ring || item.cursed || item.curses.contains(&true) || !wearable_tval(item.tval)
-        || crate::borg_junk::is_swap(st, slot as i32) || crate::borg_town_live::retained_gear(st, item)
+        || crate::borg_junk::is_swap(st, slot as i32)
     {
         return false;
     }
@@ -635,13 +635,13 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
     let capacity = if ring { 2 } else { 1 };
     let choice = |(source, item): (GearLocation, borg_item)| {
         let observed = !can_rank(&item) && !visible_artifact_weapon(&item)
-            && retained_cover(st, &item, matches!(source, GearLocation::Worn(_)));
+            && retained_cover(st, &item, source);
         // Review of #1313: nor does a partly known artifact weapon take the
         // backup's place under randarts.
         let randart_guess = !can_rank(&item) && visible_artifact_weapon(&item)
             && engine::player_opt(crate::headers::list_options_h::OPT_birth_randarts);
         let available = match source {
-            GearLocation::Home(index) => !crate::borg_town_live::retained_gear(st, &item)
+            GearLocation::Home(index) => !crate::borg_town_live::retained_home_gear(st, index)
                 && !crate::borg_town_live::buy_rejected(st, crate::borg_store::BORG_HOME as i16, index)
                 && crate::borg_town_live::shopping_weight_capacity(st, item.weight) > 0,
             _ => true,
@@ -659,18 +659,18 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
     };
     let mut choices: Vec<_> = slots.clone().map(|i| choice((GearLocation::Worn(i), st.items.items[i])))
         .chain(st.store.shops[crate::borg_store::BORG_HOME].ware.iter().copied().enumerate()
-            .filter(|(_, item)| include_home && (planned_slot(item) == Some(slot)
-                || planned_slot(item).is_none() && retained_cover(st, item, false) && ranked_slot(item) == Some(slot)))
+            .filter(|(index, item)| include_home && (planned_slot(item) == Some(slot)
+                || planned_slot(item).is_none() && retained_cover(st, item, GearLocation::Home(*index)) && ranked_slot(item) == Some(slot)))
             .map(|(i, item)| choice((GearLocation::Home(i), item))))
         .chain(st.items.items[..pack].iter().copied().enumerate()
-            .filter(|(_, item)| planned_slot(item) == Some(slot)
-                || planned_slot(item).is_none() && retained_cover(st, item, false) && ranked_slot(item) == Some(slot))
+            .filter(|(index, item)| planned_slot(item) == Some(slot)
+                || planned_slot(item).is_none() && retained_cover(st, item, GearLocation::Pack(*index)) && ranked_slot(item) == Some(slot))
             .map(|(i, item)| choice((GearLocation::Pack(i), item))))
         .collect();
     let can_identify = st.borg.tr(BI_AID) > 0;
     let uninspected: Vec<_> = st.items.items[..pack].iter().copied().enumerate()
-        .filter(|(_, item)| uninspected_cleanup_slot(item, can_identify) == Some(slot)
-            && !protected_gear(st, item))
+        .filter(|(index, item)| uninspected_cleanup_slot(item, can_identify) == Some(slot)
+            && !protected_gear(st, item, GearLocation::Pack(*index)))
         .collect();
     if choices.len() == capacity && uninspected.is_empty() {
         return GearPlan { upgrade: None, stock: Vec::new() };
@@ -833,7 +833,7 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
         let item = entry.item;
         // #1307: the active weapon or armour swap stays, as in every other
         // cleanup path.
-        let protected = protected_gear(st, &item)
+        let protected = protected_gear(st, &item, entry.source)
             || item.desc.contains(&(b'{' as core::ffi::c_char))
             || matches!(entry.source, GearLocation::Pack(i) if crate::borg_junk::is_swap(st, i as i32));
         GearStock {
@@ -901,9 +901,8 @@ pub(crate) fn redundant_copies(st: &mut BorgState, location: GearLocation, cutof
         GearLocation::Home(index) => home[index],
         GearLocation::Worn(_) => return 0,
     };
-    if !can_rank(&spare) || spare.art_idx != 0 || spare.activ_idx != 0
+    if !can_rank(&spare) || protected_gear(st, &spare, location)
         || spare.desc.contains(&(b'{' as core::ffi::c_char))
-        || crate::borg_town_live::retained_gear(st, &spare)
         || matches!(location, GearLocation::Pack(i) if crate::borg_junk::is_swap(st, i as i32))
     {
         return 0;
@@ -922,7 +921,7 @@ pub(crate) fn redundant_copies(st: &mut BorgState, location: GearLocation, cutof
         .chain(st.items.items[..wield].iter().enumerate().map(|(i, item)| (GearLocation::Pack(i), item)))
         .filter(|(source, item)| *source != location && (can_rank(item)
             || !randarts && visible_artifact_weapon(item) && item.kind == spare.kind && item.weight <= spare.weight
-            || retained_cover(st, item, matches!(source, GearLocation::Worn(_))))
+            || retained_cover(st, item, *source))
             && ranked_slot(item) == Some(slot)
             && (u32::from(item.tval) == TV_DIGGING) == digger)
         .map(|(source, item)| (source, *item, item.iqty)).collect();
@@ -976,7 +975,6 @@ pub(crate) fn inferior(st: &mut BorgState, pack_slot: usize) -> bool {
     let spare = st.items.items[pack_slot];
     if spare.iqty == 0 || !spare.aware || spare.curses.contains(&true)
         || crate::borg_junk::is_swap(st, pack_slot as i32)
-        || crate::borg_town_live::retained_gear(st, &spare)
         || inspection_pending(st, &spare)
     {
         return false;

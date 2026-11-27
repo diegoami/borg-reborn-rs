@@ -8981,7 +8981,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1139` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1141` |
 
 ## Quiver surplus in town (#1168, #1272)
 
@@ -9420,8 +9420,8 @@ The weapon and armour swaps are chosen from the pack only
 ranked Home backup plan no longer stores the active swap, and the live
 planner leaves a carried active swap out of its kit, so no disposition
 stores, sells or drops it. A digger skips
-the depth gate below, but its tunnelling bonus reads `pval`, which 4.2
-diggers leave at 0, so in practice no swap is carried below it.
+the depth gate below. Its tunnelling bonus read `pval`, which 4.2 diggers
+leave at 0, so before #1320 no swap was carried below it in practice.
 
 Both swaps were carried only from max depth 50 (C Borg: "they are heavy").
 That depth is now a parameter. The default keeps the earlier play; a lower
@@ -9429,7 +9429,44 @@ value is a hypothesis for the zoo.
 
 | Parameter | Default | Unit | Range | Read at |
 | --- | --- | --- | --- | --- |
-| `swap_carry_min_depth` | 50 | level | 0–128 | `borg_trait_swap.rs:596` |
+| `swap_carry_min_depth` | 50 | level | 0–128 | `borg_trait_swap.rs:631` |
 
 Taking a swap out of Home for the coming trip is not implemented (owner
 decision pending in #1319). [Handover](handover/2026-11-27-1315-swap-home.md)
+
+## The digger as the tunnelling swap (#1320)
+
+Between max depth 25 and 40, with under 100,000 gold, `weapon_value`
+(`borg_trait_swap.rs`) adds `digger * 3500 + 1000` to a carried digger's
+value as the weapon swap. The C Borg takes `digger` from the item's `pval`
+(`borg-trait-swap.c:274`). 4.2 objects leave `pval` at 0 and keep digging
+power elsewhere, so the reward never applied, and a digger became the swap
+only by its melee value. A plain Shovel at max depth 30 got swap value -1.
+
+With `swap_digger_tunnel`, `digger` is the digging power a wielded digger
+gives (`player-calcs.c:1959-1969`). That is its DIG_1/2/3 level plus its
+tunnelling modifier: a Shovel 1, a Pick 2, a Mattock 3 (`object.txt`).
+*Of Digging* adds TUNNEL[d4] and *of Earthquakes* TUNNEL[d6]
+(`ego_item.txt`), so `digger` is 1–3 without an ego and up to 9 with one.
+The reward is then 4,500 to 32,500, against 11,500 at most for the pval
+scale the C constants were set for.
+
+The Borg reads the item's actual tunnelling modifier, as it reads every
+modifier (`borg_item_analyze.rs`, as the C Borg's
+`borg-item-analyze.c:492-494`). The engine counts it only once the
+tunnelling rune is known (`player-calcs.c:1967-1968`), so an unidentified
+digger ego is valued on a number the player has not seen.
+
+The other gates are unchanged:
+- a digger is not noticed while the wielded weapon digs;
+- it is not noticed while Stone to Mud is castable at 40% fail or better;
+- a worthless or cursed one is skipped.
+
+The default 0 keeps the C reading. It ships at 1 in `harness/pborg.yaml`,
+with smoke identical, so it is a hypothesis until the zoo measures it.
+
+| Parameter | Default | Unit | Range | Read at |
+| --- | --- | --- | --- | --- |
+| `swap_digger_tunnel` | 0 | flag | 0–1 | `borg_trait_swap.rs:668` |
+
+[Handover](handover/2026-11-27-1320-digger-tunnel.md)

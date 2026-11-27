@@ -17,7 +17,7 @@ GAME = ROOT / "build/rust-test/game/angband"
 
 @unittest.skipUnless(GAME.is_file(), "test-town-loadout build required")
 class TownLoadoutTest(unittest.TestCase):
-    def run_case(self, case):
+    def run_case(self, case, expect="", **params):
         reserve = case.startswith("reserve-overweight")
         arrival = reserve or case in ("arrival", "arrival-shop")
         ammo_reserve = "57" if reserve or case == "arrival-shop" else "20" if case in ("trim", "arrival") else "0"
@@ -45,6 +45,7 @@ class TownLoadoutTest(unittest.TestCase):
                 BORG_PARAM_CAUTION_SCARY_DAMAGE_PERCENT="0",
             )
             env["BORG_PARAM_TOWN_LIGHT_RESERVE_TURNS__PRIEST"] = "0"
+            env.update(params)
             env["BORG_PARAM_TOWN_STAPLE_OIL__PRIEST"] = "0"
             result = subprocess.run(
                 [str(GAME), "-mborgh", "-n", *(f"-d{name}={path}" for name, path in paths.items()),
@@ -55,7 +56,7 @@ class TownLoadoutTest(unittest.TestCase):
             log = messages.read_text()
             self.assertEqual(result.returncode, 0, result.stderr + log[-4000:])
             marker = "#1264 exploration reserve" if reserve else "#1239 town loadout"
-            self.assertIn(f"{marker} passed: {case}", result.stdout, log[-6000:])
+            self.assertIn(f"{marker} passed: {case}{expect}\n", result.stdout, log[-6000:])
         return log
 
     def test_trim_and_full_home_swap_store_the_mace(self):
@@ -114,6 +115,15 @@ class TownLoadoutTest(unittest.TestCase):
     def test_the_active_swap_stays_in_the_pack(self):
         # #1315: the active armour swap is never stored, sold or dropped.
         self.run_case("swap-spare")
+
+
+    def test_a_plain_shovel_is_the_tunnelling_swap(self):
+        # #1320: a Shovel (DIG_1, pval 0) at max depth 30 gets the reward.
+        self.run_case("digger-swap", " on", BORG_PARAM_SWAP_DIGGER_TUNNEL="1")
+
+    def test_the_c_pval_reading_gives_a_shovel_no_reward(self):
+        # #1320 at 0: C's pval reading, so the Shovel is not a swap.
+        self.run_case("digger-swap", " off", BORG_PARAM_SWAP_DIGGER_TUNNEL="0")
 
 
 if __name__ == "__main__":

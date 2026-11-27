@@ -1975,6 +1975,7 @@ pub(crate) fn setup_test_town_loadout(
     swap_ring: bool,
     dungeon_books: bool,
     swap_spare: bool,
+    digger: bool,
 ) {
     use crate::headers::list_tvals_h::*;
     use crate::headers::object_h::{object, object_kind, OBJ_NOTICE_ASSESSED};
@@ -2112,6 +2113,12 @@ pub(crate) fn setup_test_town_loadout(
             inven_carry(player, shield, false, false);
         }
         // Distinct known bonuses keep the inert Home filler in separate stacks.
+        if digger {
+            // #1320: a plain Shovel (object.txt: DIG_1, pval 0) at max depth
+            // 30, inside weapon_value's 25-40 tunnelling band.
+            inven_carry(player, make(TV_DIGGING, c"Shovel", 1, None, None), false, false);
+            (*player).max_depth = 30;
+        }
         let home_space = (*home).stock_size - i16::from(pack_whip) - i16::from(swap_spare);
         while i16::from((*home).stock_num) < home_space {
             let count = i16::from((*home).stock_num);
