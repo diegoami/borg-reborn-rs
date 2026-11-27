@@ -1972,6 +1972,7 @@ pub(crate) fn setup_test_town_loadout(
     gold: i32,
     reserve_overlap: bool,
     recall_at_home: bool,
+    swap_ring: bool,
 ) {
     use crate::headers::list_tvals_h::*;
     use crate::headers::object_h::{object, object_kind, OBJ_NOTICE_ASSESSED};
@@ -2082,6 +2083,13 @@ pub(crate) fn setup_test_town_loadout(
                 object_flavor_aware(player, item);
                 home_carry(item);
             }
+        }
+        if swap_ring {
+            // #1317: a resist swap the worn kit lacks. object.txt: Resist
+            // Poison is an EASY_KNOW ring granting RES_POIS[1].
+            let ring = make(TV_RING, c"Resist Poison", 1, None, None);
+            object_flavor_aware(player, ring);
+            home_carry(ring);
         }
         // Distinct known bonuses keep the inert Home filler in separate stacks.
         let home_space = (*home).stock_size - i16::from(pack_whip);

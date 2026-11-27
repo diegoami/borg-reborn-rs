@@ -525,6 +525,12 @@ pub(crate) struct LivePlan {
     pub gold: i64,
 }
 
+/// #1317: the live planner's kit, for the native town fixtures.
+#[cfg(feature = "test-town-loadout")]
+pub(crate) fn kit_for_test(st: &mut BorgState) -> Vec<KitItem> {
+    kit_of(st, true)
+}
+
 pub(crate) fn live_plan(st: &mut BorgState) -> LivePlan {
     evaluate(st, true)
 }
