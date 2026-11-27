@@ -8981,7 +8981,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1125` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1139` |
 
 ## Quiver surplus in town (#1168, #1272)
 

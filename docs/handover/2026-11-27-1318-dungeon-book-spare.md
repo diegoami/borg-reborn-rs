@@ -38,6 +38,13 @@ reserve.
   above one. Unit test `one_dungeon_book_copy_is_the_home_reserve`: from a
   carried stack of three, one copy is stored; a Home stack of three drops
   two; a single Home copy is kept.
+- Second review of #1323: with the same book in two Home stacks, the role
+  rule made the first `Scarce` while the last-book pass reserved the last,
+  so neither was pruned. `reserve_books` now reserves a kind's `Scarce`
+  stack, so the role and the protection are the same stack. Unit test
+  `two_home_stacks_of_one_dungeon_book_keep_one_copy`: with three copies
+  in the first Home stack and one in the second, the second leaves, then
+  the copies above one.
 - Native case `reserve-book` (Priest fixture). Home holds
   [Healing and Sanctuary] and the Mage's [Arcane Control], and the pack
   carries a second [Healing and Sanctuary]. The case checks:

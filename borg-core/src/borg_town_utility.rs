@@ -1484,6 +1484,33 @@ mod tests {
         assert_eq!(actions, [Disposition::Keep], "a single Home copy is the reserve");
     }
 
+    /// #1318 (second review of #1323): with the same book in two Home stacks,
+    /// the Scarce stack is the reserve, and the other stack and the copies
+    /// above one leave over successive solves.
+    #[test]
+    fn two_home_stacks_of_one_dungeon_book_keep_one_copy() {
+        use crate::borg_town_record::PLAN_SCHEMA;
+        let st = state(10, 23, 160);
+        let first = KitItem { home_role: Role::Scarce, keep_last_book: true, need: -1, reduction: 0,
+            kind: 7, slot: 0, qty: 3, sell_shop: -1, place: Place::Home, home_room: Some([3, 3, 3]),
+            ..recall(Place::Home) };
+        let second = KitItem { home_role: Role::Renewable, slot: 1, qty: 1, home_room: Some([1, 1, 1]), ..first };
+        let mut kit = [first, second];
+        crate::borg_town_shadow::reserve_books(&mut kit);
+        assert!(kit[0].keep_last_book && !kit[1].keep_last_book, "the Scarce stack is the reserve");
+        let solve = |kit: &[KitItem]| {
+            let mut inp = input(kit);
+            inp.revision = PLAN_SCHEMA;
+            inp.home_slots = 5;
+            let mut u = Utility::of(&st, kit, false);
+            dispositions(&inp, &mut u, &st)
+        };
+        let (actions, _, _) = solve(&kit);
+        assert_eq!(actions, [Disposition::Keep, Disposition::Drop], "the second stack leaves first");
+        let (actions, _, copies) = solve(&kit[..1]);
+        assert_eq!((actions[0], copies[0]), (Disposition::Drop, 2), "then the copies above one");
+    }
+
     #[test]
     fn the_last_empty_slot_goes_to_scarce_stock_ahead_of_a_normal_shop_spare() {
         use crate::borg_town_record::PLAN_SCHEMA;
