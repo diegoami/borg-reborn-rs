@@ -70,6 +70,18 @@ Nothing in this repository. The audit's owner decisions stay open: #1331
 
 ### Owner decisions
 
+The cemetery-owned `rerun-death.py` (borg-cemetery
+`scripts/native/rerun-death.py`) still restores `borg_errand`,
+`borg_stopscared`, `borg_errand_budget`, `borg_ladders` and
+`borg_errands_plan` from a dossier. A rerun of an errand or plan death on a
+build after #1339 therefore stops at start (exit 2) rather than replaying
+(loudly, not silently). The review of #1340 proposes that the tool refuse
+such a dossier with a message naming #1339 and point to replaying at the
+dossier's own build. That is a borg-cemetery change: this session was not
+permitted to open the issue there, so it is described here for the owner to
+route (RULES 7). `tools/tests/test_rerun_death.py` says what it pins until
+then.
+
 borg-zoo still carries plan arms and `borg_reborn_errand: none` in its
 definitions and settings pages. Pinned specimens keep working, and a plan
 arm on a specimen after this change is a `config_error`. Should the zoo's
