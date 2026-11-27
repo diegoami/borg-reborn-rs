@@ -9348,11 +9348,13 @@ unknown-rune spare per equipment slot, two for rings, chosen by visible
 value. A stack keeps one copy. The rest leaves at the next safe opportunity,
 in the dungeon as well as in town. Artifacts, known activations, known
 curses, swaps, staged loadouts and inscriptions other than the game's own
-tags keep their protections.
+tags keep their protections. While Identify Rune is usable the cap waits,
+so the identification attempt comes first.
 
 In town a spare with unknown runes goes to a shop that accepts it, even when
 the shop pays nothing under `birth_no_selling`. The sale teaches every rune
-of the item. Fully known spares still drop when the sale pays nothing. An
+of the item. The Borg offers the largest quantity a shop takes. When no
+shop takes any, the spare waits rather than going to the floor. Fully known spares still drop when the sale pays nothing. An
 unknown-rune spare is never stored at Home. The ordinary town planner keeps
 it until it is identified or released. No parameter or default changes.
 [Handover](handover/2026-11-27-1308-unknown-rune-spares.md)
