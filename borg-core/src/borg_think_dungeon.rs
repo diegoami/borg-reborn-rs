@@ -887,8 +887,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     // borg-reborn-rs (#811): recovery owns the decision through handoff.
-    if lightless {
-        crate::borg_lightless::recover(st);
+    // #1359: when it gave the level back (`lightless_fallback`) it queued
+    // nothing, and this turn goes on with the ordinary think.
+    if lightless && crate::borg_lightless::recover(st) {
         return choice!("lightless_recovery");
     }
 

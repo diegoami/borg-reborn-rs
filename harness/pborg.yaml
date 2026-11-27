@@ -1514,6 +1514,13 @@ borg_param_attack_reserve_spell_overexert: 0
 # saw a safe landing).
 borg_param_escape_teleport_landing_either: 0
 
+# Lightless recovery (#811, #1359). 1 = a monster next to the Borg is the
+# ordinary think's (caution, attack), and when recovery gives up (its action
+# or search limit, no reachable exit, confused without Recall) the ordinary
+# think plays the level instead of the Borg stopping; 0 = #811 alone (the
+# Borg stops). Shipped 1 (owner, 2026-11-27; a hypothesis for the zoo).
+borg_param_lightless_fallback: 1
+
 # Immobile creatures (#646, #713). Owner: "always choose ranged against
 # immobile but annoying monsters"; "step away from immobile creature with
 # annoying effects and only attack them from a distance, if you have to".
