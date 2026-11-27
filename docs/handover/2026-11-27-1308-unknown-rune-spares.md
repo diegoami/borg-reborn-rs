@@ -45,6 +45,9 @@ outside the plain melee and armour `{??}` pattern had no cleanup route.
   releases nothing. `borg_drop_inferior_spare` runs before `borg_test_stuff`
   in the dungeon think, so the cap could discard a spare before the
   identification attempt. Once identification is used up, the cap applies.
+  Usable means an Identify Rune scroll in the pack, or the spell with the
+  mana to cast it now (`borg_spell_okay`). A learned spell the Borg cannot
+  cast does not hold the cap (second review).
 - **No floor drop in town.** For unknown-rune gear, town disposal offers the
   largest quantity a shop accepts. With no taker it waits instead of falling
   back to `DROP_SURPLUS`. This covers arrival unloading and `organize_gear`,
