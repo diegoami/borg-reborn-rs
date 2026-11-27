@@ -77,6 +77,12 @@ pub(crate) fn update(st: &mut BorgState) -> bool {
     if !needs_light || st.think_dungeon.lightless.gave_up {
         return false;
     }
+    // borg-reborn-rs (review of #1360): settle the move recovery queued on its last turn
+    // now, on the first think after it, before the turn can go to the ordinary
+    // think. Otherwise a step that worked and was undone in combat reads, at the
+    // next recover(), as a move that never happened (failed at the start square).
+    let at = (st.borg.c.x, st.borg.c.y);
+    st.think_dungeon.lightless.observe(at);
     // #1359: a monster in contact is the ordinary think's (caution, attack),
     // as in borg-rs; recovery's routes treat monsters as walls.
     !(param(Param::lightless_fallback) != 0 && monster_adjacent(st))
@@ -339,6 +345,7 @@ pub(crate) fn recover(st: &mut BorgState) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::headers::z_type_h::loc;
 
     fn recovery() -> Recovery {
         Recovery {
@@ -347,6 +354,33 @@ mod tests {
             door_attempts: 3,
             ..Recovery::default()
         }
+    }
+
+    /// Review of #1360: a step that worked, then undone while the ordinary think fought,
+    /// is not a failure of that step (one false failure can close the only
+    /// route up in a corridor).
+    #[test]
+    fn update_settles_the_pending_move_before_it_can_yield() {
+        let (start, forward) = ((5, 5), (6, 5));
+        let step = Step { to: forward, tile: Tile::Floor };
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+        st.borg.trait_[BI_CDEPTH as usize] = 1;
+        st.borg.trait_[BI_LIGHT as usize] = 0;
+        st.think_dungeon.lightless = Recovery {
+            depth: 1,
+            pending: Some((start, step)),
+            ..recovery()
+        };
+        // The step worked: the next think starts on the forward grid.
+        st.borg.c = loc { x: forward.0, y: forward.1 };
+        update(&mut st);
+        assert!(st.think_dungeon.lightless.pending.is_none(), "settled on the first think");
+        // Combat then retreats to the start square, and recovery runs again.
+        st.borg.c = loc { x: start.0, y: start.1 };
+        update(&mut st);
+        st.think_dungeon.lightless.observe(start);
+        assert!(st.think_dungeon.lightless.failed.is_empty(), "no false failure at the start square");
     }
 
     #[test]
