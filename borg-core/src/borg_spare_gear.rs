@@ -457,7 +457,9 @@ fn backup_counts(choices: &[GearChoice], worn: &[usize], capacity: usize, extra:
         let at_home = matches!(choices[index].source, GearLocation::Home(_));
         // Review of #1314: a property counts as covered when any kept piece
         // gives it, so test the combined coverage of the kept gear.
-        let kept = (0..choices.len()).filter(|&kept| kept != index && keep[kept] > 0 && choices[kept].item.iqty > 0)
+        // Review of #1314: an untrusted piece stays worn or kept but covers nothing.
+        let kept = (0..choices.len()).filter(|&kept| kept != index && keep[kept] > 0 && choices[kept].item.iqty > 0
+                && choices[kept].trusted)
             .map(|kept| &choices[kept].item);
         let covered = known_properties_cover(&combined_properties(kept), item);
         if keep[index] == 0 && !covered && (at_home || home_room) {
@@ -1375,9 +1377,9 @@ mod tests {
         let mut choices = [boots(GearLocation::Worn(0), 30), boots(GearLocation::Pack(0), 15), boots(GearLocation::Pack(1), 20)];
         choices[0].item.el_info[ELEM_FIRE as usize].res_level = 1;
         choices[1].item.el_info[ELEM_FIRE as usize].res_level = 1;
-        assert_eq!(backup_counts(&choices, &[0], 1), [1, 0, 1], "the worn boots cover rFire, so power decides");
+        assert_eq!(backup_counts(&choices, &[0], 1, 0, true), [1, 0, 1], "the worn boots cover rFire, so power decides");
         choices[0].trusted = false;
-        assert_eq!(backup_counts(&choices, &[0], 1), [1, 1, 0], "a partly known randart covers nothing");
+        assert_eq!(backup_counts(&choices, &[0], 1, 0, true), [1, 1, 0], "a partly known randart covers nothing");
     }
 
     #[test]
@@ -1417,7 +1419,7 @@ mod tests {
         let boots = |source, power: i32| {
             let item = borg_item { iqty: 1, tval: TV_BOOTS as u8, weight: 20, to_a: power as i16,
                 ..crate::borg_item::blank_item() };
-            GearChoice { source, item, power, lighter: false, backup: true, wearable: true, observed: false }
+            GearChoice { source, item, power, lighter: false, backup: true, wearable: true, observed: false, trusted: true }
         };
         let mut choices = [boots(GearLocation::Worn(0), 30), boots(GearLocation::Pack(0), 20),
             boots(GearLocation::Home(0), 19), boots(GearLocation::Pack(1), 18)];
@@ -1439,6 +1441,12 @@ mod tests {
         choices[1].item.el_info[ELEM_NEXUS as usize].res_level = 1;
         choices[2].item.flags[bit / 8] |= 1 << (bit % 8);
         assert_eq!(backup_counts(&choices, &[0], 1, 1, true), [1, 1, 0, 0], "every property is already kept");
+
+        // A partly known worn randart that appears to give Free Action
+        // covers nothing: the fully known extra with Free Action stays.
+        choices[0].trusted = false;
+        assert_eq!(backup_counts(&choices, &[0], 1, 1, true), [1, 1, 1, 0],
+            "only the untrusted worn randart appears to cover the extra's property");
     }
 
     #[test]
