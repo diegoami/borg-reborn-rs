@@ -568,8 +568,8 @@ fn armour_value(st: &BorgState, item: &borg_item) -> i32 {
 }
 
 /// borg-reborn-rs (#1320): the digging power a digger gives when wielded:
-/// for a digger only, its DIG_1/2/3 level, plus its tunnelling modifier
-/// (player-calcs.c:1959-1969). A Shovel is 1, a Pick 2, a Mattock 3
+/// its DIG_1/2/3 level (only for a digger) plus the item's tunnelling
+/// modifier, which the engine adds for any item (player-calcs.c:1959-1969). A Shovel is 1, a Pick 2, a Mattock 3
 /// (object.txt); "of Digging" adds TUNNEL[d4] and "of Earthquakes"
 /// TUNNEL[d6] (ego_item.txt), so the power reaches 9. The modifier is the
 /// item's actual one, which the Borg reads for every modifier
