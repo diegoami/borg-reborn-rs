@@ -1356,6 +1356,12 @@ borg_param_junk_gear_alternatives: 1
 # useful lighter alternative. Keep up to two Home backups for rings.
 borg_param_town_gear_home_backups: 1
 
+# #1316: a further Home backup that adds a resistance or protection (Free
+# Action, See Invisible, Hold Life, pBlind, pConf, telepathy) no kept piece
+# of its slot and no worn item gives is kept without counting against
+# junk_gear_alternatives, at Home and while Home has room. 0 = #1310's limit.
+borg_param_town_home_backup_protections: 1
+
 # #1250: idle use of expendable consumables from DL1.
 borg_param_item_use_idle: 1
 
