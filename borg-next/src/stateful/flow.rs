@@ -1,9 +1,8 @@
 //! Direction selection on an already committed, unweighted flow (#1298).
 
-use borg_rs::{
-    decision_api::{engine, headers::z_type_h::loc},
-    memory::{BorgState, AUTO_MAX_X, AUTO_MAX_Y, GOAL_DIGGING},
-};
+use borg_rs::decision_api::engine;
+use borg_rs::decision_api::headers::z_type_h::loc;
+use borg_rs::memory::{BorgState, AUTO_MAX_X, AUTO_MAX_Y, GOAL_DIGGING};
 
 struct CommittedFlow<'a> {
     costs: &'a [[u8; AUTO_MAX_X as usize]],
