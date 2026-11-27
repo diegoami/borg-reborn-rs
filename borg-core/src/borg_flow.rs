@@ -1953,6 +1953,12 @@ pub(crate) fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
 
         /* Switch to a digger if we have one is automatic */
 
+        // borg-reborn-rs (#1353): remember the rubble grid being dug; the
+        // engine's "You have removed the rubble" names no direction. A
+        // confused tunnel goes in another direction, so none is recorded.
+        st.flow_misc.dug_rubble =
+            (feat == FEAT_RUBBLE && st.borg.tr(BI_ISCONFUSED) == 0).then_some(loc { x, y });
+
         /* Dig */
         borg_note(st, "# Digging through wall/etc");
         borg_keypress(st, keycode_t::from(b'T'));

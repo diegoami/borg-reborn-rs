@@ -1412,7 +1412,17 @@ fn borg_danger_spell(
 
             RSF_MIND_BLAST => {
                 if st.borg.tr(BI_SAV) < 100 {
-                    z = spell_power / 2 + 1;
+                    // borg-reborn-rs (#1353): borg-rs v15R (5e6cd07) prices
+                    // the spell as monster_spell.txt:665-670 has it: 8d8
+                    // damage, then 3+1d4 turns of confusion.
+                    if param(Param::danger_mind_blast_upstream) != 0 {
+                        z = 8 * 8;
+                        if st.borg.tr(BI_RCONF) == 0 {
+                            p += param(Param::danger_rsf_mind_blast_confusion_fear);
+                        }
+                    } else {
+                        z = spell_power / 2 + 1;
+                    }
                 }
             }
 
