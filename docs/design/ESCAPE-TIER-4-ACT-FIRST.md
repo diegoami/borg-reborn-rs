@@ -53,7 +53,7 @@ right answer to them.
 |---|---|---|---|---|---|
 | A | 1,368,677, DL7 | 60/60 | 45 | 0 | nothing visible; the Borg retreated one grid at 1,368,657, then `borg_flow_dark` walked it back to the same grid |
 | B | 1,377,235, DL7 | 66/67 | 66 | 0 | "You hear an echoing roar. You are hit by noise": an unseen sound breath, 1 HP lost, stunned |
-| C | 1,403,464, DL7 | 67/67 | 54 | 8 | a cave spider group woke at 5+ grids (speed +20, 1d4 bites, `friends` 2d8); the next escape came 17 thinks later |
+| C | 1,403,464, DL7 | 67/67 | 54 | 8 | 16 cave spiders known, the nearest two at (59,65) and (60,65) with the Borg at (59,67): 2 grids away, the rest 3 to 9 (speed 120 against the Borg's 110: two moves to its one; 1d4 bites); the next escape came 17 thinks later |
 | D | 1,443,183, DL8 | 68/68 | 48 | 48 | an orc tracker about 6 grids away and seven cave orcs 7-13 grids off; the Borg had walked up to shoot the tracker (two Frost Bolts had failed); 24 SP left |
 
 - **B was not necessarily invisible.** "Something" in the Borg's notes means
@@ -61,15 +61,18 @@ right answer to them.
   roar" (`monster_spell.txt`, `BR_SOUN`). Sound breathers up to DL9 are the
   giant gold dragon fly (DL6) and the baby gold dragon (DL9); 1 HP lost fits
   the dragon fly (an inference; the log does not name it).
-- **What the Borg held.** Reveal Monsters (the Mage's detect-invisible,
-  level 15) was learned at turn 1,434,747, so the Borg had it at D but not
-  at A, B or C; the first Scroll of Detect Invisible was picked up at
-  1,457,725 and the first Potion of Speed at 1,450,789, after all four cases.
-  At A, B and C it had none of the three; at D it had no speed potion.
-- **Detect Monsters** (Mage level 3, 2 SP, `DETECT_VISIBLE_MONSTERS`) was not
-  cast in the 1,500 game turns before any of the four cases; at D the
-  detection was about 2,300 game turns old (the cave orcs and the tracker
-  were last placed at arrival, turn 1,440,896).
+- **What the Borg held** (the excerpt starts at turn 1,368,607, so it
+  cannot rule out an earlier pickup). Reveal Monsters (the Mage's
+  detect-invisible, level 15) was learned at turn 1,434,747, so the Borg had
+  it at D but not at A, B or C; the first Scroll of Detect Invisible was
+  picked up at 1,457,725 and the first Potion of Speed at 1,450,789, after
+  all four cases.
+- **Detect Monsters** (Mage level 3, 2 SP, `DETECT_VISIBLE_MONSTERS`) is cast
+  often: 73 casts in the window, from the Borg's panel-based check
+  (`borg_light.rs`), not only on arrival. Before B, C and D the last cast was
+  2,794, 3,573 and 2,300 game turns earlier; for A the excerpt covers only
+  the 70 turns before the case. At D the monsters were last placed at turn
+  1,440,883 to 1,440,896.
 - **After D** the danger stayed at 0 for 1,001 thinks (a trip to town
   followed).
 
@@ -85,7 +88,6 @@ a boost may settle, and it is what the code reaches first.
 `borg_caution` the order is: retreat, then `borg_escape`, then
 `phase_rule_act` (attack at range, or boost: Speed first, then Heroism,
 Berserk Strength, Bless). So every other answer waits until no escape acted.
-Detect Monsters is cast on arrival and not again.
 
 The cost over the window: 24 charges, 5 casts of Recharging (5 SP each)
 gaining 23 charges. Two short chains of escapes emptied the staff (turns
@@ -107,38 +109,60 @@ the next think; the long teleport is for when that has not worked.
 - **One flag.** `escape_compromised_act_first` (flag, default 0). With 0
   nothing below is read and today's play is kept. The settings that follow
   take effect only with the flag on.
-- **When it applies.** Tier 4 has fired (danger above 60% of current HP),
-  no awake enemy is adjacent (the Phase verdict for this think is `Shoot`:
+- **Which call may hold 4.2.** Only the normal caution call (`borg_caution`,
+  after the retreat step). `borg_escape` gains a `may_hold` argument, false
+  for the #934 poisoned-and-no-cure call (`poisoned_escape_first`), which asks
+  for an escape before the retreat and must get a real answer.
+- **When it applies.** Tier 4 has fired, no awake enemy is adjacent (the
+  Phase verdict for this think is `Shoot`:
   `phase_rule_verdict(st, PhaseSite::Compromised, Some(b_q))`, cached per
-  think), the danger without fear is below
-  `escape_compromised_act_danger_percent` of current HP (default 100: by the
-  Borg's own estimate it survives until it next acts), HP is at least
-  `escape_compromised_act_hp_percent` of max (default 50), and fewer than
-  `escape_compromised_act_rounds` (default 3) rounds have been spent this
-  way in the same episode. The episode ends when the danger falls below the
-  tier's threshold or the level changes. Outside these limits 4.2 runs as
-  today.
+  think), and all of:
+  - the danger without fear is below `escape_compromised_act_danger_percent`
+    of current HP (default 100: by the Borg's own estimate it survives until
+    it next acts);
+  - HP is at least `escape_compromised_act_hp_percent` of max (default 50);
+  - **no awake known monster can reach the Borg before its next action**:
+    with `moves` = the monster's energy per game turn over the Borg's,
+    rounded up (`extract_energy`, `game-world.c`: speed 110 is 10, 120 is
+    20), the monster's distance is more than `moves + 1`. This is a fixed
+    rule, not a setting. The danger sum does not certify it: its reach test
+    simulates one step of the monster (`borg_danger.rs`, the "single grid
+    movement" loop), so a fast monster two or three grids away adds nothing
+    to the number;
+  - fewer than `escape_compromised_act_rounds` rounds (default 3) have been
+    spent this way in the episode.
+  Outside these limits 4.2 runs as today.
+- **The episode.** One counter. It resets when tier 4's own predicate is
+  false for a think (one function, `tier4_applies(st, b_q, risky_boost)`,
+  used by tier 4 and by the reset, so the strict `>` comparisons and the
+  risky-play adjustment are the same), when the level changes, and when any
+  other escape acts (including a call that bypassed tier 4).
 - **The ladder, first one that can act:**
-  1. *Look*: Detect Monsters (the arrival check's own cast) when the monster
-     picture is older than `escape_compromised_refresh_age` game turns
-     (default 1000); with the #831 unseen mode on, `detect_invisible_now`
-     instead (Reveal Monsters covers both once known).
+  1. *Look*, when the monster picture is older than
+     `escape_compromised_refresh_age` game turns (default 1000): with the #831
+     unseen mode on, `detect_invisible_now`, within #831's own freshness
+     (`unseen_fresh`) and read limit (`recover_unseen_detect_reads`); where
+     that has nothing to use (case B: Reveal Monsters not learned, no scroll),
+     or the mode is off, Detect Monsters (the panel check's own cast).
   2. *Heal*: the quaff `phase_rule_act` already starts with, when hurt.
-  3. *Shoot*: the best attack at range (`borg_attack`; with no enemy
-     adjacent only a ranged one can be chosen).
+  3. *Shoot*: the best attack at range (`borg_attack`; it needs a target in
+     view, so a look does not promise a shot).
   4. *Boost*: `cornered_boost` (Speed first, then Heroism, Berserk Strength,
      Bless), then `borg_defend`'s resistances and shields, when an awake
      monster is in view.
-  The existing `phase_rule_act` already does steps 2 to 4 in that order;
-  the new part is step 1 and calling the ladder before 4.2 instead of after
-  every escape has declined. A look counts as acting, not as an escape (like
+  `phase_rule_act` already does steps 2 to 4 in that order; the new part is
+  step 1 and running the ladder before 4.2 instead of after every escape has
+  declined. A look counts as acting, not as an escape (like
   `EscapeAction::Healed`: no `escapes` count, flow intact).
+- **What a held turn skips.** The Borg acted, so `try_escape` returns at
+  once: the "failed to teleport" flee and leave flags, tiers 5 to 7 and the
+  back-away do not run that think. That is the intent; the next think asks
+  again. If nothing on the ladder can act, 4.2 runs and nothing is skipped.
 - **Reevaluate next round.** Every think recomputes the danger and the tier.
   If it grew past the Borg's HP, tier 3, 2 or 1 teleports as today. If the
   danger persists, the round cap sends the Borg to 4.2 after
-  `escape_compromised_act_rounds` rounds. If nothing on the ladder can act,
-  4.2 runs at once. Tiers 1 to 3 and verdicts other than `Shoot` (an enemy
-  adjacent) never use this path.
+  `escape_compromised_act_rounds` rounds. Tiers 1 to 3 and verdicts other
+  than `Shoot` (an enemy adjacent) never use this path.
 - A note per decision: `# Escape 4.2 held: {look|heal|shoot|boost}, round
   {n} of {cap}; danger {here} without fear (with fear {b_q}), HP {hp}` and,
   when it does not hold, `# Escape 4.2 not held: {why}`.
@@ -149,23 +173,30 @@ Effect on the four cases:
   enemy in view the rest of the ladder has nothing to act on, so the round
   ends in the caution flow (back away, flow); after the cap, or if nothing
   can act, 4.2 runs.
-- **B:** the look would show an ordinary unseen monster (or, with the #831
-  mode, the detection reveals it); next round a shot at it.
-- **C:** the Borg spends a round on a look or a boost with the group at
-  range. This is the case at risk: the damage estimate counts the group at 8
-  without fear, and its speed +20 can close the gap in one turn; the cap
-  and tier 3 bound it.
-- **D:** 48 is below 68, HP is full and an attack had positive utility one
-  decision earlier, so the Borg shoots the tracker.
+- **B:** a look (Detect Monsters, since the unseen-mode detection was not
+  available) shows an ordinary unseen monster if there is one; a shot
+  follows only if it is in view.
+- **C:** the nearest spiders are 2 grids away with two moves to the Borg's
+  one, inside `moves + 1`, so the reach rule refuses and 4.2 runs as today.
+  Whether a group a little farther off needs a rule of its own is open.
+- **D:** the monster picture is 2,300 game turns old, so the first round is a
+  look (Detect Monsters). A shot is possible the round after; the last
+  positive attack decision was five thinks before the escape, with movement
+  since, and none was evaluated at the escape decision.
 
 ### Stage 2: keep a charge in reserve
 
-- `escape_compromised_staff_reserve` (charges, default 0): in 4.2 only, the
-  Staff of Teleportation is skipped when it holds this many charges or fewer;
-  spells, scrolls and activations are not touched. Tiers 1 to 3 may use the
-  last charges. Hypothesis, value 2: in the recording, 1,403,464 would have
-  left the staff's last charge for the danger-105 escape 177 game turns
-  later (turn 1,403,641).
+- `escape_compromised_staff_reserve` (charges, default 0): the Staff of
+  Teleportation is skipped when it holds this many charges or fewer, in
+  **every non-emergency rung that can use it**: 4.2, 5.2 (very low level) and
+  6.2 (out of mana). The staff rungs of tiers 1 to 3 may use the last
+  charges. One helper, `staff_reserved(st)`, read by those rungs, so 5.2 and
+  6.2 do not spend what 4.2 left. The charges are those of the stack the use
+  routine selects: `borg_slot(st, TV_STAFF, sval)`, its `pval`
+  (`borg_use_staff_fail`). Spells, scrolls and activations are not touched.
+  Hypothesis, value 2: in the recording, 1,403,464 would have left the
+  staff's last charge for the danger-105 escape 177 game turns later
+  (turn 1,403,641).
 
 ### Not proposed
 
@@ -176,9 +207,10 @@ stage 1 cannot act in a case like A, where nothing is known to act against.
 
 ## Open questions
 
-- **C may be the case this breaks.** The damage estimate ignores the group's
-  speed and numbers. Measure before trusting the 100% limit; a fast-group
-  override may be needed.
+- **C is handled only for the nearest spiders.** The reach rule refuses
+  inside `moves + 1`; a group arriving a round later is bounded by the round
+  cap and tier 3. Measure before trusting the 100% limit; a rule on group
+  size may be needed.
 - **A needs its own fix**: a retreat that the next flow undoes
   (`retreat_oscillation_veto` exists, #932). Separate task; not in this plan.
 - **A round spent acting while the danger is above 60% of HP** costs a round
@@ -205,10 +237,12 @@ improvement is claimed here.
 
 ## Implementation outline (a later PR per stage)
 
-- `borg-core/src/borg_escape.rs`: a pure `compromised_act_first(...)` for the
-  decision (unit-tested on the table above), wrapped around 4.2 and the
-  flee/leave flags; the refresh as a new `EscapeAction` that is not counted
-  as an escape.
+- `borg-core/src/borg_escape.rs`: `tier4_applies`, a pure
+  `compromised_act_first(...)` for the decision (unit-tested on the table
+  above, including the reach rule at the recorded spider positions), wrapped
+  around 4.2 and the flee/leave flags; `may_hold` on `borg_escape`; the look
+  as a new `EscapeAction` that is not counted as an escape;
+  `staff_reserved` in 4.2, 5.2 and 6.2.
 - `borg-core/src/params.rs`: the settings above, each citing the line that
   reads it (`scripts/check-param-citations.py`), with their `harness/pborg.yaml`
   entries at 0, and the entries in `docs/CALIBRATION.md`.
