@@ -1,6 +1,8 @@
-//! Direction selection on an already committed, unweighted flow (#1298).
+//! Committed direction selection and up-stair route policy.
 
+use borg_rs::decision_api::borg_flow_stairs::UpStairPlan;
 use borg_rs::decision_api::engine;
+use borg_rs::decision_api::headers::list_options_h::OPT_birth_force_descend;
 use borg_rs::decision_api::headers::z_type_h::loc;
 use borg_rs::memory::{BorgState, AUTO_MAX_X, AUTO_MAX_Y, GOAL_DIGGING};
 
@@ -71,4 +73,20 @@ pub(super) fn select_step(state: &BorgState) -> i32 {
     }
 
     direction
+}
+
+pub(super) fn plan_up_stair(state: &BorgState, why: i32) -> UpStairPlan {
+    borg_rs::decision_tape::mark("policy::flow.plan_up_stair", String::new());
+    if engine::player_opt(OPT_birth_force_descend) || state.stairs.less.num == 0 {
+        return UpStairPlan::Refused;
+    }
+
+    let leaving = state.borg.goal.fleeing || state.borg.goal.leaving;
+    let weight = crate::stateful::caution::stair_flight_weight(why, leaving);
+    if weight <= 0 {
+        return UpStairPlan::Unweighted;
+    }
+    let character = crate::Read::new(state).character();
+    let avoid = character.clevel() <= 35 && character.light() != 0 && !state.borg.status.desperate;
+    UpStairPlan::Weighted { weight, avoid }
 }

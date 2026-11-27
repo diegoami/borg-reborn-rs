@@ -25,7 +25,7 @@ use crate::borg_headers::borg_trait_h::{
     BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_CURSP, BI_FOOD, BI_ISHUNGRY, BI_ISWEAK, BI_LIGHT,
     BI_MAXSP, BI_WB_POIS, BI_WS_EVIL,
 };
-use crate::headers::list_options_h::OPT_birth_force_descend;
+use crate::decisions::UpStairPlan;
 use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 
@@ -814,22 +814,17 @@ fn beside_blocks(mode: i32, monster_far: i32, borg_far: i32) -> bool {
 
 /// Prepare to flow towards "up" stairs.
 fn stair_less(st: &mut BorgState, why: i32, sneak: bool, depth: i32, ranged_reach: i32) -> bool {
-    /* forced to go up */
-    if engine::player_opt(OPT_birth_force_descend) {
-        return false;
-    }
-
-    /* None to flow to */
-    if st.stairs.less.num == 0 {
-        return false;
-    }
-
-    let weight = crate::borg_caution::stair_flight_weight(why, st.borg.goal.fleeing || st.borg.goal.leaving);
-    if weight > 0 {
-        let avoid = st.borg.tr(BI_CLEVEL) <= 35 && st.borg.tr(BI_LIGHT) != 0 && !st.borg.status.desperate;
-        return weighted_flight(st, why, Some(Which::Less), WeightedFlightOptions {
-            depth, avoid, sneak, weight, ranged_reach,
-        });
+    match plan_up_stair(st, why) {
+        UpStairPlan::Refused => return false,
+        UpStairPlan::Weighted { weight, avoid } => {
+            return weighted_flight(
+                st,
+                why,
+                Some(Which::Less),
+                WeightedFlightOptions { depth, avoid, sneak, weight, ranged_reach },
+            );
+        }
+        UpStairPlan::Unweighted => {}
     }
 
     /* Clear the flow codes */
@@ -1354,6 +1349,9 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     if case == "stair-preview-wipe" {
         run_stair_preview_wipe_regression(st);
     }
+    if case == "up-stair-plan" {
+        run_up_stair_plan_regression(st);
+    }
 
     fn observe_move(st: &mut BorgState, direction: u8, expected: loc) {
         assert_eq!(st.io.queued_keys(), [u32::from(direction)], "movement from ({}, {})", st.borg.c.x, st.borg.c.y);
@@ -1484,5 +1482,97 @@ fn run_stair_preview_wipe_regression(live: &BorgState) -> ! {
     assert!(st.io.queued_keys().is_empty());
 
     println!("stair preview wipe passed");
+    std::process::exit(0);
+}
+
+fn plan_up_stair(st: &BorgState, why: i32) -> UpStairPlan {
+    use crate::decisions::{ReadDecision, Value};
+
+    match crate::shadow::read_decision(st, ReadDecision::FlowPlanUpStair { why }) {
+        Value::UpStair(plan) => plan,
+        _ => unreachable!("up-stair plan result"),
+    }
+}
+
+pub(crate) fn plan_up_stair_native(st: &BorgState, why: i32) -> UpStairPlan {
+    use crate::decision_api::engine;
+    use crate::headers::list_options_h::OPT_birth_force_descend;
+
+    crate::decision_tape::mark("policy::flow.plan_up_stair", String::new());
+    if engine::player_opt(OPT_birth_force_descend) || st.stairs.less.num == 0 {
+        return UpStairPlan::Refused;
+    }
+    let weight = crate::borg_caution::stair_flight_weight(why, st.borg.goal.fleeing || st.borg.goal.leaving);
+    if weight > 0 {
+        let avoid = st.borg.tr(BI_CLEVEL) <= 35 && st.borg.tr(BI_LIGHT) != 0 && !st.borg.status.desperate;
+        return UpStairPlan::Weighted { weight, avoid };
+    }
+    UpStairPlan::Unweighted
+}
+
+#[cfg(feature = "test-stair-handoff")]
+fn run_up_stair_plan_regression(st: &mut BorgState) -> ! {
+    use crate::headers::list_options_h::OPT_birth_force_descend;
+    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_LESS};
+    use crate::params::{value, Param};
+
+    const GOAL_BORE: i32 = 6;
+    // Route execution lends the engine-registered state. This fixture owns
+    // the process and exits before its queued movement can reach the game.
+    crate::borg_cave::borg_init_cave(st);
+    st.borg.c = loc { x: 40, y: 20 };
+    st.borg.goal.fleeing = false;
+    st.borg.goal.leaving = false;
+    st.borg.status.desperate = false;
+    st.borg.avoidance = 89;
+    st.borg.trait_[BI_CURHP as usize] = 89;
+    st.borg.trait_[BI_CLEVEL as usize] = 35;
+    st.borg.trait_[BI_LIGHT as usize] = 1;
+    st.stairs.less.num = 1;
+    st.stairs.less.x[0] = 42;
+    st.stairs.less.y[0] = 20;
+    st.stairs.more.num = 0;
+    st.cave.grid_mut(40, 20).feat = FEAT_FLOOR as u8;
+    st.cave.grid_mut(41, 20).feat = FEAT_FLOOR as u8;
+    st.cave.grid_mut(42, 20).feat = FEAT_LESS as u8;
+    borg_io::borg_flush(st);
+
+    let force_descend = engine::player_opt(OPT_birth_force_descend);
+    assert!(engine::option_set(c"birth_force_descend", true));
+    st.danger.wipe = true;
+    assert!(!stair_less(st, GOAL_FLEE, false, 2, 0), "forced descent refuses a known up stair");
+    assert!(st.danger.wipe, "refusal leaves the pending wipe alone");
+    assert!(st.io.queued_keys().is_empty());
+    assert!(engine::option_set(c"birth_force_descend", false));
+    st.stairs.less.num = 0;
+    assert_eq!(plan_up_stair(st, GOAL_FLEE), UpStairPlan::Refused);
+    st.stairs.less.num = 1;
+    assert_eq!(plan_up_stair(st, GOAL_BORE), UpStairPlan::Unweighted);
+
+    let weight = value(Param::caution_stairs_flight_threat_weight);
+    let flee_plan = |avoid| {
+        if weight > 0 { UpStairPlan::Weighted { weight, avoid } } else { UpStairPlan::Unweighted }
+    };
+    assert_eq!(plan_up_stair(st, GOAL_FLEE), flee_plan(true));
+    st.borg.goal.leaving = true;
+    assert_eq!(plan_up_stair(st, GOAL_BORE), flee_plan(true));
+    st.borg.trait_[BI_LIGHT as usize] = 0;
+    assert_eq!(plan_up_stair(st, GOAL_BORE), flee_plan(false));
+    st.borg.trait_[BI_LIGHT as usize] = 1;
+    st.borg.trait_[BI_CLEVEL as usize] = 36;
+    assert_eq!(plan_up_stair(st, GOAL_FLEE), flee_plan(false));
+    st.borg.trait_[BI_CLEVEL as usize] = 35;
+    st.borg.status.desperate = true;
+    assert_eq!(plan_up_stair(st, GOAL_FLEE), flee_plan(false));
+    if weight > 0 {
+        assert!(!stair_less(st, GOAL_FLEE, false, 1, 0), "one move cannot reach the two-step stair");
+        assert!(st.io.queued_keys().is_empty());
+        assert!(stair_less(st, GOAL_FLEE, false, 2, 0), "two moves can reach the stair");
+        assert_eq!(st.io.queued_keys(), [u32::from(b'6')]);
+    }
+    assert!(engine::option_set(c"birth_force_descend", force_descend));
+
+    crate::shadow::after_think(st);
+    println!("up-stair plan passed");
     std::process::exit(0);
 }

@@ -16,10 +16,11 @@ RECEIPT = ROOT / 'docs/R45-PORT-SOURCE.json'
 # The R5 review compared the refactored selector and its helpers with the
 # native implementation. Pin the reviewed files alongside the R4.5 receipt.
 R5_RECEIVING_FILES = {
-    'borg-core/src/decisions.rs': '911740a6d1f693a65ebc35270ea207e7ee4499418edf23727e2aa6fe888def72',
+    'borg-core/src/decision_api.rs': '8992cde396058357d357c14340989ff83664a87b17ce54c50465207156733738',
+    'borg-core/src/decisions.rs': '6104dbff68cbdfb55c8a4a900a2aefd3cd4a3547453bbd066e200c2725f7425f',
     'borg-core/src/memory.rs': 'd147735a90b4016613343659e3a2250aa93140a43d017f81c470669082d892fe',
-    'borg-next/src/stateful/flow.rs': 'f3ec95bddecfac6e9221b883227754e4b00777d87017eebfbca9bedc7558e015',
-    'borg-next/src/stateful/mod.rs': 'fcef991129cd4b2d9a0eb5bea75483633a85357925b71db9d6dd257245c862d0',
+    'borg-next/src/stateful/flow.rs': '0f6c5ad01d6244c3945b1b03c64e6e80f70a28b87f26b9b8bd53438c926bac62',
+    'borg-next/src/stateful/mod.rs': 'f212715c2afbd9d74053a677a8ef1df90d68ff33d08fde3e8a823255935fd104',
 }
 MODULES = {
     'caution': 'borg_caution', 'escape': 'borg_escape', 'recovery': 'borg_recover',

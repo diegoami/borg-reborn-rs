@@ -207,22 +207,22 @@ class ShadowCheckTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'entry coverage'):
                 module.check([root], r45=True)
 
-    def test_r5_requires_the_new_flow_root_and_checks_its_counter(self):
+    def test_r5_requires_the_flow_roots_and_checks_their_counter(self):
         row = valid_receiving_row()
         row.update(schema='borg-reborn-rs/shadow-stats@10', surface='r5',
                    ported_points=row['ported_points'] + ['flow'])
         counts = row['counts']
-        point = module.FLOW_STEP_POINT
-        counts['stateful_points'][point] = 1
-        counts['readonly_points'][point] = 1
-        counts['flow_calls'] = 1
+        points = dict.fromkeys(module.FLOW_POINTS, 1)
+        counts['stateful_points'].update(points)
+        counts['readonly_points'].update(points)
+        counts['flow_calls'] = len(points)
         for field in ('policy_markers', 'tape_events', 'readonly_comparisons', 'comparisons'):
-            counts[field] += 1
+            counts[field] += len(points)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self.write(root, row)
             _, totals = module.check([root], r5=True, require_all_entries=True)
-            self.assertEqual(totals['flow_calls'], 1)
+            self.assertEqual(totals['flow_calls'], len(points))
             with self.assertRaisesRegex(ValueError, 'wrong schema'):
                 module.check([root], r45=True)
 
@@ -232,7 +232,7 @@ class ShadowCheckTest(unittest.TestCase):
                 module.check([root], r5=True)
             counts['flow_calls'] -= 1
 
-            del counts['readonly_points'][point]
+            del counts['readonly_points']['flow.plan_up_stair']
             counts['readonly_comparisons'] -= 1
             counts['comparisons'] -= 1
             self.write(root, row)

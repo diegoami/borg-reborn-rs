@@ -124,8 +124,13 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                 cwd=TEST_GAME.parent, env=env, capture_output=True, text=True, timeout=30,
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            if case == "flow-step":
-                self.assertIn("flow direction selection passed", result.stdout)
+            shadow_cases = {
+                "flow-step": ("flow direction selection passed", "flow.select_step", 8),
+                "up-stair-plan": ("up-stair plan passed", "flow.plan_up_stair", 10 if weight else 8),
+            }
+            if case in shadow_cases:
+                message, point, count = shadow_cases[case]
+                self.assertIn(message, result.stdout)
                 stats = root / "shadow-stats.jsonl"
                 if shadow == "off":
                     self.assertFalse(stats.exists())
@@ -133,8 +138,8 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                     self.assertEqual((root / "shadow.jsonl").read_bytes(), b"")
                     row = json.loads(stats.read_text().splitlines()[-1])
                     self.assertEqual(row["mode"], shadow)
-                    self.assertEqual(row["counts"]["readonly_points"]["flow.select_step"], 8)
-                    self.assertEqual(row["counts"]["flow_calls"], 8)
+                    self.assertEqual(row["counts"]["readonly_points"][point], count)
+                    self.assertEqual(row["counts"]["flow_calls"], count)
             elif case == "stair-preview-wipe":
                 self.assertIn("stair preview wipe passed", result.stdout)
             else:
@@ -162,6 +167,12 @@ class EmergencyStairHandoffTest(unittest.TestCase):
 
     def test_stair_preview_consumes_wipe_and_restores_cached_danger(self):
         self.run_case("stair-preview-wipe", 0)
+
+    def test_up_stair_plan_preserves_refusals_weight_and_move_cap(self):
+        for shadow in ("off", "check", "switch"):
+            for weight in (0, 5):
+                with self.subTest(shadow=shadow, weight=weight):
+                    self.run_case("up-stair-plan", weight, shadow=shadow)
 
 
 if __name__ == "__main__":
