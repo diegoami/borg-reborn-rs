@@ -9349,9 +9349,9 @@ unknown-rune spare per equipment slot, two for rings, chosen by visible
 value. A stack keeps one copy. The rest leaves at the next safe opportunity,
 in the dungeon as well as in town. Artifacts, known activations, known
 curses, swaps, staged loadouts and inscriptions other than the game's own
-tags keep their protections. While Identify Rune is usable (a scroll, or
-the spell with the mana to cast it now) the cap waits, so the identification
-attempt comes first.
+tags keep their protections. While Identify Rune is usable (a scroll the
+Borg can read now, or the spell with the mana to cast it now) the cap waits,
+so the identification attempt comes first.
 
 In town a spare with unknown runes goes to a shop that accepts it, even when
 the shop pays nothing under `birth_no_selling`. The sale teaches every rune
