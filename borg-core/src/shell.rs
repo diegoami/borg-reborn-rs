@@ -881,8 +881,14 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
         let mut left = None;
         let mut unfit = None;
         // A core going home (`rising`) is on its way to town: neither a
-        // level left early nor a rise counts (re-review #227, 3).
-        let homeward = st.rising_to_town();
+        // level left early nor a rise counts (re-review #227, 3). Nor does
+        // a climb to restock before `rising` is set (#1326).
+        let previous = r.watch.map(|w| w.depth).filter(|&d| d > 0 && d != depth);
+        drop(guard);
+        let restocking = previous.is_some_and(|d| restock_due(st, d));
+        let homeward = st.rising_to_town() || restocking;
+        let mut guard = running();
+        let r = guard.as_mut()?;
         if r.watch.is_none_or(|w| w.depth != depth) {
             if let Some(w) = r.watch.filter(|_| !homeward) {
                 // To town, the level stays in the plan: the core went to
@@ -1244,22 +1250,56 @@ enum Home {
     /// It does not.
     No,
     /// Fear: it flees to town (`fleeing_to_town`), or it rises out of a
-    /// depth it is not prepared for. The trip ends: home is its next level.
+    /// depth it is not prepared for (other than to restock). The trip ends:
+    /// home is its next level.
     Fear,
-    /// An errand of its own (`rising` while prepared for this depth):
-    /// restocking, selling, fixing its level or experience, missing home.
-    /// It goes its own way; the plan waits and goes on after town
-    /// (re-review #227, 3; docs/ERRANDS.md: "a trip to town is not fear").
+    /// An errand of its own (`rising` while prepared for this depth, or
+    /// unprepared only because a restock is due): restocking, collecting
+    /// potions from the Home, selling, fixing its level or experience,
+    /// missing home. It goes its own way; the plan waits and goes on after
+    /// town (re-review #227, 3; docs/ERRANDS.md: "a trip to town is not
+    /// fear").
     Errand,
+}
+
+/// borg-reborn-rs (#1326): a core going home (not fleeing to town) is on
+/// an errand of its own when it is prepared for its depth, or when what it
+/// lacks is a restock (`borg_restock`) or its potions in the Home ("Collect
+/// from house"). `borg_prepared` checks the restock first, so a restock
+/// used to read as unprepared, hence fear: a ladder trip ended and a
+/// command aborted when the core only went to buy supplies.
+fn own_errand(fleeing_to_town: bool, prepared_here: bool, restock_due: bool, collecting: bool) -> bool {
+    !fleeing_to_town && (prepared_here || restock_due || collecting)
+}
+
+/// borg-reborn-rs (#1326): a restock is due at `depth` (`borg_restock`,
+/// without `borg_must_return_to_town`'s level timer: the core heads up for
+/// it on every level of the climb, `rising` or not).
+fn restock_due(st: &mut BorgState, depth: i32) -> bool {
+    crate::borg_prepared::probe(st, |st| crate::borg_prepared::borg_restock(st, depth)).is_some()
 }
 
 fn scared_home(st: &mut BorgState) -> Home {
     let depth = st.borg.tr(BI_CDEPTH);
-    if depth == 0 || !(st.borg.goal.fleeing_to_town || st.rising_to_town()) {
+    if depth == 0 {
         return Home::No;
     }
-    if !st.borg.goal.fleeing_to_town && crate::borg_prepared::prepared_probe(st, depth).is_none() {
-        return Home::Errand;
+    if !st.borg.goal.fleeing_to_town {
+        // Not prepared for its depth because of a restock, the core heads up
+        // before it sets `rising` (the first 100 game turns on a level): the
+        // errand waits for it as it does for a trip home (#1326).
+        let restock = restock_due(st, depth);
+        if !restock && !st.rising_to_town() {
+            return Home::No;
+        }
+        let reason = if restock { None } else { crate::borg_prepared::prepared_probe(st, depth) };
+        let prepared_here = !restock && reason.is_none();
+        let collecting = reason
+            .as_ref()
+            .is_some_and(|r| r.text(st).windows(18).any(|w| w == b"Collect from house"));
+        if own_errand(false, prepared_here, restock, collecting) {
+            return Home::Errand;
+        }
     }
     let ended = match running().as_mut() {
         Some(r) if r.step < usize::MAX && r.target().is_some_and(|t| t > 0) => {
@@ -1652,6 +1692,16 @@ mod tests {
         assert_eq!(leveling.arrive_home(0), None);
         assert_eq!(leveling.trip, 1);
         assert_eq!(leveling.target(), None, "the errand is done in town");
+    }
+
+    #[test]
+    fn a_restock_trip_home_is_the_cores_own_errand() {
+        // borg-reborn-rs (#1326)
+        assert!(own_errand(false, true, false, false), "prepared: selling, fixing, missing home");
+        assert!(own_errand(false, false, true, false), "unprepared only for a restock");
+        assert!(own_errand(false, false, false, true), "collecting potions from the Home");
+        assert!(!own_errand(false, false, false, false), "unprepared for the depth: fear");
+        assert!(!own_errand(true, true, true, true), "fleeing to town is fear");
     }
 
     #[test]

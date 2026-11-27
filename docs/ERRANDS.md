@@ -144,7 +144,8 @@ docs/GAME-PLAN-LANGUAGE.md); `/loop-levels` is an unknown command.
   prepared for), a ladder trip goes home and a command stops ("the core
   rose from DL2, not fit for DL3"). The commands do not skip levels.
 - **Fear overrides the plan.** If the core flees to town, or climbs out of
-  a depth it is not prepared for, the trip ends and goes home, or a
+  a depth it is not prepared for (for another reason than a restock, #1326),
+  the trip ends and goes home, or a
   finite command stops. If it flees a
   level, it leaves its own way, and a level
   of the plan it leaves for another dungeon level counts as explored.
