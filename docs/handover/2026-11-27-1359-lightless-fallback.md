@@ -13,6 +13,14 @@ was; shipped 1 in `harness/pborg.yaml`). With it on:
   think, as borg-rs plays it, has the level until the Borg has light again or
   reaches a new level.
 
+**Found in review:** the first version's give-up turn queued no key, and
+`borg_think_dungeon` still returned `lightless_recovery`, so `borg_inkey` found
+an empty queue and `borg_think`'s caller ended the turn in `borg_oops("normal
+abort")`: the Borg still stopped, once, on the turn recovery gave up. Now
+`handoff` and `recover` return whether the turn was spent, and on a give-up
+the call site goes on with the ordinary think in the same turn. No smoke game
+loses its light, so nothing but reading the code shows this path.
+
 **Checked:** CI's cargo commands; smoke on the default core (see the PR).
 
 **Not checked:** a game that loses its light. The harness has no switch to

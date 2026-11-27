@@ -206,19 +206,24 @@ fn terrain(st: &mut BorgState, at: Grid, up_allowed: bool, seek_recall_light: bo
     tile
 }
 
-fn handoff(st: &mut BorgState, reason: &str) {
+/// Ends recovery. Returns whether the turn was spent: `false` when, with
+/// `lightless_fallback`, the level is given back to the ordinary think and no
+/// key is queued, so the caller must go on thinking (an empty queue would end
+/// the turn in `borg_oops("normal abort")`).
+fn handoff(st: &mut BorgState, reason: &str) -> bool {
     // borg-reborn-rs (#1359): with `lightless_fallback`, give the level back
     // to the ordinary think instead of stopping the Borg.
     if param(Param::lightless_fallback) != 0 {
         crate::borg_io::borg_note(st, &format!("# Lightless recovery gives up ({reason}); ordinary play"));
         st.think_dungeon.lightless.gave_up = true;
-        return;
+        return false;
     }
     st.think_dungeon.lightless = Recovery::default();
     borg_oops(st, reason);
     // Return a key to the caller so its empty-queue abort does not replace
     // the reason. The inactive Borg removes its hook on the next read.
     borg_keypress(st, ESCAPE);
+    true
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -267,25 +272,26 @@ fn prepare_for_return(st: &mut BorgState) -> bool {
     borg_think_dungeon_light(st, true)
 }
 
-pub(crate) fn recover(st: &mut BorgState) {
+/// One recovery turn. Returns `false` when recovery gave the level back to
+/// the ordinary think (`lightless_fallback`) and queued nothing.
+pub(crate) fn recover(st: &mut BorgState) -> bool {
     st.borg.goal.type_0 = 0;
     let at = (st.borg.c.x, st.borg.c.y);
     st.think_dungeon.lightless.observe(at);
     if st.think_dungeon.lightless.actions_left == 0 {
-        handoff(st, "lightless recovery action limit reached");
-        return;
+        return handoff(st, "lightless recovery action limit reached");
     }
     if prepare_for_return(st) {
         st.think_dungeon.lightless.actions_left -= 1;
-        return;
+        return true;
     }
     if st.borg.tr(BI_ISCONFUSED) != 0 {
         if borg_recall(st) {
             st.think_dungeon.lightless.actions_left -= 1;
         } else {
-            handoff(st, "lightless recovery cannot navigate while confused");
+            return handoff(st, "lightless recovery cannot navigate while confused");
         }
-        return;
+        return true;
     }
 
     let up_allowed = !engine::player_opt(OPT_birth_force_descend);
@@ -325,8 +331,9 @@ pub(crate) fn recover(st: &mut BorgState) {
                 borg_keypress(st, direction);
             }
         }
-        Decision::Stop(reason) => handoff(st, reason),
+        Decision::Stop(reason) => return handoff(st, reason),
     }
+    true
 }
 
 #[cfg(test)]
