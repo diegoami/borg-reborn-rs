@@ -121,6 +121,17 @@ fn consumable(st: &BorgState, item: &borg_item) -> Role {
     if supply == NormalStock::Staple {
         return Role::Renewable;
     }
+    // #1318: town books are Bookseller staples (store.c:208-230 adds every
+    // book whose class_book has no `dungeon` flag), so the check above makes
+    // them renewable. A dungeon book the class can browse is never sold in a
+    // regular shop, so one spare is a scarce reserve. (Elements do not
+    // destroy it: init.c:268-273 gives dungeon books EL_INFO_IGNORE for the
+    // base elements.)
+    if is_book(tval) {
+        return if supply == NormalStock::Unlisted && item.kind != 0 && !item.cursed
+            && engine::obj_kind_can_browse(item.kind as usize)
+        { Role::Scarce } else { Role::Ordinary };
+    }
     if !matches!(tval, TV_ROD | TV_WAND | TV_STAFF | TV_POTION | TV_SCROLL | TV_MUSHROOM) {
         return Role::Ordinary;
     }
@@ -137,6 +148,10 @@ fn consumable(st: &BorgState, item: &borg_item) -> Role {
         false
     };
     supply_role(supply, useful, is_device)
+}
+
+pub(crate) fn is_book(tval: u32) -> bool {
+    matches!(tval, TV_MAGIC_BOOK | TV_PRAYER_BOOK | TV_NATURE_BOOK | TV_SHADOW_BOOK | TV_OTHER_BOOK)
 }
 
 fn late_potion(st: &BorgState, item: &borg_item) -> bool {

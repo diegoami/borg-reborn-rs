@@ -517,10 +517,10 @@ impl Swap {
 pub(crate) fn fixture(st: &mut BorgState, case: &str) {
     use std::sync::atomic::{AtomicU8, Ordering::Relaxed};
     static SETUP: AtomicU8 = AtomicU8::new(0);
-    assert!(matches!(case, "trim" | "arrival" | "arrival-shop" | "restore" | "no-storage" | "reserve-overlap" | "reserve-swap" | "reserve-overweight" | "reserve-overweight-shop"));
+    assert!(matches!(case, "trim" | "arrival" | "arrival-shop" | "restore" | "no-storage" | "reserve-overlap" | "reserve-swap" | "reserve-book" | "reserve-overweight" | "reserve-overweight-shop"));
     let shop_reserve = case == "reserve-overweight-shop";
     let reserve = shop_reserve || case == "reserve-overweight";
-    let overlap = matches!(case, "reserve-overlap" | "reserve-swap");
+    let overlap = matches!(case, "reserve-overlap" | "reserve-swap" | "reserve-book");
     if SETUP.load(Relaxed) == 1 { return; }
     let wield = inven_wield() as usize;
     if SETUP.load(Relaxed) == 0 {
@@ -534,7 +534,7 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
         };
         engine::setup_test_town_loadout(
             st, excess, !shop && !reserve && case != "no-storage", false,
-            if shop || shop_reserve { 500 } else { 0 }, shop || overlap, !shop_reserve, case == "reserve-swap",
+            if shop || shop_reserve { 500 } else { 0 }, shop || overlap, !shop_reserve, case == "reserve-swap", case == "reserve-book",
         );
         crate::borg_item::borg_find_all_items(st);
         crate::borg_trait::borg_notice(st, true);
@@ -574,6 +574,25 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
                     && k.kind == u32::from(ring.kind)).expect("the ring is in the Home kit");
                 assert!(fact.home_role.gear() && fact.protect_disposal,
                     "role {:?}, protected {}, power {}", fact.home_role, fact.protect_disposal, fact.power);
+            }
+            if case == "reserve-book" {
+                use crate::borg_town_dispose::Place;
+                let book = |tval: u32| st.store.shops[BORG_HOME].ware.iter()
+                    .find(|it| it.iqty > 0 && u32::from(it.tval) == tval).copied();
+                let priest = book(TV_PRAYER_BOOK).expect("the Priest dungeon book at Home");
+                let mage = book(TV_MAGIC_BOOK).expect("the Mage dungeon book at Home");
+                assert_eq!(borg_town_home::classify(st, &priest, false, 0), Role::Scarce);
+                assert_ne!(borg_town_home::classify(st, &mage, false, 0), Role::Scarce);
+                let handbook = st.items.items[..wield].iter().find(|it| it.iqty > 0
+                    && u32::from(it.tval) == TV_PRAYER_BOOK && it.kind != priest.kind)
+                    .expect("the carried town book");
+                assert_eq!(borg_town_home::classify(st, handbook, false, 0), Role::Renewable);
+                let kit = crate::borg_town_shadow::kit_for_test(st);
+                let role = |place: Place, kind: u32| kit.iter()
+                    .find(|k| k.place == place && k.kind == kind).map(|k| k.home_role);
+                assert_eq!(role(Place::Home, u32::from(priest.kind)), Some(Role::Scarce));
+                assert_eq!(role(Place::Pack, u32::from(priest.kind)), Some(Role::Ordinary),
+                    "a single carried copy is the one the Borg reads, not a spare");
             }
             println!("#1239 town loadout passed: {case}");
             std::process::exit(0);
