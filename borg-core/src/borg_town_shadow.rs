@@ -365,7 +365,14 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             }
         }
         // #1318: one spare dungeon book is the reserve. Another copy, when
-        // Home already holds that book, is ordinary replaceable stock.
+        // Home already holds that book, is ordinary replaceable stock. A
+        // single carried copy is the one the Borg reads, not a spare (review
+        // of #1323): it keeps the earlier role.
+        if home_role == Role::Scarce && borg_town_home::is_book(u32::from(it.tval))
+            && place == Place::Pack && it.iqty < 2
+        {
+            home_role = Role::Ordinary;
+        }
         if home_role == Role::Scarce && borg_town_home::is_book(u32::from(it.tval)) {
             let home = &st.store.shops[BORG_HOME].ware;
             let earlier = if place == Place::Home { &home[..slot] } else { &home[..] };
