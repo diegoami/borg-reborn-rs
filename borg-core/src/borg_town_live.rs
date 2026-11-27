@@ -1110,11 +1110,14 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
             }
             _ => {}
         }
+        // Review of #1311: the planned upgrade was not made on this pass, so
+        // gear that beats the worn piece stays.
+        let pending = plan.upgrade.is_some();
         for entry in plan.stock {
             match entry.source {
                 GearLocation::Pack(slot) => {
                     let item = &st.items.items[slot];
-                    if entry.release > 0 && release_pack.is_none() {
+                    if entry.release > 0 && release_pack.is_none() && !(pending && entry.beats_worn) {
                         release_pack = Some(pack_gear_disposal(st, slot, entry.release));
                     }
                     // A withdrawn inferior variant does not block storing
@@ -1128,7 +1131,7 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
                             at: [BORG_HOME as i64, slot as i64, i64::from(entry.stash), 0] });
                     }
                 }
-                GearLocation::Home(slot) if release_home.is_none() => {
+                GearLocation::Home(slot) if release_home.is_none() && !(pending && entry.beats_worn) => {
                     release_home = release_home_gear(st, slot, entry.release);
                 }
                 _ => {}
