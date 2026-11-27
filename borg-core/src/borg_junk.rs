@@ -2370,8 +2370,10 @@ fn planned_pack_excess(st: &mut BorgState, whole_stack: bool) -> Option<SurplusD
     let groups: std::collections::BTreeSet<_> = st.items.items[..pack_size() as usize]
         .iter().filter_map(|item| cleanup_slot(st, item)).collect();
     for group in groups {
+        // #1307: the plan already keeps the planned upgrade and the worn
+        // piece. Release what ranks below both even when the wear routine
+        // cannot make the upgrade on this level.
         let plan = gear_plan(st, group, true);
-        if matches!(plan.upgrade, Some((GearLocation::Pack(_), _))) { continue; }
         for entry in plan.stock {
             let GearLocation::Pack(slot) = entry.source else { continue; };
             if entry.release > 0 && (!whole_stack || entry.release == st.items.items[slot].iqty) {

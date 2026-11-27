@@ -9323,3 +9323,17 @@ inscriptions, staged loadouts, and active melee swaps retain protection.
 The existing sale and safe drop checks apply. This changes the behaviour
 of the shipped gear policy without adding parameters or changing defaults.
 [Handover](handover/2026-11-26-1304-rogue-spare-gear.md)
+
+## Gear cleanup routines agree (#1307)
+
+Dungeon cleanup releases gear that ranks below both the worn piece and a
+planned upgrade, even when the wear routine cannot make that upgrade on the
+current level. The active weapon and armour swap stays in the ranked plan
+and in the backup cutoff. A Home or stacked pack alternative covers an
+unresolved melee spare whatever the carried weight or the free pack slots.
+Those limits apply to the actual wear or withdrawal. The ranked plan alone
+keeps permanent lights, so one permanent backup stays. The fuelled light
+reserve still releases fuelled lights that a permanent light covers. With
+`birth_randarts` a partly known artifact weapon no longer counts as a
+better peer. No parameter or default changes.
+[Handover](handover/2026-11-27-1307-gear-routines.md)

@@ -553,6 +553,19 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
         && !engine::player_opt(crate::headers::list_options_h::OPT_birth_percent_damage)
     {
         let swap = st.trait_swap.weapon_swap;
+        // #1307: an alternative covers when it can be wielded at all. Pack
+        // room and the current carry allowance limit the wear or withdrawal,
+        // not whether the option exists.
+        let randarts = engine::player_opt(crate::headers::list_options_h::OPT_birth_randarts);
+        let cover_available: Vec<_> = choices.iter().enumerate().map(|(index, entry)| {
+            index < capacity || crate::borg_item_wear::allows_ranked_wear(&entry.item, &items[destinations[0]])
+                && (can_rank(&entry.item) || !randarts && visible_artifact_weapon(&entry.item)
+                    && matches!(entry.source, GearLocation::Pack(_)))
+                && match entry.source {
+                    GearLocation::Home(i) => !crate::borg_town_live::buy_rejected(st, crate::borg_store::BORG_HOME as i16, i),
+                    _ => true,
+                }
+        }).collect();
         for &(index, _) in &uninspected {
             st.items.items[index].iqty = 0;
         }
@@ -564,7 +577,7 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
         // Count retained alternatives only. Protected artifacts remain
         // available even when they were not selected as the regular backup.
         let alternatives: Vec<_> = choices.iter().zip(&keep).enumerate().filter(|(index, (entry, count))| {
-            wear_allowed(&choices, *index, 0) && (can_rank(&entry.item) || visible_artifact_weapon(&entry.item))
+            cover_available[*index] && (can_rank(&entry.item) || visible_artifact_weapon(&entry.item))
                 && (**count > 0 || entry.item.art_idx != 0)
         }).map(|(_, (entry, _))| (entry.item, observe(entry.item))).collect();
         let other_worn: Vec<_> = items[pack + 1..quiver_start() as usize].iter()
@@ -598,8 +611,11 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
         .map(|(target, &i)| (choices[i].source, destinations[target]));
     let mut stock: Vec<_> = choices.iter().zip(&keep).enumerate().skip(capacity).map(|(index, (entry, &keep))| {
         let item = entry.item;
+        // #1307: the active weapon or armour swap stays, as in every other
+        // cleanup path.
         let protected = protected_gear(st, &item)
-            || item.desc.contains(&(b'{' as core::ffi::c_char));
+            || item.desc.contains(&(b'{' as core::ffi::c_char))
+            || matches!(entry.source, GearLocation::Pack(i) if crate::borg_junk::is_swap(st, i as i32));
         GearStock {
             source: entry.source,
             stash: keep - best.iter().filter(|&&i| i == index).count() as u8,
@@ -666,9 +682,11 @@ pub(crate) fn redundant_copies(st: &mut BorgState, location: GearLocation, cutof
     if !can_rank(&spare) || spare.art_idx != 0 || spare.activ_idx != 0
         || spare.desc.contains(&(b'{' as core::ffi::c_char))
         || crate::borg_town_live::retained_gear(st, &spare)
+        || matches!(location, GearLocation::Pack(i) if crate::borg_junk::is_swap(st, i as i32))
     {
         return 0;
     }
+    let randarts = engine::player_opt(crate::headers::list_options_h::OPT_birth_randarts);
     let slot = ranked_slot(&spare).expect("ranked gear has a slot");
     let ring = u32::from(spare.tval) == TV_RING;
     let digger = u32::from(spare.tval) == TV_DIGGING;
@@ -681,7 +699,7 @@ pub(crate) fn redundant_copies(st: &mut BorgState, location: GearLocation, cutof
         .chain(home.iter().enumerate().map(|(i, item)| (GearLocation::Home(i), item)))
         .chain(st.items.items[..wield].iter().enumerate().map(|(i, item)| (GearLocation::Pack(i), item)))
         .filter(|(source, item)| *source != location && (can_rank(item)
-            || visible_artifact_weapon(item) && item.kind == spare.kind && item.weight <= spare.weight)
+            || !randarts && visible_artifact_weapon(item) && item.kind == spare.kind && item.weight <= spare.weight)
             && ranked_slot(item) == Some(slot)
             && (u32::from(item.tval) == TV_DIGGING) == digger)
         .map(|(source, item)| (source, *item, item.iqty)).collect();
@@ -874,6 +892,11 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
         println!("#1264 exploration pack passed: {case}");
         std::process::exit(0);
     }
+    if case == "ranked-cleanup" {
+        ranked_cleanup_fixture(st);
+        println!("#1264 exploration pack passed: {case}");
+        std::process::exit(0);
+    }
     if case == "gear" {
         let slot = st.items.items[..wield].iter()
             .position(|item| item.iqty > 0 && u32::from(item.tval) == TV_POLEARM)
@@ -961,6 +984,106 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
         std::process::exit(0);
     }
     true
+}
+
+/// #1307: one cleanup routine must not block or undo another. Runs with the
+/// shipped ranked policy (`junk_gear_alternatives` 2, Home backups on).
+#[cfg(feature = "test-town-loadout")]
+fn ranked_cleanup_fixture(st: &mut BorgState) {
+    use crate::headers::list_object_flags_h::OF_LIGHT_2;
+    use GearLocation::Pack;
+    assert!(crate::borg_town_live::gear_home_backups(), "the fixture runs the shipped ranked policy");
+    let wield = inven_wield() as usize;
+    let body = wield + 6;
+    let home = crate::borg_store::BORG_HOME;
+    let empty = crate::borg_item::blank_item();
+    let robe = borg_item { iqty: 1, aware: true, ident: true, value: 800,
+        tval: TV_SOFT_ARMOR as u8, ac: 2, weight: 20, ..empty };
+    let better = borg_item { to_a: 4, ..robe };
+    let best = borg_item { to_a: 6, ..robe };
+    let reset = |st: &mut BorgState| {
+        st.items.items[..wield].fill(empty);
+        st.store.shops[home].ware.fill(empty);
+        st.trait_swap.weapon_swap = 0;
+        st.trait_swap.armour_swap = 0;
+    };
+
+    // A planned upgrade the wear routine cannot make on this level no
+    // longer protects the spare that ranks below both pieces.
+    reset(st);
+    st.items.items[body] = better;
+    st.items.items[0] = best;
+    st.items.items[1] = robe;
+    assert_eq!(gear_plan(st, body, true).upgrade, Some((Pack(0), body)));
+    let level = st.borg.time.level;
+    st.borg.time.level = st.borg.time.now
+        .wrapping_sub(crate::params::value(crate::params::Param::wear_best_max_turns) + 1);
+    assert!(!crate::borg_item_wear::borg_wear_stuff(st), "the level timer blocks wearing");
+    let drop = crate::borg_junk::ranked_pack_spare(st, crate::borg_junk::gear_alternatives())
+        .expect("release the spare below the worn piece and the upgrade");
+    assert_eq!((drop.slot, drop.quantity), (1, 1));
+    st.borg.time.level = level;
+
+    // The active swap stays in both ranked paths.
+    reset(st);
+    st.items.items[body] = best;
+    st.store.shops[home].ware[0] = better;
+    st.items.items[0] = borg_item { iqty: 3, ..robe };
+    let release = |st: &mut BorgState| gear_plan(st, body, true).stock.iter()
+        .find(|entry| entry.source == Pack(0)).map_or(0, |entry| entry.release);
+    assert_eq!(release(st), 3);
+    assert_eq!(redundant_copies(st, Pack(0), 2), 3);
+    st.trait_swap.armour_swap = 1;
+    assert_eq!(release(st), 0, "keep the active armour swap");
+    assert_eq!(redundant_copies(st, Pack(0), 2), 0, "keep the active armour swap");
+
+    // An alternative covers an unresolved weapon whatever the carried
+    // weight or the free pack slots.
+    reset(st);
+    let weapon = borg_item { iqty: 1, aware: true, ident: true, weight: 40,
+        tval: TV_SWORD as u8, dd: 2, ds: 6, to_h: 10, to_d: 20, ..empty };
+    let worn_weapon = st.items.items[wield];
+    st.items.items[wield] = weapon;
+    let mut spare = borg_item { ident: false, needs_ident: true, to_h: 0, to_d: 0, ..weapon };
+    for (index, byte) in b"{??}".iter().enumerate() {
+        spare.desc[index] = *byte as core::ffi::c_char;
+    }
+    st.items.items[0] = spare;
+    st.store.shops[home].ware[0] = borg_item { to_d: 19, ..weapon };
+    let released = |st: &mut BorgState| gear_plan(st, wield, true).stock.iter()
+        .find(|entry| entry.source == Pack(0)).map_or(0, |entry| entry.release);
+    let weight = st.borg.tr(BI_WEIGHT);
+    st.borg.trait_[BI_WEIGHT as usize] = st.borg.tr(BI_CARRY) / 2 + 500;
+    assert_eq!(crate::borg_town_live::shopping_weight_capacity(st, weapon.weight), 0);
+    assert_eq!(released(st), 1, "a heavy pack does not remove the Home alternative");
+    st.borg.trait_[BI_WEIGHT as usize] = weight;
+    st.store.shops[home].ware[0] = empty;
+    st.items.items[1] = borg_item { iqty: 2, to_d: 19, ..weapon };
+    assert_eq!(engine::pack_slots_free(), 0, "the fixture kit fills the pack");
+    assert_eq!(released(st), 1, "a full pack does not remove the stacked alternative");
+    st.items.items[wield] = worn_weapon;
+
+    // Permanent lights follow the ranked plan alone: one backup stays.
+    reset(st);
+    let light_slot = wield + 5;
+    let worn_light = st.items.items[light_slot];
+    let mut lantern = borg_item { iqty: 1, aware: true, ident: true, value: 300, kind: 1,
+        tval: TV_LIGHT as u8, weight: 50, ..empty };
+    for flag in [OF_NO_FUEL, OF_LIGHT_2] {
+        let bit = (flag as i32 - engine::FLAG_START) as usize;
+        lantern.flags[bit / 8] |= 1 << (bit % 8);
+    }
+    let spare_lantern = lantern;
+    lantern.modifiers[crate::headers::list_object_modifiers_h::OBJ_MOD_LIGHT as usize] = 1;
+    st.items.items[light_slot] = lantern;
+    st.items.items[0] = spare_lantern;
+    st.items.items[1] = spare_lantern;
+    assert_eq!(crate::borg_light::surplus_light(st), None, "the gear plan owns permanent lights");
+    let plan = gear_plan(st, light_slot, true);
+    let released: Vec<_> = [Pack(0), Pack(1)].iter().map(|source| plan.stock.iter()
+        .find(|entry| entry.source == *source).map_or(0, |entry| entry.release)).collect();
+    assert_eq!(released, [0, 1], "keep one permanent backup");
+    st.items.items[light_slot] = worn_light;
 }
 
 #[cfg(test)]
