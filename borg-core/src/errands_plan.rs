@@ -417,7 +417,7 @@ pub(crate) fn tick(st: &mut BorgState) -> bool {
             let what = match p.command {
                 Command::MaxDepth(n) => {
                     // No errand: the core plays as itself, never prepared
-                    // for a level below N (borg_prepared, "No deeper").
+                    // for a level below N (borg_prepared, "Plan max-depth N.").
                     format!("max-depth {n}")
                 }
             };
@@ -610,7 +610,9 @@ mod tests {
             for mode in ["static", "dynamic"] {
                 let reason = crate::borg_prepared::prepared_with_limit(2, plan_cap(),
                     || panic!("{mode} calculations must not bypass the cap"));
-                assert_eq!(reason.unwrap().requirement.name, "plan_depth_limit");
+                let reason = reason.unwrap();
+                assert_eq!(reason.requirement.name, "plan_depth_limit");
+                assert_eq!(reason.text(&crate::state::BorgState::default()), b"Plan max-depth 1.");
                 assert!(crate::borg_prepared::prepared_with_limit(1, plan_cap(), || None).is_none());
             }
             // Without a plan, dispatch retains both a successful dynamic

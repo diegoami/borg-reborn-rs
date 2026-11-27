@@ -50,10 +50,11 @@ borg_reborn_errand: "none"
 
 borg_reborn_stopscared: "off"
 
-# Stop at this dungeon level or character level (out of range = never), go
-# no deeper than borg_no_deeper, and stop after killing Morgoth
-# (borg_stop_king). Lowering borg_no_deeper caps the dive: the Borg stays at
-# or above that level and gains less experience.
+# Stop at this dungeon level or character level (out of range = never), stay
+# above borg_no_deeper, and stop after killing Morgoth (borg_stop_king).
+# Lowering borg_no_deeper caps the dive: the Borg is never prepared for that
+# level or deeper (borg_no_deeper = N: DL N-1 at most, as in C) and gains
+# less experience.
 
 borg_stop_dlevel: 128
 borg_stop_clevel: 51

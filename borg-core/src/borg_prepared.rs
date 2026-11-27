@@ -868,7 +868,10 @@ pub fn borg_prepared(st: &mut BorgState, depth: i32) -> Option<Reason> {
 /// link in the regression that verifies calculations cannot bypass it (#447).
 pub(crate) fn prepared_with_limit(depth: i32, limit: Option<i32>, calculate: impl FnOnce() -> Option<Reason>) -> Option<Reason> {
     if let Some(limit) = limit.filter(|limit| depth >= *limit) {
-        Some(Reason::new(ReasonMessage::Formatted(format!("No deeper {limit}.").into_bytes()), "plan_depth_limit", depth, limit, "<"))
+        // borg-reborn-rs (#1330): `max-depth N` is the limit N + 1 (the Borg
+        // may stand on DL N), so the reason names the plan's N; "No deeper
+        // N+1." read as a cap one level deeper than the plan's.
+        Some(Reason::new(ReasonMessage::Formatted(format!("Plan max-depth {}.", limit - 1).into_bytes()), "plan_depth_limit", depth, limit, "<"))
     } else {
         calculate()
     }
