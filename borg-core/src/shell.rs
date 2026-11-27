@@ -1373,6 +1373,14 @@ fn underfoot(st: &BorgState) -> u32 {
 }
 
 fn stairs_down(st: &mut BorgState) -> bool {
+    // borg-reborn-rs (#1328): the core's own refusals of a way down (hungry
+    // or weak or short of food, the sale hold, no light, a pending Recall;
+    // `borg_flow_stair_more` asks the same), also when the errand already
+    // stands on the stairs or continues a flow. Refused, nothing is queued
+    // and the core plays on (it eats, lights, waits for Recall).
+    if crate::borg_flow_stairs::more_refused(st, false) {
+        return false;
+    }
     if underfoot(st) == FEAT_MORE {
         borg_keypress(st, keycode_t::from(b'>'));
         return true;
