@@ -331,12 +331,6 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
         return choice!("cancel");
     }
 
-    // borg-reborn-rs (#208): an errand that is done stops the Borg here.
-    if let Some(done) = crate::shell::before_dungeon_think(st) {
-        crate::core_trace::selected("errand_handoff", concat!(file!(), ":", line!()));
-        return done;
-    }
-
     /* Do something */
     crate::borg_think_dungeon::borg_think_dungeon(st)
 }

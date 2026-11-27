@@ -6,8 +6,8 @@ the ancestor of borg-rs's core. `borg-core/` is a line-by-line Rust
 translation of it, and this repository ships that translation vendored at a
 pin. Read this first if you want to know how the Borg plays before you read
 the Rust. What is ours is described elsewhere:
-[borg-core.md](borg-core.md) covers the vendored core and the errands we
-added around it, and [reborn-plan.md](reborn-plan.md) covers our own
+[borg-core.md](borg-core.md) covers the vendored core and what we added
+around it, and [reborn-plan.md](reborn-plan.md) covers our own
 redesign.
 
 **Source and citations.** Every function and line number below was checked
@@ -516,7 +516,7 @@ Rust file in `borg-core/src/`.
 | `borg-log.c`, `borg-reincarnate.c`, `borg-util.c` | death logs, respawn, helpers | `borg_log.rs`, `borg_reincarnate.rs`, `borg_util.rs` |
 
 borg-core also has files with no C counterpart: the `borg_town_*.rs`
-files, `params.rs`, `core_trace.rs`, `errands_plan.rs` and others. Those
+files, `params.rs`, `core_trace.rs`, `config_file.rs` and others. Those
 are not part of the C Borg; [borg-core.md](borg-core.md) describes them.
 
 ## Further reading

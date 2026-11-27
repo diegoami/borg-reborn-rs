@@ -26,16 +26,18 @@ vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`
 
 ## 2. Independence
 
-> **Amended 2026-11-14 (owner: the repivot, option C; docs/ERRANDS.md).**
+> **Amended 2026-11-14 (owner: the repivot, option C; docs/archive/ERRANDS.md, the errands retired 2026-11-27, #1339).**
 > One part follows borg-rs on purpose, and is re-synced at each borg-rs
 > milestone the owner picks. **The decision core:** borg-rs's crate is
 > vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`.
-> Our changes to it are one patch: `src/shell.rs` (the errands) and the
-> hooks marked `borg-reborn-rs (#207)` and `(#208)`. *(Updated 2026-11-21,
-> #816: the core is the default since #606, and the patch has grown with
-> track P and the errands; `scripts/borg-core-vendor.py` lists it, our own
-> files as `OURS`, `PIN`, `ladders.txt` and eight modules, and the borg-rs
-> files carrying our hooks as `HOOKED`, 53 of them.)* The engine is
+> Our changes to it are one declared patch: files of our own and hooks
+> marked `borg-reborn-rs (#N)` in borg-rs's files, which
+> `scripts/borg-core-vendor.py` lists (`OURS`, `HOOKED`). *(Updated
+> 2026-11-27, #1339: the patch began as `src/shell.rs`, the errands, and
+> their hooks (#207, #208); it grew with track P and the errands, and the
+> core is the default since #606. The errands, `shell.rs`, `ladders.txt`
+> and the plans were retired on 2026-11-27; the configuration readers moved
+> to `config_file.rs`.)* The engine is
 > upstream `574b618c` (#724; `42cd156ac`, the commit borg-rs v12 plays, until
 > 2026-11-20, #215); borg-rs's one
 > fork correction (`cmd-wizard.c`, debug mode) is not carried. §2.1's "no
@@ -212,9 +214,9 @@ frontend's flags and outputs, and `harness/borg.txt` (§3.5, §3.6, below).
     launching PBorg. CBorg uses upstream's settings in `user/borg.txt`.
     The template descends from borg-rs's v12 file, with `borg_munchkin_by_class` and `borg_self_scum` set to
     `FALSE` (owner, 2026-11-14: no stair-scumming, no town scumming), and
-    three keys of ours that select the decision core (`borg_reborn_core`),
-    an errand (`borg_reborn_errand`) and the fear stop
-    (`borg_reborn_stopscared`). Our own core still reads nothing else in
+    a key of ours that selects the decision core (`borg_reborn_core`; the
+    errand and fear-stop keys that came with it were retired, #1339). Our
+    own core still reads nothing else in
     it. *(Updated 2026-11-21, #816: it now also carries its own shipped
     values for borg-rs's settings, #479, the track P parameters as
     `borg_param_*` lines, and further keys of ours such as `borg_scary_list`

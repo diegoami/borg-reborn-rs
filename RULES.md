@@ -337,8 +337,8 @@ No strategy, default frontend flags or measured baseline changes are implied.
 26. **Debug reported play from preserved runtime evidence.** For an
     owner-requested guided session, the agent prepares and starts a
     recorder-enabled game with a named character, private session files,
-    the exact executable/settings/starting save preserved, a core decision
-    trace and errand outcomes. Follow
+    the exact executable/settings/starting save preserved and a core
+    decision trace. Follow
     [docs/GUIDED-DEBUGGING.md](docs/GUIDED-DEBUGGING.md). The owner reports
     the unexpected behaviour and saves if the game responds; the agent
     finds and verifies the save, preserves the incident, and attempts

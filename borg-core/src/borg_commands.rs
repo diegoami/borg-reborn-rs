@@ -75,7 +75,7 @@ struct BorgCommand {
 
 /// The Borg commands (`borg_commands[]`), in C's order (the help lists
 /// them in this order).
-const BORG_COMMANDS: [BorgCommand; 31] = [
+const BORG_COMMANDS: [BorgCommand; 30] = [
     BorgCommand { selection: b'?', description: "borg command help", function: borg_cmd_help },
     BorgCommand { selection: b'$', description: "reload pborg.yaml settings", function: borg_cmd_init_txt_file },
     BorgCommand { selection: b'z', description: "activate borg", function: borg_cmd_start },
@@ -105,8 +105,6 @@ const BORG_COMMANDS: [BorgCommand; 31] = [
     BorgCommand { selection: b'o', description: "object details", function: borg_cmd_object_desc },
     BorgCommand { selection: b'R', description: "respawn", function: borg_cmd_respawn },
     BorgCommand { selection: b'v', description: "version", function: borg_cmd_version },
-    // borg-reborn-rs (#208): the errands' command line.
-    BorgCommand { selection: b'/', description: "errand (/dive N, /town, ...)", function: crate::shell::borg_cmd_errand },
     BorgCommand { selection: b'B', description: "switch to CBorg", function: borg_cmd_switch_borg },
 ];
 

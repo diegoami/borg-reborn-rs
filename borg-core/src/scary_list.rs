@@ -50,7 +50,7 @@ use std::sync::OnceLock;
 use crate::engine;
 
 /// The class names, in `class.txt` order (`BI_CLASS`).
-const CLASSES: [&str; 9] = crate::shell::CLASSES;
+const CLASSES: [&str; 9] = crate::config_file::CLASSES;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum Target {
@@ -352,7 +352,7 @@ fn fatal(error: impl std::fmt::Display) -> ! {
 }
 
 fn selected_path() -> Option<String> {
-    let file = crate::shell::borg_txt_setting("borg_scary_list")?;
+    let file = crate::config_file::borg_txt_setting("borg_scary_list")?;
     let file = file.trim();
     if file.is_empty() {
         fatal("empty borg_scary_list");

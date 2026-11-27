@@ -17,7 +17,6 @@ struct Selection {
     healing_potions: Option<i32>,
     name: Option<&'static str>,
     source: Option<&'static str>,
-    errand: Option<(String, Option<i32>)>,
     attacks: Vec<AttackRanking>,
     prepared: Vec<PreparedCheck>,
 }
@@ -245,18 +244,7 @@ pub(crate) fn begin() -> bool {
     if path.is_none() {
         return false;
     }
-    let errand = crate::shell::trace_errand();
-    FRAMES.with(|frames| {
-        let mut frames = frames.borrow_mut();
-        let errand = match errand {
-            Ok(value) => value,
-            Err(()) => frames.last().and_then(|f| f.errand.clone()),
-        };
-        frames.push(Selection {
-            errand,
-            ..Selection::default()
-        });
-    });
+    FRAMES.with(|frames| frames.borrow_mut().push(Selection::default()));
     true
 }
 
@@ -324,13 +312,9 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
         "dungeon"
     };
     let danger = crate::borg_danger::borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
-    let errand = match crate::shell::trace_errand() {
-        Ok(Some(value)) => Some(value),
-        Ok(None) if matches!(check, "errand_handoff" | "errand_steer") => frame.errand,
-        Ok(None) => None,
-        Err(()) => frame.errand,
-    }
-    .map(|(name, target)| Errand { name, target });
+    // borg-reborn-rs (#1339): the errands are retired; the field stays in
+    // the schema (always null) so that readers of core-trace@2 keep working.
+    let errand: Option<Errand> = None;
     let mut line = Line {
         schema: "borg-reborn-rs/core-trace@2".into(),
         think: 0,

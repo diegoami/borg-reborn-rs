@@ -22,8 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SRC_DIRS = [ROOT / "borg-core" / "src", ROOT / "borg-reborn-rs" / "src"]
 # Keys the shell reads itself (borg-reborn-rs, docs/ZOO-INTERFACE.md).
-SHELL_KEYS = ["borg_reborn_core", "borg_reborn_errand", "borg_reborn_stopscared",
-              "borg_plan", "borg_scary_list"]
+SHELL_KEYS = ["borg_reborn_core", "borg_scary_list"]
 
 
 _SOURCES = None
