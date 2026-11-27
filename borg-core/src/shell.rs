@@ -749,7 +749,7 @@ fn target(st: &mut BorgState) -> Option<i32> {
             let r = guard.as_ref()?;
             (r.target()?, r.skip_unprepared)
         };
-        if t == 0 || !skip || crate::borg_prepared::prepared_for_decision(st, t).is_none() {
+        if t == 0 || !skip || crate::borg_prepared::prepared_probe(st, t).is_none() {
             return Some(t);
         }
         borg_note(st, &format!("# Errand: not prepared for DL{t}, skipped."));
@@ -941,7 +941,7 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
         }
     }
     // Home after a trip: what comes next (the readiness check runs outside
-    // the lock: `borg_prepared` reads the core's state only).
+    // the lock; `prepared_probe` puts back what `borg_prepared` writes, #1329).
     let next_deepest = {
         let mut guard = running();
         let r = guard.as_mut()?;
@@ -953,7 +953,7 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
         // with none set, once the core is ready for its deepest level.
         let ready = match min_level {
             Some(level) => st.borg.tr(BI_CLEVEL) >= level,
-            None => crate::borg_prepared::prepared_for_decision(st, deepest).is_none(),
+            None => crate::borg_prepared::prepared_probe(st, deepest).is_none(),
         };
         if ready {
             if let Some(r) = running().as_mut() {
@@ -1000,9 +1000,9 @@ pub(crate) fn on_leave_level(st: &mut BorgState, bored: bool) -> Option<bool> {
         // The core leaves town its own way (`leave_town`).
         return None;
     }
-    if !prepared_below(st, 0) {
-        return Some(refuse_descent(st, 1));
-    }
+    // No readiness check here: the next level is DL1, and `borg_prepared(1)`
+    // always passes (C: "Town and First level", #1329). The ladder's own
+    // skip (`target`) and the descent from DL1 (`walk`) check the levels.
     Some(stairs_down(st))
 }
 
@@ -1258,7 +1258,7 @@ fn scared_home(st: &mut BorgState) -> Home {
     if depth == 0 || !(st.borg.goal.fleeing_to_town || st.rising_to_town()) {
         return Home::No;
     }
-    if !st.borg.goal.fleeing_to_town && crate::borg_prepared::prepared_for_decision(st, depth).is_none() {
+    if !st.borg.goal.fleeing_to_town && crate::borg_prepared::prepared_probe(st, depth).is_none() {
         return Home::Errand;
     }
     let ended = match running().as_mut() {
@@ -1276,7 +1276,7 @@ fn scared_home(st: &mut BorgState) -> Home {
 
 /// The core is prepared for the level below `depth` (`borg_prepared`).
 fn prepared_below(st: &mut BorgState, depth: i32) -> bool {
-    crate::borg_prepared::prepared_for_decision(st, depth + 1).is_none()
+    crate::borg_prepared::prepared_probe(st, depth + 1).is_none()
 }
 
 /// The errand would take the core below where it is prepared for

@@ -108,6 +108,32 @@ pub(crate) fn prepared_for_decision(st: &mut BorgState, depth: i32) -> Option<Re
     result
 }
 
+/// borg-reborn-rs (#1329): run a readiness check C never makes (the errand
+/// shell's, the trip policy's) without its side effects on the core:
+/// `borg_prepared` sets `ready_morgoth` (deep down; `borg_restock` resets
+/// it) and, from DL82, re-notices the Home. Both are put back.
+pub(crate) fn probe<T>(st: &mut BorgState, check: impl FnOnce(&mut BorgState) -> T) -> T {
+    let ready = st.borg.ready_morgoth;
+    let home = st.home.clone();
+    let result = check(st);
+    st.borg.ready_morgoth = ready;
+    st.home = home;
+    result
+}
+
+/// borg-reborn-rs (#1329): `prepared_for_decision` as `probe` runs it,
+/// written out so that the trace names this function's caller (a closure
+/// would not carry `#[track_caller]`).
+#[track_caller]
+pub(crate) fn prepared_probe(st: &mut BorgState, depth: i32) -> Option<Reason> {
+    let ready = st.borg.ready_morgoth;
+    let home = st.home.clone();
+    let result = prepared_for_decision(st, depth);
+    st.borg.ready_morgoth = ready;
+    st.home = home;
+    result
+}
+
 /// `borg_restock(depth)` as C returns it (as `borg_prepared_c`).
 pub fn borg_restock_c(st: &mut BorgState, depth: i32) -> Option<Vec<u8>> {
     let r = restock_for_return(st, depth);
@@ -1436,6 +1462,25 @@ mod tests {
         assert_eq!(restock_static(&st, 65, false, value).unwrap().requirement.name, "healing");
         st.borg.trait_[BI_AHEAL as usize] = 1;
         assert_eq!(restock_static(&st, 100, false, value).unwrap().requirement.name, "star_heal");
+    }
+
+    #[test]
+    fn a_probe_puts_back_what_the_check_writes() {
+        // borg-reborn-rs (#1329). `borg_prepared` itself reaches the engine,
+        // which these unit tests do not link, so the check here writes the
+        // two fields `borg_prepared` writes.
+        use super::*;
+        let mut st = BorgState::default();
+        st.borg.ready_morgoth = -1;
+        st.home.num_ezheal = 7;
+        let seen = probe(&mut st, |st| {
+            st.borg.ready_morgoth = 0;
+            st.home.num_ezheal = 0;
+            st.home.num_ezheal_true = 3;
+            42
+        });
+        assert_eq!(seen, 42);
+        assert_eq!((st.borg.ready_morgoth, st.home.num_ezheal, st.home.num_ezheal_true), (-1, 7, 0));
     }
 
     #[test]

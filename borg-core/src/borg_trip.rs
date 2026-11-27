@@ -533,24 +533,16 @@ pub fn plan_trip(i: &TripInputs, p: &TripParams) -> PlannedTrip {
 
 /// `borg_prepared(depth)` without its side effects: it sets
 /// `ready_morgoth` and, deep down, re-notices the Home; both are put back.
+/// borg-reborn-rs (#1329): the probe is `borg_prepared`'s own now, shared
+/// with the errand shell.
 #[track_caller]
 fn prepared_probe(st: &mut BorgState, depth: i32) -> bool {
-    let ready = st.borg.ready_morgoth;
-    let home = st.home.clone();
-    let ok = crate::borg_prepared::prepared_for_decision(st, depth).is_none();
-    st.borg.ready_morgoth = ready;
-    st.home = home;
-    ok
+    crate::borg_prepared::prepared_probe(st, depth).is_none()
 }
 
 /// `borg_must_return_to_town` without its side effects (as above).
 fn restock_probe(st: &mut BorgState) -> bool {
-    let ready = st.borg.ready_morgoth;
-    let home = st.home.clone();
-    let due = crate::borg_prepared::borg_must_return_to_town(st).is_some();
-    st.borg.ready_morgoth = ready;
-    st.home = home;
-    due
+    crate::borg_prepared::probe(st, |st| crate::borg_prepared::borg_must_return_to_town(st).is_some())
 }
 
 /// Diagnostic equipment/ammunition/device subset, using only visible tval.
