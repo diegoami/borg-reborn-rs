@@ -1399,7 +1399,7 @@ fn borg_best_stuff_aux(st: &mut BorgState, n: i32, test: &mut [u16], best: &mut 
 
             // borg-reborn-rs (#1239): reconsider reserved upgrades with the
             // departing kit's carry allowance and Home transaction preflight.
-            if !in_pack && crate::borg_town_live::retained_gear(st, item) {
+            if !in_pack && crate::borg_town_live::retained_home_gear(st, (i - pack_size) as usize) {
                 continue;
             }
 
