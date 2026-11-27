@@ -1863,11 +1863,34 @@ pub(crate) mod digger_fixture {
             assert_eq!(carried, None);
             assert!(!digs, "at 0 the inherited check judges the worn kit only");
         }
+        // Second re-review: a present but weak tool. In the Borg's view the
+        // shovel loses its ego's STR and tunnelling, a plain Shovel. At
+        // twenty twitches granite's threshold falls from 40 to 30, and
+        // the plain shovel's skill reaches it, but the engine gives a
+        // skill of 40 or less no chance at granite (player-calcs.c:1658).
+        use crate::headers::list_object_modifiers_h::OBJ_MOD_TUNNEL;
+        use crate::headers::list_stats_h::OBJ_MOD_STR;
+        let wield = inven_wield() as usize;
+        for item in &mut st.items.items[..wield] {
+            if u32::from(item.tval) == TV_DIGGING {
+                item.modifiers[OBJ_MOD_STR as usize] = 0;
+                item.modifiers[OBJ_MOD_TUNNEL as usize] = 0;
+            }
+        }
+        st.borg.times_twitch = 20;
+        st.borg.time.now += 1; // a new turn for the carried-digger cache
+        let weak = crate::borg_flow::carried_digger_skill(st);
+        println!("digger-dig-gate: plain shovel {weak:?}");
+        if on {
+            assert!(weak.is_some_and(|skill| (30..=40).contains(&skill)),
+                "the plain shovel reaches the lowered threshold, not the engine's");
+        }
+        assert!(!crate::borg_flow::borg_can_dig(st, false, FEAT_GRANITE as u8),
+            "a carried tool with no engine chance must not dig granite");
+
         // Twenty twitches, the shovel gone from the Borg's view (or the
         // flag at 0): no carried digger, and magma at threshold 0.
         assert!(worn < 10, "the worn kit alone is below magma's threshold");
-        st.borg.times_twitch = 20;
-        let wield = inven_wield() as usize;
         for item in &mut st.items.items[..wield] {
             if u32::from(item.tval) == TV_DIGGING { item.iqty = 0; }
         }

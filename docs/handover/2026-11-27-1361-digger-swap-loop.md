@@ -60,6 +60,11 @@ rule that re-equips a combat weapon while a digger is wielded.
     the flag is 0, when no digger is carried and when the worn weapon is
     sticky. At 20 twitches magma's threshold falls to 0, and a skill of 0
     had allowed a dig the engine gives no chance (`player-calcs.c:1656`).
+  - From the second Codex re-review (P2): a present but weak tool must also
+    give the terrain a chance. `engine_dig_chance` is the engine's chance
+    by terrain, and the carried branch needs it above 0. A plain Shovel
+    gives skill 30 at 20 twitches, which met granite's lowered threshold
+    of 30, though the engine digs granite only above skill 40.
   - The default 0 keeps both inherited trials. It ships at 1 in
     `harness/pborg.yaml`.
 - `docs/CALIBRATION.md`: a new section and its parameter row. The citation
@@ -80,6 +85,8 @@ rule that re-equips a combat weapon while a digger is wielded.
     shovel's is 52. At 1, `borg_can_dig` allows granite. At 0 it refuses
     it, as before. Then, with the shovel gone and 20 twitches, magma must be
     refused at both values. The reading at `9224054a` fails this at both.
+    Before that, the same kit with a plain Shovel (skill 30) and 20
+    twitches must not dig granite. The reading at `73eecd27` allows it.
 - `engine/tests/test_stair_handoff.py DiggerSwapLoopTest`, also added to CI.
   It runs both cases at the shipped settings, and runs each with the flag at
   0, where each must fail. In `digger-swap-loop` the trial wields the shovel.
@@ -98,7 +105,8 @@ rule that re-equips a combat weapon while a digger is wielded.
   needs no re-record.
 - After the re-review fix and a merge of `track-p` (the errands'
   retirement, #1339), every check in this section was rerun with the same
-  results. `cargo test --release -p borg-core` now runs 1006 tests.
+  results. `cargo test --release -p borg-core` now runs 1007 tests,
+  including `engine_dig_chance_follows_calc_digging_chances`.
 - **The recorded save**, from the canonical case, borg-cemetery#164
   (`incidents/2026-11-27-watch-dwarf-priest-shovel-loop-5153079`, archive
   SHA-256 `eb5e20c2…`, internal checksums verified). This branch's shipped

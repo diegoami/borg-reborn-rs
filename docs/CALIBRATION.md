@@ -1158,8 +1158,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1316` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1318` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2632` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2632` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2679` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2679` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:839` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1275` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1256` |
@@ -1482,16 +1482,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2641` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2642` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2643` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2644` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2645` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2646` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2647` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2648` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2649` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2650` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2686` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2687` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2688` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2689` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2690` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2691` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2692` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2693` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2694` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2695` |
 
 ## Immobile monsters and blocked stairs (#736)
 
@@ -8180,12 +8180,12 @@ local, a lead only, RULES 14; keys.log sha256 prefixes):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2668` |
-| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2669` |
-| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2670` |
-| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2671` |
-| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2672` |
-| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2673` |
+| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2715` |
+| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2716` |
+| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2717` |
+| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2718` |
+| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2719` |
+| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2720` |
 
 ## Deal with poison (#1140)
 
@@ -8609,7 +8609,7 @@ Checked on the build where the loop reproduces (`433457a4`, with
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:2052` |
+| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:2080` |
 
 ## A general movement-loop detector (#1153)
 
@@ -9499,7 +9499,11 @@ when no combat weapon is at hand.
   With the dagger kept, a Human Priest's worn skill is 5, below granite's
   40, and 52 with the carried Shovel of Earthquakes (`digger-dig-gate`).
   The trial re-observes the kit with each carried digger and is kept for
-  the Borg's turn. Tunnelling
+  the Borg's turn. The carried skill counts only when a usable carried
+  digger exists and the engine gives that skill a chance at the terrain
+  (`engine_dig_chance`, `player-calcs.c:1651-1665`). Without that, the
+  twitch allowance could lower a threshold below what the engine digs: at
+  20 twitches granite's falls to 30, but granite needs skill above 40. Tunnelling
 needs no wield: the engine wields a carried digger for each tunnelling turn
 and puts the weapon back (`cmd-cave.c:534-583`). Without the ranked plan
 the wear trial is unchanged.
