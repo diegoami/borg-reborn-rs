@@ -86,7 +86,7 @@ core's own stop) when it is done.
 | `/explore-level` | the core explores the level it is on | when the level is explored |
 | `/dive-exploring N` | each level from here down to DL N explored, in turn | when DL N is |
 | `/ladder` | the class's ladder of trips (`borg-core/ladders.txt`) | never (the last trip repeats) |
-| `/trips 1*/1,2,1*@3/...` | trips: `/` between trips, `,` between levels, `*` repeats until the core is prepared for the next trip (or `@N`, from character level N) | never |
+| `/trips 1*/1,2,1*@3/...` | trips: `/` between trips, `,` between levels, `*` repeats until the core is prepared for the next trip (or `@N`, from character level N), judged when it leaves town after shopping | never |
 | `/stopscared off\|flee\|N` | setting: stop and hand control back when the one-turn danger where the Borg stands reaches N% of its hit points; `flee` is 100 | |
 | `/explored N\|off` | setting: a level counts as explored at N% of its floor seen (default 90), or, off, only when the core is done with it | |
 | `/stall N\|off` | setting: a level is given up after N game turns with nothing new seen (default 10,000). It also bounds how long the errand tries to move on from one level, at least 10,000 game turns: then a command stops ("no way on") and a ladder lets the core play on until the level changes | |

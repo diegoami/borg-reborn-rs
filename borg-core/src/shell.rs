@@ -24,8 +24,9 @@
 //!   core that goes back to town to restock does so its own way; the level
 //!   stays in the plan, and the errand takes it back.
 //! - **A trip marked `*` repeats** until the core is prepared for the
-//!   deepest level of the next trip (`borg_prepared`); the last one repeats
-//!   until the budget. The player writes the ladder, the core's readiness
+//!   deepest level of the next trip (`borg_prepared`), judged when it
+//!   leaves town after shopping (#1327); the last one repeats until the
+//!   budget. The player writes the ladder, the core's readiness
 //!   climbs it: a mage stays on town-DL1-town longer, a warrior moves on
 //!   sooner.
 //! - The errand ends in town when the last trip is over, or at its budget,
@@ -432,6 +433,11 @@ struct Running {
     /// last game turn seen: another character drops the errand (review
     /// #227, finding 5 and re-review 4).
     owner: Option<(u32, u64, i64)>,
+    /// borg-reborn-rs (#1327): a trip marked `*` came home; whether the
+    /// next trip starts is decided when the core leaves town, after it has
+    /// shopped (`settle_repeat`): the next trip's deepest level and
+    /// character level (`@N`).
+    repeat_pending: Option<(i32, Option<i32>)>,
 }
 
 /// The level under the errand: its depth, the grids the core knows of it,
@@ -589,6 +595,7 @@ pub fn set_errand(errand: Option<Errand>, budget: i64) {
             name,
             watch: None,
             owner: None,
+            repeat_pending: None,
         }
     });
 }
@@ -946,26 +953,21 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
             return Some(true);
         }
     }
-    // Home after a trip: what comes next (the readiness check runs outside
-    // the lock; `prepared_probe` puts back what `borg_prepared` writes, #1329).
-    let next_deepest = {
+    // Home after a trip: what comes next. A repeating trip is judged when
+    // the core leaves town, after it has shopped (#1327): on arrival it has
+    // not restocked yet, and `borg_prepared` checks the restock first.
+    {
         let mut guard = running();
         let r = guard.as_mut()?;
         r.started.get_or_insert(turn);
-        r.arrive_home(depth)
-    };
-    if let Some((deepest, min_level)) = next_deepest {
-        // A repeating trip moves on at the next trip's character level, or,
-        // with none set, once the core is ready for its deepest level.
-        let ready = match min_level {
-            Some(level) => st.borg.tr(BI_CLEVEL) >= level,
-            None => crate::borg_prepared::prepared_probe(st, deepest).is_none(),
-        };
-        if ready {
-            if let Some(r) = running().as_mut() {
-                r.trip += 1;
-            }
+        if let Some(next) = r.arrive_home(depth) {
+            r.repeat_pending = Some(next);
         }
+    }
+    // Out of town without the town hook (caution took the stairs, say):
+    // the decision is made now.
+    if depth != 0 {
+        settle_repeat(st);
     }
     let outcome = {
         let guard = running();
@@ -984,6 +986,31 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
     Some(true)
 }
 
+/// borg-reborn-rs (#1327): the pending decision of a trip marked `*`: the
+/// next trip starts at its character level (`@N`), or, with none set, once
+/// the core is prepared for its deepest level; otherwise the trip repeats.
+fn settle_repeat(st: &mut BorgState) {
+    let Some((deepest, min_level)) = running().as_mut().and_then(|r| r.repeat_pending.take()) else {
+        return;
+    };
+    let clevel = st.borg.tr(BI_CLEVEL);
+    if next_trip_ready(clevel, min_level, || crate::borg_prepared::prepared_probe(st, deepest).is_none()) {
+        if let Some(r) = running().as_mut() {
+            r.trip += 1;
+            r.step = 0;
+        }
+    }
+}
+
+/// The next trip's gate: its character level when it has one, else the
+/// core's readiness for its deepest level (asked only then).
+fn next_trip_ready(clevel: i32, min_level: Option<i32>, prepared: impl FnOnce() -> bool) -> bool {
+    match min_level {
+        Some(level) => clevel >= level,
+        None => prepared(),
+    }
+}
+
 /// Town (`borg_leave_level` at depth 0): the core shops until it is bored,
 /// then the trip starts by the stairs (never a recall to the maximum
 /// depth). `None` lets the core decide as usual.
@@ -998,6 +1025,9 @@ pub(crate) fn on_leave_level(st: &mut BorgState, bored: bool) -> Option<bool> {
             finish(st, "done");
         }
         return Some(bored);
+    }
+    if bored {
+        settle_repeat(st);
     }
     if !bored || target(st).is_none_or(|t| t == 0) {
         return Some(false);
@@ -1655,6 +1685,7 @@ mod tests {
             name: String::new(),
             watch: None,
             owner: None,
+            repeat_pending: None,
         };
         assert_eq!(dive.target(), Some(3));
         let mut stop = Running {
@@ -1705,6 +1736,38 @@ mod tests {
     }
 
     #[test]
+    fn a_repeating_trip_is_judged_after_town_not_on_arrival() {
+        // borg-reborn-rs (#1327)
+        let trip = |levels: Vec<i32>, repeat: bool, min_level: Option<i32>| Trip { levels, repeat, min_level };
+        let mut r = Running {
+            trips: vec![trip(vec![1], true, None), trip(vec![1, 2, 1], false, None)],
+            trip: 0,
+            step: 1,
+            budget: 0,
+            started: None,
+            skipped: 0,
+            end: End::Home,
+            skip_unprepared: true,
+            from_here: None,
+            recall: false,
+            name: String::new(),
+            watch: None,
+            owner: None,
+            repeat_pending: None,
+        };
+        assert_eq!(r.target(), Some(0));
+        // Home: the trip starts over, and the next trip's gate waits.
+        assert_eq!(r.arrive_home(0), Some((2, None)));
+        assert_eq!((r.trip, r.step, r.target()), (0, 0, Some(1)));
+        assert_eq!(r.arrive_home(0), None, "asked once per homecoming");
+        // The gate itself.
+        assert!(next_trip_ready(5, Some(5), || unreachable!()));
+        assert!(!next_trip_ready(4, Some(5), || unreachable!()));
+        assert!(next_trip_ready(1, None, || true));
+        assert!(!next_trip_ready(50, None, || false));
+    }
+
+    #[test]
     fn a_trip_walks_its_levels_then_home_then_the_next_trip() {
         let trip = |levels: Vec<i32>| Trip {
             levels,
@@ -1725,6 +1788,7 @@ mod tests {
             name: String::new(),
             watch: None,
             owner: None,
+            repeat_pending: None,
         };
         assert_eq!(r.target(), Some(1));
         r.step = 1;
