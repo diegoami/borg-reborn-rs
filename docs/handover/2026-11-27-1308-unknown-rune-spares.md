@@ -39,9 +39,21 @@ outside the plain melee and armour `{??}` pattern had no cleanup route.
   role, so it is never stored at Home. Its unknown runes still protect it
   from the planner's own sale or drop.
 
+## Review fixes (owner, PR #1312)
+
+- **Identification first.** While Identify Rune is usable, the cap
+  releases nothing. `borg_drop_inferior_spare` runs before `borg_test_stuff`
+  in the dungeon think, so the cap could discard a spare before the
+  identification attempt. Once identification is used up, the cap applies.
+- **No floor drop in town.** For unknown-rune gear, town disposal offers the
+  largest quantity a shop accepts. With no taker it waits instead of falling
+  back to `DROP_SURPLUS`. This covers arrival unloading and `organize_gear`,
+  including the `{??}` releases of the ranked plan.
+
 ## Checked
 
 - Native `ranked-cleanup` cases cover:
+  - no release while identification is usable;
   - the lower-valued of two unknown daggers;
   - an unknown armour stack trimmed to one copy, and not released by
     pack-full cleanup;
