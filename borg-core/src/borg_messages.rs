@@ -1167,21 +1167,14 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
 
     // Removed rubble.  Important when out of lite
     if prefix(msg, b"You have removed the ") {
-        // borg-reborn-rs (#1353): borg-rs v15R (5e6cd07): in the dark,
-        // clear the remembered rubble of the 3x3 grids around the borg.
+        // borg-reborn-rs (#1353): borg-rs v15R (5e6cd07) clears the remembered
+        // rubble around the Borg in the dark. One dig removes one grid
+        // (cmd-cave.c:590-595), so only the grid the Borg dug becomes broken
+        // door; the other remembered rubble stays blocked (review of #1355).
         if crate::params::value(crate::params::Param::messages_dark_rubble_upstream) != 0 {
+            let dug = st.flow_misc.dug_rubble.take();
             if st.borg.tr(BI_LIGHT) == 0 {
-                let c = st.borg.c;
-                for y in c.y - 1..=c.y + 1 {
-                    for x in c.x - 1..=c.x + 1 {
-                        if engine::square_in_bounds(x, y) {
-                            let grid = st.cave.grid_mut(x, y);
-                            if grid.feat == FEAT_RUBBLE as u8 {
-                                grid.feat = FEAT_BROKEN as u8;
-                            }
-                        }
-                    }
-                }
+                clear_dug_rubble(st, dug);
             }
             return;
         }
@@ -1277,6 +1270,22 @@ fn player_feels(msg: &[u8]) -> bool {
 /// switches stay separate.
 fn player_subject(msg: &[u8]) -> bool {
     prefix(msg, b"You ") && !player_feels(msg)
+}
+
+/// The dark clean-up of "You have removed the rubble" (#1353): the dug grid,
+/// when it is next to the Borg and still remembered as rubble, becomes a
+/// broken door (ignored). Other remembered rubble is left alone; with no
+/// recorded dig nothing is cleared.
+fn clear_dug_rubble(st: &mut BorgState, dug: Option<loc>) {
+    let Some(d) = dug else { return };
+    let c = st.borg.c;
+    if (d.x - c.x).abs() > 1 || (d.y - c.y).abs() > 1 {
+        return;
+    }
+    let grid = st.cave.grid_mut(d.x, d.y);
+    if grid.feat == FEAT_RUBBLE as u8 {
+        grid.feat = FEAT_BROKEN as u8;
+    }
 }
 
 #[cfg(test)]
@@ -1828,6 +1837,29 @@ mod tests {
             assert!(row.contains(k), "{row}");
         }
         assert_eq!(MON_MSG_MAX as usize, MON_MSG_REPOSITORY.len() - 1);
+    }
+
+    /// #1353 (review of #1355): one dig in the dark clears one rubble grid.
+    #[test]
+    fn a_dark_dig_clears_only_the_dug_rubble() {
+        use crate::borg_headers::borg_trait_h::BI_MAX;
+        let mut st = BorgState::default();
+        st.cave = crate::borg_cave::CaveState::empty_for_test();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        st.borg.c = loc { x: 40, y: 20 };
+        st.cave.grid_mut(41, 20).feat = FEAT_RUBBLE as u8; // east, dug
+        st.cave.grid_mut(40, 19).feat = FEAT_RUBBLE as u8; // north, still there
+        st.flow_misc.dug_rubble = Some(loc { x: 41, y: 20 });
+
+        let dug = st.flow_misc.dug_rubble.take();
+        clear_dug_rubble(&mut st, dug);
+        assert_eq!(st.cave.grid(41, 20).feat, FEAT_BROKEN as u8);
+        assert_eq!(st.cave.grid(40, 19).feat, FEAT_RUBBLE as u8, "not dug");
+
+        // no recorded dig, or one that is not next to the Borg: nothing moves
+        clear_dug_rubble(&mut st, None);
+        clear_dug_rubble(&mut st, Some(loc { x: 40, y: 18 }));
+        assert_eq!(st.cave.grid(40, 19).feat, FEAT_RUBBLE as u8);
     }
 
     #[test]

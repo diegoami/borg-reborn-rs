@@ -32,9 +32,12 @@ each behind a switch whose 0 is borg-rs at the pin:
 - retreat gives up a direction whose first step is next to a faster,
   recently seen monster (not when surrounded), the test C wrote but whose
   `break` only left its own scan;
-- without light, "You have removed the" clears the remembered rubble of the
-  3x3 grids around the Borg, instead of a 2x2 loop that read only the goal
-  grid.
+- without light, "You have removed the" turns the rubble grid the Borg just
+  dug into broken door (the dig records its target), instead of a 2x2 loop
+  that read only the goal grid. borg-rs v15R clears the 3x3 around the Borg,
+  which also unblocks other remembered rubble after one dig (one dig removes
+  one grid, `cmd-cave.c:590-595`); the review of #1355 found it, so this
+  carry is narrower than v15R.
 
 Shipped 1 (owner, 2026-11-27); the smoke games are unchanged (4/4
 identical), since none reaches the three sites. These are
@@ -1189,8 +1192,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1316` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1318` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2570` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2570` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2574` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2574` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:839` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1275` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1256` |
@@ -1513,7 +1516,7 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2577` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2581` |
 | `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2578` |
 | `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2579` |
 | `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2580` |
@@ -8211,7 +8214,7 @@ local, a lead only, RULES 14; keys.log sha256 prefixes):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2606` |
+| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2610` |
 | `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2607` |
 | `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2608` |
 | `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2609` |

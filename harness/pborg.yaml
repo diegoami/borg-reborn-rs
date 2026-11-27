@@ -1528,7 +1528,7 @@ borg_param_danger_mind_blast_upstream: 1
 # - Retreat gives up a direction whose first step is next to a faster monster.
 borg_param_caution_retreat_adjacent_faster_upstream: 1
 # - Without light, "You have removed the" clears remembered rubble around
-#   the Borg (3x3) instead of reading only the goal grid.
+#   the Borg (the grid it dug) instead of reading only the goal grid.
 borg_param_messages_dark_rubble_upstream: 1
 
 # Immobile creatures (#646, #713). Owner: "always choose ranged against
