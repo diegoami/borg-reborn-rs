@@ -407,11 +407,28 @@ fn combined_properties<'a>(items: impl Iterator<Item = &'a borg_item>) -> borg_i
     combined
 }
 
+/// #1316: a resist or protection `item` gives that neither `kept` nor
+/// `kit` (the worn equipment, every slot) gives: an element's resistance,
+/// Free Action, See Invisible, Hold Life, protection from blindness or
+/// confusion, or telepathy.
+fn adds_protection(kept: &borg_item, kit: &borg_item, item: &borg_item) -> bool {
+    use crate::headers::list_object_flags_h::{OF_FREE_ACT, OF_HOLD_LIFE, OF_PROT_BLIND, OF_PROT_CONF, OF_SEE_INVIS, OF_TELEPATHY};
+    let resist = item.el_info.iter().enumerate().any(|(element, gives)| gives.res_level > 0
+        && gives.res_level > kept.el_info[element].res_level.max(kit.el_info[element].res_level));
+    resist || [OF_FREE_ACT, OF_SEE_INVIS, OF_HOLD_LIFE, OF_PROT_BLIND, OF_PROT_CONF, OF_TELEPATHY].iter().any(|&flag| {
+        let has = |it: &borg_item| engine::flag_has(&it.flags, flag as i32);
+        has(item) && !has(kept) && !has(kit)
+    })
+}
+
 /// #1310: `extra` further backups beyond the regular `capacity` stay only
 /// when each supplies a known property that no worn piece and no better
 /// kept backup gives, and only at Home, or in the pack while Home has room
-/// to store it (`home_room`).
-fn backup_counts(choices: &[GearChoice], worn: &[usize], capacity: usize, extra: usize, home_room: bool) -> Vec<u8> {
+/// to store it (`home_room`). #1316: with `protections`, the worn kit, an
+/// extra that adds a protection nothing kept or worn gives does not count
+/// against `extra`.
+fn backup_counts(choices: &[GearChoice], worn: &[usize], capacity: usize, extra: usize, home_room: bool,
+    protections: Option<&borg_item>) -> Vec<u8> {
     let mut keep = vec![0; choices.len()];
     for &index in worn {
         keep[index] += 1;
@@ -452,7 +469,8 @@ fn backup_counts(choices: &[GearChoice], worn: &[usize], capacity: usize, extra:
     }
     let mut extras = 0;
     for &index in &ranked {
-        if extras == extra { break; }
+        let capped = extras >= extra;
+        if capped && protections.is_none() { break; }
         let item = &choices[index].item;
         let at_home = matches!(choices[index].source, GearLocation::Home(_));
         // Review of #1314: a property counts as covered when any kept piece
@@ -461,10 +479,12 @@ fn backup_counts(choices: &[GearChoice], worn: &[usize], capacity: usize, extra:
         let kept = (0..choices.len()).filter(|&kept| kept != index && keep[kept] > 0 && choices[kept].item.iqty > 0
                 && choices[kept].trusted)
             .map(|kept| &choices[kept].item);
-        let covered = known_properties_cover(&combined_properties(kept), item);
-        if keep[index] == 0 && !covered && (at_home || home_room) {
+        let combined = combined_properties(kept);
+        let covered = known_properties_cover(&combined, item);
+        let protection = protections.is_some_and(|kit| adds_protection(&combined, kit, item));
+        if keep[index] == 0 && !covered && (at_home || home_room) && (!capped || protection) {
             keep[index] = 1;
-            extras += 1;
+            extras += usize::from(!protection);
         }
     }
     keep
@@ -729,7 +749,13 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
     // the ring fingers. Home room is the remembered free Home stacks.
     let extra = crate::borg_junk::gear_alternatives().saturating_sub(1) * capacity;
     let home_room = st.store.shops[crate::borg_store::BORG_HOME].ware.iter().any(|ware| ware.iqty == 0);
-    let keep = backup_counts(&choices, &best, capacity, extra, home_room);
+    // #1316: what the worn equipment gives, every slot, for the protection
+    // exemption.
+    let worn_kit = crate::borg_town_live::home_backup_protections().then(|| {
+        let wield = inven_wield() as usize;
+        combined_properties(st.items.items[wield..quiver_start() as usize].iter().filter(|item| item.iqty > 0))
+    });
+    let keep = backup_counts(&choices, &best, capacity, extra, home_room, worn_kit.as_ref());
     let beats_worn: Vec<bool> = (0..choices.len()).map(|i| {
         if i < capacity { return false; }
         if !ring { return choices[i].power > baseline; }
@@ -1391,9 +1417,9 @@ mod tests {
         let mut choices = [boots(GearLocation::Worn(0), 30), boots(GearLocation::Pack(0), 15), boots(GearLocation::Pack(1), 20)];
         choices[0].item.el_info[ELEM_FIRE as usize].res_level = 1;
         choices[1].item.el_info[ELEM_FIRE as usize].res_level = 1;
-        assert_eq!(backup_counts(&choices, &[0], 1, 0, true), [1, 0, 1], "the worn boots cover rFire, so power decides");
+        assert_eq!(backup_counts(&choices, &[0], 1, 0, true, None), [1, 0, 1], "the worn boots cover rFire, so power decides");
         choices[0].trusted = false;
-        assert_eq!(backup_counts(&choices, &[0], 1, 0, true), [1, 1, 0], "a partly known randart covers nothing");
+        assert_eq!(backup_counts(&choices, &[0], 1, 0, true, None), [1, 1, 0], "a partly known randart covers nothing");
     }
 
     #[test]
@@ -1434,7 +1460,7 @@ mod tests {
             cloak(GearLocation::Pack(1), 8, 16, 0),
             cloak(GearLocation::Pack(2), 7, 15, 0),
         ];
-        assert_eq!(backup_counts(&choices, &[0], 1, 0, true), [1, 0, 1, 0, 1]);
+        assert_eq!(backup_counts(&choices, &[0], 1, 0, true, None), [1, 0, 1, 0, 1]);
     }
 
     #[test]
@@ -1451,13 +1477,13 @@ mod tests {
         let bit = (OF_FREE_ACT as i32 - engine::FLAG_START) as usize;
         choices[1].item.flags[bit / 8] |= 1 << (bit % 8);
         choices[2].item.el_info[ELEM_NEXUS as usize].res_level = 1;
-        assert_eq!(backup_counts(&choices, &[0], 1, 0, true), [1, 1, 0, 0], "one backup per slot");
-        assert_eq!(backup_counts(&choices, &[0], 1, 1, false), [1, 1, 1, 0],
+        assert_eq!(backup_counts(&choices, &[0], 1, 0, true, None), [1, 1, 0, 0], "one backup per slot");
+        assert_eq!(backup_counts(&choices, &[0], 1, 1, false, None), [1, 1, 1, 0],
             "the rNexus boots stay at Home; the plain boots leave");
         choices[2].source = GearLocation::Pack(2);
-        assert_eq!(backup_counts(&choices, &[0], 1, 1, false), [1, 1, 0, 0], "no Home room for a carried extra");
-        assert_eq!(backup_counts(&choices, &[0], 1, 1, true), [1, 1, 1, 0]);
-        assert_eq!(backup_counts(&choices, &[0], 1, 2, true), [1, 1, 1, 0], "no distinct property, no extra");
+        assert_eq!(backup_counts(&choices, &[0], 1, 1, false, None), [1, 1, 0, 0], "no Home room for a carried extra");
+        assert_eq!(backup_counts(&choices, &[0], 1, 1, true, None), [1, 1, 1, 0]);
+        assert_eq!(backup_counts(&choices, &[0], 1, 2, true, None), [1, 1, 1, 0], "no distinct property, no extra");
 
         // Worn Free Action and a kept rNexus backup together cover boots
         // with both.
@@ -1465,13 +1491,43 @@ mod tests {
         choices[1].item.flags[bit / 8] &= !(1 << (bit % 8));
         choices[1].item.el_info[ELEM_NEXUS as usize].res_level = 1;
         choices[2].item.flags[bit / 8] |= 1 << (bit % 8);
-        assert_eq!(backup_counts(&choices, &[0], 1, 1, true), [1, 1, 0, 0], "every property is already kept");
+        assert_eq!(backup_counts(&choices, &[0], 1, 1, true, None), [1, 1, 0, 0], "every property is already kept");
 
         // A partly known worn randart that appears to give Free Action
         // covers nothing: the fully known extra with Free Action stays.
         choices[0].trusted = false;
-        assert_eq!(backup_counts(&choices, &[0], 1, 1, true), [1, 1, 1, 0],
+        assert_eq!(backup_counts(&choices, &[0], 1, 1, true, None), [1, 1, 1, 0],
             "only the untrusted worn randart appears to cover the extra's property");
+    }
+
+    /// #1316: at one backup per slot (`extra` 0), an extra that adds a
+    /// protection nothing kept or worn gives stays at Home and uses no count.
+    #[test]
+    fn protection_backups_do_not_count_against_the_limit() {
+        use crate::headers::list_elements_h::{ELEM_NEXUS, ELEM_POIS};
+        use crate::headers::list_object_flags_h::OF_FREE_ACT;
+        let boots = |source, power: i32| {
+            let item = borg_item { iqty: 1, tval: TV_BOOTS as u8, weight: 20, to_a: power as i16,
+                ..crate::borg_item::blank_item() };
+            GearChoice { source, item, power, lighter: false, backup: true, wearable: true, observed: false, trusted: true }
+        };
+        let mut choices = [boots(GearLocation::Worn(0), 30), boots(GearLocation::Pack(0), 20),
+            boots(GearLocation::Home(0), 19), boots(GearLocation::Home(1), 18), boots(GearLocation::Pack(1), 17)];
+        let bit = (OF_FREE_ACT as i32 - engine::FLAG_START) as usize;
+        choices[1].item.flags[bit / 8] |= 1 << (bit % 8);
+        choices[2].item.el_info[ELEM_NEXUS as usize].res_level = 1;
+        choices[3].item.el_info[ELEM_POIS as usize].res_level = 1;
+        let kit = crate::borg_item::blank_item();
+        assert_eq!(backup_counts(&choices, &[0], 1, 0, true, None), [1, 1, 0, 0, 0], "#1310 at one backup");
+        assert_eq!(backup_counts(&choices, &[0], 1, 0, true, Some(&kit)), [1, 1, 1, 1, 0],
+            "rNexus and rPois stay at Home; the plain boots leave");
+        let mut resists = kit;
+        resists.el_info[ELEM_POIS as usize].res_level = 1;
+        assert_eq!(backup_counts(&choices, &[0], 1, 0, true, Some(&resists)), [1, 1, 1, 0, 0],
+            "rPois from another worn slot covers the rPois boots");
+        choices[2].source = GearLocation::Pack(2);
+        assert_eq!(backup_counts(&choices, &[0], 1, 0, false, Some(&kit)), [1, 1, 0, 1, 0],
+            "a carried extra still needs Home room");
     }
 
     #[test]
