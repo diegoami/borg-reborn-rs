@@ -9304,3 +9304,22 @@ Track P ships this flag at 1 by owner decision. The compiled default is 0,
 which also serves as the Zoo control.
 
 [Zoo comparison request](https://github.com/diegoami/borg-zoo/issues/804)
+
+## Disposal of gear with unresolved runes (#1304)
+
+Under the ranked Home backup policy, apparent plain armour marked only
+with the game's `{??}` marker can be reduced to one copy. Keep that copy
+while identification is usable or fewer than two retained alternatives
+cover it. With identification unavailable and two covering alternatives,
+the whole armour stack can leave.
+
+A melee spare with unresolved runes stays eligible for identification
+while the Borg has a usable source. When identification is unavailable,
+the ranked policy can release it if two distinct retained alternatives
+cover the observed combat and swap roles. The comparison considers worn,
+carried, and available Home gear. Artifacts, known activations, custom
+inscriptions, staged loadouts, and active melee swaps retain protection.
+
+The existing sale and safe drop checks apply. This changes the behaviour
+of the shipped gear policy without adding parameters or changing defaults.
+[Handover](handover/2026-11-26-1304-rogue-spare-gear.md)
