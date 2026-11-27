@@ -134,21 +134,37 @@ the next think; the long teleport is for when that has not worked.
   - HP is at least `escape_compromised_act_hp_percent` of max (default 50);
   - **no awake known monster can reach the Borg before its next action**.
     The energy schedule (`game-world.c`: `turn_energy`, `extract_energy`;
-    speed 110 gives 10 a tick, 120 gives 20, 130 gives 30) gives a
-    conservative bound on a monster's actions between two Borg actions, from
-    the engine's own speeds: the Borg acts at most every `T =
-    ceil(100 / rate_borg)` ticks, and a monster gets at most `moves =
-    floor(rate_monster * T / 100) + 1` actions in that time (the `+1` is
-    energy it already holds). A rounded-up ratio of the rates can undercount
-    this. The monster's distance is the Chebyshev one, `max(|dy|, |dx|)`,
-    not `engine::distance` (which adds half the shorter leg: it says 4 for an
+    speed 110 gives 10 a tick, 120 gives 20, 130 gives 30, 140 gives 38)
+    gives a conservative bound on a monster's actions between two Borg
+    actions. The rates can change during the wait, so the bound takes the
+    **worst case of each**:
+    - the Borg's rate is the *minimum*: the engine's own speed without
+      temporary haste (`player-calcs.c`: `TMD_FAST` and `TMD_SPRINT` give
+      +10 and can expire on the next world tick) and with Slow kept
+      (`TMD_SLOW` gives -10); the Borg acts at most every `T =
+      ceil(100 / rate_min)` ticks;
+    - the monster's rate is the *maximum*: its `mspeed` (the tracked
+      `kill.speed` is the raw one) plus the engine's timed adjustment
+      (`mon-move.c`: +10 with `MON_TMD_FAST`, minus 2 per slow level, which
+      is given no credit, since it can expire), plus +10 more if its race has
+      the `HASTE` spell (`monster_spell.txt`: `MON_TIMED_INC:FAST`);
+    - a monster then gets at most `moves = floor(rate_max * T / 100) + 1`
+      actions in that time (the `+1` is energy it already holds). A
+      rounded-up ratio of the rates can undercount this (Borg speed 119
+      against a monster at 140: 19 and 38 a tick, a ratio of 2, a bound of 3;
+      a Borg at 110 with haste that lapses against the same monster: a
+      bound of 4, three steps and a bite).
+    The monster's distance is the Chebyshev one, `max(|dy|, |dx|)`, not
+    `engine::distance` (which adds half the shorter leg: it says 4 for an
     offset of (3,3), though a monster steps there in 3 moves). The hold is
     refused when that distance is at most `moves + 1`. For the recorded
-    spiders (20 against 10: `moves` = 3) that is 4 grids; the nearest were
-    2. This is a fixed rule, not a setting. The danger sum does not certify
-    it: its reach test simulates one step of the monster (`borg_danger.rs`,
-    the "single grid movement" loop), so a fast monster two or three grids
-    away adds nothing to the number;
+    spiders (20 against 10, no haste: `moves` = 3) that is 4 grids; the
+    nearest were 2. **When a rate cannot be established** (a monster whose
+    speed is not known, a timed state the Borg cannot read) the hold is
+    declined and 4.2 runs as today. This is a fixed rule, not a setting. The
+    danger sum does not certify it: its reach test simulates one step of the
+    monster (`borg_danger.rs`, the "single grid movement" loop), so a fast
+    monster two or three grids away adds nothing to the number;
   - fewer than `escape_compromised_act_rounds` rounds (default 3) have been
     spent this way in the episode.
   Outside these limits 4.2 runs as today.
@@ -249,9 +265,13 @@ stage 1 cannot act in a case like A, where nothing is known to act against.
 
 ## Measuring it (borg-zoo, RULES 14 and 20)
 
-Population comparisons go to borg-zoo as a request issue. Proposed arms: the
-shipped settings (flag 0); stage 1 (flag 1); stages 1 and 2, over all classes (the tier is not
-Mage-only). The endpoint, its size and the confirmation suite are the zoo's
+Population comparisons go to borg-zoo as a request issue, each tied to a
+build that contains what it varies. Stage 1 can merge before stage 2, so
+the first request, after the stage-1 issue (diegoami/borg-reborn-rs#1348), is
+shipped settings (flag 0) against stage 1 (flag 1). Once the reserve exists
+(diegoami/borg-reborn-rs#1349), a request adds the reserve alone and the
+reserve with stage 1, on a build that has both; the stages are independent
+switches. All over all classes (the tier is not Mage-only). The endpoint, its size and the confirmation suite are the zoo's
 to prespecify before the run. Candidate measures: deaths and the depth
 reached per game, escapes by tier and charges and recharges per level
 gained, and deaths within a fixed number of thinks after a held 4.2. No
@@ -262,13 +282,17 @@ improvement is claimed here.
 - `borg-core/src/borg_escape.rs`: `tier4_applies`, a pure
   `compromised_act_first(...)` for the decision (unit-tested on the table
   above, including the reach rule at the recorded spider positions, the
-  diagonal (3,3) offset and a speed-119 Borg against a speed-130 monster), wrapped
+  diagonal (3,3) offset, a speed-119 Borg against a speed-140 monster (the
+  rounded ratio gives 2 actions, the bound 3), and a hasted Borg whose haste
+  lapses), wrapped
   around 4.2 and the flee/leave flags; `may_hold` on `borg_escape`; the look
   as a new `EscapeAction` that is not counted as an escape;
   `staff_reserved` in 4.2, 5.2, 6.2 and tier 8.
 - `borg-core/src/params.rs`: the settings above, each citing the line that
   reads it (`scripts/check-param-citations.py`), with their `harness/pborg.yaml`
-  entries at 0, and the entries in `docs/CALIBRATION.md`.
+  entries: the two switches at 0 and stage 1's four limits at their working
+  values, 100, 50, 3 and 1,000 (a zero there would disable every hold, so it
+  is never the shipped value), and the entries in `docs/CALIBRATION.md`.
 - `docs/PHASE-DOOR.md`: one line pointing the compromised site here.
 - Default off keeps `harness/reference/smoke-borg-rs` unchanged; check it with
   the smoke diff, as the other settings do.
