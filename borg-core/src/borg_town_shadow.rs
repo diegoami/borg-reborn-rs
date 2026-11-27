@@ -319,7 +319,9 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
                     .map_or(0, |o| i64::from(o.sale_quote(sell_shop as usize, i32::from(it.iqty)))),
             }
         };
-        let redundant_dagger = borg_town_home::redundant_elemental_dagger(st, it, preferred_dagger);
+        let retained_at_home = place == Place::Home && crate::borg_town_live::retained_home_gear(st, slot);
+        let redundant_dagger = !retained_at_home
+            && borg_town_home::redundant_elemental_dagger(st, it, preferred_dagger);
         let redundant_home_gear = place == Place::Home
             && (redundant_dagger || redundant_at_home.get(slot) == Some(&true));
         let ranked_item = ranked_gear && crate::borg_spare_gear::can_rank(it) && !redundant_dagger;
@@ -332,7 +334,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             engine::store_stock(&st.access, BORG_HOME).get(slot).map(|offer| {
                 let blocked = live && (crate::borg_town_live::buy_rejected(st, BORG_HOME as i16, slot)
                     || (!redundant_home_gear && crate::borg_town_live::home_moved(st, it, true))
-                    || crate::borg_town_live::retained_gear(st, it));
+                    || retained_at_home);
                 let carry = if blocked { 0 } else { offer.carry_capacity() };
                 let acquire = if live { crate::borg_town_live::acquisition_room(st, it.tval, it.kind) }
                     else { i32::from(it.iqty) };
@@ -387,7 +389,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             home_room,
             keep_last_book: protects_class_book(it),
             protect_disposal: protected_supply
-                || (place == Place::Home && (crate::borg_town_live::retained_gear(st, it)
+                || (place == Place::Home && (retained_at_home
                     || (home_policy && it.art_idx != 0 || ranked_item) && !redundant_dagger))
                 || (it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
                     && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis),
@@ -697,7 +699,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
                 && crate::borg_town_live::shopping_weight_capacity(st, item.weight) > 0)
             && item.aware && !unsuitable(item.tval, item.sval) && !(live && crate::borg_town_live::buy_rejected(st, 7, slot))
             && !(live && (crate::borg_town_live::home_moved(st, item, true)
-                || crate::borg_town_live::retained_gear(st, item)));
+                || crate::borg_town_live::retained_home_gear(st, slot)));
         let native = engine::store_stock(&st.access, BORG_HOME);
         let joins = native.get(slot).is_some_and(|o| o.merge_capacity() >= 1);
         stock.candidates.push(crate::borg_town_stock::Candidate { shop:7,slot:slot as u8,

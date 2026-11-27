@@ -487,7 +487,13 @@ pub(crate) fn preparing_loadout(st: &BorgState) -> bool {
             || shop_overloaded() && live.departure_slots.contains(&true) || recall_loadout::pending(st))
 }
 
-pub(crate) fn retained_gear(st: &BorgState, item: &crate::borg_headers::borg_item_h::borg_item) -> bool {
+/// Retention marks belong to Home stock. A later pickup with the same
+/// properties is still ordinary pack gear.
+pub(crate) fn retained_home_gear(st: &BorgState, slot: usize) -> bool {
+    home_gear_recorded(st, &st.store.shops[BORG_HOME].ware[slot])
+}
+
+fn home_gear_recorded(st: &BorgState, item: &borg_item) -> bool {
     recall_loadout::retained_at_home(st, item)
         || active(st) && st.think.town_live.retained_gear.iter().any(|saved| borg_town_loadout::same_item(item, saved))
 }
@@ -502,7 +508,7 @@ fn continue_loadout(st: &mut BorgState) -> Option<TownAction> {
         Next::Town(action) => action,
         Next::Wear(slot) => TownAction { code: WEAR_FOR_DEPARTURE, at: [-1, slot as i64, 1, 0] },
         Next::Done => {
-            if let Some(item) = swap.retained().filter(|item| !retained_gear(st, item)) {
+            if let Some(item) = swap.retained().filter(|item| !home_gear_recorded(st, item)) {
                 st.think.town_live.retained_gear.push(item);
             }
             borg_note(st, "# Town loadout: displaced gear stored at Home");

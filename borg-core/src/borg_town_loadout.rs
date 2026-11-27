@@ -147,7 +147,7 @@ fn eviction(st: &BorgState) -> Option<borg_item> {
                 && native.carry_capacity() >= i32::from(item.iqty)
                 && !crate::borg_town_live::buy_rejected(st, BORG_HOME as i16, *slot)
                 && pack_slot(st, item).is_none()
-                && !crate::borg_town_live::retained_gear(st, item)
+                && !crate::borg_town_live::retained_home_gear(st, *slot)
         })
         .filter_map(|(_, (item, _))| {
             let wield = crate::borg_inventory::borg_wield_slot(item);
@@ -279,7 +279,7 @@ pub(crate) fn propose(st: &mut BorgState, tried: &[bool; 12], restoring: bool) -
                 || crate::borg_town_live::acquisition_room(st, item.tval, item.kind) == 0
                 || crate::borg_town_live::buy_rejected(st, shop as i16, slot)
                 || shop == BORG_HOME && crate::borg_town_live::home_moved(st, item, true)
-                || restoring && !crate::borg_town_live::retained_gear(st, item)
+                || restoring && !crate::borg_town_live::retained_home_gear(st, slot)
             {
                 continue;
             }
@@ -697,9 +697,9 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
     }
     assert_eq!(st.borg.tr(BI_CDEPTH), 0, "left town before the fixture observed the exchange");
     if case == "arrival-shop" {
-        let stored = st.store.shops[BORG_HOME].ware.iter().any(|item| {
+        let stored = st.store.shops[BORG_HOME].ware.iter().enumerate().any(|(slot, item)| {
             item.iqty > 0 && equipment_slot(item).is_some()
-                && crate::borg_town_live::retained_gear(st, item)
+                && crate::borg_town_live::retained_home_gear(st, slot)
         });
         if stored && st.borg.tr(BI_RECALL) > 0
             && crate::borg_town_budget::Facts::of(st).allowance() >= 0
@@ -710,9 +710,10 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
         return;
     }
     if SETUP.load(Relaxed) == 2 && st.items.items[wield].weight == 30 {
-        let heavy = st.store.shops[BORG_HOME].ware.iter()
-            .find(|item| item.weight == 180 && crate::borg_town_live::retained_gear(st, item));
-        if heavy.is_some() && st.borg.tr(BI_RECALL) > 0 {
+        let heavy = st.store.shops[BORG_HOME].ware.iter().enumerate()
+            .find(|(slot, item)| item.weight == 180 && crate::borg_town_live::retained_home_gear(st, *slot));
+        if let Some((home_slot, heavy)) = heavy.filter(|_| st.borg.tr(BI_RECALL) > 0) {
+            let heavy = *heavy;
             assert!(crate::borg_town_budget::Facts::of(st).allowance() >= 0);
             if matches!(case, "trim" | "arrival") {
                 if case == "trim" {
@@ -723,6 +724,22 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
                 println!("#1239 town loadout passed: {case}");
                 std::process::exit(0);
             }
+            // #1346: the confirmed Home deposit must not shield later
+            // pickups with the same properties from the ordinary gear plan.
+            use crate::borg_spare_gear::{gear_plan, GearLocation};
+            let pack_slot = st.items.items[..wield].iter().position(|item| item.iqty == 0)
+                .expect("the exchange frees a pack slot");
+            let empty = st.items.items[pack_slot];
+            st.items.items[pack_slot] = borg_item { iqty: 2, ..heavy };
+            let plan = gear_plan(st, wield, true);
+            assert!(plan.stock.iter().any(|entry| {
+                entry.source == GearLocation::Pack(pack_slot) && entry.release > 0
+            }), "a stack matching the retained mace can be trimmed");
+            assert!(plan.stock.iter().any(|entry| {
+                entry.source == GearLocation::Home(home_slot) && entry.release == 0
+            }), "the deposited mace stays protected at Home");
+            st.items.items[pack_slot] = empty;
+
             SETUP.store(1, Relaxed);
             engine::strengthen_test_town_loadout(st);
             st.borg.time.level -= 1;
