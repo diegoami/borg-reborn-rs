@@ -430,6 +430,76 @@ fn uninspected_gear(item: &borg_item) -> bool {
         .take_while(|&c| c != 0).eq(*b"{??}")
 }
 
+/// #1308: wearable pack gear whose runes are not all known. The game marks
+/// such an item `{??}` (obj-desc.c:541,570). An apparently plain item has
+/// the mark only while it carries a rune the player has not learned
+/// (obj-knowledge.c:678-746), so the mark is evidence of a hidden property.
+/// Artifacts, known activations, known curses, swaps, staged loadouts and
+/// inscriptions other than the game's own tags keep their protections.
+pub(crate) fn unknown_rune_spare(st: &BorgState, slot: usize) -> bool {
+    let item = &st.items.items[slot];
+    if item.iqty == 0 || !item.aware || !item.needs_ident || item.art_idx != 0 || item.activ_idx != 0
+        || item.one_ring || item.cursed || item.curses.contains(&true) || !wearable_tval(item.tval)
+        || crate::borg_junk::is_swap(st, slot as i32) || crate::borg_town_live::retained_gear(st, item)
+    {
+        return false;
+    }
+    game_tags_only(&item.desc)
+}
+
+/// The tvals `borg_wield_slot` gives an equipment slot.
+pub(crate) fn wearable_tval(tval: u8) -> bool {
+    matches!(u32::from(tval), TV_SWORD | TV_POLEARM | TV_HAFTED | TV_DIGGING | TV_DRAG_ARMOR | TV_HARD_ARMOR
+        | TV_SOFT_ARMOR | TV_SHIELD | TV_CROWN | TV_HELM | TV_BOW | TV_RING | TV_AMULET | TV_LIGHT
+        | TV_CLOAK | TV_GLOVES | TV_BOOTS)
+}
+
+/// #1308: a shop sale teaches every rune of the item, even when the shop
+/// pays nothing (store.c:532-534 and 1948-1952).
+pub(crate) fn teaches_on_sale(item: &borg_item) -> bool {
+    item.needs_ident && wearable_tval(item.tval)
+}
+
+/// The inscription holds only the game's own tags. obj-desc.c:
+/// obj_desc_inscrip joins the player's note and those tags with ", "
+/// inside one pair of braces.
+fn game_tags_only(desc: &[core::ffi::c_char]) -> bool {
+    let desc: Vec<u8> = desc.iter().map(|&c| c as u8).take_while(|&c| c != 0).collect();
+    let Some(open) = desc.iter().position(|&c| c == b'{') else { return true; };
+    let inner = desc[open + 1..].split(|&c| c == b'}').next().unwrap_or(&[]);
+    inner.split(|&c| c == b',').all(|tag| matches!(tag.trim_ascii(), b"??" | b"ignore" | b"tried"))
+}
+
+/// #1308: keep at most one unknown-rune spare per equipment slot (two for
+/// the ring fingers), the best by its visible value. A stack keeps one copy;
+/// the engine stacks only identical gear (obj-pile.c:object_similar). The
+/// rest leaves at the next safe opportunity.
+pub(crate) fn unknown_rune_excess(st: &BorgState, whole_stack: bool) -> Option<crate::borg_junk::SurplusDrop> {
+    let pack = inven_wield() as usize;
+    let group = |item: &borg_item| (crate::borg_inventory::borg_wield_slot(item), u32::from(item.tval) == TV_DIGGING);
+    let spares: Vec<_> = (0..pack).filter(|&slot| unknown_rune_spare(st, slot)).collect();
+    let mut keep = vec![0u8; pack];
+    let mut groups: Vec<_> = spares.iter().map(|&slot| group(&st.items.items[slot])).collect();
+    groups.sort_unstable();
+    groups.dedup();
+    for key in groups {
+        let mut ranked: Vec<_> = spares.iter().copied().filter(|&slot| group(&st.items.items[slot]) == key).collect();
+        ranked.sort_by_key(|&slot| {
+            let item = &st.items.items[slot];
+            (std::cmp::Reverse(item.value), item.weight, slot)
+        });
+        let capacity = if u32::from(st.items.items[ranked[0]].tval) == TV_RING { 2 } else { 1 };
+        for slot in ranked.into_iter().take(capacity) {
+            keep[slot] = 1;
+        }
+    }
+    spares.into_iter().find_map(|slot| {
+        let quantity = st.items.items[slot].iqty - keep[slot];
+        (quantity > 0 && (!whole_stack || keep[slot] == 0))
+            .then_some(crate::borg_junk::SurplusDrop { slot, quantity, sell_first: true })
+    })
+}
+
 pub(crate) fn cleanup_slot(st: &BorgState, item: &borg_item) -> Option<usize> {
     planned_slot(item).or_else(|| {
         uninspected_cleanup_slot(item, st.borg.tr(BI_AID) > 0)
@@ -1084,11 +1154,66 @@ fn ranked_cleanup_fixture(st: &mut BorgState) {
         .find(|entry| entry.source == *source).map_or(0, |entry| entry.release)).collect();
     assert_eq!(released, [0, 1], "keep one permanent backup");
     st.items.items[light_slot] = worn_light;
+
+    // #1308: one unknown-rune spare per slot, two for the ring fingers.
+    reset(st);
+    let unknown = |item: borg_item| {
+        let mut item = borg_item { ident: false, needs_ident: true, ..item };
+        for (index, byte) in b"{??}".iter().enumerate() {
+            item.desc[index] = *byte as core::ffi::c_char;
+        }
+        item
+    };
+    let dagger = borg_item { iqty: 1, aware: true, value: 100, tval: TV_SWORD as u8, weight: 12,
+        dd: 1, ds: 4, ..empty };
+    st.items.items[0] = unknown(dagger);
+    st.items.items[1] = unknown(borg_item { value: 300, ego_idx: 5, ..dagger });
+    st.items.items[2] = unknown(borg_item { tval: TV_BOW as u8, weight: 5, ..dagger });
+    st.items.items[3] = unknown(borg_item { iqty: 3, ..robe });
+    let excess = |st: &BorgState, whole| unknown_rune_excess(st, whole).map(|drop| (drop.slot, drop.quantity));
+    assert_eq!(excess(st, false), Some((0, 1)), "the lower-valued unknown dagger leaves");
+    st.items.items[0] = empty;
+    assert_eq!(excess(st, false), Some((3, 2)), "an unknown stack keeps one copy");
+    assert_eq!(excess(st, true), None, "trimming a stack frees no pack slot");
+    st.items.items[3] = empty;
+    assert_eq!(excess(st, false), None, "one unknown weapon and one unknown launcher stay");
+    st.items.items[0] = unknown(dagger);
+    for (index, byte) in b"{@w1, ??}".iter().enumerate() {
+        st.items.items[0].desc[index] = *byte as core::ffi::c_char;
+    }
+    assert_eq!(excess(st, false), None, "a deliberate inscription keeps its protection");
+    reset(st);
+    let ring = borg_item { iqty: 1, aware: true, value: 200, tval: TV_RING as u8, weight: 1, ..empty };
+    for slot in 0..3 {
+        st.items.items[slot] = unknown(borg_item { value: 200 + slot as i32, ..ring });
+    }
+    assert_eq!(excess(st, false), Some((0, 1)), "two unknown rings fill both fingers");
+    st.trait_swap.armour_swap = 1;
+    assert_eq!(excess(st, false), None, "the active swap is not an unknown spare");
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn unknown_rune_tags_and_shop_learning() {
+        let desc = |text: &[u8]| {
+            let mut out = [0 as core::ffi::c_char; 80];
+            for (d, &s) in out.iter_mut().zip(text) { *d = s as core::ffi::c_char; }
+            out
+        };
+        assert!(game_tags_only(&desc(b"a Dagger (1d4) (+6,+2) {??}")));
+        assert!(game_tags_only(&desc(b"a Dagger (1d4) (+6,+2) {ignore, ??}")));
+        assert!(game_tags_only(&desc(b"a Dagger (1d4) (+6,+2)")));
+        assert!(!game_tags_only(&desc(b"a Dagger (1d4) (+6,+2) {@w1, ??}")), "keep a deliberate inscription");
+        let mut sling = borg_item { tval: TV_BOW as u8, needs_ident: true, ..crate::borg_item::blank_item() };
+        assert!(teaches_on_sale(&sling));
+        sling.needs_ident = false;
+        assert!(!teaches_on_sale(&sling), "a known item teaches nothing");
+        let scroll = borg_item { tval: TV_SCROLL as u8, needs_ident: true, ..sling };
+        assert!(!teaches_on_sale(&scroll), "flavours follow their own sale policy");
+    }
 
     #[test]
     fn cloak_backup_keeps_stealth_and_requires_a_pound_for_an_extra_copy() {

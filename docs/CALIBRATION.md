@@ -8981,7 +8981,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1087` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1096` |
 
 ## Quiver surplus in town (#1168, #1272)
 
@@ -9337,3 +9337,22 @@ reserve still releases fuelled lights that a permanent light covers. With
 `birth_randarts` a partly known artifact weapon no longer counts as a
 better peer. No parameter or default changes.
 [Handover](handover/2026-11-27-1307-gear-routines.md)
+
+## Gear with unknown runes (#1308)
+
+The game marks gear `{??}` while one of its runes is unknown. An apparently
+plain item carries the mark only while it has a property the player has not
+learned, so the mark is evidence of a hidden ego, modifier, resistance or
+curse. Under the ranked Home backup policy the pack carries at most one
+unknown-rune spare per equipment slot, two for rings, chosen by visible
+value. A stack keeps one copy. The rest leaves at the next safe opportunity,
+in the dungeon as well as in town. Artifacts, known activations, known
+curses, swaps, staged loadouts and inscriptions other than the game's own
+tags keep their protections.
+
+In town a spare with unknown runes goes to a shop that accepts it, even when
+the shop pays nothing under `birth_no_selling`. The sale teaches every rune
+of the item. Fully known spares still drop when the sale pays nothing. An
+unknown-rune spare is never stored at Home. The ordinary town planner keeps
+it until it is identified or released. No parameter or default changes.
+[Handover](handover/2026-11-27-1308-unknown-rune-spares.md)

@@ -1398,7 +1398,8 @@ pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
         let cutoff = gear_alternatives();
         let spare = if crate::borg_town_live::gear_home_backups() {
             surplus_light_drop(st).or_else(|| planned_pack_excess(st, true))
-                .or_else(|| unplanned_pack_excess(st, true)).map(|drop| drop.slot as i32)
+                .or_else(|| unplanned_pack_excess(st, true))
+                .or_else(|| crate::borg_spare_gear::unknown_rune_excess(st, true)).map(|drop| drop.slot as i32)
         } else if cutoff > 0 {
             (0..pack_size()).find(|&slot| {
                 let slot = slot as usize;
@@ -2301,7 +2302,8 @@ pub(crate) fn borg_drop_inferior_spare(st: &mut BorgState) -> bool {
         if light.is_none() && !(0..pack_size() as usize).any(|slot| {
             let item = &st.items.items[slot];
             crate::borg_spare_gear::can_rank(item) || crate::borg_town_live::gear_home_backups()
-                && crate::borg_spare_gear::cleanup_slot(st, item).is_some()
+                && (crate::borg_spare_gear::cleanup_slot(st, item).is_some()
+                    || crate::borg_spare_gear::unknown_rune_spare(st, slot))
         })
             || !safe_to_drop(st) { return false; }
         let Some(drop) = light.or_else(|| ranked_pack_spare(st, cutoff)) else { return false; };
@@ -2339,7 +2341,8 @@ pub(crate) fn borg_drop_inferior_spare(st: &mut BorgState) -> bool {
 pub(crate) fn ranked_pack_spare(st: &mut BorgState, cutoff: usize) -> Option<SurplusDrop> {
     if let Some(drop) = surplus_light_drop(st) { return Some(drop); }
     if crate::borg_town_live::gear_home_backups() {
-        return planned_pack_excess(st, false).or_else(|| unplanned_pack_excess(st, false));
+        return planned_pack_excess(st, false).or_else(|| unplanned_pack_excess(st, false))
+            .or_else(|| crate::borg_spare_gear::unknown_rune_excess(st, false));
     }
     (0..pack_size() as usize).find_map(|slot| {
         let quantity = crate::borg_spare_gear::redundant_copies(st, crate::borg_spare_gear::GearLocation::Pack(slot), cutoff);

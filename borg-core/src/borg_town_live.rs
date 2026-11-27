@@ -1137,6 +1137,7 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
     }
     if release_pack.is_none() {
         release_pack = crate::borg_junk::unplanned_pack_excess(st, false)
+            .or_else(|| crate::borg_spare_gear::unknown_rune_excess(st, false))
             .map(|drop| pack_gear_disposal(st, drop.slot, drop.quantity));
     }
     if release_home.is_none() {
@@ -1158,7 +1159,10 @@ fn pack_gear_disposal(st: &BorgState, slot: usize, quantity: u8) -> TownAction {
 }
 
 fn spare_sale(st: &BorgState, slot: usize, item: &borg_item, quantity: u8) -> Option<TownAction> {
-    if item.value <= 0 {
+    // #1308: a shop that accepts gear with unknown runes teaches every rune
+    // on the sale, even when it pays nothing (store.c:532-534, 1948-1952).
+    let teaches = crate::borg_spare_gear::teaches_on_sale(item);
+    if item.value <= 0 && !teaches {
         return None;
     }
     let native = crate::engine::inven_object(&st.access, slot)?;
@@ -1167,7 +1171,7 @@ fn spare_sale(st: &BorgState, slot: usize, item: &borg_item, quantity: u8) -> Op
         !sale_rejected(st, shop as i16, item)
             && crate::borg_store_sell::borg_store_buys(item, shop as i32)
             && native.store_accepts_quantity(shop, quantity)
-            && (crate::borg_junk::gear_alternatives() == 0 || native.sale_quote(shop, quantity) > 0)
+            && (crate::borg_junk::gear_alternatives() == 0 || teaches || native.sale_quote(shop, quantity) > 0)
     })?;
     Some(TownAction { code: action::SELL, at: [shop as i64, slot as i64, i64::from(quantity), 0] })
 }
