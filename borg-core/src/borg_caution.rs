@@ -7051,12 +7051,21 @@ fn throw_first_applies(mode: i32, cornered_caller: bool, adjacent: bool, ranged_
 /// `caution_rising_explore_ticks` Borg ticks on the level (one per think,
 /// `borg_think`; restarted on each new level) lets the descent through.
 pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
-    rising_descent_window(st)
+    rising_holds_descent_with(st, pos_danger, p(Param::caution_rising_explore_ticks))
+}
+
+/// `rising_holds_descent` with the exploration budget given (#1357: the
+/// compiled default is 0, so the tests name the budget they exercise).
+fn rising_holds_descent_with(st: &BorgState, pos_danger: i32, budget: i32) -> bool {
+    rising_descent_window_with(st, budget)
         && pos_danger <= i32::from(st.borg.avoidance) * p(Param::caution_rising_descend_danger_tenths) / 10
 }
 
 fn rising_descent_window(st: &BorgState) -> bool {
-    let budget = p(Param::caution_rising_explore_ticks);
+    rising_descent_window_with(st, p(Param::caution_rising_explore_ticks))
+}
+
+fn rising_descent_window_with(st: &BorgState, budget: i32) -> bool {
     st.rising_to_town()
         && st.borg.tr(BI_CDEPTH) > 0
         && budget > 0
@@ -8292,18 +8301,26 @@ mod rising_tests {
     /// not rising.
     #[test]
     fn rising_holds_a_descent_until_danger_or_budget() {
-        assert!(rising_holds_descent(&rising(), 0));
-        assert!(rising_holds_descent(&rising(), 20), "danger at avoidance x 10/10 still holds");
-        assert!(!rising_holds_descent(&rising(), 21), "real danger lets the descent through");
+        let hold = |st: &BorgState, danger| rising_holds_descent_with(st, danger, 300);
+        assert!(hold(&rising(), 0));
+        assert!(hold(&rising(), 20), "danger at avoidance x 10/10 still holds");
+        assert!(!hold(&rising(), 21), "real danger lets the descent through");
         let mut st = rising();
         st.borg.time.now = st.borg.time.level + 300;
-        assert!(!rising_holds_descent(&st, 0), "the exploration budget is spent");
+        assert!(!hold(&st, 0), "the exploration budget is spent");
         let mut st = rising();
         st.borg.goal.rising = false;
-        assert!(!rising_holds_descent(&st, 0), "not rising");
+        assert!(!hold(&st, 0), "not rising");
         let mut st = rising();
         st.borg.trait_[BI_CDEPTH as usize] = 0;
-        assert!(!rising_holds_descent(&st, 0), "in town");
+        assert!(!hold(&st, 0), "in town");
+    }
+
+    /// #1357: compiled, the hold is off (C and borg-rs); it ships at 500.
+    #[test]
+    fn rising_hold_compiles_off() {
+        assert_eq!(p(Param::caution_rising_explore_ticks), 0);
+        assert!(!rising_holds_descent(&rising(), 0));
     }
 }
 
