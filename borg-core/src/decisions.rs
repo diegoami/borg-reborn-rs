@@ -78,7 +78,14 @@ ItemRecharging,
 
 }
 #[derive(Clone,Copy,Debug,PartialEq,Serialize)]
-pub enum Value { Acted(bool), Score(i32), Unit, HomeSale {acted:bool,best_home_power:i32} }
+pub enum Value { Acted(bool), Score(i32), Unit, HomeSale {acted:bool,best_home_power:i32}, UpStair(UpStairPlan) }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub enum UpStairPlan {
+    Refused,
+    Unweighted,
+    Weighted { weight: i32, avoid: bool },
+}
 impl Decision {
 pub fn name(&self)->&'static str { match self {
 Self::HomePower=>"store.borg_power_home",
@@ -231,9 +238,9 @@ Self::ItemRecharging=>Value::Acted(crate::borg_item_use::borg_recharging_native(
 /// Audited immutable policy requests; implementations cannot write caller memory.
 #[derive(Clone,Debug,PartialEq,Serialize)]
 #[serde(tag="kind")]
-pub enum ReadDecision { HomePower, StoreMinimumQuantity {item:ItemSnapshot}, StoreDisabled, PowerEquipment, ItemEquipsItem {activation:i32,check_charge:bool}, FlowSelectStep }
+pub enum ReadDecision { HomePower, StoreMinimumQuantity {item:ItemSnapshot}, StoreDisabled, PowerEquipment, ItemEquipsItem {activation:i32,check_charge:bool}, FlowSelectStep, FlowPlanUpStair { why: i32 } }
 impl ReadDecision {
-    pub fn name(&self)->&'static str { match self { Self::HomePower=>"store.borg_power_home", Self::StoreMinimumQuantity{..}=>"store.borg_min_item_quantity", Self::StoreDisabled=>"store.town_strategy_disabled", Self::PowerEquipment=>"power.borg_power_equipment", Self::ItemEquipsItem {..}=>"item_use.borg_equips_item", Self::FlowSelectStep=>"flow.select_step" } }
+    pub fn name(&self)->&'static str { match self { Self::HomePower=>"store.borg_power_home", Self::StoreMinimumQuantity{..}=>"store.borg_min_item_quantity", Self::StoreDisabled=>"store.town_strategy_disabled", Self::PowerEquipment=>"power.borg_power_equipment", Self::ItemEquipsItem {..}=>"item_use.borg_equips_item", Self::FlowSelectStep=>"flow.select_step", Self::FlowPlanUpStair {..}=>"flow.plan_up_stair" } }
     pub fn native(self,state:&BorgState)->Value { match self {
 Self::HomePower=>Value::Score(crate::borg_home_power::borg_power_home_native(state)),
 Self::StoreMinimumQuantity{item}=>Value::Score(crate::borg_store_sell::borg_min_item_quantity_native(state,&item.0)),
@@ -241,6 +248,7 @@ Self::StoreDisabled=>Value::Acted(crate::borg_think_store::town_strategy_disable
         Self::PowerEquipment=>Value::Score(crate::borg_power::borg_power_equipment_native(state)),
         Self::ItemEquipsItem {activation,check_charge}=>Value::Acted(crate::borg_item_use::borg_equips_item_native(state,activation,check_charge)),
         Self::FlowSelectStep=>Value::Score(crate::borg_flow::select_step_native(state)),
+        Self::FlowPlanUpStair { why }=>Value::UpStair(crate::borg_flow_stairs::plan_up_stair_native(state, why)),
     } }
 }
 

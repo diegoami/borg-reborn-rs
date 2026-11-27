@@ -192,6 +192,7 @@ fn set_free_action(st: &mut BorgState, value: i32) {
 pub fn read_decide(st: &BorgState, request: ReadDecision) -> Value {
     match request {
         ReadDecision::FlowSelectStep => Value::Score(flow::select_step(st)),
+        ReadDecision::FlowPlanUpStair { why } => Value::UpStair(flow::plan_up_stair(st, why)),
         ReadDecision::HomePower => Value::Score(home_power::borg_power_home(st)),
         ReadDecision::StoreMinimumQuantity { item } => {
             Value::Score(store_sell::borg_min_item_quantity(st, &item.0))

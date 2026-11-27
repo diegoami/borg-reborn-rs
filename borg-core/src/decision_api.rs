@@ -148,6 +148,8 @@ crate::decision_tape::engine("borg_flow_misc::borg_extract_dir",format!("{:?}",(
 }
 }
 pub mod borg_flow_stairs {
+    pub use crate::decisions::UpStairPlan;
+
     pub fn bounded_desperate_flight(st: &mut crate::state::BorgState, up: bool, max_moves: i32, ranged_reach: i32) -> bool {
         crate::decision_tape::effect(st, "borg_flow_stairs::bounded_desperate_flight", format!("{:?}", (up, max_moves, ranged_reach,)), |st| crate::borg_flow_stairs::bounded_desperate_flight(st, up, max_moves, ranged_reach))
     }

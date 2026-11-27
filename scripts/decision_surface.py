@@ -20,7 +20,7 @@ LOCAL_POLICY = {
                'category_attack_safe_with cornered_boost fight_incoming_with '
                'flight_recall_survivable forecast_monster_speed kept_at_range '
                'near_known_breeder nearest_mover_seen ranged_before_recall ranged_candidate '
-               'recall_restricts recall_watch_holds scary_ranged_no_stairs start_leaving walk_away_from',
+               'recall_restricts recall_watch_holds scary_ranged_no_stairs stair_flight_weight start_leaving walk_away_from',
     'defence': 'borg_defend detect_invisible_now unseen_detection_safe',
     'escape': 'PhaseCheck PhaseSite borg_allow_teleport borg_escape borg_freedom '
               'borg_recall_for_flight borg_surrounded phase_door phase_rule_act '
