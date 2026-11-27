@@ -1810,7 +1810,8 @@ mod tests {
 /// trial wielded the shovel and the ranked gear plan put the dagger back,
 /// one wield per turn. The Borg must keep the dagger and leave the square it
 /// started on. `digger-only` carries the shovel with nothing wielded: the
-/// Borg must wield it, once, and keep it.
+/// Borg must wield it and keep it until a plain Dagger, far weaker, enters
+/// the pack at think `DAGGER_AT`; then it must wield the dagger and keep it.
 #[cfg(feature = "test-stair-handoff")]
 pub(crate) mod digger_fixture {
     use super::*;
@@ -1827,6 +1828,8 @@ pub(crate) mod digger_fixture {
     /// Thinks watched after the setup: the recorded loop wields on every
     /// eligible think, so a loop shows within a few of them.
     const WATCH: u32 = 60;
+    /// `digger-only`: the think at which the dagger enters the pack.
+    const DAGGER_AT: u32 = 30;
 
     pub(crate) fn step(st: &mut BorgState, case: &str) {
         let weapon = case == "digger-swap-loop";
@@ -1850,19 +1853,30 @@ pub(crate) mod digger_fixture {
             return;
         }
         let worn = st.items.items[wield].tval;
+        let think = THINKS.get();
         if worn != WORN.replace(worn) {
             WIELDS.set(WIELDS.get() + 1);
-            println!("{case}: think {} wields tval {worn}", THINKS.get());
+            println!("{case}: think {think} wields tval {worn}");
+            if !weapon {
+                // Before the dagger, only the shovel; after it, only the dagger.
+                let want = if think < DAGGER_AT { TV_DIGGING } else { TV_SWORD };
+                assert_eq!(u32::from(worn), want, "{case}: think {think} wields the wrong weapon");
+            }
         }
-        let limit = u32::from(!weapon);
-        assert!(WIELDS.get() <= limit, "{case}: {} weapon changes in {} thinks", WIELDS.get(), THINKS.get());
-        THINKS.set(THINKS.get() + 1);
+        let limit = if weapon { 0 } else if think < DAGGER_AT { 1 } else { 2 };
+        assert!(WIELDS.get() <= limit, "{case}: {} weapon changes in {think} thinks", WIELDS.get());
+        if !weapon && think == DAGGER_AT {
+            assert_eq!((u32::from(worn), WIELDS.get()), (TV_DIGGING, 1), "{case}: the lone shovel is wielded and kept");
+            engine::carry_test_dagger(st);
+            crate::borg_item::borg_find_all_items(st);
+            crate::borg_trait::borg_notice(st, true);
+        }
+        THINKS.set(think + 1);
         if THINKS.get() < WATCH { return; }
         let start = START.get().unwrap();
         let moved = start != (st.borg.tr(BI_CDEPTH), st.borg.c.x, st.borg.c.y);
         assert!(moved, "{case}: still on the starting square after {WATCH} thinks");
-        let expect = if weapon { TV_SWORD } else { TV_DIGGING };
-        assert_eq!(u32::from(worn), expect, "{case}: the weapon kept");
+        assert_eq!(u32::from(worn), TV_SWORD, "{case}: the combat weapon is wielded");
         assert_eq!(WIELDS.get(), limit);
         println!("{case} passed (#1361)");
         std::process::exit(0);

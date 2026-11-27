@@ -9483,9 +9483,15 @@ level 27 Priest on a DL5 staircase wielded 2,026 times, alternating
 shovel, and the rule that wears equipment while a digger is wielded ran the
 plan, which put the dagger back.
 
-With `wear_digger_keeps_weapon`, the trial skips a digger while a combat
-weapon is worn. A digger is still worn when the weapon slot is empty or
-holds another digger, and the plan still chooses between weapons. Tunnelling
+With `wear_digger_keeps_weapon`, a digger is a digger: it is wielded only
+when no combat weapon is at hand.
+- The trial skips a digger while a combat weapon is worn. A digger is still
+  worn when the weapon slot is empty or holds another digger.
+- The plan replaces a worn digger with any combat weapon it can wear,
+  whatever their power. In the `digger-only` case a plain Dagger (1d4)
+  (+0,+0) replaces the Shovel of Earthquakes (+18,+11) the moment it enters
+  the pack.
+- The plan still chooses between combat weapons by power. Tunnelling
 needs no wield: the engine wields a carried digger for each tunnelling turn
 and puts the weapon back (`cmd-cave.c:534-583`). Without the ranked plan
 the wear trial is unchanged.
@@ -9495,8 +9501,8 @@ the remove trial (`borg_junk.rs:borg_remove_stuff`). With nothing else to
 wield, that trial ranked bare hands above the shovel only because a carried
 digger earns the tunnelling swap reward (above), and the wear trial then
 put the shovel back on: in the `digger-only` case the Borg took it off and
-on at thinks 57, 60 and 239 until it found a Rapier. A better weapon still
-replaces the digger through the wear paths.
+on at thinks 57, 60 and 239 until it found a Rapier. A combat weapon
+replaces the digger through the plan.
 
 The default 0 keeps the inherited trial. It ships at 1 in
 `harness/pborg.yaml`, a fix of a loop rather than a tuning, checked by the

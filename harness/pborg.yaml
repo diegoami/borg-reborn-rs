@@ -2371,12 +2371,13 @@ borg_param_swap_carry_min_depth: 50
 # diggers leave at 0. A hypothesis.
 borg_param_swap_digger_tunnel: 1
 
-# #1361: a digger in the weapon slot is for tunnelling, which the engine
-# does with a carried digger by itself. Under the ranked gear plan the
-# routine wear trial does not wield a digger over a worn combat weapon (the
-# plan put the weapon back, so a recorded Priest wielded 2,026 times on a
-# staircase), and the remove trial does not take a lone wielded digger off
-# to bare hands. 0 keeps both inherited trials.
+# #1361: a digger is a digger. It tunnels, which the engine does with a
+# carried digger by itself, and is wielded only with no combat weapon. Under
+# the ranked gear plan the routine wear trial does not wield a digger over a
+# worn combat weapon (the plan put the weapon back, so a recorded Priest
+# wielded 2,026 times on a staircase), the plan replaces a worn digger with
+# any combat weapon it can wear, and the remove trial does not take a lone
+# wielded digger off to bare hands. 0 keeps the inherited choices.
 borg_param_wear_digger_keeps_weapon: 1
 
 # Open chests whose trap difficulty is within this of its disarming skill.

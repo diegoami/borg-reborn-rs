@@ -44,8 +44,11 @@ rule that re-equips a combat weapon while a digger is wielded.
     combat weapon is worn (`digger_waits_for_tunnelling`). A digger is still
     worn when the weapon slot is empty or holds a digger.
   - The remove trial keeps a wielded, uncursed digger
-    (`keeps_wielded_digger`, called from `borg_junk.rs`). A better weapon
-    still replaces it through the wear paths.
+    (`keeps_wielded_digger`, called from `borg_junk.rs`).
+  - The ranked plan (`borg_spare_gear::gear_plan`) replaces a worn digger
+    with any combat weapon it can wear, whatever their power. The owner's
+    rule, from the PR discussion: "Digger is digger". A digger is wielded
+    only when no combat weapon is at hand.
   - The default 0 keeps both inherited trials. It ships at 1 in
     `harness/pborg.yaml`.
 - `docs/CALIBRATION.md`: a new section and its parameter row. The citation
@@ -57,11 +60,14 @@ rule that re-equips a combat weapon while a digger is wielded.
   - `digger-swap-loop`: Narthanc is wielded and the shovel carried. The
     weapon slot must not change, and the Borg must leave its starting square.
   - `digger-only`: only the shovel is carried and nothing is wielded. It
-    must be wielded once and kept.
+    must be wielded and kept. At think 30 a plain Dagger (1d4) (+0,+0),
+    far below the shovel in power, enters the pack. The plan must then
+    wield the dagger, at think 31, and keep it.
 - `engine/tests/test_stair_handoff.py DiggerSwapLoopTest`, also added to CI.
   It runs both cases at the shipped settings, and runs each with the flag at
-  0, where each must fail: the trial wields the shovel, or the remove trial
-  takes it off.
+  0, where each must fail. In `digger-swap-loop` the trial wields the shovel.
+  In `digger-only` the remove trial takes the shovel off at think 57 and
+  the dagger is never worn.
 - `scripts/borg-core-vendor.py`: the `HOOKED` notes for `borg_item_wear.rs`
   and `borg_junk.rs` name the change.
 
@@ -84,7 +90,8 @@ rule that re-equips a combat weapon while a digger is wielded.
   | 0 (the case's settings) | 29 | 28 | 0 |
   | 1 (shipped) | 32 | 0 | 27 |
 
-  At 0 the loop is the recorded one, alternating `:1114` and `:1086`, as in
+  These numbers were taken before and again after the plan rule was added,
+  with the same result. At 0 the loop is the recorded one, alternating `:1114` and `:1086`, as in
   the live trace. At 1 the Priest drops surplus Phase Door scrolls and
   explores DL5. In the messages log, the 19 wields stamped turn 0 are the
   message history restored from the save. They are not played.
@@ -100,14 +107,9 @@ rule that re-equips a combat weapon while a digger is wielded.
 - The wear and remove trials disagree because the tunnelling swap reward
   counts only for a carried digger, while a wielded digger digs as well.
   This flag stops the churn without changing that valuation.
-- With the flag at 1, the ranked plan still chooses between a worn digger
-  and a pack weapon by equipment power. If it ranks the digger higher, the
-  digger stays wielded. This is stable, but it is not the "only for
-  tunnelling" rule. The fixture does not reach this state.
 
 ## For the owner
 
-- Whether the swap reward should also count a wielded digger, which would
-  remove the cause of the second disagreement rather than its symptom.
-- Whether the ranked plan should always prefer a combat weapon over a worn
-  digger.
+- Settled: the plan always prefers a combat weapon over a worn digger. The
+  swap reward is left as it is: with the digger rules in place, its
+  wielded/carried difference no longer moves the weapon slot.

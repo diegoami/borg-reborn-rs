@@ -896,8 +896,10 @@ class DiggerSwapLoopTest(unittest.TestCase):
     Priest on DL5 a shovel whose STR the whole-kit trial prefers and the
     plan's equipment power does not. It plays live for 60 thinks: the
     weapon slot must not change and the Borg must leave its starting square.
-    With only the shovel and nothing wielded, the shovel is wielded once
-    and kept; without the switch the remove trial takes it off again.
+    With only the shovel and nothing wielded, the shovel is wielded and
+    kept until a plain Dagger, far weaker, enters the pack at think 30; the
+    ranked plan must then wield the dagger and keep it. Without the switch
+    the remove trial takes the shovel off and the dagger is never worn.
     """
 
     def run_case(self, case, **params):
@@ -925,7 +927,7 @@ class DiggerSwapLoopTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("digger-swap-loop: 1 weapon changes", result.stderr)
 
-    def test_a_lone_digger_is_still_wielded(self):
+    def test_a_lone_digger_is_wielded_until_a_weapon_arrives(self):
         result = self.run_case("digger-only")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr[-3000:])
         self.assertIn("digger-only passed (#1361)", result.stdout)
@@ -933,7 +935,7 @@ class DiggerSwapLoopTest(unittest.TestCase):
     def test_without_the_switch_the_remove_trial_takes_off_the_lone_digger(self):
         result = self.run_case("digger-only", BORG_PARAM_WEAR_DIGGER_KEEPS_WEAPON="0")
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("digger-only: 2 weapon changes", result.stderr)
+        self.assertIn("digger-only: think 57 wields the wrong weapon", result.stderr)
 
 
 if __name__ == "__main__":

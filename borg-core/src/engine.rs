@@ -2095,6 +2095,44 @@ pub(crate) fn setup_test_digger_kit(st: &mut BorgState, weapon: bool) {
     });
 }
 
+/// borg-reborn-rs (#1361): a known plain Dagger (1d4) (+0,+0) put in the
+/// pack, a combat weapon far below the fixture's Shovel of Earthquakes in
+/// power.
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn carry_test_dagger(st: &mut BorgState) {
+    use crate::headers::list_tvals_h::TV_SWORD;
+    use crate::headers::object_h::{object, object_kind, OBJ_NOTICE_ASSESSED};
+    use crate::headers::player_h::player;
+    use crate::headers::z_rand_h::{aspect, MINIMISE};
+
+    extern "C" {
+        fn lookup_kind(tval: i32, sval: i32) -> *mut object_kind;
+        fn object_new() -> *mut object;
+        fn object_prep(obj: *mut object, kind: *mut object_kind, level: i32, roll: aspect);
+        fn object_copy(dest: *mut object, src: *const object);
+        fn object_flavor_aware(p: *mut player, obj: *mut object);
+        fn inven_carry(p: *mut player, obj: *mut object, absorb: bool, message: bool);
+        fn update_stuff(p: *mut player);
+    }
+
+    // SAFETY: test-only setup on the engine thread during a dungeon think;
+    // the engine owns the object once it enters the pack.
+    lend(st, || unsafe {
+        let kind = lookup_kind(TV_SWORD as i32, lookup_sval(TV_SWORD as i32, "Dagger"));
+        assert!(!kind.is_null());
+        let obj = object_new();
+        object_prep(obj, kind, 0, MINIMISE);
+        let known = object_new();
+        object_copy(known, obj);
+        (*obj).known = known;
+        (*known).notice |= OBJ_NOTICE_ASSESSED as u8;
+        (*obj).notice |= OBJ_NOTICE_ASSESSED as u8;
+        object_flavor_aware(player, obj);
+        inven_carry(player, obj, false, false);
+        update_stuff(player);
+    });
+}
+
 #[cfg(feature = "test-town-loadout")]
 pub(crate) fn setup_test_town_loadout(
     st: &mut BorgState,
