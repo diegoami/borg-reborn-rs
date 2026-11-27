@@ -359,11 +359,6 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         {
             home_role = Role::Renewable;
         }
-        // #1315: the active weapon or armour swap stays in the pack, where
-        // the swap notice looks for it. Renewable keeps it out of Home and
-        // the protection keeps it from the planner's sale or drop.
-        let active_swap = place == Place::Pack && swap_slots.contains(&(slot as i32));
-        if active_swap { home_role = Role::Renewable; }
         if home_role == Role::LatePotion {
             let home = &st.store.shops[BORG_HOME].ware;
             let earlier = if place == Place::Home { &home[..slot] } else { &home[..] };
@@ -391,7 +386,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             home_role,
             home_room,
             keep_last_book: protects_class_book(it),
-            protect_disposal: protected_supply || active_swap
+            protect_disposal: protected_supply
                 || (place == Place::Home && (crate::borg_town_live::retained_gear(st, it)
                     || (home_policy && it.art_idx != 0 || ranked_item) && !redundant_dagger))
                 || (it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
@@ -450,7 +445,11 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
 
     let mut kit = Vec::new();
     for (slot, &it) in items.iter().enumerate().take(pack_end) {
-        if it.iqty == 0 {
+        // #1315 (review of #1324): the active weapon or armour swap stays
+        // in the pack, where the swap notice looks for it. Left out of the
+        // kit, no disposition can store, sell or drop it; its weight and
+        // slot still count in the limits, which read the pack itself.
+        if it.iqty == 0 || swap_slots.contains(&(slot as i32)) {
             continue;
         }
         if u32::from(it.tval) == crate::headers::list_tvals_h::TV_LIGHT {

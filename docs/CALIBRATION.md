@@ -9393,3 +9393,24 @@ is still the #1276 cutoff of better options. That policy shipped with 2.
 | `junk_gear_alternatives` | 1 | count | 0–3 | `borg_junk.rs:64` |
 
 [Handover](handover/2026-11-27-1310-home-backups.md)
+
+## Carried swaps and the Home (#1315)
+
+The weapon and armour swaps are chosen from the pack only
+(`borg_trait_swap.rs`), so a swap stored at Home is never used. The
+ranked Home backup plan no longer stores the active swap, and the live
+planner leaves a carried active swap out of its kit, so no disposition
+stores, sells or drops it. A digger skips
+the depth gate below, but its tunnelling bonus reads `pval`, which 4.2
+diggers leave at 0, so in practice no swap is carried below it.
+
+Both swaps were carried only from max depth 50 (C Borg: "they are heavy").
+That depth is now a parameter. The default keeps the earlier play; a lower
+value is a hypothesis for the zoo.
+
+| Parameter | Default | Unit | Range | Read at |
+| --- | --- | --- | --- | --- |
+| `swap_carry_min_depth` | 50 | level | 0–128 | `borg_trait_swap.rs:596` |
+
+Taking a swap out of Home for the coming trip is not implemented (owner
+decision pending in #1319). [Handover](handover/2026-11-27-1315-swap-home.md)

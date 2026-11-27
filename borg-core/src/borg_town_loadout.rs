@@ -607,11 +607,20 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
             st.trait_swap.armour_swap = slot as i32 + 1;
             assert!(crate::borg_junk::is_swap(st, slot as i32));
             let kind = u32::from(st.items.items[slot].kind);
-            let kit = crate::borg_town_shadow::kit_for_test(st);
-            let fact = kit.iter().find(|k| k.place == Place::Pack && k.kind == kind)
-                .expect("the shield is in the pack kit");
-            assert!(fact.home_role == crate::borg_town_home::Role::Renewable && fact.protect_disposal,
-                "role {:?}, protected {}", fact.home_role, fact.protect_disposal);
+            let in_kit = |st: &mut BorgState| crate::borg_town_shadow::kit_for_test(st).iter()
+                .any(|k| k.place == Place::Pack && k.kind == kind);
+            // Every planner disposition acts on a kit stack, so a swap left
+            // out of the kit cannot be stored, sold or dropped there.
+            assert!(!in_kit(st), "the active swap is left out of the planner's kit");
+            // The overweight Priest is under pack pressure: the full live plan
+            // does not move the swap either.
+            let targets = |a: TownAction| matches!(a.code, action::STORE | action::SELL | action::DROP)
+                && a.at[1] == slot as i64;
+            let plan = crate::borg_town_shadow::live_plan(st).action;
+            assert!(!targets(plan), "the live plan moves the active swap: {:?}", (plan.code, plan.at));
+            st.trait_swap.armour_swap = 0;
+            assert!(in_kit(st), "an ordinary spare is in the kit");
+            st.trait_swap.armour_swap = slot as i32 + 1;
             // The same shield, not the swap, is the ranked plan's stash.
             st.trait_swap.armour_swap = 0;
             let stored = |a: Option<TownAction>| a.is_some_and(|a| a.code == action::STORE && a.at[1] == slot as i64);
