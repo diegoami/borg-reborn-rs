@@ -96,9 +96,20 @@ had to wait for a recharge.
 
 ## The plan: look, shoot or boost, then teleport
 
-All settings default to 0, "retains today's play", like the other escape
-settings, so no shipped run changes until the owner moves a value after a
-zoo result. Staged so each can be measured alone.
+The two switches, `escape_compromised_act_first` (stage 1) and
+`escape_compromised_staff_reserve` (stage 2), default to 0, "retains today's
+play", like the other escape settings, so no shipped run changes until the
+owner moves one after a zoo result. They are independent: the reserve can be
+measured with stage 1 off, and stage 1 with the reserve at 0.
+
+Stage 1's four limits (`..._act_danger_percent`, `..._act_hp_percent`,
+`..._act_rounds`, `..._refresh_age`) have their **working values as their
+defaults, in `params.rs` and in `harness/pborg.yaml` alike**: 100, 50, 3 and
+1,000. They are read only while the flag is 1, so with the flag at 0 they
+change nothing, and the stage-1 arm of a zoo run changes only the flag. A
+limit set to 0 means what it says: a danger ceiling of 0% or 0 rounds never
+holds 4.2, an HP floor of 0% has no floor, and a refresh age of 0 looks
+every think.
 
 ### Stage 1: when threatened, do something about it first
 
@@ -121,14 +132,23 @@ the next think; the long teleport is for when that has not worked.
     of current HP (default 100: by the Borg's own estimate it survives until
     it next acts);
   - HP is at least `escape_compromised_act_hp_percent` of max (default 50);
-  - **no awake known monster can reach the Borg before its next action**:
-    with `moves` = the monster's energy per game turn over the Borg's,
-    rounded up (`extract_energy`, `game-world.c`: speed 110 is 10, 120 is
-    20), the monster's distance is more than `moves + 1`. This is a fixed
-    rule, not a setting. The danger sum does not certify it: its reach test
-    simulates one step of the monster (`borg_danger.rs`, the "single grid
-    movement" loop), so a fast monster two or three grids away adds nothing
-    to the number;
+  - **no awake known monster can reach the Borg before its next action**.
+    The energy schedule (`game-world.c`: `turn_energy`, `extract_energy`;
+    speed 110 gives 10 a tick, 120 gives 20, 130 gives 30) gives a
+    conservative bound on a monster's actions between two Borg actions, from
+    the engine's own speeds: the Borg acts at most every `T =
+    ceil(100 / rate_borg)` ticks, and a monster gets at most `moves =
+    floor(rate_monster * T / 100) + 1` actions in that time (the `+1` is
+    energy it already holds). A rounded-up ratio of the rates can undercount
+    this. The monster's distance is the Chebyshev one, `max(|dy|, |dx|)`,
+    not `engine::distance` (which adds half the shorter leg: it says 4 for an
+    offset of (3,3), though a monster steps there in 3 moves). The hold is
+    refused when that distance is at most `moves + 1`. For the recorded
+    spiders (20 against 10: `moves` = 3) that is 4 grids; the nearest were
+    2. This is a fixed rule, not a setting. The danger sum does not certify
+    it: its reach test simulates one step of the monster (`borg_danger.rs`,
+    the "single grid movement" loop), so a fast monster two or three grids
+    away adds nothing to the number;
   - fewer than `escape_compromised_act_rounds` rounds (default 3) have been
     spent this way in the episode.
   Outside these limits 4.2 runs as today.
@@ -155,7 +175,7 @@ the next think; the long teleport is for when that has not worked.
   declined. A look counts as acting, not as an escape (like
   `EscapeAction::Healed`: no `escapes` count, flow intact).
 - **What a held turn skips.** The Borg acted, so `try_escape` returns at
-  once: the "failed to teleport" flee and leave flags, tiers 5 to 7 and the
+  once: the "failed to teleport" flee and leave flags, tiers 5 to 8 and the
   back-away do not run that think. That is the intent; the next think asks
   again. If nothing on the ladder can act, 4.2 runs and nothing is skipped.
 - **Reevaluate next round.** Every think recomputes the danger and the tier.
@@ -188,10 +208,12 @@ Effect on the four cases:
 
 - `escape_compromised_staff_reserve` (charges, default 0): the Staff of
   Teleportation is skipped when it holds this many charges or fewer, in
-  **every non-emergency rung that can use it**: 4.2, 5.2 (very low level) and
-  6.2 (out of mana). The staff rungs of tiers 1 to 3 may use the last
-  charges. One helper, `staff_reserved(st)`, read by those rungs, so 5.2 and
-  6.2 do not spend what 4.2 left. The charges are those of the stack the use
+  **every non-emergency rung that can use it**: 4.2, 5.2 (very low level),
+  6.2 (out of mana) and tier 8 (twitching, which calls the staff after the
+  same alternatives). The staff rungs of tiers 1 to 3 may use the last
+  charges. Tier 8's other teleports (spells, scrolls, off-level) are not
+  touched. One helper, `staff_reserved(st)`, read by those rungs, so 5.2, 6.2 and
+  tier 8 do not spend what 4.2 left. The charges are those of the stack the use
   routine selects: `borg_slot(st, TV_STAFF, sval)`, its `pval`
   (`borg_use_staff_fail`). Spells, scrolls and activations are not touched.
   Hypothesis, value 2: in the recording, 1,403,464 would have left the
@@ -239,10 +261,11 @@ improvement is claimed here.
 
 - `borg-core/src/borg_escape.rs`: `tier4_applies`, a pure
   `compromised_act_first(...)` for the decision (unit-tested on the table
-  above, including the reach rule at the recorded spider positions), wrapped
+  above, including the reach rule at the recorded spider positions, the
+  diagonal (3,3) offset and a speed-119 Borg against a speed-130 monster), wrapped
   around 4.2 and the flee/leave flags; `may_hold` on `borg_escape`; the look
   as a new `EscapeAction` that is not counted as an escape;
-  `staff_reserved` in 4.2, 5.2 and 6.2.
+  `staff_reserved` in 4.2, 5.2, 6.2 and tier 8.
 - `borg-core/src/params.rs`: the settings above, each citing the line that
   reads it (`scripts/check-param-citations.py`), with their `harness/pborg.yaml`
   entries at 0, and the entries in `docs/CALIBRATION.md`.
