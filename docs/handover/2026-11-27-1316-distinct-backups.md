@@ -4,10 +4,9 @@ Issue #1316. Written on #1314 (#1310), which another session owned. That
 stack landed in `track-p` through #1321, and this branch now merges
 `track-p` and targets it.
 
-The owner did not pick between the issue's options before the work
-started. This implements option (c), the one the session recommended,
-behind a flag: `town_home_backup_protections` (compiled default 0,
-shipped 1).
+This implements option (c) behind a flag: `town_home_backup_protections`
+(compiled default 0, shipped 1). The owner confirmed shipping it on
+(2026-11-27, after the review of #1325).
 
 ## Done
 
@@ -53,8 +52,6 @@ the CI cargo commands, the citation check, and the shipped smoke against
 
 ## For the owner
 
-- Option (c) is a choice made for you. Turn
-  `borg_param_town_home_backup_protections` to 0 for #1314's rule.
 - borg-zoo#816 compares 1 and 2 backups per slot on #1314's head. With
   this flag shipped, the `gear1` arm on this head is no longer plain
   #1314. Pin #816 on #1314's head, or add an arm for this flag.
