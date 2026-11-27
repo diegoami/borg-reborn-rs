@@ -1627,22 +1627,38 @@ fn with_object_quantity<T>(
     source: *const crate::headers::object_h::object,
     quantity: i32,
     read: impl FnOnce(*const crate::headers::object_h::object) -> T,
-) -> T {
+) -> Option<T> {
     use crate::headers::object_h::object;
     extern "C" {
         fn object_copy_amt(dest: *mut object, src: *const object, amount: i32);
         fn object_wipe(obj: *mut object);
     }
+    // borg-reborn-rs (#1354): a quantity the native stack does not hold
+    // (the Borg's model of the stack can be stale) is no answer, not an
+    // abort: release builds have panic=abort, so the assert ended the game.
+    if !quantity_in_stack(quantity, object_number(source)) {
+        return None;
+    }
     // SAFETY: callers hold a live object handle. The native copy owns its
     // allocated fields, which are released after the read-only query.
     unsafe {
-        assert!(quantity > 0 && quantity <= i32::from((*source).number));
         let mut split = std::mem::MaybeUninit::<object>::zeroed();
         object_copy_amt(split.as_mut_ptr(), source, quantity);
         let result = read(split.as_ptr());
         object_wipe(split.as_mut_ptr());
-        result
+        Some(result)
     }
+}
+
+/// `obj->number` of a live object handle.
+fn object_number(source: *const crate::headers::object_h::object) -> i32 {
+    // SAFETY: callers hold a live object handle; reading number cannot re-enter.
+    unsafe { i32::from((*source).number) }
+}
+
+/// borg-reborn-rs (#1354): `quantity` copies can be split from a stack of `number`.
+fn quantity_in_stack(quantity: i32, number: i32) -> bool {
+    quantity > 0 && quantity <= number
 }
 
 impl StoreObject<'_> {
@@ -1654,6 +1670,8 @@ impl StoreObject<'_> {
             // SAFETY: the temporary split and store are live for this query.
             unsafe { crate::headers::store_h::price_item(crate::headers::store_h::stores.add(shop), split, false, quantity) }
         })
+        // #1354: copies the store does not hold cost more than any purse.
+        .unwrap_or(i32::MAX)
     }
 
     /// The native shop quote for one copy, as displayed to the player.
@@ -1684,8 +1702,11 @@ impl StoreObject<'_> {
     }
 
     pub fn sale_quote(self, shop: usize, quantity: i32) -> i32 {
-        // SAFETY: this handle borrows a live store stock object.
-        assert!(quantity > 0 && quantity <= unsafe { i32::from((*self.0).number) });
+        // borg-reborn-rs (#1354): copies the store does not hold fetch
+        // nothing (callers read > 0 as worth it), instead of an abort.
+        if !quantity_in_stack(quantity, object_number(self.0)) {
+            return 0;
+        }
         native_sale_quote(self.0, shop, quantity)
     }
 
@@ -1902,11 +1923,16 @@ impl CarriedObject<'_> {
             // SAFETY: the temporary split and store are live for this query.
             unsafe { store_check_num(stores.add(shop), split) }
         })
+        // #1354: copies the Borg does not carry are not accepted.
+        .unwrap_or(false)
     }
 
     pub fn sale_quote(self, shop: usize, quantity: i32) -> i32 {
-        // SAFETY: handle is a live carried object; reading number cannot re-enter.
-        assert!(quantity > 0 && quantity <= unsafe { i32::from((*self.0).number) });
+        // borg-reborn-rs (#1354): copies the Borg does not carry fetch nothing
+        // (every caller reads > 0 as a sale worth making), instead of an abort.
+        if !quantity_in_stack(quantity, object_number(self.0)) {
+            return 0;
+        }
         native_sale_quote(self.0, shop, quantity)
     }
 
@@ -4207,5 +4233,23 @@ pub fn synthetic_start() -> bool {
     #[cfg(not(feature = "borgh"))]
     {
         false
+    }
+}
+
+// borg-reborn-rs (#1354): store queries for more copies than the stack holds
+// answer "no" instead of aborting the game.
+#[cfg(test)]
+mod quantity_in_stack_tests {
+    use super::quantity_in_stack;
+
+    #[test]
+    fn only_copies_the_stack_holds() {
+        assert!(quantity_in_stack(1, 1));
+        assert!(quantity_in_stack(3, 5));
+        assert!(quantity_in_stack(5, 5));
+        assert!(!quantity_in_stack(6, 5), "a stale model asks for more than the stack");
+        assert!(!quantity_in_stack(0, 5));
+        assert!(!quantity_in_stack(-1, 5));
+        assert!(!quantity_in_stack(1, 0));
     }
 }
