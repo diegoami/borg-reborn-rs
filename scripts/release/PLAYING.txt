@@ -32,9 +32,9 @@ Windows:  double-click angband.exe in the unpacked folder (it plays in a
           console window; make it at least 80x24).
 macOS:    in the unpacked folder, ./angband (in the terminal).
 
-PBorg is selected when you launch the game. Ctrl-Z opens the selected
-Borg's command prompt. Press B there to switch Borgs, then use Ctrl-Z, z
-to start the selected Borg. CBorg ships with upstream Angband settings in lib/user/borg.txt.
+PBorg is selected when you launch the game. Ctrl-Z opens the Borg's command
+prompt. Press ? to see the commands, including B to switch Borgs. Use Ctrl-Z
+then z to start the selected Borg. CBorg uses lib/user/borg.txt.
 
 Create a character (or load your save), then press Ctrl-Z and then z: the
 Borg plays. Any key stops it and gives you the controls back. Saves are in

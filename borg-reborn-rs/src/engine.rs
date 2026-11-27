@@ -273,6 +273,14 @@ extern "C" fn do_cmd_pborg(cmd: u8) {
         borg_rs::do_cmd_borg_key(cmd);
         return;
     }
+    if cmd == b'?' {
+        extern "C" {
+            fn do_cmd_reborn_borg_help();
+        }
+        // SAFETY: the help screen runs on the engine thread.
+        unsafe { do_cmd_reborn_borg_help() };
+        return;
+    }
     crate::borg::command(cmd);
 }
 

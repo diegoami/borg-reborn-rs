@@ -23,8 +23,9 @@ start it.
 
 A game the Borg has played is marked as such, as with Angband's own Borg.
 
-PBorg is selected at launch. At the Ctrl-Z prompt, press **B** to switch
-between PBorg and CBorg. CBorg settings live in `lib/user/borg.txt`.
+PBorg is selected at launch. At the Ctrl-Z prompt, press **?** to see the
+commands, including **B** to switch Borgs. CBorg settings live in
+`lib/user/borg.txt`.
 
 ### Where things are
 
