@@ -51,7 +51,7 @@ class ExplorationPackTest(unittest.TestCase):
                 env["BORG_PARAM_TOWN_SHOP_OVERLOADED"] = "2"
             if fixture == "ranked-cleanup":
                 # #1307: the shipped ranked policy with Home backups.
-                env["BORG_PARAM_JUNK_GEAR_ALTERNATIVES"] = "2"
+                env["BORG_PARAM_JUNK_GEAR_ALTERNATIVES"] = "1"
                 env["BORG_PARAM_TOWN_GEAR_HOME_BACKUPS"] = "1"
                 env["BORG_PARAM_TOWN_SHOP_OVERLOADED"] = "2"
             result = subprocess.run(

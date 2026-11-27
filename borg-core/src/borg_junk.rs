@@ -70,6 +70,15 @@ pub(crate) fn gear_alternatives() -> usize {
     }
 }
 
+/// #1310: under the ranked Home backup policy `junk_gear_alternatives` is the
+/// number of regular backups per equipment slot. Gear outside the ranked
+/// plan (diggers) keeps the better-alternative cutoff the policy shipped with.
+pub(crate) const UNPLANNED_GEAR_CUTOFF: usize = 2;
+
+pub(crate) fn unplanned_gear_cutoff() -> usize {
+    if crate::borg_town_live::gear_home_backups() { UNPLANNED_GEAR_CUTOFF } else { gear_alternatives() }
+}
+
 /// `PACK_SLOTS`: the pack slots not taken by the quiver.
 fn pack_slots(st: &BorgState) -> i32 {
     i32::from(engine::z_info().pack_size) - st.borg.tr(BI_QUIVER_SLOTS)
@@ -2352,7 +2361,7 @@ pub(crate) fn ranked_pack_spare(st: &mut BorgState, cutoff: usize) -> Option<Sur
 
 pub(crate) fn unplanned_pack_excess(st: &mut BorgState, whole_stack: bool) -> Option<SurplusDrop> {
     use crate::borg_spare_gear::{self as spare_gear, GearLocation};
-    let cutoff = gear_alternatives();
+    let cutoff = unplanned_gear_cutoff();
     (0..pack_size() as usize).find_map(|slot| {
         let item = &st.items.items[slot];
         if !spare_gear::can_rank(item) || spare_gear::planned_slot(item).is_some() { return None; }

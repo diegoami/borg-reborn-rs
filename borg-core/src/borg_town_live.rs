@@ -1144,7 +1144,7 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
         for slot in 0..st.store.shops[BORG_HOME].ware.len() {
             let item = &st.store.shops[BORG_HOME].ware[slot];
             if !can_rank(item) || planned_slot(item).is_some() { continue; }
-            let quantity = redundant_copies(st, GearLocation::Home(slot), crate::borg_junk::gear_alternatives());
+            let quantity = redundant_copies(st, GearLocation::Home(slot), crate::borg_junk::unplanned_gear_cutoff());
             release_home = release_home_gear(st, slot, quantity);
             if release_home.is_some() { break; }
         }

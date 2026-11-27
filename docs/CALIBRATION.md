@@ -9266,8 +9266,8 @@ identified spares.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2261` |
-| `junk_gear_alternatives` | 2 | distinct better options | 0–3 | `borg_junk.rs:64` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2272` |
+| `junk_gear_alternatives` | 1 | count | 0–3 | `borg_junk.rs:64` |
 | `town_gear_home_backups` | 1 | flag | 0–1 | `borg_town_live.rs:198` |
 
 The removal establishes the control for the paired pilot of the #1264
@@ -9370,3 +9370,21 @@ it on that basis. A hidden curse is an accepted risk: among the standard
 artifacts only Calris has one (`artifact.txt`, air swing). No parameter or
 default changes.
 [Handover](handover/2026-11-27-1309-observed-cover.md)
+
+## Home backups per slot (#1310)
+
+With `town_gear_home_backups` on, `junk_gear_alternatives` is the number
+of regular backups the ranked plan keeps per equipment slot, each a pair for
+the ring fingers. The shipped value is 1, the policy of #1278. A backup
+beyond the first stays only when it supplies a known property that no worn
+piece and no better kept backup gives. It stays only at Home, or in the
+pack while the remembered Home has a free stack to store it. Diggers keep
+the earlier cutoff of two better options. The unresolved gear rules keep
+their two-alternative evidence. With `town_gear_home_backups` 0 the value
+is still the #1276 cutoff of better options. That policy shipped with 2.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `junk_gear_alternatives` | 1 | count | 0–3 | `borg_junk.rs:64` |
+
+[Handover](handover/2026-11-27-1310-home-backups.md)

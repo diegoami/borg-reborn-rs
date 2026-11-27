@@ -380,7 +380,11 @@ struct GearChoice {
     observed: bool,
 }
 
-fn backup_counts(choices: &[GearChoice], worn: &[usize], capacity: usize) -> Vec<u8> {
+/// #1310: `extra` further backups beyond the regular `capacity` stay only
+/// when each supplies a known property that no worn piece and no better
+/// kept backup gives, and only at Home, or in the pack while Home has room
+/// to store it (`home_room`).
+fn backup_counts(choices: &[GearChoice], worn: &[usize], capacity: usize, extra: usize, home_room: bool) -> Vec<u8> {
     let mut keep = vec![0; choices.len()];
     for &index in worn {
         keep[index] += 1;
@@ -411,10 +415,22 @@ fn backup_counts(choices: &[GearChoice], worn: &[usize], capacity: usize) -> Vec
         // so an already-light runner-up fills the role.
         let light_limit = worn.iter().chain(&regular).map(|&i| choices[i].item.weight)
             .min().unwrap_or(0).saturating_sub(10);
-        if let Some(index) = ranked.into_iter().find(|&i| keep[i] == 0 && choices[i].lighter
+        if let Some(index) = ranked.iter().copied().find(|&i| keep[i] == 0 && choices[i].lighter
             && choices[i].item.weight <= light_limit)
         {
             keep[index] = 1;
+        }
+    }
+    let mut extras = 0;
+    for &index in &ranked {
+        if extras == extra { break; }
+        let item = &choices[index].item;
+        let at_home = matches!(choices[index].source, GearLocation::Home(_));
+        let covered = (0..choices.len()).any(|kept| kept != index && keep[kept] > 0
+            && choices[kept].item.iqty > 0 && known_properties_cover(&choices[kept].item, item));
+        if keep[index] == 0 && !covered && (at_home || home_room) {
+            keep[index] = 1;
+            extras += 1;
         }
     }
     keep
@@ -644,7 +660,11 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
             choices[i].lighter = preserves;
         }
     }
-    let keep = backup_counts(&choices, &best, capacity);
+    // #1310: `junk_gear_alternatives` backups per slot, each a full set for
+    // the ring fingers. Home room is the remembered free Home stacks.
+    let extra = crate::borg_junk::gear_alternatives().saturating_sub(1) * capacity;
+    let home_room = st.store.shops[crate::borg_store::BORG_HOME].ware.iter().any(|ware| ware.iqty == 0);
+    let keep = backup_counts(&choices, &best, capacity, extra, home_room);
     let mut observed_releases = Vec::new();
     if slot == pack && !uninspected.is_empty()
         && !engine::player_opt(crate::headers::list_options_h::OPT_birth_percent_damage)
@@ -1086,7 +1106,7 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
 }
 
 /// #1307: one cleanup routine must not block or undo another. Runs with the
-/// shipped ranked policy (`junk_gear_alternatives` 2, Home backups on).
+/// shipped ranked policy (`junk_gear_alternatives` 1, Home backups on).
 #[cfg(feature = "test-town-loadout")]
 fn ranked_cleanup_fixture(st: &mut BorgState) {
     use crate::headers::list_object_flags_h::OF_LIGHT_2;
@@ -1282,7 +1302,30 @@ mod tests {
             cloak(GearLocation::Pack(1), 8, 16, 0),
             cloak(GearLocation::Pack(2), 7, 15, 0),
         ];
-        assert_eq!(backup_counts(&choices, &[0], 1), [1, 0, 1, 0, 1]);
+        assert_eq!(backup_counts(&choices, &[0], 1, 0, true), [1, 0, 1, 0, 1]);
+    }
+
+    #[test]
+    fn extra_home_backups_need_a_distinct_property_and_home_room() {
+        use crate::headers::list_elements_h::ELEM_NEXUS;
+        use crate::headers::list_object_flags_h::OF_FREE_ACT;
+        let boots = |source, power: i32| {
+            let item = borg_item { iqty: 1, tval: TV_BOOTS as u8, weight: 20, to_a: power as i16,
+                ..crate::borg_item::blank_item() };
+            GearChoice { source, item, power, lighter: false, backup: true, wearable: true, observed: false }
+        };
+        let mut choices = [boots(GearLocation::Worn(0), 30), boots(GearLocation::Pack(0), 20),
+            boots(GearLocation::Home(0), 19), boots(GearLocation::Pack(1), 18)];
+        let bit = (OF_FREE_ACT as i32 - engine::FLAG_START) as usize;
+        choices[1].item.flags[bit / 8] |= 1 << (bit % 8);
+        choices[2].item.el_info[ELEM_NEXUS as usize].res_level = 1;
+        assert_eq!(backup_counts(&choices, &[0], 1, 0, true), [1, 1, 0, 0], "one backup per slot");
+        assert_eq!(backup_counts(&choices, &[0], 1, 1, false), [1, 1, 1, 0],
+            "the rNexus boots stay at Home; the plain boots leave");
+        choices[2].source = GearLocation::Pack(2);
+        assert_eq!(backup_counts(&choices, &[0], 1, 1, false), [1, 1, 0, 0], "no Home room for a carried extra");
+        assert_eq!(backup_counts(&choices, &[0], 1, 1, true), [1, 1, 1, 0]);
+        assert_eq!(backup_counts(&choices, &[0], 1, 2, true), [1, 1, 1, 0], "no distinct property, no extra");
     }
 
     #[test]
