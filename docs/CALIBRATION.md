@@ -36,7 +36,8 @@ each behind a switch whose 0 is borg-rs at the pin:
   3x3 grids around the Borg, instead of a 2x2 loop that read only the goal
   grid.
 
-Shipped 1 (owner, 2026-11-27), with `smoke-borg-rs` re-recorded. These are
+Shipped 1 (owner, 2026-11-27); the smoke games are unchanged (4/4
+identical), since none reaches the three sites. These are
 bug fixes taken from an accepted borg-rs release, not measured here: a zoo
 comparison against 0 decides whether they stay (RULES 14).
 
