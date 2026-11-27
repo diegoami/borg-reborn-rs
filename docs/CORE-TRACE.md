@@ -19,7 +19,8 @@ remains valid; consumers retain support for it. Schema `@2` records:
   `borg_recover`, `borg_attack` or `borg_flow_old`); `check_source` names
   its hook in this source revision;
 - `goals`: leaving, fleeing, fleeing_to_town and rising;
-- `errand`: its name and optional target, or null;
+- `errand`: always null since the errands were retired (#1339); kept so that
+  readers of `core-trace@2` keep working;
 - `keys`: queued numeric keycodes in consumption order; `acted`: the
   think's original boolean return;
 - `attacks`: each attack-ranking invocation completed in this think, with
@@ -47,9 +48,8 @@ build, while parameter source locations refer to the pre-extraction file.
 
 Each successful root return has a marked `choice!` hook that returns the
 original `true` without evaluating policy again. Nested thinks keep their
-own selection frames and are written in completion order. Reading errand
-context uses a nonblocking lock; nested thinks inherit the outer context
-if that lock is busy. No trace value feeds back into policy. Danger's extra
+own selection frames and are written in completion order. No trace value
+feeds back into policy. Danger's extra
 evaluation is read-only and consumes no RNG; full-suite parity tests guard
 that boundary. Files are written directly per line, without a userspace
 buffer that the engine's C exit could strand. Write failures exit with a

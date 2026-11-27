@@ -52,7 +52,6 @@ What is where
     lib/user/pborg.yaml   P-Borg's settings, including class overrides.
     lib/user/borg.txt     C-Borg's settings.
     borg/                A reference copy of P-Borg's settings.
-    borg/plans/          Errands plans (optional, see docs in the source).
     docs/                The Angband manual and, when present, the guide.
     LICENSES/            Licences for Angband, the Borg and build dependencies.
     BUILD_ID.*           The build identity of each executable.

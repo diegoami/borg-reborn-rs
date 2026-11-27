@@ -262,8 +262,10 @@ or `borg_respawn_*` setting, or a bad value is refused with a Borg warning. A
 class value goes through the same range checks and configuration checks as
 the common line, on top of the common values (each line, then each class's
 lines together); one they would change or reject is refused and the Borg does
-not start, as with an invalid common line. The keys the shell reads
-(`borg_reborn_*`, `borg_plan`, `borg_scary_list`) have no class value either,
+not start, as with an invalid common line. The keys our configuration
+readers take (`borg_reborn_core`, `borg_scary_list`, and the retired
+`borg_reborn_errand`, `borg_reborn_stopscared` and `borg_plan`) have no
+class value either,
 and there is no environment form for these settings. A zoo profile writes a
 class value with the `__<class>` name (`PBORG_SET` names are
 `[A-Za-z0-9_.-]`, so not with `@`). Which names can be written depends on the

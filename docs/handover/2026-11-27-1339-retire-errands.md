@@ -1,8 +1,12 @@
 ## 2026-11-27: Retire the errands, /level-up and the plans (#1339)
 
-Owner decision of 2026-11-27: the errands are out of scope, no measured run
-uses them (every borg-zoo definition sets `borg_reborn_errand: none`), and
-they complicate the source and risk breaking too much; `max-depth` plans and
+Owner decision of 2026-11-27: the errands are out of scope, no current zoo
+arm uses them, and they complicate the source and risk breaking too much.
+(Earlier experiments did use them: the option-C pilot's ladder arm,
+`reborn-pilot-c-classes-1800`, and the plan arms of the borg-zoo#151
+pilots, `reference/zoo/catalogue/profiles.json`. Those ran on their own
+pinned specimens. The recent definitions set `borg_reborn_errand: none`
+and no `borg_plan`.) `max-depth` plans and
 `/level-up` go with them. This came out of an audit of how readiness
 (`borg_prepared`) is routed between the C Borg, borg-core and the errand
 shell: its errand-shell findings (#1326–#1329, #1333, PRs #1334–#1338) were
@@ -27,7 +31,12 @@ closed as superseded.
   values (a pborg.yaml line with one warning) and stops the run (exit 2) at
   any value that would select an errand, a fear stop or a plan, from
   `borg_reborn_errand`, `borg_reborn_stopscared`, `borg_plan` or
-  `BORG_ERRAND`, `BORG_STOPSCARED`, `BORG_ERRANDS_PLAN`. `harness/run.sh`
+  `BORG_ERRAND`, `BORG_STOPSCARED`, `BORG_ERRANDS_PLAN`. `borg_plan: none`
+  is a new inert value (the old loader would have tried to open a file
+  named `none`). The check runs for the borg-rs core only, as the old
+  readers did; a reborn-core run ignores a `borg_plan` line, where the old
+  `core_is_borg_rs()` exited 2 for it (plans only ever ran on borg-rs).
+  `harness/run.sh` refuses `BORG_ERRANDS_PLAN` for every core. `harness/run.sh`
   refuses `BORG_ERRANDS_PLAN` and no longer stages plans or records errand
   variables.
 - **Tests:** `test_shopping.py`, `test_level_up.py` and
@@ -47,8 +56,11 @@ closed as superseded.
 CI's four cargo commands; `scripts/tests`, `tools/tests`,
 `check-param-citations.py`; a native build; `engine/tests` (with the
 wild-cat and phase-stock fixtures and the pinned zoo adapter); the smoke
-suite against `smoke-borg-rs` (see the PR for the result); a manual run
-showing the world guard still refuses an unloaded `borg_world`.
+suite against `smoke-borg-rs` (4/4 identical); a manual run showing the
+world guard still refuses an unloaded `borg_world`. Review on the PR
+(DeepSeek V4.1 Flash, OpenCode): code and default play confirmed; its
+documentation findings are fixed in the same PR, except the archived pages,
+which stay unchanged as `docs/archive/README.md` requires.
 
 ### What is left
 

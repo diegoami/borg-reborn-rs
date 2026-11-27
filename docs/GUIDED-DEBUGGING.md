@@ -99,8 +99,8 @@ Report whether saving succeeded or displayed an error. **Ctrl-X** saves
 and quits; it is not necessary to quit just to collect a save. The
 recording preserves any input used to stop or save the game.
 
-The agent records an incident marker with the time, errand, observed and
-expected behaviour, and the nearest recorder frame/turn when available.
+The agent records an incident marker with the time, observed and expected
+behaviour, and the nearest recorder frame/turn when available.
 It finds the running session's actual save path and copies a successful
 save into the incident directory before further play can overwrite it.
 Check modification time, file contents/character description and the
@@ -123,9 +123,9 @@ even when the incident itself cannot be saved.
    separate working directory. Use the original executable and settings
    for the first attempt, before changing the code.
 2. Prefer replaying the recorded lead-in. A native save preserves game
-   state, but not necessarily the Borg's map, goals, errand queue or other
-   process memory. Loading a save and reissuing the errand is a useful
-   second experiment, not proof that the original state was reconstructed.
+   state, but not necessarily the Borg's map, goals or other process
+   memory. Loading a save and starting the Borg again is a useful second
+   experiment, not proof that the original state was reconstructed.
    It can also be necessary to replay from before the unexpected action.
 3. Use the recorder CLI's `replay --verify` or stream verification where
    supported. Keep replay outputs separate. Report an exact match,

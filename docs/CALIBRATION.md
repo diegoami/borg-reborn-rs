@@ -5836,8 +5836,8 @@ higher than the inherited values. Ranger uses the same rule below CL29.
 The class sections in `harness/pborg.yaml` supply the class
 values folded as `borg_param_<name>__<class>` in `harness/borg.txt`.
 Set that class-specific key to sweep a threshold in the zoo.
-The optional `borg_plan` overlay and
-`borg_no_deeper` still provide explicit depth limits. Profiles with the
+`borg_no_deeper` still provides an explicit depth limit (the `borg_plan`
+overlay was retired with the plans, #1339). Profiles with the
 retired #693 settings load with a warning and use these checks.
 
 | Parameter | Compiled default | Unit | Range | Source |

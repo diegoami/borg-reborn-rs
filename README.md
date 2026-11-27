@@ -9,8 +9,8 @@ Press **Ctrl-Z** then **z** to start the selected Borg. The game engine is
 upstream Angband at
 `574b618c3bfec595f3503a58f8e488b1c4ae3a46`. PBorg plays with the
 **borg-rs core**: a line-by-line Rust translation of the original C Borg,
-vendored in `borg-core/`, with named settings, errands and a decision trace
-added here. [borg-zoo](https://diegoami.github.io/borg-zoo/) measures it.
+vendored in `borg-core/`, with named settings and a decision trace added
+here. [borg-zoo](https://diegoami.github.io/borg-zoo/) measures it.
 
 **Status (2026-11-21):** the borg-rs core plays every class from birth and
 is the default core (#479, #606). Its thresholds are being turned into named
@@ -138,7 +138,7 @@ A suite of runs: `harness/suite.sh smoke OUTDIR`.
 
 | Core | What | How to select |
 | --- | --- | --- |
-| **borg-rs** (default) | borg-rs's core in `borg-core/`, with our settings, errands and trace | `borg_reborn_core: "borg-rs"` in `pborg.yaml` (shipped) |
+| **borg-rs** (default) | borg-rs's core in `borg-core/`, with our settings and trace | `borg_reborn_core: "borg-rs"` in `pborg.yaml` (shipped) |
 | reborn (frozen) | this repository's own first-principles core | `BORG_CORE=reborn` in the environment, or `borg_reborn_core: reborn` |
 
 `BORG_CORE` in the environment wins over the file. The reborn core reads

@@ -125,7 +125,7 @@ promoted to `main`.
 | **R3. Attack and defence** | `R3` | `borg_fight_attack.rs`, `borg_fight_defend.rs` (8,200 lines) | as R2 | **done**: owner accepted #427 (2026-11-16) |
 | **R4. Items** | `R4` | power, wearing, item use, activations, shopping (9,000 lines) | as R2 | **in progress**: final review #438 |
 | **R4.5. Catch up with the core that plays** (owner, 2026-11-21) | `R4.5` | borg-core's changes since R's pin `2f74e1c5` (P5–P7 and work merged on main: +20,119/−2,582 lines in `borg-core/src` at main `ab775d48`, the largest share, 8,565, in the six files R2/R3 own) carried into `borg-next/` up to one owner-named main pin (#856) | as R2, at that pin with the shipped `harness/borg.txt`; the carry report gives the residual backlog and re-estimates R5 | not started; needs R4 (#438) |
-| **R5. Paths and the think** | `R5` | flows, and `borg_think_dungeon`'s priority list into modes and goals (7,000 lines) | as R2, and the errands run on the modes frame | not started |
+| **R5. Paths and the think** | `R5` | flows, and `borg_think_dungeon`'s priority list into modes and goals (7,000 lines) | as R2 (the errands it also named were retired, #1339) | not started |
 | **R6. Our perception** (optional) | `R6` | engine reads in place of borg-rs's screen reading | breaks parity on purpose; judged by the zoo | not started |
 
 Estimates (2026-11-14, to be redone after R2): R1 1–2 weeks, R2 2–3, R3–R5
