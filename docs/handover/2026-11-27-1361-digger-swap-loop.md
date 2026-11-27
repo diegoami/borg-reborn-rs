@@ -72,15 +72,25 @@ rule that re-equips a combat weapon while a digger is wielded.
 - The four cargo commands and the citation check pass.
 - The shipped smoke suite is 4 of 4 identical to `smoke-borg-rs`, so it
   needs no re-record.
+- **The recorded save**, from the canonical case, borg-cemetery#164
+  (`incidents/2026-11-27-watch-dwarf-priest-shovel-loop-5153079`, archive
+  SHA-256 `eb5e20c2…`, internal checksums verified). This branch's shipped
+  build replayed `repro.save` with the case's own `borg-settings` and its
+  command (`-seed 1 -race 5 -class 3 -load … -keep-load-rng -exact-turns
+  -turns 5153379`), from turn 5,153,079 to 5,153,379:
+
+  | `wear_digger_keeps_weapon` | thinks | `borg_wear_stuff` wields | moves (flow) |
+  | --- | --- | --- | --- |
+  | 0 (the case's settings) | 29 | 28 | 0 |
+  | 1 (shipped) | 32 | 0 | 27 |
+
+  At 0 the loop is the recorded one, alternating `:1114` and `:1086`, as in
+  the live trace. At 1 the Priest drops surplus Phase Door scrolls and
+  explores DL5. In the messages log, the 19 wields stamped turn 0 are the
+  message history restored from the save. They are not played.
 
 ## Not checked
 
-- **The recorded save.** The evidence bundle is a release of
-  `diegoami/angband-workspace`, outside this session's repository scope, so
-  `repro.save` was not replayed. The owner can check the fix there with the
-  issue's command on a build of this branch (`-seed 1 -race 5 -class 3
-  -load repro.save -keep-load-rng -exact-turns -turns 5153379`). It should
-  show no alternating wield and a move off the staircase.
 - No zoo run. The trial change applies only while a digger and a combat
   weapon are both carried. The remove change applies only to a wielded
   digger.
