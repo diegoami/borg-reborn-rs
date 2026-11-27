@@ -45,6 +45,8 @@ to supply lost its distinct rank, and its place, to a stronger plain piece.
 Each plan choice now carries `trusted`, which is false for a partly known
 artifact under randarts. An untrusted worn piece covers nothing when ranking
 backups (`an_untrusted_worn_randart_does_not_make_a_backup_look_covered`).
+It also counts for nothing among the two alternatives that release an
+unresolved melee spare (`an_untrusted_worn_randart_weapon_is_no_melee_alternative`).
 
 ## Checked
 

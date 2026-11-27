@@ -490,6 +490,14 @@ fn observed_gear(item: &borg_item) -> bool {
 /// properties, a lower bound on what it gives, even with unknown runes or
 /// an untried activation. A known curse still excludes it. Standard
 /// artifacts carry at most one hidden curse (artifact.txt: Calris).
+/// A retained choice that can count toward the two alternatives an
+/// unresolved melee spare needs. Review of #1313: an untrusted piece, a
+/// partly known artifact under randarts, counts for nothing, even worn.
+fn melee_cover_choice(entry: &GearChoice, kept: u8) -> bool {
+    entry.trusted && (can_rank(&entry.item) || visible_artifact_weapon(&entry.item) || entry.observed)
+        && (kept > 0 || entry.item.art_idx != 0 || entry.observed)
+}
+
 fn retained_cover(st: &BorgState, item: &borg_item, worn: bool) -> bool {
     cover_eligible(item, worn, protected_gear(st, item),
         engine::player_opt(crate::headers::list_options_h::OPT_birth_randarts))
@@ -556,7 +564,11 @@ fn game_tags_only(desc: &[core::ffi::c_char]) -> bool {
 pub(crate) fn unknown_rune_excess(st: &BorgState, whole_stack: bool) -> Option<crate::borg_junk::SurplusDrop> {
     // Review of #1312: while Identify Rune is usable, `borg_test_stuff`
     // gets its attempt first. The cleanup runs earlier in the dungeon think.
-    if st.borg.tr(BI_AID) > 0 {
+    // Usable means a scroll in the pack (borg_trait.rs adds 1000 to BI_AID
+    // for a learned spell) or the spell with the mana to cast it now.
+    if st.borg.tr(BI_AID) % 1000 > 0
+        || crate::borg_magic::borg_spell_okay(st, crate::borg_headers::borg_magic_h::IDENTIFY_RUNE)
+    {
         return None;
     }
     let pack = inven_wield() as usize;
@@ -757,8 +769,7 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
         // Count retained alternatives only. Protected artifacts remain
         // available even when they were not selected as the regular backup.
         let alternatives: Vec<_> = choices.iter().zip(&keep).enumerate().filter(|(index, (entry, count))| {
-            cover_available[*index] && (can_rank(&entry.item) || visible_artifact_weapon(&entry.item) || entry.observed)
-                && (**count > 0 || entry.item.art_idx != 0 || entry.observed)
+            cover_available[*index] && melee_cover_choice(entry, **count)
         }).map(|(_, (entry, _))| (entry.item, observe(entry.item))).collect();
         let other_worn: Vec<_> = items[pack + 1..quiver_start() as usize].iter()
             .filter(|item| item.iqty > 0 && !item.cursed).collect();
@@ -1298,6 +1309,9 @@ fn ranked_cleanup_fixture(st: &mut BorgState) {
     let excess = |st: &BorgState, whole| unknown_rune_excess(st, whole).map(|drop| (drop.slot, drop.quantity));
     st.borg.trait_[BI_AID as usize] = 1;
     assert_eq!(excess(st, false), None, "identification comes before the cap");
+    st.borg.trait_[BI_AID as usize] = 1000;
+    assert!(!crate::borg_magic::borg_spell_okay(st, crate::borg_headers::borg_magic_h::IDENTIFY_RUNE));
+    assert_eq!(excess(st, false), Some((0, 1)), "a spell the Borg cannot cast now does not hold the cap");
     st.borg.trait_[BI_AID as usize] = 0;
     assert_eq!(excess(st, false), Some((0, 1)), "the lower-valued unknown dagger leaves");
     st.items.items[0] = empty;
@@ -1380,6 +1394,17 @@ mod tests {
         assert_eq!(backup_counts(&choices, &[0], 1, 0, true), [1, 0, 1], "the worn boots cover rFire, so power decides");
         choices[0].trusted = false;
         assert_eq!(backup_counts(&choices, &[0], 1, 0, true), [1, 1, 0], "a partly known randart covers nothing");
+    }
+
+    #[test]
+    fn an_untrusted_worn_randart_weapon_is_no_melee_alternative() {
+        let item = borg_item { iqty: 1, aware: true, tval: TV_SWORD as u8, art_idx: 4, dd: 2, ds: 5,
+            to_h: 9, to_d: 12, ..crate::borg_item::blank_item() };
+        let mut worn = GearChoice { source: GearLocation::Worn(0), item, power: 0, lighter: false,
+            backup: false, wearable: true, observed: false, trusted: true };
+        assert!(melee_cover_choice(&worn, 1), "a visible standard artifact weapon covers");
+        worn.trusted = false;
+        assert!(!melee_cover_choice(&worn, 1), "a partly known randart weapon does not, even worn");
     }
 
     #[test]
