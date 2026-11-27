@@ -2377,8 +2377,10 @@ fn planned_pack_excess(st: &mut BorgState, whole_stack: bool) -> Option<SurplusD
         // piece. Release what ranks below both even when the wear routine
         // cannot make the upgrade on this level.
         let plan = gear_plan(st, group, true);
+        let pending = plan.upgrade.is_some();
         for entry in plan.stock {
             let GearLocation::Pack(slot) = entry.source else { continue; };
+            if pending && entry.beats_worn { continue; }
             if entry.release > 0 && (!whole_stack || entry.release == st.items.items[slot].iqty) {
                 return Some(SurplusDrop { slot, quantity: entry.release, sell_first: true });
             }
