@@ -1405,6 +1405,26 @@ mod tests {
         assert_ne!(replace(&kit), Some(0), "the ranked plan's protection keeps the swap");
     }
 
+    /// #1318: a spare dungeon book is Scarce. An incoming intermittent
+    /// spare never replaces it; a scarce reserve may, as for other supplies.
+    #[test]
+    fn a_spare_dungeon_book_survives_an_incoming_common_item() {
+        use crate::borg_town_record::PLAN_SCHEMA;
+        let st = state(10, 23, 160);
+        let stock = KitItem { need: -1, reduction: 0, ..recall(Place::Home) };
+        let book = KitItem { home_role: Role::Scarce, kind: 1, slot: 0, ..stock };
+        let gear = KitItem { home_role: Role::Gear, power: 50, protect_disposal: true, ..stock };
+        let mut kit = vec![book];
+        kit.extend((1..24).map(|slot| KitItem { kind: 1 + u32::from(slot), slot, ..gear }));
+        let out = vec![Disposition::Keep; kit.len()];
+        let mut inp = input(&kit);
+        inp.revision = PLAN_SCHEMA;
+        inp.home_slots = 0;
+        let u = Utility::of(&st, &kit, false);
+        assert_eq!(home_replacement(&inp, &u, &out, 100, Role::Common.rank(), 0), None);
+        assert_eq!(home_replacement(&inp, &u, &out, 100, Role::Renewable.rank(), 0), None);
+    }
+
     #[test]
     fn the_last_empty_slot_goes_to_scarce_stock_ahead_of_a_normal_shop_spare() {
         use crate::borg_town_record::PLAN_SCHEMA;

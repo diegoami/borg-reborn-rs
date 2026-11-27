@@ -356,6 +356,15 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
                 home_role = Role::Scarce;
             }
         }
+        // #1318: one spare dungeon book is the reserve. Another copy, when
+        // Home already holds that book, is ordinary replaceable stock.
+        if home_role == Role::Scarce && borg_town_home::is_book(u32::from(it.tval)) {
+            let home = &st.store.shops[BORG_HOME].ware;
+            let earlier = if place == Place::Home { &home[..slot] } else { &home[..] };
+            if earlier.iter().any(|other| other.iqty > 0 && other.kind == it.kind) {
+                home_role = Role::Renewable;
+            }
+        }
         KitItem {
             home_role,
             home_room,

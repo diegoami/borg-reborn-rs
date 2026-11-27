@@ -362,7 +362,7 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
         SETUP.store(1, Relaxed);
         let has_whip = case != "no-storage";
         let gold = if has_whip { 24_223 } else { 0 };
-        engine::setup_test_town_loadout(st, excess, has_whip, case == "full-pack", gold, false, true, false);
+        engine::setup_test_town_loadout(st, excess, has_whip, case == "full-pack", gold, false, true, false, false);
         crate::borg_item::borg_find_all_items(st);
         crate::borg_trait::borg_notice(st, true);
         SETUP.store(2, Relaxed);

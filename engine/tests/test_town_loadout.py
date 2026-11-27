@@ -39,7 +39,7 @@ class TownLoadoutTest(unittest.TestCase):
                 BORG_PARAM_TOWN_LOADOUT_POWER_LOSS="3000",
                 BORG_PARAM_TOWN_QUIVER_TRIM_RESERVE__PRIEST=ammo_reserve,
                 BORG_PARAM_TOWN_RECALL_URGENT_DEPTH="5",
-                BORG_PARAM_TOWN_HOME_RESERVE="1" if reserve or case in ("reserve-overlap", "reserve-swap", "arrival-shop") else "0",
+                BORG_PARAM_TOWN_HOME_RESERVE="1" if reserve or case in ("reserve-overlap", "reserve-swap", "reserve-book", "arrival-shop") else "0",
                 BORG_PARAM_CAUTION_TOWN_NEVER_SCARY="1",
                 BORG_PARAM_CAUTION_SCARY_NAMED_MONSTERS="0",
                 BORG_PARAM_CAUTION_SCARY_DAMAGE_PERCENT="0",
@@ -105,6 +105,11 @@ class TownLoadoutTest(unittest.TestCase):
     def test_resist_swap_at_home_is_never_replacement_stock(self):
         # #1317: a Ring of Resist Poison with no carried power stays protected.
         self.run_case("reserve-swap")
+
+    def test_one_dungeon_book_spare_is_a_scarce_reserve(self):
+        # #1318: a Priest dungeon book at Home is Scarce; the Mage one and a
+        # second carried copy are not.
+        self.run_case("reserve-book")
 
 
 if __name__ == "__main__":

@@ -1973,6 +1973,7 @@ pub(crate) fn setup_test_town_loadout(
     reserve_overlap: bool,
     recall_at_home: bool,
     swap_ring: bool,
+    dungeon_books: bool,
 ) {
     use crate::headers::list_tvals_h::*;
     use crate::headers::object_h::{object, object_kind, OBJ_NOTICE_ASSESSED};
@@ -2090,6 +2091,14 @@ pub(crate) fn setup_test_town_loadout(
             let ring = make(TV_RING, c"Resist Poison", 1, None, None);
             object_flavor_aware(player, ring);
             home_carry(ring);
+        }
+        if dungeon_books {
+            // #1318: class.txt marks [Healing and Sanctuary] a Priest dungeon
+            // book and [Arcane Control] a Mage one. The pack carries a second
+            // copy of the Priest book.
+            home_carry(make(TV_PRAYER_BOOK, c"[Healing and Sanctuary]", 1, None, None));
+            home_carry(make(TV_MAGIC_BOOK, c"[Arcane Control]", 1, None, None));
+            inven_carry(player, make(TV_PRAYER_BOOK, c"[Healing and Sanctuary]", 1, None, None), false, false);
         }
         // Distinct known bonuses keep the inert Home filler in separate stacks.
         let home_space = (*home).stock_size - i16::from(pack_whip);
