@@ -517,7 +517,7 @@ impl Swap {
 pub(crate) fn fixture(st: &mut BorgState, case: &str) {
     use std::sync::atomic::{AtomicU8, Ordering::Relaxed};
     static SETUP: AtomicU8 = AtomicU8::new(0);
-    assert!(matches!(case, "trim" | "arrival" | "arrival-shop" | "restore" | "no-storage" | "reserve-overlap" | "reserve-swap" | "reserve-book" | "swap-spare" | "reserve-overweight" | "reserve-overweight-shop"));
+    assert!(matches!(case, "trim" | "arrival" | "arrival-shop" | "restore" | "no-storage" | "reserve-overlap" | "reserve-swap" | "reserve-book" | "swap-spare" | "digger-swap" | "reserve-overweight" | "reserve-overweight-shop"));
     let shop_reserve = case == "reserve-overweight-shop";
     let reserve = shop_reserve || case == "reserve-overweight";
     let overlap = matches!(case, "reserve-overlap" | "reserve-swap" | "reserve-book");
@@ -534,7 +534,7 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
         };
         engine::setup_test_town_loadout(
             st, excess, !shop && !reserve && case != "no-storage", false,
-            if shop || shop_reserve { 500 } else { 0 }, shop || overlap, !shop_reserve, case == "reserve-swap", case == "reserve-book", case == "swap-spare",
+            if shop || shop_reserve { 500 } else { 0 }, shop || overlap, !shop_reserve, case == "reserve-swap", case == "reserve-book", case == "swap-spare", case == "digger-swap",
         );
         crate::borg_item::borg_find_all_items(st);
         crate::borg_trait::borg_notice(st, true);
@@ -595,6 +595,31 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
                     "a single carried copy is the one the Borg reads, not a spare");
             }
             println!("#1239 town loadout passed: {case}");
+            std::process::exit(0);
+        }
+        if case == "digger-swap" {
+            // #1320: a carried plain Shovel at max depth 30, in the 25-40
+            // band where weapon_value rewards a digger.
+            let slot = st.items.items[..wield].iter()
+                .position(|it| it.iqty > 0 && u32::from(it.tval) == TV_DIGGING)
+                .expect("the carried Shovel");
+            let shovel = st.items.items[slot];
+            assert_eq!((st.borg.tr(BI_MAXDEPTH), shovel.pval), (30, 0));
+            assert_eq!(crate::borg_trait_swap::digger_power(&shovel), 1);
+            let on = crate::params::value(crate::params::Param::swap_digger_tunnel) != 0;
+            let (swap, value, digger) = (st.trait_swap.weapon_swap, st.trait_swap.weapon_swap_value, st.trait_swap.weapon_swap_digger);
+            if on {
+                assert_eq!((swap, digger), (slot as i32 + 1, 1), "the Shovel is the tunnelling swap (value {value})");
+                // The swap value is the Shovel's value with its power, and
+                // exactly the reward 1 * 3500 + 1000 above its melee value.
+                assert_eq!(crate::borg_trait_swap::weapon_value_for_test(st, &shovel, 1), value);
+                let melee = crate::borg_trait_swap::weapon_value_for_test(st, &shovel, 0);
+                assert_eq!(value - melee, 4500, "melee {melee}, swap {value}");
+                assert!(melee <= 1000, "without the reward the Shovel is no swap: {melee}");
+            } else {
+                assert_eq!((swap, value, digger), (0, -1, 0), "C's pval reading: no reward, no swap");
+            }
+            println!("#1239 town loadout passed: {case} {}", if on { "on" } else { "off" });
             std::process::exit(0);
         }
         if case == "swap-spare" {

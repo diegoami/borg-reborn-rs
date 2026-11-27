@@ -2365,6 +2365,12 @@ borg_uses_swaps: true
 
 borg_param_swap_carry_min_depth: 50
 
+# #1320: value a carried digger as the weapon swap by its digging power (the
+# DIG_1/2/3 level plus its tunnelling modifier), so the max-depth 25-40
+# tunnelling reward applies. 0 reads pval as the C Borg does, which 4.2
+# diggers leave at 0. A hypothesis.
+borg_param_swap_digger_tunnel: 1
+
 # Open chests whose trap difficulty is within this of its disarming skill.
 # Higher opens riskier chests.
 # Impact: set to 14, 0 of 6 test games play differently.
