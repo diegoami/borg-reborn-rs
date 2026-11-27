@@ -36,7 +36,15 @@ closed as superseded.
   named `none`). The check runs for the borg-rs core only, as the old
   readers did; a reborn-core run ignores a `borg_plan` line, where the old
   `core_is_borg_rs()` exited 2 for it (plans only ever ran on borg-rs).
-  `harness/run.sh` refuses `BORG_ERRANDS_PLAN` for every core. `harness/run.sh`
+  `harness/run.sh` refuses an active `BORG_ERRANDS_PLAN` for every core.
+  After the Codex review of #1340: the environment and the file are both
+  checked (an empty or `none` variable no longer masks an active
+  `borg_plan` line); an explicit `BORG_ERRANDS_PLAN` stops a reborn-core
+  run at core selection, as before, without reading the file; and
+  `harness/run.sh` accepts the off values the game accepts (`none` in the
+  environment, the template or `PBORG_SET`, which drops a retired key at
+  its off value with a warning) and refuses the rest
+  (`engine/tests/test_retired_harness_settings.py`). `harness/run.sh`
   refuses `BORG_ERRANDS_PLAN` and no longer stages plans or records errand
   variables.
 - **Tests:** `test_shopping.py`, `test_level_up.py` and
@@ -48,8 +56,10 @@ closed as superseded.
 - **Docs:** `ERRANDS.md` and `GAME-PLAN-LANGUAGE.md` moved to
   `docs/archive/`; README, AGENTS, SPEC, ZOO-INTERFACE, borg-core.md and the
   other current pages say what went. `pborg.yaml` drops the errand lines and
-  corrects the `borg_no_deeper` comment (N means DL N-1 at most, as in C;
-  from #1338).
+  corrects the `borg_no_deeper` comment (from #1338; made precise after the
+  Codex review: static preparedness refuses DL N and deeper, DL1 always
+  passes, and on DL N or deeper the Borg normally heads up; a trap door or
+  a flight can still take it deeper).
 
 ### Checks
 

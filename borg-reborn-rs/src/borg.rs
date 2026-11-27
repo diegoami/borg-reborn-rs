@@ -310,6 +310,9 @@ pub fn core_is_borg_rs() -> bool {
             eprintln!("borg-reborn-rs: {error}");
             std::process::exit(2);
         });
+        if !selected {
+            check_reborn_plan_environment();
+        }
         selected
     })
 }
@@ -369,26 +372,52 @@ pub fn check_retired_errand_settings() {
 }
 
 fn check_retired_errand_settings_now() {
+    // Review of #1340: the environment and the file are both checked, so an
+    // inert variable (an empty or `none` BORG_ERRANDS_PLAN) cannot mask an
+    // active line in pborg.yaml, as the old "environment wins" order would.
     for (variable, setting, inert) in RETIRED_ERRAND_SETTINGS {
-        let verdict = match std::env::var_os(variable) {
-            Some(value) => match value.to_str() {
-                Some(value) => retired_errand_setting(variable, Some(value), inert, false),
-                None => Err(format!("{variable}: invalid non-UTF-8 value {value:?}; the setting was retired (#1339)")),
-            },
-            None => {
-                let value = borg_rs::config_file::borg_txt_setting(setting);
-                retired_errand_setting(&format!("pborg.yaml {setting}"), value.as_deref(), inert, true)
-            }
-        };
-        match verdict {
-            Ok(Some(warning)) => eprintln!("borg-reborn-rs: {warning}"),
-            Ok(None) => {}
-            Err(error) => {
-                eprintln!("borg-reborn-rs: {error}");
-                std::process::exit(2);
-            }
+        report_retired(retired_environment(variable, inert));
+        let value = borg_rs::config_file::borg_txt_setting(setting);
+        report_retired(retired_errand_setting(
+            &format!("pborg.yaml {setting}"),
+            value.as_deref(),
+            inert,
+            true,
+        ));
+    }
+}
+
+/// A retired setting's environment variable, judged as `retired_errand_setting`.
+fn retired_environment(variable: &str, inert: &[&str]) -> Result<Option<String>, String> {
+    match std::env::var_os(variable) {
+        None => Ok(None),
+        Some(value) => match value.to_str() {
+            Some(value) => retired_errand_setting(variable, Some(value), inert, false),
+            None => Err(format!(
+                "{variable}: invalid non-UTF-8 value {value:?}; the setting was retired (#1339)"
+            )),
+        },
+    }
+}
+
+fn report_retired(verdict: Result<Option<String>, String>) {
+    match verdict {
+        Ok(Some(warning)) => eprintln!("borg-reborn-rs: {warning}"),
+        Ok(None) => {}
+        Err(error) => {
+            eprintln!("borg-reborn-rs: {error}");
+            std::process::exit(2);
         }
     }
+}
+
+/// Review of #1340: an explicit plan in the environment stops a reborn-core
+/// run too (the old core selection refused it). The reborn core never read
+/// the file's settings, so only the variable is checked, and the file stays
+/// unread (the reborn override keeps its lazy access).
+fn check_reborn_plan_environment() {
+    let (variable, _, inert) = RETIRED_ERRAND_SETTINGS[2];
+    report_retired(retired_environment(variable, inert));
 }
 
 /// Run a key from the shared Borg command prompt. The reborn core supports start.

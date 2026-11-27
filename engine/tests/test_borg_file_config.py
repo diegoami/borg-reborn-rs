@@ -105,10 +105,24 @@ class BorgFileConfigTest(unittest.TestCase):
         })
         self.assertEqual(result.returncode, 2, result.stderr)
         self.assertIn('BORG_ERRANDS_PLAN: "plan.txt" would select', result.stderr)
-        # The reborn core never read plans.
+        # Review of #1340: an inert variable does not mask an active file line.
+        for value in ['', 'none']:
+            _, result = self.launch(f'masked-plan-{value or "empty"}', content,
+                                    {'BORG_CORE': 'borg-rs', 'BORG_ERRANDS_PLAN': value})
+            self.assertEqual(result.returncode, 2, result.stderr)
+            self.assertIn('pborg.yaml borg_plan: "errands_plan.txt" would select', result.stderr)
+        # The reborn core never read the file's plan line ...
         out, result = self.launch('original-plan', b'borg_reborn_core: 0\nborg_plan: x.txt\n')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue((out / 'params.json').is_file())
+        # ... but an explicit plan in the environment stops it too (review of #1340).
+        _, result = self.launch('original-env-plan', b'borg_reborn_core: 0\n',
+                                {'BORG_ERRANDS_PLAN': 'plan.txt'})
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('BORG_ERRANDS_PLAN: "plan.txt" would select', result.stderr)
+        out, result = self.launch('original-env-plan-none', b'borg_reborn_core: 0\n',
+                                  {'BORG_ERRANDS_PLAN': 'none'})
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     @unittest.skipUnless(os.name == 'posix', 'OS-byte paths require POSIX')
     def test_valid_config_in_a_non_utf8_user_directory(self):

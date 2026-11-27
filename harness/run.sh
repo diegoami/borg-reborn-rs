@@ -64,9 +64,19 @@ CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-0}"
     echo "run.sh: CHECKPOINT_EVERY must be 0..1000000000" >&2; exit 2; }
 BIN="${ANGBAND_BIN:-$ROOT/build/$IMPL/game/angband}"
 # The errands, their ladders and the plans were retired (#1339): a plan
-# would change the arm, so asking for one stops the run.
-if [ -n "${BORG_ERRANDS_PLAN:-}" ]; then
-    echo "run.sh: BORG_ERRANDS_PLAN: the plans were retired (#1339)" >&2; exit 2
+# would change the arm, so asking for one stops the run. Off values (empty,
+# `none`) pass, as the game itself accepts them (review of #1340).
+retired_inert() {  # retired_inert NAME VALUE: 0 when VALUE is NAME's off value
+    local v; v="$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')"
+    case "$1:$v" in
+        borg_reborn_errand:|borg_reborn_errand:none|borg_plan:|borg_plan:none) return 0 ;;
+        borg_reborn_stopscared:|borg_reborn_stopscared:none|borg_reborn_stopscared:off) return 0 ;;
+        borg_reborn_stopscared:false|borg_reborn_stopscared:no) return 0 ;;
+    esac
+    return 1
+}
+if ! retired_inert borg_plan "${BORG_ERRANDS_PLAN:-}"; then
+    echo "run.sh: BORG_ERRANDS_PLAN=$BORG_ERRANDS_PLAN: the plans were retired (#1339)" >&2; exit 2
 fi
 # The named scary monsters as data (#518), pinned by its SHA-256.
 SCARY=""
@@ -238,12 +248,23 @@ if [ -n "$OVERRIDES" ]; then
     for kv in "${SETS[@]}"; do
         [[ "$kv" =~ ^[A-Za-z0-9_@]+=[A-Za-z0-9_.-]+$ ]] || {
             echo "run.sh: PBORG_SET: invalid entry '$kv'" >&2; exit 2; }
+        # #1339 (review of #1340): a retired key is no longer in the template;
+        # at its off value it is dropped with a warning, at any other value
+        # it stops the run, as the game would.
+        case "${kv%%=*}" in
+            borg_reborn_errand|borg_reborn_stopscared|borg_plan)
+                if retired_inert "${kv%%=*}" "${kv#*=}"; then
+                    echo "run.sh: PBORG_SET: ${kv%%=*} is retired and ignored (#1339)" >&2
+                    continue
+                fi
+                echo "run.sh: PBORG_SET: $kv: the errands, stopscared and plans were retired (#1339)" >&2; exit 2 ;;
+        esac
         CHANGES+=(--set "$kv")
     done
-    update_settings --existing "${CHANGES[@]}"
+    if [ ${#CHANGES[@]} -gt 0 ]; then update_settings --existing "${CHANGES[@]}"; fi
 fi
 SELECTED_PLAN="$(get_setting borg_plan)"
-if [ -n "$SELECTED_PLAN" ]; then
+if ! retired_inert borg_plan "$SELECTED_PLAN"; then
     echo "run.sh: $PBORG_TEMPLATE selects a plan; the plans were retired (#1339)" >&2
     exit 2
 fi

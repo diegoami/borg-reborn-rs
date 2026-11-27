@@ -40,11 +40,14 @@ borg_reborn_core: "borg-rs"
 # at its off value ("none", "off") is ignored with a warning; any other value
 # stops the run.
 
-# Stop at this dungeon level or character level (out of range = never), stay
-# above borg_no_deeper, and stop after killing Morgoth (borg_stop_king).
-# Lowering borg_no_deeper caps the dive: the Borg is never prepared for that
-# level or deeper (borg_no_deeper = N: DL N-1 at most, as in C) and gains
-# less experience.
+# Stop at this dungeon level or character level (out of range = never), and
+# stop after killing Morgoth (borg_stop_king). borg_no_deeper = N, as in C:
+# with the shipped static preparedness (borg_uses_dynamic_calcs FALSE) the
+# Borg is never prepared for DL N or deeper (DL1 always is), so it does not
+# choose to descend there, and on DL N or deeper it normally heads up (not
+# prepared for its level; deeper than N with no other way chosen, "Going up
+# a bit"). A trap door, a teleport-level or a flight can still take it
+# deeper. Lowering it caps the dive and gains less experience.
 
 borg_stop_dlevel: 128
 borg_stop_clevel: 51
