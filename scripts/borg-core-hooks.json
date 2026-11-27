@@ -298,7 +298,7 @@
     },
     "src/borg_flow.rs": {
       "donor_blob": "087ab0e6123857e818c00c3d77287c922c013817",
-      "receiving_sha256": "b42d219430a26e8f64541c7325e9e7ae4425c0de11ebd33a432daef9e345a6d0"
+      "receiving_sha256": "86009e027cec55ee8bb32f7a6cbd1b49391825c1f51dad91bf4db4a3d51398c6"
     },
     "src/borg_flow_glyph.rs": {
       "donor_blob": "496ad56366a4a7adb17fb10f35435a9b65ab942f",
@@ -314,7 +314,7 @@
     },
     "src/borg_flow_stairs.rs": {
       "donor_blob": "cfc8b5b2e21dd2a374f7fe4e749c96754505b6bb",
-      "receiving_sha256": "ba20628418779e647c670250661ae79eaf4dfb3dafa26c9c6e58d9844c248611"
+      "receiving_sha256": "3e6300ad6e4cd9699fa3a4af1ca2ba16fdeb98c91950967d40e6eba7577f07c4"
     },
     "src/borg_flow_take.rs": {
       "donor_blob": "f19b4b2933fbf4ccab7476b39e6abb17a5a07a87",

@@ -30,11 +30,12 @@ jobs:
       # Offline provenance attestation; builds never read an external source tree.
       - name: Verify exact recorded vendor bytes and hooks
         run: python3 scripts/borg-core-vendor.py check-recorded
-      - name: Verify accepted R4 and receiving R4.5 source
+      - name: Verify accepted R4 and R4.5 source
         run: |
           accepted_r4=40cbaf272193abb44dd80fad2cfeec24b627be22
+          accepted_r45=e898abb5586135375434ad016e240686c022c53b
           receiving_main=24be98732748230062882fe2b7d9601dba5e2cc0
-          git fetch --no-tags --depth=1 origin "$accepted_r4" "$receiving_main"
+          git fetch --no-tags --depth=1 origin "$accepted_r4" "$accepted_r45" "$receiving_main"
           accepted="$RUNNER_TEMP/accepted-r4"
           git worktree add --detach "$accepted" "$accepted_r4"
           (
@@ -45,7 +46,12 @@ jobs:
             python3 scripts/r4-code-metrics.py
             python3 -m unittest discover -s scripts/tests
           )
-          python3 scripts/audit-r45-port.py
+          archived_r45="$RUNNER_TEMP/accepted-r45"
+          git worktree add --detach "$archived_r45" "$accepted_r45"
+          cmp docs/R45-PORT-SOURCE.json "$archived_r45/docs/R45-PORT-SOURCE.json"
+          cmp docs/R45-RECEIVING-SURFACE.json "$archived_r45/docs/R45-RECEIVING-SURFACE.json"
+          (cd "$archived_r45" && python3 scripts/audit-r45-port.py)
+          python3 scripts/audit-r45-port.py --receiving-r5
           python3 scripts/r45-receiving-surface.py > /dev/null
       - run: cargo fmt --check -p borg-reborn-rs -p borg-next
       - run: cargo clippy --workspace --all-targets -- -D warnings
@@ -344,8 +350,8 @@ jobs:
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=on BORG_SHADOW=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-off
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=on BORG_SHADOW=check BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-check
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=on BORG_SHADOW=switch BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-switch
-          harness/check-shadow.py --r45 --expect-mode check harness/out/shadow-check
-          harness/check-shadow.py --r45 --expect-mode switch harness/out/shadow-switch
+          harness/check-shadow.py --r5 --expect-mode check harness/out/shadow-check
+          harness/check-shadow.py --r5 --expect-mode switch harness/out/shadow-switch
           harness/diff --suite smoke --expect-impl rust harness/out/shadow-off harness/out/shadow-check
           harness/diff --suite smoke --expect-impl rust harness/out/shadow-off harness/out/shadow-switch
           python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/core-deaths" --runs harness/out/shadow-off harness/out/shadow-check harness/out/shadow-switch
@@ -355,8 +361,8 @@ jobs:
         run: |
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=check BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths JOBS=1 harness/suite.sh stateful-entries harness/out/stateful-entries-check
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=switch BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths JOBS=1 harness/suite.sh stateful-entries harness/out/stateful-entries-switch
-          harness/check-shadow.py --r45 --require-all-entries --expect-mode check harness/out/shadow-check harness/out/stateful-entries-check harness/out/item-use-fixture-check --constructed-root harness/out/item-use-fixture-check --report harness/out/shadow-coverage-check.json
-          harness/check-shadow.py --r45 --require-all-entries --expect-mode switch harness/out/shadow-switch harness/out/stateful-entries-switch harness/out/item-use-fixture-switch --constructed-root harness/out/item-use-fixture-switch --report harness/out/shadow-coverage-switch.json
+          harness/check-shadow.py --r5 --require-all-entries --expect-mode check harness/out/shadow-check harness/out/stateful-entries-check harness/out/item-use-fixture-check --constructed-root harness/out/item-use-fixture-check --report harness/out/shadow-coverage-check.json
+          harness/check-shadow.py --r5 --require-all-entries --expect-mode switch harness/out/shadow-switch harness/out/stateful-entries-switch harness/out/item-use-fixture-switch --constructed-root harness/out/item-use-fixture-switch --report harness/out/shadow-coverage-switch.json
           harness/diff --suite stateful-entries --expect-impl rust harness/out/stateful-entries-check harness/out/stateful-entries-switch
           python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/core-deaths" --runs harness/out/stateful-entries-check harness/out/stateful-entries-switch
       - name: Retain declared natural and constructed run coverage

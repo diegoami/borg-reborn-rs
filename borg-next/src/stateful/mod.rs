@@ -12,6 +12,7 @@ pub mod equipment_identify;
 pub mod equipment_wear;
 pub mod escape;
 mod fast_fragile;
+mod flow;
 pub mod home_power;
 pub mod item_use;
 pub mod power;
@@ -190,6 +191,7 @@ fn set_free_action(st: &mut BorgState, value: i32) {
 /// Compiler-enforced read-only entry dispatch, with no caller state clone.
 pub fn read_decide(st: &BorgState, request: ReadDecision) -> Value {
     match request {
+        ReadDecision::FlowSelectStep => Value::Score(flow::select_step(st)),
         ReadDecision::HomePower => Value::Score(home_power::borg_power_home(st)),
         ReadDecision::StoreMinimumQuantity { item } => {
             Value::Score(store_sell::borg_min_item_quantity(st, &item.0))

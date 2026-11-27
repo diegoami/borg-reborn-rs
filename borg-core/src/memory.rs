@@ -2,6 +2,7 @@
 //! This is a visibility boundary, not a new perception or decision hook.
 pub use crate::borg::{BorgGoal, BorgStatus, BorgTemp, BorgTimes};
 pub use crate::borg_cave::{BorgGrid, CaveState, AUTO_MAX_X, AUTO_MAX_Y};
+pub use crate::borg_flow::GOAL_DIGGING;
 pub use crate::borg_flow_kill::BorgKill;
 pub use crate::borg_flow_take::BorgTake;
 pub use crate::state::BorgState;

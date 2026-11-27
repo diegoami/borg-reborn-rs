@@ -10,7 +10,14 @@ import decision_surface as surface
 
 class DecisionSurfaceTest(unittest.TestCase):
     def test_actual_policy_surface_is_closed(self):
-        self.assertEqual(surface.check(Path(__file__).resolve().parents[2]), 30)
+        self.assertEqual(surface.check(Path(__file__).resolve().parents[2]), 31)
+
+    def test_flow_has_only_its_named_memory_constants(self):
+        imports = 'use borg_rs::memory::{BorgState, AUTO_MAX_X, AUTO_MAX_Y, GOAL_DIGGING};'
+        self.assertFalse(surface.inspect(imports, port=True, policy='flow'))
+        self.assertTrue(surface.inspect(imports, port=True, policy='caution'))
+        self.assertTrue(surface.inspect(imports.replace('GOAL_DIGGING', 'traits::BI_CDEPTH'),
+                                        port=True, policy='flow'))
 
     def test_defence_mutation_adapters_are_exact_and_policy_cannot_delegate(self):
         for adapter in surface.DEFENCE_ADAPTERS:
@@ -106,7 +113,7 @@ class DecisionSurfaceTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'nested.rs'):
                 surface.check(fixture)
             extra.write_text('fn local_helper() {}')
-            self.assertEqual(surface.check(fixture), 31)
+            self.assertEqual(surface.check(fixture), 32)
             dispatch = fixture / 'borg-next/src/stateful/mod.rs'
             dispatch.write_text(dispatch.read_text() + 'crate::shadow::register();')
             with self.assertRaisesRegex(ValueError, 'mod.rs'):

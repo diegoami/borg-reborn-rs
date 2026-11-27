@@ -4,7 +4,7 @@ from pathlib import Path
 from rust_ports import mask_non_code, without_test_items
 
 NATIVE = ('borg_caution', 'borg_escape', 'borg_recover', 'borg_fight_attack', 'borg_fight_defend', 'borg_item_use', 'borg_power', 'borg_item_wear', 'borg_item_id', 'borg_home_power', 'borg_store_buy', 'borg_store_sell', 'borg_think_store', 'borg_fast_fragile')
-PORTS = ('caution', 'escape', 'recovery', 'attack', 'defence', 'item_use', 'power', 'equipment_wear', 'equipment_identify', 'home_power', 'store_buy', 'store_sell', 'think_store', 'attack_preference', 'fast_fragile')
+PORTS = ('caution', 'escape', 'recovery', 'attack', 'defence', 'item_use', 'power', 'equipment_wear', 'equipment_identify', 'home_power', 'store_buy', 'store_sell', 'think_store', 'attack_preference', 'fast_fragile', 'flow')
 NATIVE_NAMESPACES = {'decision_api', 'decision_tape', 'decisions', 'shadow',
                      'params', 'borg', 'borg_cave', 'borg_update', 'state', 'attack_preference',
                      'headers', 'borg_headers', 'borg_inventory', *NATIVE}
@@ -56,6 +56,9 @@ def inspect(text, port=False, dispatch=False, policy=None):
     # Raw identifier spelling must not hide the same dependency/method.
     code = re.sub(r'\br#(?=\w)', '', code)
     code = re.sub(r'\buse\s*::', 'use ', code)
+    port_memory = {'BorgState'}
+    if policy == 'flow':
+        port_memory.update(('AUTO_MAX_X', 'AUTO_MAX_Y', 'GOAL_DIGGING'))
     if port and dispatch:
         # Normalize whitespace only for matching the exact adapter/import.
         # Remove just these snippets, then inspect all remaining code.
@@ -116,7 +119,7 @@ def inspect(text, port=False, dispatch=False, policy=None):
             errors.append('port reads or writes an unnamed native trait')
         # The full memory/type path is restricted even outside use statements.
         for match in re.finditer(r'\bborg_rs\s*::\s*(memory|threat_facts|decisions)\s*::\s*(\w+)', code):
-            allowed_names = {'memory': {'BorgState'},
+            allowed_names = {'memory': port_memory,
                              'threat_facts': {'param', 'Param', 'resolved_param'},
                              'decisions': {'Decision', 'ReadDecision', 'Value'} if dispatch else set()}
             if match[2] not in allowed_names[match[1]]:
@@ -139,7 +142,7 @@ def inspect(text, port=False, dispatch=False, policy=None):
     for m in re.finditer(r'\b' + prefix + r'::decision_tape::(\w+)\s*\(', code):
         if m[1] not in ('active', 'mark'):
             errors.append(f'policy may not drive the tape through {m[1]}')
-    exact_imports = {'threat_facts': {'param','Param','resolved_param'}, 'memory': {'BorgState'},
+    exact_imports = {'threat_facts': {'param','Param','resolved_param'}, 'memory': port_memory,
                      'decisions': {'Decision', 'ReadDecision', 'Value'} if dispatch else set()} if port else {
         'params': {'value','Param'}, 'borg': {'BorgTime', 'BorgGoal', 'BorgMonInfo'},
         'borg_cave': {'AUTO_MAX_X','AUTO_MAX_Y','BorgGrid','DUNGEON_HGT','DUNGEON_WID'}, 'borg_update': {'Detect'},
@@ -183,7 +186,7 @@ def check(root):
     for path, port in paths:
         errors = inspect(path.read_text(), port,
                          dispatch=port and path == directory / 'mod.rs',
-                         policy=next((name for name in ('attack','defence','item_use','power','equipment_wear','equipment_identify','home_power','store_buy','store_sell','think_store') if port and
+                         policy=next((name for name in ('attack','defence','item_use','power','equipment_wear','equipment_identify','home_power','store_buy','store_sell','think_store','flow') if port and
                              (path.stem == name or name in path.relative_to(directory).parts[:-1])),None))
         if errors:
             raise ValueError(f'{path}: ' + '; '.join(errors))
