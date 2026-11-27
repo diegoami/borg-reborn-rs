@@ -601,7 +601,7 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
             use crate::borg_town_dispose::Place;
             let slot = st.items.items[..wield].iter()
                 .position(|it| it.iqty > 0 && u32::from(it.tval) == TV_SHIELD)
-                .expect("the carried Wicker Shield");
+                .expect("the carried Leather Shield");
             // Below swap_carry_min_depth no swap is noticed. Make the shield
             // the active armour swap directly, as a deeper Borg would carry it.
             st.trait_swap.armour_swap = slot as i32 + 1;
@@ -618,6 +618,19 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
                 && a.at[1] == slot as i64;
             let plan = crate::borg_town_shadow::live_plan(st).action;
             assert!(!targets(plan), "the live plan moves the active swap: {:?}", (plan.code, plan.at));
+            // Second review of #1324: copy-limit cleanup runs before the
+            // planner. At one copy per kind, the worn and carried shields
+            // make one excess copy: a plain spare is stored, the swap is not.
+            let limit = crate::borg_headers::borg_h::BORG_TOWN_MAX_NON_MISSILE_COPIES as usize;
+            let configured = st.core.cfg[limit];
+            st.core.cfg[limit] = 1;
+            let overflow = crate::borg_town_live::overflow_action_for_test(st);
+            assert!(!overflow.is_some_and(targets), "copy cleanup moves the active swap: {:?}", overflow.map(|a| (a.code, a.at)));
+            st.trait_swap.armour_swap = 0;
+            let overflow = crate::borg_town_live::overflow_action_for_test(st);
+            assert!(overflow.is_some_and(targets), "the fixture exercises copy cleanup: {:?}", overflow.map(|a| (a.code, a.at)));
+            st.trait_swap.armour_swap = slot as i32 + 1;
+            st.core.cfg[limit] = configured;
             st.trait_swap.armour_swap = 0;
             assert!(in_kit(st), "an ordinary spare is in the kit");
             st.trait_swap.armour_swap = slot as i32 + 1;

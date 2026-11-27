@@ -156,6 +156,11 @@ fn overflow_action(st: &BorgState) -> Option<TownAction> {
     let pack = st.items.items.iter().take(crate::borg_item::inven_wield() as usize);
     let excess: Vec<_> = pack.enumerate().rev().filter_map(|(slot, item)| {
         let quantity = excess_copies(&st.items.items, item, limit);
+        // #1315 (second review of #1324): the active swap stack keeps one
+        // copy carried, where the swap notice looks for it.
+        let quantity = if crate::borg_junk::is_swap(st, slot as i32) {
+            quantity.min(u32::from(item.iqty).saturating_sub(1))
+        } else { quantity };
         (quantity > 0).then_some((slot, item, quantity as i32))
     }).collect();
     // Try Home even when it has no empty slot. A matching partial stack
@@ -1089,6 +1094,12 @@ fn release_home_gear(st: &BorgState, slot: usize, quantity: u8) -> Option<TownAc
     Some(sale.map_or(
         TownAction { code: action::DROP_HOME, at: [BORG_HOME as i64, slot as i64, i64::from(quantity), 0] },
         |shop| TownAction { code: action::SELL_HOME, at: [shop as i64, slot as i64, i64::from(quantity), 0] }))
+}
+
+/// #1315: the copy-limit cleanup, for the native town fixtures.
+#[cfg(feature = "test-town-loadout")]
+pub(crate) fn overflow_action_for_test(st: &BorgState) -> Option<TownAction> {
+    overflow_action(st)
 }
 
 /// #1315: the ranked gear step, for the native town fixtures.

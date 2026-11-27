@@ -2104,7 +2104,12 @@ pub(crate) fn setup_test_town_loadout(
         if swap_spare {
             // #1315: a carried runner-up shield the ranked plan would store,
             // and one free Home stack for it.
-            inven_carry(player, make(TV_SHIELD, c"Wicker Shield", 1, None, None), false, false);
+            // Review of #1324: the worn piece's kind, with a known -1 armour
+            // bonus, so the copy limit counts both and the stacks differ.
+            let shield = make(TV_SHIELD, c"Leather Shield", 1, None, None);
+            (*shield).to_a = -1;
+            (*(*shield).known).to_a = -1;
+            inven_carry(player, shield, false, false);
         }
         // Distinct known bonuses keep the inert Home filler in separate stacks.
         let home_space = (*home).stock_size - i16::from(pack_whip) - i16::from(swap_spare);

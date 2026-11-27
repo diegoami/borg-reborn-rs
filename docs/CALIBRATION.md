@@ -9032,7 +9032,7 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:455` |
+| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:460` |
 
 ### Recall-first trial
 
@@ -9268,7 +9268,7 @@ identified spares.
 |---|---:|---|---|---|
 | `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2272` |
 | `junk_gear_alternatives` | 1 | count | 0–3 | `borg_junk.rs:64` |
-| `town_gear_home_backups` | 1 | flag | 0–1 | `borg_town_live.rs:198` |
+| `town_gear_home_backups` | 1 | flag | 0–1 | `borg_town_live.rs:204` |
 
 The removal establishes the control for the paired pilot of the #1264
 redesign. [Handover](handover/2026-11-25-1265-remove-sandal-flag.md)
