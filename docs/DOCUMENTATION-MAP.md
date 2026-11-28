@@ -34,7 +34,7 @@ Borg that this session could read.
 | [design/](#design-the-shipped-cores-design-documents) | **The shipped core's design**: the town planner, the trip policy, the class family, shop shortcuts, joint-policy trials, the C bugs borg-rs kept or fixed | borg-rs `docs/` at the vendored core's pin `8c5d000a58e9` |
 | [research/borg-agent/](research/borg-agent/knowledge/README.md) | borg-agent's knowledge pages (danger, dungeon, mechanics, monsters, readiness), its knowledge design and post-mortem | borg-agent (retired) at `57a480ceffdd` |
 | [architecture/](architecture/README.md) | How the C Borg, the shipped core and the redesign work | written here |
-| [README](../README.md), [CALIBRATION.md](CALIBRATION.md), [PHASE-DOOR.md](PHASE-DOOR.md), [GAME-KNOWLEDGE.md](GAME-KNOWLEDGE.md), ... | Playing the Borg, its settings, single decisions, what knowledge is used | written here ([docs/README.md](README.md)) |
+| [README](../README.md), [user/GUIDE.md](user/GUIDE.md), [contributing/](contributing/README.md), [CALIBRATION.md](CALIBRATION.md), [PHASE-DOOR.md](PHASE-DOOR.md), [GAME-KNOWLEDGE.md](GAME-KNOWLEDGE.md), ... | Playing the Borg, its settings, single decisions, what knowledge is used | written here ([docs/README.md](README.md)) |
 
 When moved, the documents kept their text; only their links were changed
 to the new places, and links to files that stayed behind (data, receipts,

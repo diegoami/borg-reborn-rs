@@ -62,6 +62,8 @@ fn entry_documents_exist() {
         "docs/HANDOVER.md",
         "docs/c-borg/BORG_SPEC.md",
         "docs/c-borg/TUNABLE-BORG-PLAN.md",
+        "docs/user/GUIDE.md",
+        "docs/contributing/README.md",
     ] {
         assert!(root().join(rel).is_file(), "missing {rel}");
     }
@@ -97,7 +99,13 @@ fn current_documents_have_no_dangling_links() {
     .iter()
     .map(|rel| root().join(rel))
     .collect();
-    for dir in ["docs", "docs/architecture", "docs/research"] {
+    for dir in [
+        "docs",
+        "docs/architecture",
+        "docs/research",
+        "docs/user",
+        "docs/contributing",
+    ] {
         for entry in std::fs::read_dir(root().join(dir)).unwrap() {
             let path = entry.unwrap().path();
             if path.extension().is_some_and(|e| e == "md") {
@@ -156,6 +164,50 @@ fn current_documents_have_no_dangling_links() {
         dangling.is_empty(),
         "dangling links:\n{}",
         dangling.join("\n")
+    );
+}
+
+/// #817: the play guide's command table lists every key of PBorg's Ctrl-Z
+/// prompt, as `borg-core/src/borg_commands.rs`'s `BORG_COMMANDS` defines
+/// them, so a command added to the core fails here until the guide says
+/// what it does.
+#[test]
+fn play_guide_lists_every_pborg_command() {
+    let source = read("borg-core/src/borg_commands.rs");
+    let table = source
+        .split("const BORG_COMMANDS")
+        .nth(1)
+        .and_then(|rest| rest.split("];").next())
+        .expect("BORG_COMMANDS not found in borg_commands.rs");
+    let marker = "selection: b'";
+    let keys: Vec<char> = table
+        .match_indices(marker)
+        .filter_map(|(i, _)| table[i + marker.len()..].chars().next())
+        .collect();
+    assert!(
+        keys.len() >= 20,
+        "only {} commands found in BORG_COMMANDS: the scan is broken",
+        keys.len()
+    );
+    let guide = read("docs/user/GUIDE.md");
+    let section = guide
+        .split("## 3. The Borg's commands")
+        .nth(1)
+        .and_then(|rest| rest.split("\n## ").next())
+        .expect("the guide has no section '## 3. The Borg's commands'");
+    let rows: String = section
+        .lines()
+        .filter(|line| line.starts_with('|'))
+        .map(|line| line.split('|').nth(1).unwrap_or_default())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let missing: Vec<char> = keys
+        .into_iter()
+        .filter(|key| !rows.contains(&format!("`{key}`")))
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "docs/user/GUIDE.md section 3 does not list the PBorg command(s) {missing:?}"
     );
 }
 
