@@ -1,6 +1,6 @@
 //! Committed direction selection and stair route policy.
 
-use borg_rs::decision_api::borg_flow::GOAL_FLEE;
+use borg_rs::decision_api::borg_flow::{borg_flow_old, ExplorationGoal, GOAL_FLEE};
 use borg_rs::decision_api::borg_flow_stairs::{
     more_refused, rising_holds_flee_descent, CombinedStairPlan, StairDirection, StairPlan,
 };
@@ -156,4 +156,13 @@ pub(super) fn plan_combined_stairs(
         (false, false) => return CombinedStairPlan::Refused,
     };
     CombinedStairPlan::Weighted { only, weight }
+}
+
+pub(super) fn continue_exploration(state: &mut BorgState) -> Option<ExplorationGoal> {
+    use ExplorationGoal::{Bore, Dark, Misc, Vault, Xtra};
+
+    borg_rs::decision_tape::mark("policy::flow.continue_exploration", String::new());
+    [Misc, Dark, Xtra, Bore, Vault]
+        .into_iter()
+        .find(|&goal| borg_flow_old(state, goal as i32))
 }

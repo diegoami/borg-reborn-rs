@@ -1426,6 +1426,7 @@ pub mod store_fixture {
 
 pub mod borg_flow {
     pub use crate::borg_flow::GOAL_FLEE;
+    pub use crate::decisions::ExplorationGoal;
 
     pub fn borg_flow_clear(st: &mut crate::state::BorgState) {
         crate::decision_tape::effect(st, "borg_flow::borg_flow_clear", String::new(), |st| crate::borg_flow::borg_flow_clear(st))

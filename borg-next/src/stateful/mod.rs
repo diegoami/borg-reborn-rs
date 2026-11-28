@@ -28,6 +28,7 @@ pub fn decide(st: &mut BorgState, request: Decision) -> Value {
         Decision::FlowPlanCombinedStairs { why, only } => {
             Value::CombinedStairs(flow::plan_combined_stairs(st, why, only))
         }
+        Decision::FlowContinueExploration => Value::ExplorationFlow(flow::continue_exploration(st)),
         Decision::HomePower => Value::Score(home_power::borg_power_home(st)),
         Decision::StoreBuyUseful => Value::Acted(store_buy::borg_think_shop_buy_useful(st)),
         Decision::HomeBuyUseful => Value::Acted(store_buy::borg_think_home_buy_useful(st)),

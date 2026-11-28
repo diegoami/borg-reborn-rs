@@ -132,6 +132,7 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             shadow_cases = {
                 "flow-step": ("flow direction selection passed", "readonly_points", "flow.select_step", 8),
+                "exploration-flow": ("exploration flow passed", "root_points", "flow.continue_exploration", 8),
                 "up-stair-plan": ("up-stair plan passed", "readonly_points", "flow.plan_up_stair", 10 if weight else 8),
                 "down-stair-plan": ("down-stair plan passed", "root_points", "flow.plan_down_stair", 9 if weight else 7),
                 "combined-stair-plan": ("combined stair plan passed", "root_points", "flow.plan_combined_stairs", 11 if weight else 14),
@@ -147,11 +148,13 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                     row = json.loads(stats.read_text().splitlines()[-1])
                     self.assertEqual(row["mode"], shadow)
                     self.assertEqual(row["counts"][points][point], count)
-                    expected_calls = count
-                    if case == "combined-stair-plan" and weight == 0:
-                        self.assertEqual(row["counts"]["readonly_points"]["flow.select_step"], 1)
-                        expected_calls += 1
-                    self.assertEqual(row["counts"]["flow_calls"], expected_calls)
+                    nested_steps = {
+                        "combined-stair-plan": 0 if weight else 1,
+                        "exploration-flow": 6,
+                    }.get(case, 0)
+                    if nested_steps:
+                        self.assertEqual(row["counts"]["readonly_points"]["flow.select_step"], nested_steps)
+                    self.assertEqual(row["counts"]["flow_calls"], count + nested_steps)
             elif case == "stair-preview-wipe":
                 self.assertIn("stair preview wipe passed", result.stdout)
             else:
@@ -176,6 +179,11 @@ class EmergencyStairHandoffTest(unittest.TestCase):
         for shadow in ("off", "check", "switch"):
             with self.subTest(shadow=shadow):
                 self.run_case("flow-step", 0, shadow=shadow)
+
+    def test_committed_exploration_preserves_goal_results_and_fallthrough(self):
+        for shadow in ("off", "check", "switch"):
+            with self.subTest(shadow=shadow):
+                self.run_case("exploration-flow", 0, shadow=shadow)
 
     def test_stair_preview_consumes_wipe_and_restores_cached_danger(self):
         self.run_case("stair-preview-wipe", 0)
