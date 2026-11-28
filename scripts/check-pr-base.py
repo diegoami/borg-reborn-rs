@@ -68,7 +68,9 @@ def main(argv):
     for number in sorted(numbers):
         try:
             issue = json.loads(gh('issue', 'view', str(number), '--json', 'labels'))
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as exc:
+            if 'Could not resolve to an issue' not in (exc.stderr or ''):
+                raise  # a network, rate-limit or auth error must not pass the PR
             continue  # a number that is no issue of this repository
         issue_labels.update(l['name'] for l in issue['labels'])
     message = violation(base, head, labels, files, issue_labels, info['isCrossRepository'])
