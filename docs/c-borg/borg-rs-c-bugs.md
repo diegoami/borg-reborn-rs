@@ -839,4 +839,8 @@ Format: file, function, (seed, turn when observed), explanation.
   (`wall_guess_walk` starts at the first step and returns `NextToBorg`,
   which writes nothing, instead of the Borg's grid); the next shot is allowed
   after every outcome, as in C. Shipped 0 until the zoo measures
-  it.
+  it. (Shipped 1 since #1069.) The "miss, not a wall" part holds only for a
+  fired or thrown missile (#1425): a spell or device has no hit roll, and
+  the Borg's view passes through unknown grids, so a no-damage cast at a monster sensed by ESP takes C's
+  guess (Hobbit Druid `Borg261128174030`, 3,490 Stinking Clouds at a
+  gallant behind unseen granite).

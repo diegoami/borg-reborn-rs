@@ -1900,12 +1900,15 @@ fn handle_messages(st: &mut BorgState) -> i32 {
     // borg to attempt another shot. A low number on successful_target
     // prohibits a ranged attack.
     if st.fight_attack.successful_target < 0 && st.fight_attack.successful_target > -10 {
+        // borg-reborn-rs (#1425): -2 is a fired or thrown missile (`aim_key(st,
+        // -2)`), the only ranged attack that can miss without a message.
+        let missile = st.fight_attack.successful_target == -2;
         st.fight_attack.successful_target -= 10;
         // borg-reborn-rs (#929): with update_miss_wall_guess = 1 a miss at
         // a monster in view is not a wall, and no guess lands on the
         // Borg's own grid.
         let guard = param(Param::update_miss_wall_guess) != 0;
-        let missed = if guard { missed_visible_target(st) } else { None };
+        let missed = if guard { missed_visible_target(st, missile) } else { None };
         if let Some(age) = missed {
             let g = st.borg.goal.g;
             borg_note(st, &format!("# Missed a monster in view at ({},{}), seen {} ago: a miss, not a wall (#929)", g.y, g.x, age));
@@ -1925,14 +1928,32 @@ fn handle_messages(st: &mut BorgState) -> i32 {
 /// a thrown or fired miss (`make_ranged_throw`, player-attack.c:1278-1280:
 /// `test_hit` failed) prints no message. Returns how many thinks ago the
 /// monster was seen.
-fn missed_visible_target(st: &BorgState) -> Option<BorgTime> {
+///
+/// borg-reborn-rs (#1425): only for a `missile`. A spell, wand, rod,
+/// activation or breath has no hit roll: its path stops at the first wall or
+/// monster (`project_path`, project.c:205-218), and a ball bursts on the
+/// last open grid before a wall (`project`, project.c:693-696, 730-734), so
+/// a cast that did no damage stopped short. `BORG_VIEW` passes through
+/// unknown grids (`sight_grid`), and a monster sensed by ESP is seen every
+/// think, so without this test a wall the Borg has never seen was taken for
+/// a miss after every cast (Hobbit Druid `Borg261128174030`: 3,490 Stinking
+/// Clouds at a gallant behind granite at (162,30), three grids from the
+/// Druid, on DL7).
+fn missed_visible_target(st: &BorgState, missile: bool) -> Option<BorgTime> {
     let g = st.borg.goal.g;
     let ag = *st.cave.grid(g.x, g.y);
     let kill = (ag.kill != 0).then(|| {
         let kill = &st.kills.kills[usize::from(ag.kill)];
         (kill.r_idx, borg_timer(st, kill.when))
     });
-    in_view_target_age(g, st.borg.c, &ag, kill)
+    silent_miss(missile, in_view_target_age(g, st.borg.c, &ag, kill))
+}
+
+/// borg-reborn-rs (#1425): a shot with no message is a miss only for a
+/// fired or thrown `missile` (`successful_target` -2), the one ranged
+/// attack that can miss its target silently.
+fn silent_miss(missile: bool, in_view_age: Option<BorgTime>) -> Option<BorgTime> {
+    in_view_age.filter(|_| missile)
 }
 
 /// `missed_visible_target` on the targeted grid `ag` at `goal`, the Borg at
@@ -2858,6 +2879,63 @@ mod miss_wall_guess_tests {
         assert_eq!(in_view_target_age(fang, borg, &in_view, None), None);
         assert_eq!(in_view_target_age(fang, borg, &out_of_view, Some((54, 1))), None);
         assert_eq!(in_view_target_age(borg, borg, &in_view, Some((54, 1))), None);
+    }
+
+    /// #1425: Hobbit Druid `Borg261128174030` at (159,31) on DL7 cast
+    /// Stinking Cloud 3,490 times at a gallant at (175,23) that it sensed by
+    /// ESP. The Borg knew (160,31) and (161,30) as floor and (162,30) not at
+    /// all. The engine's `project_path` from the save (a probe, not
+    /// committed) is (160,31), (161,30), then granite at (162,30), which
+    /// stops the ball 14 grids short. The Borg's own path walk matches the
+    /// engine's here.
+    const DRUID: loc = loc { x: 159, y: 31 };
+    const GALLANT: loc = loc { x: 175, y: 23 };
+    const BLOCKER: loc = loc { x: 162, y: 30 };
+    fn druid_known(g: loc) -> bool {
+        [loc { x: 160, y: 31 }, loc { x: 161, y: 30 }, loc { x: 161, y: 31 }, loc { x: 160, y: 30 }].contains(&g)
+    }
+
+    #[test]
+    fn the_borg_walks_the_engines_path_to_the_gallant() {
+        let (mut y, mut x) = (DRUID.y, DRUID.x);
+        let mut steps = Vec::new();
+        for _ in 0..3 {
+            crate::borg_projection::borg_inc_motion(&mut y, &mut x, DRUID.y, DRUID.x, GALLANT.y, GALLANT.x);
+            steps.push(loc { x, y });
+        }
+        assert_eq!(steps, [loc { x: 160, y: 31 }, loc { x: 161, y: 30 }, BLOCKER]);
+    }
+
+    /// #1425: a cast that did no damage is never a miss, even at a monster
+    /// in view seen at the shot (the gallant, by ESP); a missile there still
+    /// is (the #929 Fang misses, the reachable control).
+    #[test]
+    fn a_wasted_cast_is_not_a_miss() {
+        let in_view = BorgGrid { info: BORG_VIEW, kill: 1, ..BorgGrid::default() };
+        let age = in_view_target_age(GALLANT, DRUID, &in_view, Some((54, 1)));
+        assert_eq!(age, Some(1));
+        assert_eq!(silent_miss(false, age), None);
+        assert_eq!(silent_miss(true, age), Some(1));
+        assert_eq!(silent_miss(true, None), None);
+    }
+
+    /// #1425: with the miss refused, the no-damage cast takes C's guess,
+    /// under the #929 guard: the first unknown grid of the path is the
+    /// engine's own blocker. Granite there stops the next ball path at the
+    /// Borg's map (`borg_launch_bolt_at_location` scores a ball that stops
+    /// at a wall 0), and the map pass never writes an unknown screen grid
+    /// back (`update_map_grid`), so the Borg stops casting from this grid.
+    #[test]
+    fn a_wasted_cloud_guesses_the_engines_blocker() {
+        let guess = crate::borg_projection::wall_guess_walk(
+            DRUID,
+            GALLANT,
+            (false, false),
+            true,
+            |_| false,
+            |g| !druid_known(g),
+        );
+        assert_eq!(guess, crate::borg_projection::WallGuess::Unknown(BLOCKER));
     }
 }
 

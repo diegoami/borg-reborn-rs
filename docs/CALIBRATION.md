@@ -7028,6 +7028,24 @@ miss at an adjacent monster wrote granite under the Borg (Paladin 1194051723:
   leaving -11 after a spell would lock ranged attacks out until the Borg
   moves (`missed_before` clears only -12 or less; review of #1005). 0 = C's
   guess.
+- **#1425: (a) holds only for a fired or thrown missile.**
+  `successful_target` -2 (`aim_key(st, -2)`: launcher, throw) is the only
+  ranged attack with a hit roll; a spell, wand, rod, activation or breath
+  (-1) stops only at a wall or a monster (`project_path`,
+  src/project.c:205-218) and a ball bursts before the wall
+  (src/project.c:693-696, 730-734), so a cast that did no damage stopped
+  short. `BORG_VIEW` passes through unknown grids (`sight_grid`) and a monster
+  sensed by ESP is seen every think, so (a) took every such cast for a miss
+  and allowed the next: Hobbit Druid `Borg261128174030` (P build `4101f6ec`,
+  borg-cemetery#168) cast Stinking Cloud at a gallant at (175,23) from
+  (159,31) 3,490 times. The engine's path from the save is (160,31),
+  (161,30), then granite at (162,30), unknown to the player. A cast now takes
+  (b)'s guess, the first unknown grid of the path ((162,30) here), and the
+  next ball path stops there. A missile at a monster sensed only by ESP
+  behind unknown ground can still be taken for a miss (follow-up issue).
+  Tests: `a_wasted_cast_is_not_a_miss`,
+  `a_wasted_cloud_guesses_the_engines_blocker`,
+  `the_borg_walks_the_engines_path_to_the_gallant` (borg_update.rs).
 - Evidence (replays, not a measurement): both Fang games and the three smoke
   games play the same key stream with 0 and 1 (Paladin `7fb11d46a041a04a`,
   Druid `3687ca84c5cdeb34`). The Borg's grid was remembered in all seven
