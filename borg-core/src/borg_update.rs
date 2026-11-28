@@ -443,6 +443,15 @@ fn view_needs_update(old_sight: bool, new_sight: bool, info: u16) -> bool {
     old_sight != new_sight && info & BORG_VIEW != 0
 }
 
+/// Whether the map pass writes the screen's feature `f_idx` over the
+/// Borg's grid (`update_map_grid`): a feature the player remembers, unless
+/// the grid is out of view and marked `BORG_IGNORE_MAP` (stone to mud). An
+/// unknown screen grid (`FEAT_NONE`) never overwrites, so a guessed wall on
+/// a grid the player has not seen stays until the player sees it.
+fn screen_overwrites(f_idx: u32, in_view: bool, info: u16) -> bool {
+    f_idx != FEAT_NONE && (in_view || info & BORG_IGNORE_MAP == 0)
+}
+
 /// One grid of `borg_update_map` (the body of its loop; a C `continue` is
 /// a `return`).
 fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
@@ -473,7 +482,7 @@ fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
     // Notice "knowledge": if this square is not in view and the borg
     // previously cast stone to mud here, ignore the map info so repeated
     // stone to mud aren't cast
-    if g.f_idx != FEAT_NONE && (g.in_view || ag.info & BORG_IGNORE_MAP == 0) {
+    if screen_overwrites(g.f_idx, g.in_view, ag.info) {
         if g.in_view {
             ag.info &= !BORG_IGNORE_MAP;
         }
@@ -1900,12 +1909,15 @@ fn handle_messages(st: &mut BorgState) -> i32 {
     // borg to attempt another shot. A low number on successful_target
     // prohibits a ranged attack.
     if st.fight_attack.successful_target < 0 && st.fight_attack.successful_target > -10 {
+        // borg-reborn-rs (#1425): -2 is a fired or thrown missile (`aim_key(st,
+        // -2)`), the only ranged attack that can miss without a message.
+        let missile = st.fight_attack.successful_target == -2;
         st.fight_attack.successful_target -= 10;
         // borg-reborn-rs (#929): with update_miss_wall_guess = 1 a miss at
         // a monster in view is not a wall, and no guess lands on the
         // Borg's own grid.
         let guard = param(Param::update_miss_wall_guess) != 0;
-        let missed = if guard { missed_visible_target(st) } else { None };
+        let missed = if guard { missed_visible_target(st, missile) } else { None };
         if let Some(age) = missed {
             let g = st.borg.goal.g;
             borg_note(st, &format!("# Missed a monster in view at ({},{}), seen {} ago: a miss, not a wall (#929)", g.y, g.x, age));
@@ -1925,14 +1937,32 @@ fn handle_messages(st: &mut BorgState) -> i32 {
 /// a thrown or fired miss (`make_ranged_throw`, player-attack.c:1278-1280:
 /// `test_hit` failed) prints no message. Returns how many thinks ago the
 /// monster was seen.
-fn missed_visible_target(st: &BorgState) -> Option<BorgTime> {
+///
+/// borg-reborn-rs (#1425): only for a `missile`. A spell, wand, rod,
+/// activation or breath has no hit roll: its path stops at the first wall or
+/// monster (`project_path`, project.c:205-218), and a ball bursts on the
+/// last open grid before a wall (`project`, project.c:693-696, 730-734), so
+/// a cast that did no damage stopped short. `BORG_VIEW` passes through
+/// unknown grids (`sight_grid`), and a monster sensed by ESP is seen every
+/// think, so without this test a wall the Borg has never seen was taken for
+/// a miss after every cast (Hobbit Druid `Borg261128174030`: 3,490 Stinking
+/// Clouds at a gallant behind granite at (162,30), three grids from the
+/// Druid, on DL7).
+fn missed_visible_target(st: &BorgState, missile: bool) -> Option<BorgTime> {
     let g = st.borg.goal.g;
     let ag = *st.cave.grid(g.x, g.y);
     let kill = (ag.kill != 0).then(|| {
         let kill = &st.kills.kills[usize::from(ag.kill)];
         (kill.r_idx, borg_timer(st, kill.when))
     });
-    in_view_target_age(g, st.borg.c, &ag, kill)
+    silent_miss(missile, in_view_target_age(g, st.borg.c, &ag, kill))
+}
+
+/// borg-reborn-rs (#1425): a shot with no message is a miss only for a
+/// fired or thrown `missile` (`successful_target` -2), the one ranged
+/// attack that can miss its target silently.
+fn silent_miss(missile: bool, in_view_age: Option<BorgTime>) -> Option<BorgTime> {
+    in_view_age.filter(|_| missile)
 }
 
 /// `missed_visible_target` on the targeted grid `ag` at `goal`, the Borg at
@@ -1954,7 +1984,16 @@ fn goal_message(st: &mut BorgState, i: i32, msg: &[u8]) {
 
     if msg.starts_with(b"HIT:") || msg.starts_with(b"MISS:") {
         // Handle "You hit xxx." / "You miss xxx."
-        locate(st, args(what), g, 0, i, 2);
+        // borg-reborn-rs (review of #1431): a melee blow at the goal's
+        // monster reached it. Leap into Battle (`successful_target` -1)
+        // (effect MOVE_ATTACK) moves the player and swings
+        // (`effect_handler_MOVE_ATTACK`, effect-handler-attack.c:1787-1854,
+        // `py_attack_real`; "You miss", player-attack.c:767), so its miss is
+        // no wall.
+        let k = locate(st, args(what), g, 0, i, 2);
+        if goal_reached(msg, k > 0, param(Param::update_miss_wall_guess) != 0) {
+            target_worked(st);
+        }
     } else if msg.starts_with(b"AFRAID:") {
         // Handle "You too afraid of xxx."
         if st.cave.grid(g.x, g.y).kill > 0 {
@@ -2002,6 +2041,20 @@ fn goal_message(st: &mut BorgState, i: i32, msg: &[u8]) {
         // reached, C bug 46)
         target_worked(st);
     }
+}
+
+/// borg-reborn-rs (review of #1431): whether a goal-pass message that names
+/// the monster on the goal grid (`located`) shows that the last attack
+/// reached it, beyond the C set (`PAIN`, `KILL`, `DIED`, `BLINK`,
+/// `STATE_SLEEP`, `STATE_CONFUSED`, which call `target_worked` themselves):
+/// a melee blow (`HIT`, `MISS`), since Leap into Battle (`successful_target`
+/// -1) moves the player and swings at the target. Only under `guard`
+/// (`update_miss_wall_guess` = 1); at 0 a Leap miss takes C's wall guess, as
+/// in C. A fear message needs no rule: "flees in terror!" is one of the
+/// engine's standard monster messages the Borg reads as `PAIN`
+/// (borg_messages.rs, `MON_MSG_REPOSITORY`).
+fn goal_reached(msg: &[u8], located: bool, guard: bool) -> bool {
+    guard && located && (msg.starts_with(b"HIT:") || msg.starts_with(b"MISS:"))
 }
 
 /// One message of the "monsters near the old location" pass (use 3).
@@ -2858,6 +2911,166 @@ mod miss_wall_guess_tests {
         assert_eq!(in_view_target_age(fang, borg, &in_view, None), None);
         assert_eq!(in_view_target_age(fang, borg, &out_of_view, Some((54, 1))), None);
         assert_eq!(in_view_target_age(borg, borg, &in_view, Some((54, 1))), None);
+    }
+
+    /// #1425: Hobbit Druid `Borg261128174030` at (159,31) on DL7 cast
+    /// Stinking Cloud 3,490 times at a gallant at (175,23) that it sensed by
+    /// ESP. The Borg knew (160,31) and (161,30) as floor and (162,30) not at
+    /// all. The engine's `project_path` from the save (a probe, not
+    /// committed) is (160,31), (161,30), then granite at (162,30), which
+    /// stops the ball 14 grids short. The Borg's own path walk matches the
+    /// engine's here.
+    const DRUID: loc = loc { x: 159, y: 31 };
+    const GALLANT: loc = loc { x: 175, y: 23 };
+    const BLOCKER: loc = loc { x: 162, y: 30 };
+    fn druid_known(g: loc) -> bool {
+        [loc { x: 160, y: 31 }, loc { x: 161, y: 30 }, loc { x: 161, y: 31 }, loc { x: 160, y: 30 }].contains(&g)
+    }
+
+    #[test]
+    fn the_borg_walks_the_engines_path_to_the_gallant() {
+        let (mut y, mut x) = (DRUID.y, DRUID.x);
+        let mut steps = Vec::new();
+        for _ in 0..3 {
+            crate::borg_projection::borg_inc_motion(&mut y, &mut x, DRUID.y, DRUID.x, GALLANT.y, GALLANT.x);
+            steps.push(loc { x, y });
+        }
+        assert_eq!(steps, [loc { x: 160, y: 31 }, loc { x: 161, y: 30 }, BLOCKER]);
+    }
+
+    /// #1425: a cast that did no damage is never a miss, even at a monster
+    /// in view seen at the shot (the gallant, by ESP); a missile there still
+    /// is (the #929 Fang misses, the reachable control).
+    #[test]
+    fn a_wasted_cast_is_not_a_miss() {
+        let in_view = BorgGrid { info: BORG_VIEW, kill: 1, ..BorgGrid::default() };
+        let age = in_view_target_age(GALLANT, DRUID, &in_view, Some((54, 1)));
+        assert_eq!(age, Some(1));
+        assert_eq!(silent_miss(false, age), None);
+        assert_eq!(silent_miss(true, age), Some(1));
+        assert_eq!(silent_miss(true, None), None);
+    }
+
+    /// #1425: with the miss refused, the no-damage cast takes C's guess,
+    /// under the #929 guard: the first unknown grid of the path is the
+    /// engine's own blocker. Granite there stops the next ball path at the
+    /// Borg's map (`borg_launch_bolt_at_location` scores a ball that stops
+    /// at a wall 0), and the map pass never writes an unknown screen grid
+    /// back (`update_map_grid`), so the Borg stops casting from this grid.
+    #[test]
+    fn a_wasted_cloud_guesses_the_engines_blocker() {
+        let guess = crate::borg_projection::wall_guess_walk(
+            DRUID,
+            GALLANT,
+            (false, false),
+            true,
+            |_| false,
+            |g| !druid_known(g),
+        );
+        assert_eq!(guess, crate::borg_projection::WallGuess::Unknown(BLOCKER));
+    }
+
+    /// Review of #1431: a melee hit or miss at the goal's monster shows the
+    /// attack reached it (Leap into Battle, `successful_target` -1), only
+    /// with `update_miss_wall_guess` = 1; at 0 C's wall guess is kept
+    /// (re-review). An unmatched name, a monster's own blow, fear, or
+    /// recovering courage add nothing here (fear arrives as `PAIN`).
+    #[test]
+    fn a_melee_swing_shows_the_shot_reached_only_under_the_guard() {
+        for msg in [&b"MISS:the gallant"[..], b"HIT:the gallant"] {
+            assert!(goal_reached(msg, true, true), "{}", String::from_utf8_lossy(msg));
+            assert!(!goal_reached(msg, true, false), "{}", String::from_utf8_lossy(msg));
+            assert!(!goal_reached(msg, false, true), "{}", String::from_utf8_lossy(msg));
+        }
+        for msg in [&b"STATE__FEAR:the gallant"[..], b"STATE__BOLD:the gallant", b"STATE_AWAKE:the gallant", b"HIT_BY:the gallant"] {
+            assert!(!goal_reached(msg, true, true), "{}", String::from_utf8_lossy(msg));
+        }
+    }
+
+    /// Review of #1432: a target straight down the Borg's corridor. The
+    /// hallway rule passes over the unknown grids in the Borg's column, and
+    /// C's walk then guesses the step back from the target, (54,29) here,
+    /// which the player remembers as floor. The map pass writes that floor
+    /// back (`screen_overwrites`), so the next aim is open again and the
+    /// shot is chosen again. With the guard, the guess is the first unknown
+    /// grid, (54,26), which the map pass keeps, and the next aim stops there.
+    #[test]
+    fn a_corridor_guess_survives_the_map_pass_and_stops_the_next_aim() {
+        use crate::borg_projection::{wall_guess_grid, wall_guess_walk, WallGuess};
+        use std::collections::HashMap;
+        let borg = loc { x: 54, y: 20 };
+        let target = loc { x: 54, y: 30 };
+        // The Borg's map: known floor (54,21..=25), unknown (54,26..=28),
+        // remembered floor (54,29), the target's grid unknown (ESP).
+        let mut map: HashMap<(i32, i32), u32> = HashMap::new();
+        for y in 21..=25 {
+            map.insert((54, y), FEAT_FLOOR);
+        }
+        map.insert((54, 29), FEAT_FLOOR);
+        let screen = map.clone();
+        let feat = |m: &HashMap<(i32, i32), u32>, g: loc| *m.get(&(g.x, g.y)).unwrap_or(&FEAT_NONE);
+        let unknown = |g: loc| feat(&screen, g) == FEAT_NONE;
+        // Guess, write granite, then the map pass of the same update.
+        let after = |guess: &WallGuess| {
+            let mut m = map.clone();
+            let g = wall_guess_grid(guess).expect("a wall is guessed");
+            m.insert((g.x, g.y), FEAT_GRANITE);
+            for (&g, &f) in &screen {
+                if screen_overwrites(f, true, 0) {
+                    m.insert(g, f);
+                }
+            }
+            m
+        };
+        // The next aim walks the same path and stops at a known wall.
+        let next_aim_blocked = |m: &HashMap<(i32, i32), u32>| {
+            let (mut y, mut x) = (borg.y, borg.x);
+            loop {
+                crate::borg_projection::borg_inc_motion(&mut y, &mut x, borg.y, borg.x, target.y, target.x);
+                if x == target.x && y == target.y {
+                    return false;
+                }
+                if feat(m, loc { x, y }) == FEAT_GRANITE {
+                    return true;
+                }
+            }
+        };
+        let c_walk = wall_guess_walk(borg, target, (true, false), false, |_| false, unknown);
+        assert_eq!(c_walk, WallGuess::BeforeTarget(loc { x: 54, y: 29 }));
+        assert!(!next_aim_blocked(&after(&c_walk)), "C's guess is written back over");
+        let guarded = wall_guess_walk(borg, target, (true, false), true, |_| false, unknown);
+        assert_eq!(guarded, WallGuess::Unknown(loc { x: 54, y: 26 }));
+        assert!(next_aim_blocked(&after(&guarded)));
+        // An unknown screen grid never overwrites the guess.
+        assert!(!screen_overwrites(FEAT_NONE, true, 0));
+    }
+
+    /// #1425, the recurrence at turn 3,511,372 (borg-cemetery#168): the same
+    /// Druid at (54,27), in a north-south corridor, cast Stinking Cloud 2,772
+    /// times at a soldier at (55,46) sensed by ESP. The engine's path from
+    /// that save (probe, not committed): (54,28) to (54,34) known floor,
+    /// (54,35) and (54,36) floor the player has not seen, then granite at
+    /// (55,37), unknown. The Borg walks the same ten steps, and C's hallway
+    /// rule (`x_hall`: no guess in the Borg's own column) skips the two
+    /// unknown floor grids, so the guess is the real blocker.
+    #[test]
+    fn the_corridor_cloud_guesses_the_engines_blocker() {
+        let druid = loc { x: 54, y: 27 };
+        let soldier = loc { x: 55, y: 46 };
+        let blocker = loc { x: 55, y: 37 };
+        let (mut y, mut x) = (druid.y, druid.x);
+        let mut steps = Vec::new();
+        for _ in 0..10 {
+            crate::borg_projection::borg_inc_motion(&mut y, &mut x, druid.y, druid.x, soldier.y, soldier.x);
+            steps.push(loc { x, y });
+        }
+        let mut engine: Vec<loc> = (28..=36).map(|y| loc { x: 54, y }).collect();
+        engine.push(blocker);
+        assert_eq!(steps, engine);
+        // Known on the Borg's map: the corridor (53..=55, 25..=34).
+        let known = |g: loc| (53..=55).contains(&g.x) && (25..=34).contains(&g.y);
+        let guess = crate::borg_projection::wall_guess_walk(druid, soldier, (true, false), true, |_| false, |g| !known(g));
+        assert_eq!(guess, crate::borg_projection::WallGuess::Unknown(blocker));
     }
 }
 
