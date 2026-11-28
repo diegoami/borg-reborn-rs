@@ -1100,42 +1100,13 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /* Flee the level */
-    // borg-reborn-rs (#603): flee as usual while Recall counts down with
-    // caution_recall_wait_as_usual.
-    if st.borg.goal.fleeing && !crate::borg_caution::recall_restricts(st) {
-        /* Take the next stairs */
-        st.borg.stair_more = true;
-        st.borg.stair_less = true;
-        if force_descend() {
-            st.borg.stair_less = false;
-        }
-
-        borg_note(st, "# Fleeing and leaving the level. (Looking for any stair)");
-
-        /* Continue fleeing the level */
-        if borg_flow_old(st, GOAL_FLEE) {
-            return choice!("borg_flow_old");
-        }
-
-        /* Try to find some stairs */
-        if st.borg.mon.scary && borg_flow_stair_both(st, GOAL_FLEE, false) {
-            return choice!("borg_flow_stair_both");
-        }
-
-        /* Try to find some stairs up */
-        if borg_flow_stair_less(st, GOAL_FLEE, false) {
-            borg_note(st, "# Looking for stairs. Fleeing.");
-            return choice!("borg_flow_stair_less");
-        }
-
-        /* Try to find some stairs down */
-        // borg-reborn-rs (#483): not while rising, unless in real danger.
-        let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
-        if !crate::borg_caution::rising_holds_descent(st, here)
-            && borg_flow_stair_more(st, GOAL_FLEE, false, false)
-        {
-            return choice!("borg_flow_stair_more");
-        }
+    use crate::decisions::FlightRoute;
+    match active_flight(st) {
+        Some(FlightRoute::Committed) => return choice!("borg_flow_old"),
+        Some(FlightRoute::CombinedStairs) => return choice!("borg_flow_stair_both"),
+        Some(FlightRoute::UpStairs) => return choice!("borg_flow_stair_less"),
+        Some(FlightRoute::DownStairs) => return choice!("borg_flow_stair_more"),
+        None => {}
     }
 
     /* Flee to a safe Morgoth grid if appropriate */
@@ -1803,5 +1774,155 @@ pub(crate) fn run_exploration_flow_regression(st: &mut BorgState) -> ! {
 
     crate::shadow::after_think(st);
     println!("exploration flow passed");
+    std::process::exit(0);
+}
+
+fn active_flight(st: &mut BorgState) -> Option<crate::decisions::FlightRoute> {
+    use crate::decisions::{Decision, Value};
+
+    if !st.borg.goal.fleeing {
+        return None;
+    }
+    match crate::shadow::decision(st, Decision::FlowActiveFlight) {
+        Value::ActiveFlight(route) => route,
+        _ => unreachable!("active flight must return the chosen route or fall through"),
+    }
+}
+
+pub(crate) fn active_flight_native(st: &mut BorgState) -> Option<crate::decisions::FlightRoute> {
+    use crate::decision_api::borg_danger::borg_danger;
+    use crate::decision_api::borg_flow::borg_flow_old;
+    use crate::decision_api::borg_flow_stairs::{borg_flow_stair_both, borg_flow_stair_less, borg_flow_stair_more};
+    use crate::decision_api::borg_io::borg_note;
+    use crate::decision_api::engine;
+    use crate::decisions::FlightRoute;
+
+    crate::decision_tape::mark("policy::flow.active_flight", String::new());
+    // #603: the Recall profile can allow flight while Recall counts down.
+    if crate::borg_caution::recall_restricts(st) {
+        return None;
+    }
+
+    st.borg.stair_more = true;
+    st.borg.stair_less = true;
+    if engine::player_opt(OPT_birth_force_descend) {
+        st.borg.stair_less = false;
+    }
+    borg_note(st, "# Fleeing and leaving the level. (Looking for any stair)");
+
+    if borg_flow_old(st, GOAL_FLEE) {
+        return Some(FlightRoute::Committed);
+    }
+    if st.borg.mon.scary && borg_flow_stair_both(st, GOAL_FLEE, false) {
+        return Some(FlightRoute::CombinedStairs);
+    }
+    if borg_flow_stair_less(st, GOAL_FLEE, false) {
+        borg_note(st, "# Looking for stairs. Fleeing.");
+        return Some(FlightRoute::UpStairs);
+    }
+
+    // #483: rising can veto descent after the local danger read.
+    let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    if !crate::borg_caution::rising_holds_descent(st, here)
+        && borg_flow_stair_more(st, GOAL_FLEE, false, false)
+    {
+        return Some(FlightRoute::DownStairs);
+    }
+    None
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn run_active_flight_regression(st: &mut BorgState) -> ! {
+    use crate::decisions::FlightRoute;
+    use crate::headers::list_terrain_h::FEAT_FLOOR;
+
+    assert_eq!(st.borg.tr(BI_CDEPTH), 5);
+    crate::borg_cave::borg_init_cave(st);
+    st.borg.c = loc { x: 40, y: 20 };
+    st.borg.avoidance = 89;
+    st.borg.trait_[BI_CURHP as usize] = 89;
+    st.borg.trait_[BI_MAXHP as usize] = 89;
+    st.borg.trait_[BI_LIGHT as usize] = 1;
+    st.borg.trait_[BI_CLEVEL as usize] = 35;
+    st.borg.goal.fleeing = false;
+    st.borg.goal.rising = false;
+    st.borg.goal.recalling = 0;
+    st.borg.stair_less = false;
+    st.borg.stair_more = false;
+    st.borg.mon.scary = false;
+    st.kills.cnt = 0;
+    st.kills.nxt = 1;
+    st.danger = Default::default();
+    st.stairs.less.num = 0;
+    st.stairs.less.x[0] = 39;
+    st.stairs.less.y[0] = 20;
+    st.stairs.more.num = 1;
+    st.stairs.more.x[0] = 41;
+    st.stairs.more.y[0] = 20;
+    st.cave.grid_mut(39, 20).feat = FEAT_LESS as u8;
+    st.cave.grid_mut(40, 20).feat = FEAT_FLOOR as u8;
+    st.cave.grid_mut(41, 20).feat = FEAT_MORE as u8;
+    crate::borg_io::borg_flush(st);
+
+    let before = st.clone();
+    assert_eq!(active_flight(st), None);
+    assert!(*st == before, "the normal driver leaves an inactive flight alone");
+    st.borg.goal.fleeing = true;
+    st.borg.goal.recalling = 1;
+    let before = st.clone();
+    assert_eq!(active_flight(st), None);
+    assert!(*st == before, "restricted Recall precedes any stair flag update");
+    st.borg.goal.recalling = 0;
+
+    let original_force_descend = engine::player_opt(OPT_birth_force_descend);
+    assert!(engine::option_set(c"birth_force_descend", true));
+    for row in &mut st.flow.data_flow {
+        row.fill(255);
+    }
+    st.flow.data_flow[20][40] = 1;
+    st.flow.data_flow[20][41] = 0;
+    st.borg.goal.type_0 = GOAL_FLEE as i16;
+    assert_eq!(active_flight(st), Some(FlightRoute::Committed));
+    assert!(st.borg.stair_more && !st.borg.stair_less, "forced descent clears the up flag");
+    assert_eq!(st.io.queued_keys(), [u32::from(b'6')]);
+    crate::borg_io::borg_flush(st);
+    assert!(engine::option_set(c"birth_force_descend", false));
+
+    st.borg.goal.type_0 = 0;
+    st.borg.mon.scary = true;
+    assert_eq!(active_flight(st), Some(FlightRoute::CombinedStairs));
+    assert_eq!(st.io.queued_keys(), [u32::from(b'6')]);
+    crate::borg_io::borg_flush(st);
+
+    st.borg.goal.type_0 = 0;
+    st.borg.mon.scary = false;
+    st.stairs.less.num = 1;
+    assert_eq!(active_flight(st), Some(FlightRoute::UpStairs));
+    assert_eq!(st.io.queued_keys(), [u32::from(b'4')]);
+    crate::borg_io::borg_flush(st);
+
+    st.borg.goal.type_0 = 0;
+    st.stairs.less.num = 0;
+    st.borg.goal.rising = true;
+    st.borg.time.level = st.borg.time.now;
+    assert_eq!(active_flight(st), None, "rising holds descent on a safe level");
+    assert!(st.io.queued_keys().is_empty());
+
+    st.borg.goal.rising = false;
+    assert_eq!(active_flight(st), Some(FlightRoute::DownStairs));
+    assert_eq!(st.io.queued_keys(), [u32::from(b'6')]);
+    crate::borg_io::borg_flush(st);
+
+    st.borg.goal.type_0 = 0;
+    st.stairs.more.num = 0;
+    st.borg.stair_less = false;
+    st.borg.stair_more = false;
+    assert_eq!(active_flight(st), None, "the driver falls through when no route acts");
+    assert!(st.borg.stair_less && st.borg.stair_more, "fallthrough keeps both stair flags");
+    assert!(st.io.queued_keys().is_empty());
+    assert!(engine::option_set(c"birth_force_descend", original_force_descend));
+
+    crate::shadow::after_think(st);
+    println!("active flight passed");
     std::process::exit(0);
 }

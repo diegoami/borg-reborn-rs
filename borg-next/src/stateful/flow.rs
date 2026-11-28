@@ -1,9 +1,12 @@
 //! Committed direction selection and stair route policy.
 
+use borg_rs::decision_api::borg_danger::borg_danger;
 use borg_rs::decision_api::borg_flow::{borg_flow_old, ExplorationGoal, GOAL_FLEE};
 use borg_rs::decision_api::borg_flow_stairs::{
-    more_refused, rising_holds_flee_descent, CombinedStairPlan, StairDirection, StairPlan,
+    borg_flow_stair_both, borg_flow_stair_less, borg_flow_stair_more, more_refused,
+    rising_holds_flee_descent, CombinedStairPlan, FlightRoute, StairDirection, StairPlan,
 };
+use borg_rs::decision_api::borg_io::borg_note;
 use borg_rs::decision_api::engine;
 use borg_rs::decision_api::headers::list_options_h::OPT_birth_force_descend;
 use borg_rs::decision_api::headers::z_type_h::loc;
@@ -165,4 +168,40 @@ pub(super) fn continue_exploration(state: &mut BorgState) -> Option<ExplorationG
     [Misc, Dark, Xtra, Bore, Vault]
         .into_iter()
         .find(|&goal| borg_flow_old(state, goal as i32))
+}
+
+pub(super) fn active_flight(state: &mut BorgState) -> Option<FlightRoute> {
+    borg_rs::decision_tape::mark("policy::flow.active_flight", String::new());
+    if crate::stateful::caution::recall_restricts(state) {
+        return None;
+    }
+
+    state.borg.stair_more = true;
+    state.borg.stair_less = true;
+    if engine::player_opt(OPT_birth_force_descend) {
+        state.borg.stair_less = false;
+    }
+    borg_note(
+        state,
+        "# Fleeing and leaving the level. (Looking for any stair)",
+    );
+
+    if borg_flow_old(state, GOAL_FLEE) {
+        return Some(FlightRoute::Committed);
+    }
+    if state.borg.mon.scary && borg_flow_stair_both(state, GOAL_FLEE, false) {
+        return Some(FlightRoute::CombinedStairs);
+    }
+    if borg_flow_stair_less(state, GOAL_FLEE, false) {
+        borg_note(state, "# Looking for stairs. Fleeing.");
+        return Some(FlightRoute::UpStairs);
+    }
+
+    let here = borg_danger(state, state.borg.c.y, state.borg.c.x, 1, true, false);
+    if !crate::stateful::caution::rising_holds_descent(state, here)
+        && borg_flow_stair_more(state, GOAL_FLEE, false, false)
+    {
+        return Some(FlightRoute::DownStairs);
+    }
+    None
 }

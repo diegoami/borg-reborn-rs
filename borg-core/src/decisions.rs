@@ -77,11 +77,12 @@ ItemRecharging,
 FlowPlanDownStair { why: i32, brave: bool },
 FlowPlanCombinedStairs { why: i32, only: Option<StairDirection> },
 FlowContinueExploration,
+FlowActiveFlight,
 
 
 }
 #[derive(Clone,Copy,Debug,PartialEq,Serialize)]
-pub enum Value { Acted(bool), Score(i32), Unit, HomeSale {acted:bool,best_home_power:i32}, UpStair(StairPlan), DownStair(StairPlan), CombinedStairs(CombinedStairPlan), ExplorationFlow(Option<ExplorationGoal>) }
+pub enum Value { Acted(bool), Score(i32), Unit, HomeSale {acted:bool,best_home_power:i32}, UpStair(StairPlan), DownStair(StairPlan), CombinedStairs(CombinedStairPlan), ExplorationFlow(Option<ExplorationGoal>), ActiveFlight(Option<FlightRoute>) }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum StairPlan {
@@ -113,6 +114,15 @@ pub enum ExplorationGoal {
     Xtra = crate::borg_think_dungeon::GOAL_XTRA,
     Bore = crate::borg_think_dungeon::GOAL_BORE,
     Vault = crate::borg_think_dungeon::GOAL_VAULT,
+}
+
+/// The route that acted during the normal dungeon flight sequence.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub enum FlightRoute {
+    Committed,
+    CombinedStairs,
+    UpStairs,
+    DownStairs,
 }
 
 impl Decision {
@@ -189,6 +199,7 @@ Self::ItemRecharging=>"item_use.borg_recharging",
 Self::FlowPlanDownStair {..}=>"flow.plan_down_stair",
 Self::FlowPlanCombinedStairs {..}=>"flow.plan_combined_stairs",
 Self::FlowContinueExploration=>"flow.continue_exploration",
+Self::FlowActiveFlight=>"flow.active_flight",
 
 
 } }
@@ -265,6 +276,7 @@ Self::ItemRecharging=>Value::Acted(crate::borg_item_use::borg_recharging_native(
 Self::FlowPlanDownStair { why, brave }=>Value::DownStair(crate::borg_flow_stairs::plan_down_stair_native(st, why, brave)),
 Self::FlowPlanCombinedStairs { why, only }=>Value::CombinedStairs(crate::borg_flow_stairs::plan_combined_stairs_native(st, why, only)),
 Self::FlowContinueExploration=>Value::ExplorationFlow(crate::borg_think_dungeon::continue_exploration_native(st)),
+Self::FlowActiveFlight=>Value::ActiveFlight(crate::borg_think_dungeon::active_flight_native(st)),
 
 
 } }

@@ -39,7 +39,9 @@ R45_ADDED = (
     'attack.attack_on_sight', 'recovery.holding_for_monster', 'store.sell_selected_quantity',
 )
 FLOW_READONLY_POINTS = ('flow.select_step', 'flow.plan_up_stair')
-FLOW_STATEFUL_POINTS = ('flow.plan_down_stair', 'flow.plan_combined_stairs', 'flow.continue_exploration')
+FLOW_STATEFUL_POINTS = (
+    'flow.plan_down_stair', 'flow.plan_combined_stairs', 'flow.continue_exploration', 'flow.active_flight',
+)
 R2_PORTED = ['danger.wall_like', 'danger', 'danger.one_monster', 'caution', 'escape', 'recovery']
 NUMERIC = ('comparisons', 'danger_calls', 'danger_comparisons',
            'monster_comparisons', 'wall_comparisons', 'stateful_comparisons',
