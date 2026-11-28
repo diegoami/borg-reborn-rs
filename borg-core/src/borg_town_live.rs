@@ -622,6 +622,9 @@ fn hold_idle_store(st: &mut BorgState) -> bool {
     true
 }
 
+/// Like `choose`, for the excess-stock trip. "Nothing in excess" says
+/// nothing about the visit (it is asked before `choose` on most outside
+/// thinks, a follow-up re-entry included), so only a chosen store is noted.
 pub fn choose_overflow(st: &mut BorgState) -> bool {
     if !choose_overflow_plan(st) { return false; }
     let chosen = !hold_idle_store(st) || choose_overflow_plan(st) && !hold_idle_store(st);
@@ -894,10 +897,12 @@ fn copies_under_weight_limit(allowance: i64, weight: i16) -> i32 {
 }
 
 pub fn choose(st: &mut BorgState) -> bool {
-    if !choose_plan(st) { return false; }
     // borg-reborn-rs (#1395): a held destination is replanned at once,
     // without the held store's offers, so another store's action is chosen.
-    let chosen = !hold_idle_store(st) || choose_plan(st) && !hold_idle_store(st);
+    let chosen = choose_plan(st)
+        && (!hold_idle_store(st) || choose_plan(st) && !hold_idle_store(st));
+    // Every result, no store included, reaches the visit record (re-review
+    // of #1414).
     note_request(st, chosen);
     chosen
 }
@@ -905,11 +910,13 @@ pub fn choose(st: &mut BorgState) -> bool {
 /// Outside, the store action the Borg walks to (or re-enters for) is the
 /// request a later `store_exit` record names (review of #1414). A decision
 /// outside for another store, or for none, ends the current visit; one for
-/// the same store keeps it (a follow-up re-entry).
+/// the same store keeps it (a follow-up re-entry). A decision for no store
+/// also drops the last request, so a later entry without a new one names
+/// none (re-review of #1414).
 fn note_request(st: &mut BorgState, chosen: bool) {
     if st.borg.in_shop { return; }
     let shop = if chosen { st.borg.goal.shop } else { -1 };
-    if shop >= 0 { st.think.town_live.entry_request = planned(st); }
+    st.think.town_live.entry_request = if shop >= 0 { planned(st) } else { None };
     if st.think.town_live.visit.as_ref().is_some_and(|v| v.shop != shop) {
         st.think.town_live.visit = None;
     }
@@ -1663,6 +1670,37 @@ mod tests {
         st.borg.goal.shop = 4;
         note_request(&mut st, true);
         assert!(st.think.town_live.visit.is_none(), "a decision for another store ends it");
+    }
+
+    /// Re-review of #1414: a visit left early (to drink, say) and followed
+    /// outside by a decision for no store ends; returning to the same store
+    /// opens a fresh visit, with no stale request or attempts.
+    #[test]
+    fn no_store_decision_ends_the_visit_and_the_next_one_starts_fresh() {
+        let mut st = BorgState::default();
+        st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
+        st.core.cfg[BORG_TOWN_PLAN as usize] = 1;
+        st.think.town_action = Some(TownAction { code: action::BUY, at: [4, 1, 1, 0] });
+        st.borg.goal.shop = 4;
+        note_request(&mut st, true);
+        st.borg.in_shop = true;
+        st.think.shop_num = 4;
+        begin_visit(&mut st);
+        let request = planned(&st).unwrap();
+        record_attempt(&mut st, request, QUEUED);
+        // The store handler leaves to drink: no store_exit, the visit stays.
+        st.borg.in_shop = false;
+        assert!(st.think.town_live.visit.is_some());
+        // Outside, the planner chooses no store (choose routes it here).
+        clear(&mut st);
+        note_request(&mut st, false);
+        assert!(st.think.town_live.visit.is_none());
+        assert!(st.think.town_live.entry_request.is_none());
+        // Back in the same store without a new request: a fresh visit.
+        st.borg.in_shop = true;
+        begin_visit(&mut st);
+        let visit = st.think.town_live.visit.as_ref().unwrap();
+        assert_eq!((visit.shop, visit.requested, visit.attempts.len()), (4, None, 0));
     }
 
     /// Review of #1414: a store the human asked for is never held, and a
