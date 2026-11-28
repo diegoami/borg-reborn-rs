@@ -10,6 +10,14 @@ executor handles route search, parked stairs, and the move.
 [Native caller](../../borg-core/src/borg_flow_stairs.rs#L1203) ·
 [Native executor](../../borg-core/src/borg_flow_stairs.rs#L537)
 
+The combined and down-stair planners use the same native veto. The
+caution port runs its own implementation at its caution call sites.
+The receiving-source audit compares the normalized bodies. Stair shadow
+comparisons check how the planners use the recorded native result.
+[Native bridge](../../borg-core/src/decision_api.rs#L166) ·
+[Ported caution veto](../../borg-next/src/stateful/caution.rs#L4404) ·
+[Source receipt](../R45-PORT-SOURCE.json#L595)
+
 The constructed engine case covers the combined and single-kind requests,
 food and light gates, rising with weights zero and five, and a blocked up
 corridor that forces the clean down fallback. The zero-weight case checks
@@ -18,16 +26,22 @@ and switch. The strict R5 gate now requires the new stateful entry.
 [Engine controls](../../engine/tests/test_stair_handoff.py#L195) ·
 [R5 shadow reader](../../harness/check-shadow.py)
 
-The shipped smoke was built at `eeb833d8ade29c273af367594deb9d667889fa78`
+The local shipped smoke was built at `eeb833d8ade29c273af367594deb9d667889fa78`
 and compared against native `24be98732748230062882fe2b7d9601dba5e2cc0`.
 Shadow-off matched all three native starts. Check and switch each matched
 off for keys, messages, state, and summary, with 163 combined-planner
 comparisons and zero mismatches per mode. All three arms used the same
-clean binary and shipped settings. The comparisons cover the planner's
-selection and its call to the recorded rising veto.
-[Smoke starts](../../harness/suites/smoke)
+clean binary and shipped settings. The shipped profile sets
+`caution_rising_hold_flee_descent` to zero, so the veto permits descent
+in those runs. The constructed case enables the veto and checks its
+effect on the selected route.
+[Smoke starts](../../harness/suites/smoke) ·
+[Shipped setting](../../harness/borg.txt#L517)
 
 All ten stair tests, all 15 pinned Zoo profile-contract tests, Rust and
 Python tool tests, and the receiving-source and vendor checks passed.
-The 45-start Zoo comparison remains the milestone gate for the completed
-R5 candidate. [Track R epic #217](https://github.com/diegoami/borg-reborn-rs/issues/217)
+
+The owner decides whether to merge this slice after review and CI. The
+45-start Zoo comparison remains the R5 milestone gate. The owner starts it
+once the completed candidate and fixed native reference are pinned.
+[Track R epic #217](https://github.com/diegoami/borg-reborn-rs/issues/217)

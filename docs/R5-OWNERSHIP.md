@@ -72,6 +72,14 @@ is absent. [Stair preview](../borg-core/src/borg_flow_stairs.rs#L622) ·
 | Up-stair search handoff | `borg_flow_old` records the departure after a successful step action when searching for an up stair or following a known one. A record includes the original stair, expected next grid, level, turn, danger and known flag. An observed arrival in one to three turns can renew it if danger permits. Continuing exploration suppresses a down target that could undo the move; a known route replans before trying down again. [Departure write](../borg-core/src/borg_flow.rs#L1640) · [Validation and renewal](../borg-core/src/borg_flow_stairs.rs#L88) |
 | Emergency down-stair handoff | The recorder recognizes reversal of an observed dark step or continued progress on an existing down route. It records remaining moves, expected danger and HP. Renewal requires arrival on the next turn at the expected grid and level, no extra danger, and no HP loss. Caution later checks confusion and rising, then descends at an allowed stair or replans within the remaining budget. Failure clears the record and releases the normal fallback. [Record](../borg-core/src/borg_flow_stairs.rs#L157) · [Resume](../borg-core/src/borg_caution.rs#L7141) |
 
+The combined and down-stair planners replay the native rising-flight
+veto. The caution port runs its own implementation in caution. The
+receiving-source audit checks the two bodies, and the stair shadow checks
+the planners' use of the recorded result.
+[Native bridge](../borg-core/src/decision_api.rs#L166) ·
+[Ported caution veto](../borg-next/src/stateful/caution.rs#L4404) ·
+[Source receipt](R45-PORT-SOURCE.json#L595)
+
 The dungeon driver's normal and brave paths, the level-leave and early
 stair helpers, and shell errands call the same public entries. Owned caution
 already calls several through `decision_api`. Its stateful dependencies
