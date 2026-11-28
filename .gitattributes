@@ -1,0 +1,4 @@
+# #1382: merged without the cited line numbers (scripts/merge-citations.py,
+# registered by scripts/setup.sh). Without the driver: the ordinary merge.
+borg-core/src/params.rs merge=citations
+docs/CALIBRATION.md merge=citations
