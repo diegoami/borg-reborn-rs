@@ -111,6 +111,10 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             }
             if case == "down-stair-plan":
                 overrides.update(caution_rising_hold_flee_descent=1, caution_recall_wait_as_usual=0)
+            if case == "combined-stair-plan":
+                overrides.update(caution_rising_hold_flee_descent=1, caution_stairs_clean_path=2,
+                                 caution_stairs_clean_path_flee=1, caution_stairs_block_danger_percent=0,
+                                 caution_stairs_flight_ignore_danger=1)
             for name, value in overrides.items():
                 key = f"borg_param_{name}"
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
@@ -130,6 +134,7 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                 "flow-step": ("flow direction selection passed", "readonly_points", "flow.select_step", 8),
                 "up-stair-plan": ("up-stair plan passed", "readonly_points", "flow.plan_up_stair", 10 if weight else 8),
                 "down-stair-plan": ("down-stair plan passed", "root_points", "flow.plan_down_stair", 9 if weight else 7),
+                "combined-stair-plan": ("combined stair plan passed", "root_points", "flow.plan_combined_stairs", 11 if weight else 14),
             }
             if case in shadow_cases:
                 message, points, point, count = shadow_cases[case]
@@ -142,7 +147,11 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                     row = json.loads(stats.read_text().splitlines()[-1])
                     self.assertEqual(row["mode"], shadow)
                     self.assertEqual(row["counts"][points][point], count)
-                    self.assertEqual(row["counts"]["flow_calls"], count)
+                    expected_calls = count
+                    if case == "combined-stair-plan" and weight == 0:
+                        self.assertEqual(row["counts"]["readonly_points"]["flow.select_step"], 1)
+                        expected_calls += 1
+                    self.assertEqual(row["counts"]["flow_calls"], expected_calls)
             elif case == "stair-preview-wipe":
                 self.assertIn("stair preview wipe passed", result.stdout)
             else:
@@ -182,6 +191,12 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             for weight in (0, 5):
                 with self.subTest(shadow=shadow, weight=weight):
                     self.run_case("down-stair-plan", weight, shadow=shadow)
+
+    def test_combined_stair_plan_preserves_refusals_and_fallback_order(self):
+        for shadow in ("off", "check", "switch"):
+            for weight in (0, 5):
+                with self.subTest(shadow=shadow, weight=weight):
+                    self.run_case("combined-stair-plan", weight, shadow=shadow)
 
 
 if __name__ == "__main__":

@@ -39,7 +39,7 @@ R45_ADDED = (
     'attack.attack_on_sight', 'recovery.holding_for_monster', 'store.sell_selected_quantity',
 )
 FLOW_READONLY_POINTS = ('flow.select_step', 'flow.plan_up_stair')
-DOWN_STAIR_POINT = 'flow.plan_down_stair'
+FLOW_STATEFUL_POINTS = ('flow.plan_down_stair', 'flow.plan_combined_stairs')
 R2_PORTED = ['danger.wall_like', 'danger', 'danger.one_monster', 'caution', 'escape', 'recovery']
 NUMERIC = ('comparisons', 'danger_calls', 'danger_comparisons',
            'monster_comparisons', 'wall_comparisons', 'stateful_comparisons',
@@ -85,7 +85,7 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
     if receiving_surface:
         allowed = tuple(name for name in allowed if name not in R45_RETIRED) + R45_ADDED
     if r5:
-        allowed += (*FLOW_READONLY_POINTS, DOWN_STAIR_POINT)
+        allowed += (*FLOW_READONLY_POINTS, *FLOW_STATEFUL_POINTS)
     fields = NUMERIC + (() if legacy_r2 else ('attack_calls', 'pure_attack_comparisons')) + (('defence_calls',) if complete else ()) + (('item_use_calls',) if item_surface else ()) + (('readonly_comparisons',) if r4_item_use else ()) + (('power_calls',) if power_surface else ()) + (('equipment_calls',) if equipment_surface else ()) + (('store_calls',) if store_surface else ())
     if r5:
         fields += ('flow_calls',)

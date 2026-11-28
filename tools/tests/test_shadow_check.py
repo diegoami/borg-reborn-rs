@@ -213,17 +213,17 @@ class ShadowCheckTest(unittest.TestCase):
                    ported_points=row['ported_points'] + ['flow'])
         counts = row['counts']
         readonly = dict.fromkeys(module.FLOW_READONLY_POINTS, 1)
-        down = module.DOWN_STAIR_POINT
+        stateful = dict.fromkeys(module.FLOW_STATEFUL_POINTS, 1)
         counts['stateful_points'].update(readonly)
-        counts['stateful_points'][down] = 1
+        counts['stateful_points'].update(stateful)
         counts['readonly_points'].update(readonly)
-        counts['root_points'][down] = 1
-        flow_calls = len(readonly) + 1
+        counts['root_points'].update(stateful)
+        flow_calls = len(readonly) + len(stateful)
         counts['flow_calls'] = flow_calls
         for field in ('policy_markers', 'tape_events', 'comparisons'):
             counts[field] += flow_calls
         counts['readonly_comparisons'] += len(readonly)
-        counts['stateful_comparisons'] += 1
+        counts['stateful_comparisons'] += len(stateful)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self.write(root, row)
@@ -251,17 +251,19 @@ class ShadowCheckTest(unittest.TestCase):
                         module.check([root], r5=True, require_all_entries=True)
                     self.assertIn(point, str(error.exception))
 
-            missing = copy.deepcopy(row)
-            missing_counts = missing['counts']
-            del missing_counts['root_points'][down]
-            del missing_counts['stateful_points'][down]
-            for field in ('flow_calls', 'policy_markers', 'tape_events', 'stateful_comparisons', 'comparisons'):
-                missing_counts[field] -= 1
-            self.write(root, missing)
-            module.check([root], r5=True)
-            with self.assertRaisesRegex(ValueError, 'missing individual entry coverage') as error:
-                module.check([root], r5=True, require_all_entries=True)
-            self.assertIn(down, str(error.exception))
+            for point in stateful:
+                with self.subTest(missing_root=point):
+                    missing = copy.deepcopy(row)
+                    missing_counts = missing['counts']
+                    del missing_counts['root_points'][point]
+                    del missing_counts['stateful_points'][point]
+                    for field in ('flow_calls', 'policy_markers', 'tape_events', 'stateful_comparisons', 'comparisons'):
+                        missing_counts[field] -= 1
+                    self.write(root, missing)
+                    module.check([root], r5=True)
+                    with self.assertRaisesRegex(ValueError, 'missing individual entry coverage') as error:
+                        module.check([root], r5=True, require_all_entries=True)
+                    self.assertIn(point, str(error.exception))
 
     def test_declared_run_partition_keeps_combined_strict_gate(self):
         with tempfile.TemporaryDirectory() as directory:

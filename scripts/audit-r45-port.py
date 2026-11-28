@@ -16,12 +16,12 @@ RECEIPT = ROOT / 'docs/R45-PORT-SOURCE.json'
 # Pin the R5 flow policy and its updated dependencies alongside the R4.5 receipt.
 R5_RECEIVING_FILES = {
     'borg-core/src/borg_caution.rs': '4d0de570382d361e2b82a676949e609345150f7f61fd73b11f2e047f8a3404b5',
-    'borg-core/src/decision_api.rs': 'e5898d4b5b08f3ba29dc5d574d24d1c912a2528572b79f59cde9d9de579ad4f6',
-    'borg-core/src/decisions.rs': 'b6afa85fc2af722559514e7c04d0bc9c8b86f350b13ebda07555fd8b1adb3183',
+    'borg-core/src/decision_api.rs': '58477870ed4e1caf35f18b10b2c044f987b42a36c61e7bae9fab870712234c34',
+    'borg-core/src/decisions.rs': '0c4fbaed7c1013213e871746049906e2f3b94345143784c0eda3230557ef21d5',
     'borg-core/src/memory.rs': 'd147735a90b4016613343659e3a2250aa93140a43d017f81c470669082d892fe',
     'borg-next/src/stateful/caution.rs': '1c2308a13e1db61ecd5f7061638dc19d68e4839091e53a6f7f8d721d404605c4',
-    'borg-next/src/stateful/flow.rs': '435dc0586038d06fb041497ef333ea6e025963b48f0765c3deccf0603214b212',
-    'borg-next/src/stateful/mod.rs': 'e3d6b9a82a50992fa0ca9e9c5930dfe2084ea8a28892cefc491e21ce1ce5294d',
+    'borg-next/src/stateful/flow.rs': 'e6c61a4560ba4c09d7564a85a4ffa49ee0585fd053eb259471b216314004f824',
+    'borg-next/src/stateful/mod.rs': 'a42eabcaa8418e8cfc544253059690db8a97156425f8cf9a95ac8165193ccfac',
 }
 MODULES = {
     'caution': 'borg_caution', 'escape': 'borg_escape', 'recovery': 'borg_recover',
