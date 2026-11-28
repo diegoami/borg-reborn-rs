@@ -262,7 +262,7 @@
     },
     "src/borg_caution.rs": {
       "donor_blob": "20aa04db4795b242c9b920db0de095c8aa239afc",
-      "receiving_sha256": "a64bd17cf2a8f4cf7f7078832f5641cadb935cd8289ac6fee6a9003737e24486"
+      "receiving_sha256": "4d0de570382d361e2b82a676949e609345150f7f61fd73b11f2e047f8a3404b5"
     },
     "src/borg_cave.rs": {
       "donor_blob": "4aef06d02592767bd52e2f5dbaac0181c181a909",
@@ -298,7 +298,7 @@
     },
     "src/borg_flow.rs": {
       "donor_blob": "087ab0e6123857e818c00c3d77287c922c013817",
-      "receiving_sha256": "86009e027cec55ee8bb32f7a6cbd1b49391825c1f51dad91bf4db4a3d51398c6"
+      "receiving_sha256": "f4169fc667946a4ded8b147360968a989f8695c2dbc92acac319cc987f6479d6"
     },
     "src/borg_flow_glyph.rs": {
       "donor_blob": "496ad56366a4a7adb17fb10f35435a9b65ab942f",
@@ -314,7 +314,7 @@
     },
     "src/borg_flow_stairs.rs": {
       "donor_blob": "cfc8b5b2e21dd2a374f7fe4e749c96754505b6bb",
-      "receiving_sha256": "5698fb728ca80e4c0db1a19805478c0c812a1b38440a5b91611e2e9f4eb4f005"
+      "receiving_sha256": "bffb5b091a6b20fe1b0f3ea83504b1b2cc68a4c46b02ea970634048340e5bc57"
     },
     "src/borg_flow_take.rs": {
       "donor_blob": "f19b4b2933fbf4ccab7476b39e6abb17a5a07a87",

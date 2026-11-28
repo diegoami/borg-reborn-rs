@@ -74,14 +74,15 @@ ItemEquipsItem { activation:i32,check_charge:bool },
 ItemActivateFailure { tval:i32,sval:i32 },
 ItemUseThings,
 ItemRecharging,
+FlowPlanDownStair { why: i32, brave: bool },
 
 
 }
 #[derive(Clone,Copy,Debug,PartialEq,Serialize)]
-pub enum Value { Acted(bool), Score(i32), Unit, HomeSale {acted:bool,best_home_power:i32}, UpStair(UpStairPlan) }
+pub enum Value { Acted(bool), Score(i32), Unit, HomeSale {acted:bool,best_home_power:i32}, UpStair(StairPlan), DownStair(StairPlan) }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
-pub enum UpStairPlan {
+pub enum StairPlan {
     Refused,
     Unweighted,
     Weighted { weight: i32, avoid: bool },
@@ -157,6 +158,7 @@ Self::ItemEquipsItem {..}=>"item_use.borg_equips_item",
 Self::ItemActivateFailure {..}=>"item_use.borg_activate_failure",
 Self::ItemUseThings=>"item_use.borg_use_things",
 Self::ItemRecharging=>"item_use.borg_recharging",
+Self::FlowPlanDownStair {..}=>"flow.plan_down_stair",
 
 
 } }
@@ -230,6 +232,7 @@ Self::ItemEquipsItem { activation,check_charge }=>Value::Acted(crate::borg_item_
 Self::ItemActivateFailure { tval,sval }=>Value::Score(crate::borg_item_use::borg_activate_failure_native(st,tval,sval)),
 Self::ItemUseThings=>Value::Acted(crate::borg_item_use::borg_use_things_native(st)),
 Self::ItemRecharging=>Value::Acted(crate::borg_item_use::borg_recharging_native(st)),
+Self::FlowPlanDownStair { why, brave }=>Value::DownStair(crate::borg_flow_stairs::plan_down_stair_native(st, why, brave)),
 
 
 } }

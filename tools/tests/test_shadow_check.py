@@ -212,17 +212,23 @@ class ShadowCheckTest(unittest.TestCase):
         row.update(schema='borg-reborn-rs/shadow-stats@10', surface='r5',
                    ported_points=row['ported_points'] + ['flow'])
         counts = row['counts']
-        points = dict.fromkeys(module.FLOW_POINTS, 1)
-        counts['stateful_points'].update(points)
-        counts['readonly_points'].update(points)
-        counts['flow_calls'] = len(points)
-        for field in ('policy_markers', 'tape_events', 'readonly_comparisons', 'comparisons'):
-            counts[field] += len(points)
+        readonly = dict.fromkeys(module.FLOW_READONLY_POINTS, 1)
+        down = module.DOWN_STAIR_POINT
+        counts['stateful_points'].update(readonly)
+        counts['stateful_points'][down] = 1
+        counts['readonly_points'].update(readonly)
+        counts['root_points'][down] = 1
+        flow_calls = len(readonly) + 1
+        counts['flow_calls'] = flow_calls
+        for field in ('policy_markers', 'tape_events', 'comparisons'):
+            counts[field] += flow_calls
+        counts['readonly_comparisons'] += len(readonly)
+        counts['stateful_comparisons'] += 1
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self.write(root, row)
             _, totals = module.check([root], r5=True, require_all_entries=True)
-            self.assertEqual(totals['flow_calls'], len(points))
+            self.assertEqual(totals['flow_calls'], flow_calls)
             with self.assertRaisesRegex(ValueError, 'wrong schema'):
                 module.check([root], r45=True)
 
@@ -232,7 +238,7 @@ class ShadowCheckTest(unittest.TestCase):
                 module.check([root], r5=True)
             counts['flow_calls'] -= 1
 
-            for point in module.FLOW_POINTS:
+            for point in readonly:
                 with self.subTest(missing_root=point):
                     missing = copy.deepcopy(row)
                     missing_counts = missing['counts']
@@ -244,6 +250,18 @@ class ShadowCheckTest(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'missing read-only root coverage') as error:
                         module.check([root], r5=True, require_all_entries=True)
                     self.assertIn(point, str(error.exception))
+
+            missing = copy.deepcopy(row)
+            missing_counts = missing['counts']
+            del missing_counts['root_points'][down]
+            del missing_counts['stateful_points'][down]
+            for field in ('flow_calls', 'policy_markers', 'tape_events', 'stateful_comparisons', 'comparisons'):
+                missing_counts[field] -= 1
+            self.write(root, missing)
+            module.check([root], r5=True)
+            with self.assertRaisesRegex(ValueError, 'missing individual entry coverage') as error:
+                module.check([root], r5=True, require_all_entries=True)
+            self.assertIn(down, str(error.exception))
 
     def test_declared_run_partition_keeps_combined_strict_gate(self):
         with tempfile.TemporaryDirectory() as directory:

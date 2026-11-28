@@ -17,6 +17,7 @@
 //! The known up and down staircases (`track_less`, `track_more`) live in
 //! `StairsState`. The flow itself is `borg_flow`.
 
+use crate::borg_flow::GOAL_FLEE;
 use crate::borg_headers::borg_magic_h::{
     BERSERK_STRENGTH, BLESS, DEMON_BANE, HASTE_SELF, HEROISM, MANA_CHANNEL, PROTECTION_FROM_EVIL,
     RAPID_REGENERATION, RESISTANCE, SMITE_EVIL, VENOM,
@@ -25,12 +26,11 @@ use crate::borg_headers::borg_trait_h::{
     BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_CURSP, BI_FOOD, BI_ISHUNGRY, BI_ISWEAK, BI_LIGHT,
     BI_MAXSP, BI_WB_POIS, BI_WS_EVIL,
 };
-use crate::decisions::UpStairPlan;
+
+use crate::decisions::StairPlan;
 use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 
-/// `GOAL_FLEE` (borg-flow.h): flee the level.
-const GOAL_FLEE: i32 = 7;
 use crate::{borg_flow, borg_io, borg_magic, engine};
 
 /// A list of known stairs (`struct borg_track` as used for `track_less`
@@ -815,8 +815,8 @@ fn beside_blocks(mode: i32, monster_far: i32, borg_far: i32) -> bool {
 /// Prepare to flow towards "up" stairs.
 fn stair_less(st: &mut BorgState, why: i32, sneak: bool, depth: i32, ranged_reach: i32) -> bool {
     match plan_up_stair(st, why) {
-        UpStairPlan::Refused => return false,
-        UpStairPlan::Weighted { weight, avoid } => {
+        StairPlan::Refused => return false,
+        StairPlan::Weighted { weight, avoid } => {
             return weighted_flight(
                 st,
                 why,
@@ -824,7 +824,7 @@ fn stair_less(st: &mut BorgState, why: i32, sneak: bool, depth: i32, ranged_reac
                 WeightedFlightOptions { depth, avoid, sneak, weight, ranged_reach },
             );
         }
-        UpStairPlan::Unweighted => {}
+        StairPlan::Unweighted => {}
     }
 
     /* Clear the flow codes */
@@ -901,25 +901,17 @@ pub(crate) fn enqueue_down_stairs(st: &mut BorgState) {
 
 /// Prepare to flow towards "down" stairs.
 fn stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bool, depth: i32, ranged_reach: i32) -> bool {
-    /* None to flow to */
-    if st.stairs.more.num == 0 {
-        return false;
-    }
-
-    // borg-reborn-rs (#557): no flight down a staircase while rising.
-    if why == GOAL_FLEE && crate::borg_caution::rising_holds_flee_descent(st) {
-        return false;
-    }
-
-    if more_refused(st, brave) {
-        return false;
-    }
-
-    let weight = crate::borg_caution::stair_flight_weight(why, false);
-    if weight > 0 {
-        return weighted_flight(st, why, Some(Which::More), WeightedFlightOptions {
-            depth, avoid: false, sneak, weight, ranged_reach,
-        });
+    match plan_down_stair(st, why, brave) {
+        StairPlan::Refused => return false,
+        StairPlan::Weighted { weight, avoid } => {
+            return weighted_flight(
+                st,
+                why,
+                Some(Which::More),
+                WeightedFlightOptions { depth, avoid, sneak, weight, ranged_reach },
+            );
+        }
+        StairPlan::Unweighted => {}
     }
 
     /* Clear the flow codes */
@@ -1352,6 +1344,9 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     if case == "up-stair-plan" {
         run_up_stair_plan_regression(st);
     }
+    if case == "down-stair-plan" {
+        run_down_stair_plan_regression(st);
+    }
 
     fn observe_move(st: &mut BorgState, direction: u8, expected: loc) {
         assert_eq!(st.io.queued_keys(), [u32::from(direction)], "movement from ({}, {})", st.borg.c.x, st.borg.c.y);
@@ -1485,7 +1480,7 @@ fn run_stair_preview_wipe_regression(live: &BorgState) -> ! {
     std::process::exit(0);
 }
 
-fn plan_up_stair(st: &BorgState, why: i32) -> UpStairPlan {
+fn plan_up_stair(st: &BorgState, why: i32) -> StairPlan {
     use crate::decisions::{ReadDecision, Value};
 
     match crate::shadow::read_decision(st, ReadDecision::FlowPlanUpStair { why }) {
@@ -1494,20 +1489,20 @@ fn plan_up_stair(st: &BorgState, why: i32) -> UpStairPlan {
     }
 }
 
-pub(crate) fn plan_up_stair_native(st: &BorgState, why: i32) -> UpStairPlan {
+pub(crate) fn plan_up_stair_native(st: &BorgState, why: i32) -> StairPlan {
     use crate::decision_api::engine;
     use crate::headers::list_options_h::OPT_birth_force_descend;
 
     crate::decision_tape::mark("policy::flow.plan_up_stair", String::new());
     if engine::player_opt(OPT_birth_force_descend) || st.stairs.less.num == 0 {
-        return UpStairPlan::Refused;
+        return StairPlan::Refused;
     }
     let weight = crate::borg_caution::stair_flight_weight(why, st.borg.goal.fleeing || st.borg.goal.leaving);
     if weight > 0 {
         let avoid = st.borg.tr(BI_CLEVEL) <= 35 && st.borg.tr(BI_LIGHT) != 0 && !st.borg.status.desperate;
-        return UpStairPlan::Weighted { weight, avoid };
+        return StairPlan::Weighted { weight, avoid };
     }
-    UpStairPlan::Unweighted
+    StairPlan::Unweighted
 }
 
 #[cfg(feature = "test-stair-handoff")]
@@ -1546,13 +1541,13 @@ fn run_up_stair_plan_regression(st: &mut BorgState) -> ! {
     assert!(st.io.queued_keys().is_empty());
     assert!(engine::option_set(c"birth_force_descend", false));
     st.stairs.less.num = 0;
-    assert_eq!(plan_up_stair(st, GOAL_FLEE), UpStairPlan::Refused);
+    assert_eq!(plan_up_stair(st, GOAL_FLEE), StairPlan::Refused);
     st.stairs.less.num = 1;
-    assert_eq!(plan_up_stair(st, GOAL_BORE), UpStairPlan::Unweighted);
+    assert_eq!(plan_up_stair(st, GOAL_BORE), StairPlan::Unweighted);
 
     let weight = value(Param::caution_stairs_flight_threat_weight);
     let flee_plan = |avoid| {
-        if weight > 0 { UpStairPlan::Weighted { weight, avoid } } else { UpStairPlan::Unweighted }
+        if weight > 0 { StairPlan::Weighted { weight, avoid } } else { StairPlan::Unweighted }
     };
     assert_eq!(plan_up_stair(st, GOAL_FLEE), flee_plan(true));
     st.borg.goal.leaving = true;
@@ -1575,5 +1570,103 @@ fn run_up_stair_plan_regression(st: &mut BorgState) -> ! {
 
     crate::shadow::after_think(st);
     println!("up-stair plan passed");
+    std::process::exit(0);
+}
+
+fn plan_down_stair(st: &mut BorgState, why: i32, brave: bool) -> StairPlan {
+    use crate::decisions::{Decision, Value};
+
+    match crate::shadow::decision(st, Decision::FlowPlanDownStair { why, brave }) {
+        Value::DownStair(plan) => plan,
+        _ => unreachable!("down-stair plan result"),
+    }
+}
+
+pub(crate) fn plan_down_stair_native(st: &mut BorgState, why: i32, brave: bool) -> StairPlan {
+    use crate::decision_api::borg_flow_stairs::{more_refused, rising_holds_flee_descent};
+
+    crate::decision_tape::mark("policy::flow.plan_down_stair", String::new());
+    if st.stairs.more.num == 0 {
+        return StairPlan::Refused;
+    }
+    // #557: hold down-stair flight while rising, before shared refusals.
+    if why == GOAL_FLEE && rising_holds_flee_descent(st) {
+        return StairPlan::Refused;
+    }
+    if more_refused(st, brave) {
+        return StairPlan::Refused;
+    }
+    let weight = crate::borg_caution::stair_flight_weight(why, false);
+    if weight > 0 {
+        StairPlan::Weighted { weight, avoid: false }
+    } else {
+        StairPlan::Unweighted
+    }
+}
+
+#[cfg(feature = "test-stair-handoff")]
+fn run_down_stair_plan_regression(st: &mut BorgState) -> ! {
+    use crate::borg_flow::GOAL_DARK;
+    use crate::borg_headers::borg_trait_h::BI_MAXHP;
+    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_MORE};
+    use crate::params::{value, Param};
+
+    // The weighted commit uses the engine-registered state. This process
+    // exits before the queued step can affect the live cave.
+    assert_eq!(st.borg.tr(BI_CDEPTH), 5);
+    crate::borg_cave::borg_init_cave(st);
+    st.borg.c = loc { x: 40, y: 20 };
+    st.borg.goal.rising = true;
+    st.borg.goal.fleeing = true;
+    st.borg.goal.recalling = 0;
+    st.borg.avoidance = 89;
+    for (index, number) in [(BI_CLEVEL, 35), (BI_CURHP, 89), (BI_MAXHP, 89), (BI_LIGHT, 1)] {
+        st.borg.trait_[index as usize] = number;
+    }
+    st.kills.cnt = 0;
+    st.kills.nxt = 1;
+    st.danger = Default::default();
+    st.danger.wipe = true;
+    st.stairs.less.num = 0;
+    st.stairs.more.num = 0;
+    st.stairs.more.x[0] = 42;
+    st.stairs.more.y[0] = 20;
+    st.cave.grid_mut(40, 20).feat = FEAT_FLOOR as u8;
+    st.cave.grid_mut(41, 20).feat = FEAT_FLOOR as u8;
+    st.cave.grid_mut(42, 20).feat = FEAT_MORE as u8;
+    borg_io::borg_flush(st);
+
+    assert!(!stair_more(st, GOAL_FLEE, false, true, 2, 0), "the route requires a known down stair");
+    assert!(st.danger.wipe, "absent stairs leave the pending wipe alone");
+    st.stairs.more.num = 1;
+    assert!(!stair_more(st, GOAL_FLEE, false, true, 2, 0), "rising holds a healthy flight down");
+    assert!(st.io.queued_keys().is_empty());
+    assert_eq!(plan_down_stair(st, GOAL_DARK, true), StairPlan::Unweighted, "rising still permits an ordinary route");
+
+    st.borg.goal.rising = false;
+    st.borg.goal.recalling = 1;
+    assert_eq!(plan_down_stair(st, GOAL_FLEE, true), StairPlan::Refused, "Recall applies without a known up stair");
+    st.borg.goal.recalling = 0;
+    st.stairs.less.num = 1;
+    st.borg.trait_[BI_LIGHT as usize] = 0;
+    assert_eq!(plan_down_stair(st, GOAL_FLEE, true), StairPlan::Refused, "a brave exit still needs light with an up stair known");
+    st.borg.trait_[BI_LIGHT as usize] = 1;
+    // Zero food fails the shallow preparedness check. The same state
+    // must permit descent when the caller requests a brave route.
+    st.borg.trait_[BI_FOOD as usize] = 0;
+    assert_eq!(plan_down_stair(st, GOAL_FLEE, false), StairPlan::Refused, "an unprepared descent requires bravery");
+    let weight = value(Param::caution_stairs_flight_threat_weight);
+    let expected = if weight > 0 { StairPlan::Weighted { weight, avoid: false } } else { StairPlan::Unweighted };
+    assert_eq!(plan_down_stair(st, GOAL_FLEE, true), expected);
+
+    if weight > 0 {
+        st.borg.status.desperate = true;
+        assert!(!stair_more(st, GOAL_FLEE, false, true, 1, 0), "one move cannot reach the two-step stair");
+        assert!(st.io.queued_keys().is_empty());
+        assert!(stair_more(st, GOAL_FLEE, false, true, 2, 0), "two moves can reach the stair");
+        assert_eq!(st.io.queued_keys(), [u32::from(b'6')]);
+    }
+    crate::shadow::after_think(st);
+    println!("down-stair plan passed");
     std::process::exit(0);
 }
