@@ -12,6 +12,13 @@
   and quiver drops) now calls it before any side effect. After a step the
   action is cleared and the next think plans the drop again from the floor
   grid; a Home disposal keeps its `disposal` record across the step.
+- The plain-drop step is behind `town_drop_clear_floor` (shipped 1 in
+  `harness/pborg.yaml`, documented in `docs/CALIBRATION.md`). The exact-turn
+  stair replays (`test_stair_handoff.py`, seeds 204 and 224) pin it to 0:
+  their games make such drops long before the recorded stair turns (seed 204
+  steps off a shop door at turn 31060 to drop 2 Potions of Slowness), so the
+  routes moved and the tests stopped reaching their assertions (review on
+  #1398).
 - The drop is still `d` with the `borg ignore` inscription; no `k` (owner,
   on #1397: `k` would open the door to discards nobody notices).
 - `test_inferior_spares.py` (`TownSpareSaleTest`, the ranked-home case)

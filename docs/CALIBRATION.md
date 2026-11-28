@@ -9147,6 +9147,20 @@ control use this setting. Replays use the schema recorded in each visit.
 |---|---|---|---|---|
 | `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:466` |
 
+### Drops from clear floor (#1397)
+
+The first decision after a shop visit is made on the shop's entrance. Only
+open floor holds objects (`terrain.txt`), so a drop from an entrance or
+stairs scatters to a neighbouring grid (`obj-pile.c:drop_find_grid`), where
+`borg_destroy_floor` cannot ignore it and `pickup_always` takes it back.
+With `town_drop_clear_floor` the planner's plain drop first steps to clear
+floor, as the arrival-unload drop already did (#1256). The exact-turn stair
+replays pin it to 0, since it changes their recorded routes.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_drop_clear_floor` | 1 | flag | 0–1 | `borg_town_live.rs:982` |
+
 ### Recall-first trial
 
 Set `town_shop_overloaded = 0` and a positive

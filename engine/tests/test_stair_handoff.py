@@ -31,6 +31,8 @@ def state_at(states, turn):
 # two attack settings). The
 # incident classes are Warrior (0) and Mage (1), so only their class lines exist.
 PINNED_TOWN_SETTINGS = [
+    # #1397: town drops step off shop entrances after these recorded routes.
+    ("town_drop_clear_floor", 0),
     # #1250: keep the original use and timing of Magic Mapping.
     ("item_use_idle", 0),
     # #1375, #1373, #1374: the refused-kind floor filter (Treasure Detection is

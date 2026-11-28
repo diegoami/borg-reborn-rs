@@ -974,6 +974,15 @@ fn drop_quantity(planned: i64, qty: i64, splits: bool) -> i64 {
     if splits && (1..qty).contains(&planned) { planned } else { qty }
 }
 
+/// borg-reborn-rs (#1397): with `town_drop_clear_floor`, the plain DROP
+/// first steps off a shop entrance, stairs or a pile
+/// (`borg_junk::step_to_drop_floor`); 0 drops wherever the Borg stands, as
+/// before #1397.
+fn drop_floor_step(st: &mut BorgState) -> Option<bool> {
+    if crate::params::value(crate::params::Param::town_drop_clear_floor) == 0 { return None; }
+    crate::borg_junk::step_to_drop_floor(st)
+}
+
 /// A drop is an outside action, not a request to route to shop -1.
 pub fn execute_outside(st: &mut BorgState) -> bool {
     if !active(st) || st.borg.in_shop { return false; }
@@ -1014,7 +1023,7 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
         if reserve == 0 || a.at[2] != qty { clear(st); return false; }
         // borg-reborn-rs (#1397): never drop from a shop entrance or stairs.
         let (enchanted, kind) = (item.to_h != 0 || item.to_d != 0, item.kind);
-        if let Some(stepped) = crate::borg_junk::step_to_drop_floor(st) { clear(st); return stepped; }
+        if let Some(stepped) = drop_floor_step(st) { clear(st); return stepped; }
         // borg-reborn-rs (#1239): settle the trim from refreshed inventory.
         if shop_overloaded() || enchanted {
             st.think.town_live.pending_quiver_trim = Some((kind, carried_kind(st, kind), enchanted));
@@ -1046,7 +1055,7 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     }
     // borg-reborn-rs (#1397): the first think after a shop visit is on its
     // entrance, where no object can lie: step to clear floor, then drop.
-    if let Some(stepped) = crate::borg_junk::step_to_drop_floor(st) { clear(st); return stepped; }
+    if let Some(stepped) = drop_floor_step(st) { clear(st); return stepped; }
     let letter = crate::engine::all_letters_nohjkl(slot as i32) as i8 as u32;
     if home_disposal {
         st.think.town_live.disposal = None;
