@@ -68,17 +68,28 @@ jobs:
 
   engine:
     # Preserve the required check and report failures from either core.
-    needs: [engine-reborn, engine-borg-rs]
+    needs: [engine-scope, engine-reborn, engine-borg-rs]
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - env:
+          SCOPE_RESULT: ${{ needs.engine-scope.result }}
+          ENGINE: ${{ needs.engine-scope.outputs.engine }}
           REBORN_RESULT: ${{ needs.engine-reborn.result }}
           BORG_RS_RESULT: ${{ needs.engine-borg-rs.result }}
-        run: test "$REBORN_RESULT:$BORG_RS_RESULT" = success:success
+        run: |
+          test "$SCOPE_RESULT" = success
+          case "$ENGINE:$REBORN_RESULT:$BORG_RS_RESULT" in
+            0:skipped:skipped|1:success:success) ;;
+            *) echo "Unexpected engine result: $ENGINE:$REBORN_RESULT:$BORG_RS_RESULT"; exit 1 ;;
+          esac
 
   engine-reborn:
+    needs: engine-scope
+    if: needs.engine-scope.outputs.engine == '1'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
@@ -227,7 +238,10 @@ jobs:
       - run: python3 tools/rerun-death.py "$(ls -d "$RUNNER_TEMP"/deaths/D-* | head -1)" "$RUNNER_TEMP/rerun"
 
   engine-borg-rs:
+    needs: engine-scope
+    if: needs.engine-scope.outputs.engine == '1'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
@@ -351,38 +365,52 @@ jobs:
   engine-scope:
     runs-on: ubuntu-latest
     outputs:
+      engine: ${{ steps.scope.outputs.engine }}
       full: ${{ steps.scope.outputs.full }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      # #577: the full test suite (8 minutes, a job of its own since #1400)
-      # plays the reborn core only (BORG_CORE=reborn; #606 made borg-rs the harness
-      # default). A pull request whose files are all docs, the
-      # vendored borg-rs core or its settings cannot change that core's play,
-      # and skips it. Those files can change the borg-rs core's play, which
-      # this suite never measures. The borg-rs smoke plays those settings.
-      # #1389: so do scripts/ (reference tooling and checks; only
-      # scripts/make-world.py is run by harness/run.sh, so it stays a full
-      # run), .gitattributes and the pr-base workflow. Any other file
-      # (ci.yml included), and every push to main or track-p, runs the full
-      # suite. On a pull request HEAD is the merge commit and HEAD^1 the base.
       - id: scope
         run: |
-          full=1
-          if [ "${{ github.event_name }}" = pull_request ] \
-              && ! git diff --name-only HEAD^1 HEAD \
-                | grep -qvE '^(docs/|reference/|borg-core/|harness/pborg\.yaml$|harness/scary_monsters[a-z_]*\.txt$|[^/]+\.md$|scripts/|\.gitattributes$|\.github/workflows/pr-base\.yml$)' \
-              && ! git diff --name-only HEAD^1 HEAD | grep -qx scripts/make-world.py; then
-              full=0
-          fi
-          echo "full=$full" >> "$GITHUB_OUTPUT"
-          echo "full test suite: $full"
+          python3 - <<'PYSCOPE'
+          import os
+          import re
+          import subprocess
+
+          engine = full = True
+          if os.environ['GITHUB_EVENT_NAME'] == 'pull_request':
+              # HEAD is the test merge commit and HEAD^1 is the base.
+              # Check both paths of renames and keep filenames NUL-delimited.
+              changed = subprocess.check_output(
+                  ['git', 'diff', '--no-renames', '--name-only', '-z', 'HEAD^1', 'HEAD']
+              ).split(b'\0')[:-1]
+
+              def docs_only(path):
+                  return (path.startswith(b'docs/') and not path.startswith(b'docs/deaths/')
+                          or re.fullmatch(rb'[^/]+\.md', path) is not None)
+
+              # The full suite plays reborn only (#577, #1389). The borg-rs
+              # core, its settings and unrelated tooling do not affect it.
+              full_skip = re.compile(
+                  rb'(?:docs/|reference/|borg-core/|scripts/).*|[^/]+\.md|harness/pborg\.yaml|'
+                  rb'harness/scary_monsters[a-z_]*\.txt|\.gitattributes|\.github/workflows/pr-base\.yml',
+                  re.DOTALL,
+              )
+              engine = any(not docs_only(path) for path in changed)
+              full = any(path == b'scripts/make-world.py' or not full_skip.fullmatch(path)
+                         for path in changed)
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'engine={int(engine)}\nfull={int(full)}\n')
+          print(f'engine: {int(engine)}, full test suite: {int(full)}')
+          PYSCOPE
 
   engine-full-shard:
     needs: engine-scope
     if: needs.engine-scope.outputs.full == '1'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -449,6 +477,7 @@ jobs:
     needs: [engine-scope, engine-full-shard]
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - env:
           SCOPE_RESULT: ${{ needs.engine-scope.result }}
@@ -462,24 +491,41 @@ jobs:
           esac
 
   recorder:
+    needs: engine-scope
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    if: always()
     steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/cemetery-tools
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+      - env:
+          SCOPE_RESULT: ${{ needs.engine-scope.result }}
+          ENGINE: ${{ needs.engine-scope.outputs.engine }}
+        run: |
+          test "$SCOPE_RESULT" = success
+          test "$ENGINE" = 0 || test "$ENGINE" = 1
+      - if: needs.engine-scope.outputs.engine == '1'
+        uses: actions/checkout@v4
+      - if: needs.engine-scope.outputs.engine == '1'
+        uses: ./.github/actions/cemetery-tools
+      - if: needs.engine-scope.outputs.engine == '1'
+        uses: dtolnay/rust-toolchain@stable
+      - if: needs.engine-scope.outputs.engine == '1'
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
         with:
           cache-bin: false
           cache-workspace-crates: true
           workspaces: |
             . -> build/recorder/cargo
-      - uses: ./.github/actions/apt-install
+      - if: needs.engine-scope.outputs.engine == '1'
+        uses: ./.github/actions/apt-install
         with:
           packages: libx11-dev libssl-dev ccache
-      - uses: ./.github/actions/ccache
+      - if: needs.engine-scope.outputs.engine == '1'
+        uses: ./.github/actions/ccache
         with:
           variant: recorder
-      - run: cmake -S engine -B build/recorder -DCMAKE_C_COMPILER_LAUNCHER=ccache -DSUPPORT_BORG_RECORDING=ON -DCMAKE_BUILD_TYPE=Release
-      - run: cmake --build build/recorder -j4
-      - run: python3 harness/check-recorder.py --binary build/recorder/game/angband --output "$RUNNER_TEMP/recorder-check"
+      - if: needs.engine-scope.outputs.engine == '1'
+        run: cmake -S engine -B build/recorder -DCMAKE_C_COMPILER_LAUNCHER=ccache -DSUPPORT_BORG_RECORDING=ON -DCMAKE_BUILD_TYPE=Release
+      - if: needs.engine-scope.outputs.engine == '1'
+        run: cmake --build build/recorder -j4
+      - if: needs.engine-scope.outputs.engine == '1'
+        run: python3 harness/check-recorder.py --binary build/recorder/game/angband --output "$RUNNER_TEMP/recorder-check"
