@@ -17,11 +17,12 @@ runs:
         echo "CCACHE_MAXSIZE=200M" >> "$GITHUB_ENV"
         compiler=$(cc --version | sha256sum | cut -d' ' -f1)
         echo "compiler=$compiler" >> "$GITHUB_OUTPUT"
+        echo "image=${ImageOS:-unknown}" >> "$GITHUB_OUTPUT"
     - id: keys
       shell: bash
       env:
-        PREFIX: ccache-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.config.outputs.compiler }}-${{ inputs.variant }}-
-        SOURCES: ${{ hashFiles('engine/UPSTREAM', 'engine/CMakeLists.txt', 'engine/sources.cmake', 'engine/patches/**', 'engine/frontend/**', 'engine/recorder-hooks.patch', 'recorder-pin.json') }}
+        PREFIX: ccache-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.config.outputs.image }}-${{ steps.config.outputs.compiler }}-${{ inputs.variant }}-
+        SOURCES: ${{ hashFiles('engine/UPSTREAM', 'engine/CMakeLists.txt', 'engine/sources.cmake', 'engine/apply-patches.sh', 'engine/patches/**', 'engine/frontend/**', 'engine/recorder-hooks.patch', 'recorder-pin.json') }}
       run: |
         echo "primary=${PREFIX}${SOURCES}" >> "$GITHUB_OUTPUT"
         echo "prefix=$PREFIX" >> "$GITHUB_OUTPUT"
