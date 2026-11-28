@@ -74,12 +74,13 @@ unconditionally, as before; they were left alone so that 0 keeps today's play.
 
 ## Not checked
 
-- No native Necromancer or Ranger case: the synthetic build (`engine/frontend/
-  synthetic-build.c`) accepts only a Human Warrior with no mana, so the
-  Light-scroll and torch rule and the Ranger's Nimbleness are unit-tested
-  (`unlight_refused`, `second_stat_potion_wanted_at`) and covered natively only
-  through the shared predicate on a Warrior. Widening the build to other
-  classes is a change to the `character-build@1` contract's validation.
+- The Ranger's Nimbleness and the Necromancer's torches have native cases
+  (`test_a_ranger_drinks_nimbleness_and_sells_contemplation`,
+  `test_a_necromancer_sells_the_torches_it_cannot_use`) on the class fixtures
+  of #1378. A Necromancer's Light scroll is dropped as a kind either way
+  (#1273), so the case shows the rule on its torches. No seeded Home case: no
+  fixture seeds Home with a Light scroll, so what #1375 changes for Home
+  classification is unit-reasoned, not native.
 - No native Experience case at the XP cap: the build derives experience from
   the level, so the cap cannot be set.
 - No native walk over a refused stack on another route; the drop of it is

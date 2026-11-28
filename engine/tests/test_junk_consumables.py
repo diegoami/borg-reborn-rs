@@ -14,6 +14,9 @@ from pborg_fixture import write_pborg_config
 ROOT = Path(__file__).resolve().parents[2]
 GAME = ROOT / "build/rust-test/game/angband"
 BASE_KIT = ROOT / "engine/tests/fixtures/warrior-level5.build"
+RANGER_KIT = ROOT / "engine/tests/fixtures/ranger-level5.build"
+NECROMANCER_KIT = ROOT / "engine/tests/fixtures/necromancer-level5.build"
+RANGER, NECROMANCER = 7, 4
 
 # tval and sval from list-tvals.h and object.txt at the pin in engine/UPSTREAM.
 BLINDNESS = (26, 35)
@@ -223,6 +226,38 @@ class JunkConsumablesTest(unittest.TestCase):
         self.assertGreaterEqual(frames[0]["danger"], frames[0]["hp"] // 10)
         self.assertNotIn("Quaffing Potion of Experience", messages)
         self.assertNotEqual(frames[0]["check"], "borg_use_things")
+
+    def test_a_ranger_drinks_nimbleness_and_sells_contemplation(self):
+        # #1371 (owner: "a Ranger would choose to drink Nimbleness"), natively
+        # with the Ranger fixture (#1378): Strength 18/40, Intelligence 14,
+        # Wisdom 18/20, Dexterity 18/50, Constitution 18/30. Its class table
+        # refuses Contemplation.
+        kit = [(NIMBLENESS, 1, True, 0), (CONTEMPLATION, 1, True, 0), (CURE_LIGHT_WOUNDS, 2, True, 0)]
+        messages, _ = self.launch(kit, keys=120, params={"town_stat_trade_policy": 1},
+                                  player_class=RANGER, base_kit=RANGER_KIT)
+        self.assertIn("# Quaffing Potion of Nimbleness.", messages)
+        self.assertIn("You feel very dextrous!", messages)
+        self.assertIn("# Selling Potion of Contemplation", messages)
+        self.assertNotIn("Quaffing Potion of Contemplation", messages)
+        messages, _ = self.launch(kit, keys=120, params={"town_stat_trade_policy": 0},
+                                  player_class=RANGER, base_kit=RANGER_KIT)
+        self.assertNotIn("Quaffing Potion of Nimbleness", messages)
+        self.assertNotIn("Selling Potion of Contemplation", messages)
+
+    def test_a_necromancer_sells_the_torches_it_cannot_use(self):
+        # #1375, natively with the Necromancer fixture (#1378). The Scrolls of
+        # Light are dropped as a kind either way (#1273); the Wooden Torches
+        # (an Unlight class sees without one) are sold under the one rule and
+        # kept without it.
+        kit = [((25, 23), 2, True, 0), (CURE_LIGHT_WOUNDS, 2, True, 0)]
+        messages, _ = self.launch(kit, keys=150, params={"town_refused_kind_policy": 1},
+                                  player_class=NECROMANCER, base_kit=NECROMANCER_KIT)
+        self.assertIn("# Discarding Scrolls of Light (Necromancer)", messages)
+        self.assertIn("# Selling Wooden Torches (5000 turns)", messages)
+        messages, _ = self.launch(kit, keys=150, params={"town_refused_kind_policy": 0},
+                                  player_class=NECROMANCER, base_kit=NECROMANCER_KIT)
+        self.assertIn("# Discarding Scrolls of Light (Necromancer)", messages)
+        self.assertNotIn("Selling Wooden Torch", messages)
 
 
 if __name__ == "__main__":
