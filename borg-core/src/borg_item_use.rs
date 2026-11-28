@@ -30,11 +30,12 @@ use crate::borg_headers::borg_magic_h::{
     HERBAL_CURING, RECHARGING, REMEMBRANCE, REMOVE_HUNGER, REVITALIZE, UNHOLY_REPRIEVE,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_ACCW, BI_CDEPTH, BI_CURHP, BI_DEV, BI_FRACT, BI_ISBLIND, BI_ISCONFUSED, BI_ISFIXCON,
+    BI_ACCW, BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_DEV, BI_FRACT, BI_ISBLIND, BI_ISCONFUSED, BI_ISFIXCON,
     BI_ISFIXDEX, BI_ISFIXEXP, BI_ISFIXINT, BI_ISFIXSTR, BI_ISFIXWIS, BI_ISFORGET, BI_ISHUNGRY,
     BI_ISIMAGE, BI_MAXHP, BI_RBLIND, BI_RCONF,
 };
-use crate::headers::list_effects_h::EF_NOURISH;
+use crate::borg_town_capability::HUNGRY_PERCENT;
+use crate::headers::list_effects_h::{EF_CRUNCH, EF_NOURISH};
 use crate::headers::list_tvals_h::{
     TV_DRAG_ARMOR, TV_FOOD, TV_MUSHROOM, TV_POTION, TV_RING, TV_ROD, TV_SCROLL, TV_STAFF, TV_WAND,
 };
@@ -186,7 +187,9 @@ pub(crate) fn can_read_now(st: &BorgState) -> bool {
 
 /// Attempt to read the given scroll (by sval).
 pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
-    if !can_read_now(st) { return false; }
+    if !can_read_now(st) {
+        return false;
+    }
 
     /* borg-reborn-rs (#829): not a teleport under a teleport curse */
     if crate::borg_escape::teleport_scroll_blocked(st, sval) {
@@ -201,6 +204,11 @@ pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
         return false;
     }
 
+    read_scroll_at(st, i);
+    true
+}
+
+fn read_scroll_at(st: &mut BorgState, i: i32) {
     /* Log the message */
     note_desc(st, b"# Reading ", i as usize, b".");
 
@@ -214,13 +222,10 @@ pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
     borg_keypress(st, letter(i));
 
     /* borg-reborn-rs (#1062): the cause of the next jump */
-    crate::borg_leash::own_scroll(st, sval);
+    crate::borg_leash::own_scroll(st, i32::from(st.items.items[i as usize].sval));
 
     /* Clear "shop" goals */
     clear_shop_goals(st);
-
-    /* Success */
-    true
 }
 
 /// Attempt to eat the given food or mushroom.
@@ -248,6 +253,11 @@ fn eat_from_slot(st: &mut BorgState, i: i32) -> bool {
         return false;
     }
 
+    eat_at(st, i);
+    true
+}
+
+fn eat_at(st: &mut BorgState, i: i32) {
     /* Log the message */
     note_desc(st, b"# Eating ", i as usize, b".");
 
@@ -257,43 +267,88 @@ fn eat_from_slot(st: &mut BorgState, i: i32) -> bool {
 
     /* Clear "shop" goals */
     clear_shop_goals(st);
-
-    /* Success */
-    true
 }
 
-/// Whether a Remove Hunger scroll may be tried ahead of food: only under the
-/// town plan, and only when the Borg can read (`borg_read_scroll` also
-/// checks the light). A Borg that cannot read goes on to eat.
-///
-/// borg-reborn-rs (#451).
-pub(crate) fn may_read_hunger_scroll_first(capability_mode: bool, blind: bool, confused: bool, forgetful: bool) -> bool {
-    capability_mode && !blind && !confused && !forgetful
+/// Hunger spells keep their existing priority in the town plan's emergency path.
+pub(crate) fn borg_try_planned_hunger_spells(st: &mut BorgState) -> bool {
+    st.cfg(crate::borg_headers::borg_h::BORG_TOWN_PLAN) == 1
+        && st.borg.tr(BI_ISBLIND) == 0
+        && st.borg.tr(BI_ISCONFUSED) == 0
+        && st.borg.tr(BI_ISFORGET) == 0
+        && (borg_spell(st, REMOVE_HUNGER) || borg_spell(st, HERBAL_CURING))
 }
 
-/// Relieve hunger before any food is eaten: the hunger spells, then a Remove
-/// Hunger scroll (50% of a full stomach, `NOURISH:INC_TO` 50 in object.txt:
-/// more than a ration's `INC_BY` 30 when read hungry, at 5 against 8 weight).
-/// Only under the town plan, where the planner carries the scroll.
-///
-/// borg-reborn-rs (#451).
-pub fn borg_satisfy_hunger_before_food(st: &mut BorgState) -> bool {
-    let capability_mode = st.cfg(crate::borg_headers::borg_h::BORG_TOWN_PLAN) == 1;
-    if !may_read_hunger_scroll_first(
-        capability_mode,
-        st.borg.tr(BI_ISBLIND) != 0,
-        st.borg.tr(BI_ISCONFUSED) != 0,
-        st.borg.tr(BI_ISFORGET) != 0,
-    ) {
+/// Score known food and readable Remove Hunger scrolls by the nourishment
+/// remaining in their pack slots. Use the same Hungry threshold as the town
+/// planner for INC_TO (object.txt and effect_handler_NOURISH at 574b618c).
+fn neutral_food_slot(
+    pack: &[borg_item],
+    hunger_scroll: Option<i32>,
+    can_eat: bool,
+    effects: impl Fn(usize) -> Vec<(u16, i32, i64)>,
+) -> Option<usize> {
+    pack.iter()
+        .enumerate()
+        .filter_map(|(slot, item)| {
+            if !item.aware || item.iqty == 0 {
+                return None;
+            }
+            match u32::from(item.tval) {
+                TV_FOOD if can_eat => {}
+                TV_SCROLL if hunger_scroll == Some(i32::from(item.sval)) => {}
+                _ => return None,
+            }
+
+            let mut nutrition = 0;
+            for (effect, subtype, amount) in effects(item.kind as usize) {
+                // effects.c:effect_subtype:191-201 at 574b618c.
+                match (u32::from(effect), subtype) {
+                    (EF_NOURISH, 0) => nutrition += amount.max(0), // INC_BY
+                    (EF_NOURISH, 3) => nutrition += (amount - HUNGRY_PERCENT).max(0), // INC_TO
+                    (EF_CRUNCH, _) => {} // Message only.
+                    _ => return None,
+                }
+            }
+            (nutrition > 0).then_some((slot, nutrition * i64::from(item.iqty), item.iqty))
+        })
+        .min_by_key(|&(_, total, quantity)| (total, quantity))
+        .map(|(slot, _, _)| slot)
+}
+
+fn borg_consume_neutral_food(st: &mut BorgState) -> bool {
+    let allow_scroll = st.cfg(crate::borg_headers::borg_h::BORG_TOWN_PLAN) == 1;
+    consume_neutral_food_stack(st, allow_scroll)
+}
+
+/// Recovery can use a readable Remove Hunger scroll under either town policy.
+pub(crate) fn borg_recover_hunger(st: &mut BorgState) -> bool {
+    consume_neutral_food_stack(st, true) || borg_activate_item(st, st.act.satisfy)
+}
+
+fn consume_neutral_food_stack(st: &mut BorgState, allow_scroll: bool) -> bool {
+    let hunger_scroll = (allow_scroll && can_read_now(st))
+        .then_some(st.item_val.sv_scroll_satisfy_hunger);
+    let pack_size = usize::from(engine::z_info().pack_size);
+    let can_eat = !engine::player_is_shapechanged();
+    let slot = neutral_food_slot(&st.items.items[..pack_size], hunger_scroll, can_eat, |kind| {
+        engine::kind_effect_values(kind, st.borg.tr(BI_CLEVEL))
+    });
+    let Some(slot) = slot else {
         return false;
+    };
+    if u32::from(st.items.items[slot].tval) == TV_SCROLL {
+        read_scroll_at(st, slot as i32);
+    } else {
+        eat_at(st, slot as i32);
     }
-    borg_spell(st, REMOVE_HUNGER)
-        || borg_spell(st, HERBAL_CURING)
-        || borg_read_scroll(st, st.item_val.sv_scroll_satisfy_hunger)
+    true
 }
 
 /// Prevent starvation by any means possible.
 pub fn borg_eat_food_any(st: &mut BorgState) -> bool {
+    if borg_consume_neutral_food(st) {
+        return true;
+    }
     let pack_size = usize::from(engine::z_info().pack_size);
 
     /* Scan the inventory for "normal" food */
@@ -1201,48 +1256,15 @@ pub fn borg_use_things(st: &mut BorgState) -> bool {
 
 /// Satisfy hunger using known supplies without using unrelated items.
 pub(crate) fn borg_eat_when_hungry(st: &mut BorgState) -> bool {
-    // borg-reborn-rs (#451): a Remove Hunger scroll goes before any food
-    if borg_satisfy_hunger_before_food(st)
-        || borg_spell(st, REMOVE_HUNGER)
+    let food = TV_FOOD as i32;
+    borg_spell(st, REMOVE_HUNGER)
         || borg_spell(st, HERBAL_CURING)
+        || borg_consume_neutral_food(st)
         || borg_quaff_potion(st, st.item_val.sv_potion_slime_mold)
-    {
-        return true;
-    }
-
-    if engine::player_is_shapechanged() {
-        return borg_activate_item(st, st.act.food_waybread);
-    }
-
-    let pack_size = usize::from(engine::z_info().pack_size);
-    let slot = hungry_food_slot(&st.item_val, &st.items.items[..pack_size]);
-    // borg-reborn-rs (#1109): keep the Waybread activation ahead of biscuits.
-    if (slot < 0 || i32::from(st.items.items[slot as usize].sval) == st.item_val.sv_food_biscuit)
-        && borg_activate_item(st, st.act.food_waybread)
-    {
-        return true;
-    }
-    eat_from_slot(st, slot)
-}
-
-fn hungry_food_slot(values: &ItemValState, pack: &[borg_item]) -> i32 {
-    [
-        values.sv_food_slime_mold,
-        values.sv_food_slice,
-        values.sv_food_apple,
-        values.sv_food_pint,
-        values.sv_food_handful,
-        values.sv_food_honey_cake,
-        values.sv_food_ration,
-        values.sv_food_waybread,
-        values.sv_food_draught,
-        // object.txt: Hard Biscuit adds 10 nutrition and has no harmful effect.
-        values.sv_food_biscuit,
-    ]
-    .into_iter()
-    .map(|sval| borg_slot_in_pack(pack, TV_FOOD as i32, sval))
-    .find(|&slot| slot >= 0)
-    .unwrap_or(-1)
+        || borg_eat(st, food, st.item_val.sv_food_pint)
+        || borg_eat(st, food, st.item_val.sv_food_waybread)
+        || borg_eat(st, food, st.item_val.sv_food_draught)
+        || borg_activate_item(st, st.act.food_waybread)
 }
 
 /// Recharge things.
@@ -1511,43 +1533,44 @@ mod tests {
     }
 
     #[test]
-    fn hungry_food_uses_a_known_biscuit_after_the_existing_foods() {
-        let values = ItemValState {
-            sv_food_biscuit: 1,
-            sv_food_ration: 2,
-            ..ItemValState::default()
-        };
-        let food = |sval, aware| borg_item {
-            iqty: 1,
+    fn neutral_food_ranks_stacks_by_total_nutrition() {
+        let food = |kind, iqty| borg_item {
+            kind,
+            iqty,
             tval: TV_FOOD as u8,
-            sval,
-            aware,
-            ..blank_item()
+            aware: true,
+            ..crate::borg_item::blank_item()
+        };
+        let mut pack = [
+            food(0, 4),
+            food(1, 1),
+            borg_item { tval: TV_SCROLL as u8, sval: 7, ..food(2, 1) },
+            food(3, 1),
+            borg_item { aware: false, ..food(0, 1) },
+            food(0, 0),
+        ];
+        let nourish = EF_NOURISH as u16;
+        let effects = |kind| match kind {
+            0 => vec![(nourish, 0, 10), (EF_CRUNCH as u16, 0, 0)], // Biscuit
+            1 => vec![(nourish, 0, 30)], // Ration
+            2 => vec![(nourish, 3, 50)], // Remove Hunger
+            3 => vec![(nourish, 0, 3), (crate::headers::list_effects_h::EF_TIMED_INC as u16, 0, 1)],
+            _ => unreachable!(),
         };
 
-        let mut pack = [
-            food(1, true),  // Hard Biscuit
-            food(3, true),  // Scrap of Flesh
-            food(2, false), // Unaware Ration of Food
-        ];
-        assert_eq!(hungry_food_slot(&values, &pack), 0);
-
-        pack[2].aware = true;
-        assert_eq!(hungry_food_slot(&values, &pack), 2);
-
-        pack[0].aware = false;
+        assert_eq!(neutral_food_slot(&pack, Some(7), true, effects), Some(1));
+        assert_eq!(neutral_food_slot(&pack, Some(7), false, effects), Some(2));
+        assert_eq!(neutral_food_slot(&pack, None, false, effects), None);
+        pack[1].iqty = 2;
+        assert_eq!(neutral_food_slot(&pack, Some(7), true, effects), Some(2));
+        assert_eq!(neutral_food_slot(&pack, None, true, effects), Some(0));
         pack[2].iqty = 0;
-        assert_eq!(hungry_food_slot(&values, &pack), -1);
-    }
-
-    #[test]
-    fn the_hunger_scroll_goes_before_food_only_under_the_plan_and_when_it_can_be_read() {
-        assert!(may_read_hunger_scroll_first(true, false, false, false));
-        // without the town plan the C Borg's order stands (spells, then food)
-        assert!(!may_read_hunger_scroll_first(false, false, false, false));
-        // blind, confused or forgetful: no scroll, the Borg goes on to eat
-        assert!(!may_read_hunger_scroll_first(true, true, false, false));
-        assert!(!may_read_hunger_scroll_first(true, false, true, false));
-        assert!(!may_read_hunger_scroll_first(true, false, false, true));
+        assert_eq!(neutral_food_slot(&pack, Some(7), true, effects), Some(0));
+        pack[2].iqty = 1;
+        pack[0].iqty = 3;
+        pack[1].iqty = 1;
+        assert_eq!(neutral_food_slot(&pack, Some(7), true, effects), Some(1));
+        pack[4].aware = true;
+        assert_eq!(neutral_food_slot(&pack, Some(7), true, effects), Some(4));
     }
 }
