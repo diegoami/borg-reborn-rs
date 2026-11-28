@@ -1,6 +1,6 @@
 # Calculation-reload carry: verified product scenario, ready for adoption
 
-Consumer [96](https://github.com/diegoami/better-borg-c/issues/96), canonical
+Consumer [96](https://github.com/diegoami/patched-borg-c/issues/96), canonical
 source [325](https://github.com/diegoami/neo-angband-tracker/issues/325)
 (calcreload-325). Fix applied as `c528eb81e0651bad91f28c896594cf56ad6fd3de`
 (import of source PR337 `253ab11468bd91f47f2a458ecc3f333a00eaa677`, patch

@@ -1,6 +1,6 @@
 # Necrolight-296 carry: verified product scenario
 
-Consumer [377](https://github.com/diegoami/better-borg-c/issues/377),
+Consumer [377](https://github.com/diegoami/patched-borg-c/issues/377),
 canonical source
 [296](https://github.com/diegoami/neo-angband-tracker/issues/296)
 (necrolight-296; source fix `ea838de67`, evidence fixture `742e04ed8`).

@@ -1,6 +1,6 @@
 # Restmult-149 carry: verified product scenario
 
-Consumer [306](https://github.com/diegoami/better-borg-c/issues/306),
+Consumer [306](https://github.com/diegoami/patched-borg-c/issues/306),
 canonical source
 [149](https://github.com/diegoami/neo-angband-tracker/issues/149)
 (restmult-149; source fix `e66740cc`, evidence fixture `e76b239b3`).

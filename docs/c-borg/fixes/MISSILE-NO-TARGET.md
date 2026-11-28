@@ -1,6 +1,6 @@
 # Missile no-target carry: verified product scenario, ready for adoption
 
-Consumer [51](https://github.com/diegoami/better-borg-c/issues/51), canonical
+Consumer [51](https://github.com/diegoami/patched-borg-c/issues/51), canonical
 source [254](https://github.com/diegoami/neo-angband-tracker/issues/254)
 (missile-254). Fix applied as `09dd4435bd0f36d702246ad6936c856cf08a7e51`
 (import of source PR288 `405e4fd4880e7bef27d6a6328765a904638c8257`, patch

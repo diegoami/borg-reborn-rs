@@ -1,6 +1,6 @@
 # Drophole-136 carry: verified product scenario
 
-Consumer [290](https://github.com/diegoami/better-borg-c/issues/290),
+Consumer [290](https://github.com/diegoami/patched-borg-c/issues/290),
 canonical source
 [136](https://github.com/diegoami/neo-angband-tracker/issues/136)
 (drophole-136; source PR450 `ca904787`, evidence PR449). Fix applied as the

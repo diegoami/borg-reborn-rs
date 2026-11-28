@@ -1,6 +1,6 @@
 # Neckdead-47 carry: verified no-behaviour-change cleanup
 
-Consumer [312](https://github.com/diegoami/better-borg-c/issues/312),
+Consumer [312](https://github.com/diegoami/patched-borg-c/issues/312),
 canonical source
 [47](https://github.com/diegoami/neo-angband-tracker/issues/47)
 (CBUG-0031, neckdead-47; source fix `e9080f35f`, evidence fixture

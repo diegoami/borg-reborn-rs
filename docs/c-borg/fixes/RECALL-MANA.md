@@ -1,6 +1,6 @@
 # Recall-wait mana threshold carry: verified product scenario with a layered interaction
 
-Consumer [250](https://github.com/diegoami/better-borg-c/issues/250),
+Consumer [250](https://github.com/diegoami/patched-borg-c/issues/250),
 canonical source [157](https://github.com/diegoami/neo-angband-tracker/issues/157)
 (recallmana-157 / CBUG-0141). Fix applied as
 `8a604133a62c97ce00a9c0c5faf0d575357cf5d3` (`cherry-pick -x` of source

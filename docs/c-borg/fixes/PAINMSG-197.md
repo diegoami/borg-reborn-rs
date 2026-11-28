@@ -1,6 +1,6 @@
 # Painmsg-197 carry: verified product scenario
 
-Consumer [287](https://github.com/diegoami/better-borg-c/issues/287),
+Consumer [287](https://github.com/diegoami/patched-borg-c/issues/287),
 canonical source
 [197](https://github.com/diegoami/neo-angband-tracker/issues/197)
 (painmsg-197; source PR458 `8a0c13f7`, evidence PR457). Fix applied as

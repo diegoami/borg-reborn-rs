@@ -1,6 +1,6 @@
 # Impact milestone 5: eight carries since impact v4 (patches 0043–0050)
 
-Review package for [milestone 5](https://github.com/diegoami/better-borg-c/milestone/5):
+Review package for [milestone 5](https://github.com/diegoami/patched-borg-c/milestone/5):
 the eight verified C bug carries after the milestone4 runtime snapshot
 `70993393a` (42 carries) — patches 0043–0050, consumer issues 188, 196,
 201, 205, 214, 216, 212 and 224. Runtime snapshot after the eighth

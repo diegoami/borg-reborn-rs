@@ -1,6 +1,6 @@
 # Glowtrace permanent-glow correction carry: verified product scenario
 
-Consumer [224](https://github.com/diegoami/better-borg-c/issues/224),
+Consumer [224](https://github.com/diegoami/patched-borg-c/issues/224),
 canonical source
 [213](https://github.com/diegoami/neo-angband-tracker/issues/213)
 (glowtrace-213, revised kit). Correction applied as `b5e07827a`

@@ -16,7 +16,7 @@ where an independent verdict goes.
 | Release tag | `4.2.6-impact-v15` on this package's merge commit, whose `src/`, `lib/` and `CMakeLists.txt` are identical to `b684b95b4`; the tag sits on the package commit because `tools/make-release.py` reads `patches/series.json` and `docs/RELEASE-INSTALL.md` from the release ref (the `4.2.6-impact-v9.1` precedent) |
 | Size | 8 first-parent commits/merges to the snapshot, 34 files, +9336/-252 (the bulk is the committed v14 matrix summary and upstream's SDL2/workflow files) |
 | Runtime surface | `src/`: 15 files, +713/-199, all from official master; `src/borg/`: `borg-trait.c` only, +20/-11 |
-| Compare view | https://github.com/diegoami/better-borg-c/compare/4.2.6-impact-v14...b684b95b4 |
+| Compare view | https://github.com/diegoami/patched-borg-c/compare/4.2.6-impact-v14...b684b95b4 |
 
 No new carry, no improvement unit and no gameplay change of this repository's own lands in the
 window. Its non-runtime items: the milestone-14 package and corrections (PRs 541, 543, already
@@ -94,7 +94,7 @@ from the commit that contains this file.
 
 ## Review and corrections
 
-Review [#547](https://github.com/diegoami/better-borg-c/issues/547), run at the owner's request by an
+Review [#547](https://github.com/diegoami/patched-borg-c/issues/547), run at the owner's request by an
 independent Claude agent from a fresh clone (same model family as the implementer): **approve with
 corrections**. It reproduced claims 2.1-2.7, including the three-tree retirement audit, the 371-case
 matrix on the import and pre-import builds, and the patch and source assets byte for byte against the

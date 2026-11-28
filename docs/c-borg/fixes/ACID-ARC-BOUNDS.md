@@ -1,6 +1,6 @@
 # Acid-arc-bounds carry: verified product scenario, ready for adoption
 
-Consumer [141](https://github.com/diegoami/better-borg-c/issues/141), canonical
+Consumer [141](https://github.com/diegoami/patched-borg-c/issues/141), canonical
 source [252](https://github.com/diegoami/neo-angband-tracker/issues/252)
 (acidarc-252). Fix applied as
 `894965c78bce5c53a3bbdc498ace40a825fb0679` (import of source PR382

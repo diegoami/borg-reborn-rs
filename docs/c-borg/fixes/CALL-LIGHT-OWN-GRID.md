@@ -1,6 +1,6 @@
 # Call-light-own-grid carry: verified product scenario, ready for adoption
 
-Consumer [196](https://github.com/diegoami/better-borg-c/issues/196), canonical
+Consumer [196](https://github.com/diegoami/patched-borg-c/issues/196), canonical
 source [231](https://github.com/diegoami/neo-angband-tracker/issues/231)
 (calllight-231). Fix applied as
 `6b43497330399bfc8711289a3e873868a8af910f` (import of source PR395-head

@@ -1,6 +1,6 @@
 # Impact milestone 8: twelve patch units since impact v7 (patches 0078-0089)
 
-Review package for [milestone 8](https://github.com/diegoami/better-borg-c/milestone/8): the
+Review package for [milestone 8](https://github.com/diegoami/patched-borg-c/milestone/8): the
 verified C carries after the milestone7 runtime snapshot `3573d741e6dc3cafa4099fcef8b38fdb32952977`
 (patches through 0077): board carries 0078-0081 (banisharte-37, restmult-149, shopline-125,
 lightwest-40), the 0082/0083 stacked pair (modcredit-70, and neckdead-47 carried as an

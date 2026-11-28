@@ -1,6 +1,6 @@
 # Lantern-90 carry: verified product scenario
 
-Consumer [296](https://github.com/diegoami/better-borg-c/issues/296),
+Consumer [296](https://github.com/diegoami/patched-borg-c/issues/296),
 canonical source
 [90](https://github.com/diegoami/neo-angband-tracker/issues/90)
 (CBUG-0074, lantern-90; source fix `bd4698a8`, evidence fixture

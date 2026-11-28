@@ -1,6 +1,6 @@
 # Starvealch-18 carry: verified product scenario
 
-Consumer [359](https://github.com/diegoami/better-borg-c/issues/359),
+Consumer [359](https://github.com/diegoami/patched-borg-c/issues/359),
 canonical source
 [18](https://github.com/diegoami/neo-angband-tracker/issues/18)
 (starvealch-18; source fix `0fd9bc4bd`, evidence fixture `98aa8ad02`).

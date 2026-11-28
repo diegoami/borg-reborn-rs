@@ -19,8 +19,8 @@ qualified native observed binary; six-carry is the rebuilt actual merge
 45eac63bd9f7cabe3c4ef1607703324ca8dae0fc. Both retain the official game base
 e473720ed88a0f0c7ca66815cef3000eb4a38bc3. Exact source/build/binary/data/tool/
 calendar/RNG/command identity and all individual summaries are in
-[machine results](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/deep-impact-v2-results.json); the prospective configuration is
-[cohort.json](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/deep-impact-v2-cohort.json). Observer instrumentation is unchanged,
+[machine results](https://github.com/diegoami/patched-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/deep-impact-v2-results.json); the prospective configuration is
+[cohort.json](https://github.com/diegoami/patched-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/deep-impact-v2-cohort.json). Observer instrumentation is unchanged,
 reads state and uses forked saves; no decisions/RNG/game rules changed by logging.
 No cheat-death, hidden-information input or favorable intervention was used.
 
@@ -68,7 +68,7 @@ change. Original-C defects, if proved, route to source207 before fix/adoption.
 
 All three fixed v1 observation prefixes were repeated by the deep runs. Fixed
 seed47's complete400000-turn trajectory was not repeated; only its first20000
-observations are qualified. [Replay receipts](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/deep-impact-v2-repeatability.json)
+observations are qualified. [Replay receipts](https://github.com/diegoami/patched-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/deep-impact-v2-repeatability.json)
 state that limitation. Runtime calendar/timezone is recorded for these runs;
 native seasonal monster rules still limit cross-calendar reproduction.
 

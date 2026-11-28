@@ -1,6 +1,6 @@
 # Tap-unlife carry: BLOCKED — the defect does not reproduce on the layered product
 
-Consumer [140](https://github.com/diegoami/better-borg-c/issues/140), canonical
+Consumer [140](https://github.com/diegoami/patched-borg-c/issues/140), canonical
 source [249](https://github.com/diegoami/neo-angband-tracker/issues/249)
 (tapunlife-249). Candidate fix: source PR362
 `21a1b9079e612adaf8108390e5ec2379ffce33b7`, applied on

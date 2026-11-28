@@ -1,6 +1,6 @@
 # Clock-overflow graceful reset carry: verified product scenario
 
-Consumer [245](https://github.com/diegoami/better-borg-c/issues/245),
+Consumer [245](https://github.com/diegoami/patched-borg-c/issues/245),
 canonical source [246](https://github.com/diegoami/neo-angband-tracker/issues/246)
 (clockreset-246). Fix applied as `49f9c19df2b7157594498eb81091c8f4c6dbdbf6`
 (`cherry-pick -x` of source `7cc0ebbd2016afeaaf57c5e976251b67f7c0e147`, source PR 415,

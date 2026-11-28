@@ -1,7 +1,7 @@
 # Native C impact v1 — accumulated external-review package
 
-[Milestone1](https://github.com/diegoami/better-borg-c/milestone/1) collects this
-batch; [review issue11](https://github.com/diegoami/better-borg-c/issues/11) owns
+[Milestone1](https://github.com/diegoami/patched-borg-c/milestone/1) collects this
+batch; [review issue11](https://github.com/diegoami/patched-borg-c/issues/11) owns
 external findings. The owner directed merge, measure and continue, with external
 review at an accumulated milestone. No external verdict has been supplied.
 This milestone does not reinstate a per-PR independent-review gate.
@@ -10,10 +10,10 @@ This milestone does not reinstate a per-PR independent-review gate.
 
 | Change | PR | Merge commit | Measured benefit |
 | --- | --- | --- | --- |
-| Native harness/frozen baseline | [5](https://github.com/diegoami/better-borg-c/pull/5) | b2c4aeb7a14dc77232ab71dad74df4c071b095c0 | Repeated starts/traces, failure accounting and explicit execution contract |
-| Safer available emergency swap | [6](https://github.com/diegoami/better-borg-c/pull/6) | e4932f358beffcf9956b4e4b8d9e719c5086f664 | Two-threat native damage113→59HP; five affected cases corrected |
-| Trace/watchdog safety | [9](https://github.com/diegoami/better-borg-c/pull/9) | 401583ac5258356f07ea61e85eeaa7387d898b05 | Partial records no longer abort supervision; reader failure reaps owned child |
-| Knockout reaction reset | [10](https://github.com/diegoami/better-borg-c/pull/10) | d4bfdce9d4782cf83994ad52de707a52d1f31018 | Post-recovery accepted kill notification0→1; three identical controls |
+| Native harness/frozen baseline | [5](https://github.com/diegoami/patched-borg-c/pull/5) | b2c4aeb7a14dc77232ab71dad74df4c071b095c0 | Repeated starts/traces, failure accounting and explicit execution contract |
+| Safer available emergency swap | [6](https://github.com/diegoami/patched-borg-c/pull/6) | e4932f358beffcf9956b4e4b8d9e719c5086f664 | Two-threat native damage113→59HP; five affected cases corrected |
+| Trace/watchdog safety | [9](https://github.com/diegoami/patched-borg-c/pull/9) | 401583ac5258356f07ea61e85eeaa7387d898b05 | Partial records no longer abort supervision; reader failure reaps owned child |
+| Knockout reaction reset | [10](https://github.com/diegoami/patched-borg-c/pull/10) | d4bfdce9d4782cf83994ad52de707a52d1f31018 | Post-recovery accepted kill notification0→1; three identical controls |
 
 Review the executable snapshot at **d4bfdce9d4782cf83994ad52de707a52d1f31018**.
 Later milestone documentation/session links do not change runtime source.
@@ -65,12 +65,12 @@ Each post-merge variant has3cap survivors,0deaths,0completions,0stalls,0crashes,
 not extra independent samples. All observations are right-censored at the cap;
 wall differences are not attributed to fixes. Turns, spent energy and Borg calls
 remain distinct. Raw final RNG/character state and every result/trace/save hash:
-[original baseline receipt](https://github.com/diegoami/better-borg-c/issues/3#issuecomment-6682135753)
-and [actual post-merge JSON](https://github.com/diegoami/better-borg-c/issues/11#issuecomment-6682638064).
+[original baseline receipt](https://github.com/diegoami/patched-borg-c/issues/3#issuecomment-6682135753)
+and [actual post-merge JSON](https://github.com/diegoami/patched-borg-c/issues/11#issuecomment-6682638064).
 
 ## Verification and retained failures
 
-Actual cumulative main [hosted42201885117](https://github.com/diegoami/better-borg-c/actions/runs/42201885117)
+Actual cumulative main [hosted42201885117](https://github.com/diegoami/patched-borg-c/actions/runs/42201885117)
 at d4bfdce9 passed **16 tooling tests,965/965 unit +5/5 frontend**, numerical
 logs inspected. Source82 main42201213151, watchdog main42201501479 and PR
 heads42200616909/42201431003/42201832068 also completed SUCCESS. Harness PR5

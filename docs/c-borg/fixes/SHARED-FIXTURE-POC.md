@@ -1,6 +1,6 @@
 # CBUG-0066 shared decision-boundary POC — native exporter
 
-Owner task: [native315](https://github.com/diegoami/better-borg-c/issues/315).
+Owner task: [native315](https://github.com/diegoami/patched-borg-c/issues/315).
 Coordination and canonical contract/corpus: [workspace40](https://github.com/diegoami/angband-workspace/issues/40).
 TypeScript consumer: [Mandos217](https://github.com/diegoami/mandos/issues/217).
 

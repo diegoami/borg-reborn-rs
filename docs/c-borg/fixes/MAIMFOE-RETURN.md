@@ -1,6 +1,6 @@
 # Maim Foe real-pass return carry: verified product scenario, ready for adoption
 
-Consumer [214](https://github.com/diegoami/better-borg-c/issues/214), canonical
+Consumer [214](https://github.com/diegoami/patched-borg-c/issues/214), canonical
 source [256](https://github.com/diegoami/neo-angband-tracker/issues/256)
 (maimfoe-256). Fix applied as
 `c61e90c9cdfb466336d3f564a1a3709f3daecc65` (import of source PR389-head

@@ -1,6 +1,6 @@
 # Staff-holiness carry: verified product scenario, ready for adoption
 
-Consumer [87](https://github.com/diegoami/better-borg-c/issues/87), canonical
+Consumer [87](https://github.com/diegoami/patched-borg-c/issues/87), canonical
 source [262](https://github.com/diegoami/neo-angband-tracker/issues/262)
 (staff-262). Fix applied as `13fe885cb11a61c1a2ff9c2e53dd338b86bbddb0`
 (import of source PR329 `fe34f38d0c998cf34ace02d09bf97774f38e65df`, stacked

@@ -1,6 +1,6 @@
 # Stair-track carry: verified product scenario, ready for adoption
 
-Consumer [137](https://github.com/diegoami/better-borg-c/issues/137), canonical
+Consumer [137](https://github.com/diegoami/patched-borg-c/issues/137), canonical
 source [232](https://github.com/diegoami/neo-angband-tracker/issues/232)
 (stairtrack-232, priority low). Fix applied as
 `faa86f83b12f7f43cdde21f48faf045f9e385c60` (import of source PR358

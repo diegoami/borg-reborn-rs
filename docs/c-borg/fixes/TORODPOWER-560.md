@@ -1,6 +1,6 @@
 # Torodpower-560 carry: verified product scenario
 
-Consumer [369](https://github.com/diegoami/better-borg-c/issues/369),
+Consumer [369](https://github.com/diegoami/patched-borg-c/issues/369),
 canonical source
 [560](https://github.com/diegoami/neo-angband-tracker/issues/560)
 (torodpower-560; source fix `fc444ab17`, evidence fixture `12a59c5c4`).

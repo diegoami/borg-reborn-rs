@@ -1,6 +1,6 @@
 # Detect panel carry: verified product scenario, ready for adoption
 
-Consumer [72](https://github.com/diegoami/better-borg-c/issues/72), canonical
+Consumer [72](https://github.com/diegoami/patched-borg-c/issues/72), canonical
 source [290](https://github.com/diegoami/neo-angband-tracker/issues/290)
 (detect-290, source priority high). Fix applied as
 `c3e8f60a3ea164b74ce76bbac7a3097263a13a9f` (import of source PR306

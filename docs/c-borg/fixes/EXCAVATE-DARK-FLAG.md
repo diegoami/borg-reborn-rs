@@ -1,6 +1,6 @@
 # Excavate-dark-flag carry: verified product scenario, ready for adoption
 
-Consumer [188](https://github.com/diegoami/better-borg-c/issues/188), canonical
+Consumer [188](https://github.com/diegoami/patched-borg-c/issues/188), canonical
 source [236](https://github.com/diegoami/neo-angband-tracker/issues/236)
 (excavate-236). Fix applied as
 `bdd3c2ea2c120c5200f182b1676b860942abc71e` (import of source PR400-head

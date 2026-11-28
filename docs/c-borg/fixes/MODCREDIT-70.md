@@ -1,6 +1,6 @@
 # Modcredit-70 carry: verified product scenario
 
-Consumer [311](https://github.com/diegoami/better-borg-c/issues/311),
+Consumer [311](https://github.com/diegoami/patched-borg-c/issues/311),
 canonical source
 [70](https://github.com/diegoami/neo-angband-tracker/issues/70)
 (modcredit-70; source fix `46c6188e`, evidence fixture `426696724`).

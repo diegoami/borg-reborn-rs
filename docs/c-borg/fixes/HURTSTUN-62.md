@@ -1,6 +1,6 @@
 # Hurtstun-62 carry: verified no-behaviour-change cleanup
 
-Consumer [329](https://github.com/diegoami/better-borg-c/issues/329),
+Consumer [329](https://github.com/diegoami/patched-borg-c/issues/329),
 canonical source
 [62](https://github.com/diegoami/neo-angband-tracker/issues/62)
 (CBUG-0046, hurtstun-62; source fix `f1aca2e9a`, evidence fixture

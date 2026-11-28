@@ -1,6 +1,6 @@
 # Tradehist-20 carry: verified product scenario
 
-Consumer [367](https://github.com/diegoami/better-borg-c/issues/367),
+Consumer [367](https://github.com/diegoami/patched-borg-c/issues/367),
 canonical source
 [20](https://github.com/diegoami/neo-angband-tracker/issues/20)
 (tradehist-20; source fix `9ae5e4585`, evidence fixture `942c80a50`).

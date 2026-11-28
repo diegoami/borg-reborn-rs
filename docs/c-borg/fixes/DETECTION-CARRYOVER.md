@@ -1,6 +1,6 @@
 # Detection-carryover carry: verified product scenario, ready for adoption
 
-Consumer [205](https://github.com/diegoami/better-borg-c/issues/205), canonical
+Consumer [205](https://github.com/diegoami/patched-borg-c/issues/205), canonical
 source [219](https://github.com/diegoami/neo-angband-tracker/issues/219)
 (detectcarry-219). Fix applied as
 `7be6518287d8bb20b08c3e59f58c8f3707e36ae2` (import of source PR391-head

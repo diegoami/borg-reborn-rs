@@ -1,7 +1,7 @@
 # Improvement I-002 impact record
 
 Unit: let `borg_caution()` heal while fleeing at survivable danger
-([#408](https://github.com/diegoami/better-borg-c/issues/408), contract and
+([#408](https://github.com/diegoami/patched-borg-c/issues/408), contract and
 evidence there; ledger `patches/improvements.json`; merged `861ecb2da`,
 PR #414). Local-only improvement, never proposed upstream (charter,
 PR #389). Owner direction 2026-11-10: "Fix 408".

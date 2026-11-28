@@ -1,6 +1,6 @@
 # Slay traits carry: verified product scenario, ready for adoption
 
-Consumer [69](https://github.com/diegoami/better-borg-c/issues/69), canonical
+Consumer [69](https://github.com/diegoami/patched-borg-c/issues/69), canonical
 source [239](https://github.com/diegoami/neo-angband-tracker/issues/239)
 (slay-239, source priority high). Fix applied as
 `6bcdd28ace1248e223ac381d61051964bb50a592` (import of source PR304

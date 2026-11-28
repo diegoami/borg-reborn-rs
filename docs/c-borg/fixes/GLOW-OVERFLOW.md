@@ -1,6 +1,6 @@
 # Glow-array overflow carry: verified product scenario, ready for adoption
 
-Consumer [102](https://github.com/diegoami/better-borg-c/issues/102), canonical
+Consumer [102](https://github.com/diegoami/patched-borg-c/issues/102), canonical
 source [311](https://github.com/diegoami/neo-angband-tracker/issues/311)
 (glowoverflow-311, priority high). Fix applied as
 `3cb61705d1adcf813c8318285d7c29abf8c61d5a` (import of source PR346

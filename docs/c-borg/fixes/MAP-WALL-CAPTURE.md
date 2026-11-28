@@ -1,6 +1,6 @@
 # Map-wall-capture carry: verified product scenario, ready for adoption
 
-Consumer [148](https://github.com/diegoami/better-borg-c/issues/148), canonical
+Consumer [148](https://github.com/diegoami/patched-borg-c/issues/148), canonical
 source [212](https://github.com/diegoami/neo-angband-tracker/issues/212)
 (mapwall-212). Fix applied as
 `641234dbd3e5d661e911e810e55df991a3a3a9b3` (import of source PR387

@@ -1,6 +1,6 @@
 # Multibyte screen-text carry: verified product scenario, ready for adoption
 
-Consumer [93](https://github.com/diegoami/better-borg-c/issues/93), canonical
+Consumer [93](https://github.com/diegoami/patched-borg-c/issues/93), canonical
 source [287](https://github.com/diegoami/neo-angband-tracker/issues/287)
 (text-287). Fix applied as `c6c51d4d09e591da9d5df313666fe95b31f05e03`
 (import of source PR335 `3e7fe8a8399352c4fe67f5de2d8d48b5e0bd04c1`, patch

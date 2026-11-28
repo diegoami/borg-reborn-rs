@@ -1,6 +1,6 @@
 # Recalldepth endgame answer carry: verified product scenario, ready for adoption
 
-Consumer [216](https://github.com/diegoami/better-borg-c/issues/216),
+Consumer [216](https://github.com/diegoami/patched-borg-c/issues/216),
 canonical source
 [310](https://github.com/diegoami/neo-angband-tracker/issues/310)
 (recalldepth-310). Fix applied as

@@ -1,6 +1,6 @@
 # Screen-text buffer-size correction carry: verified product scenario
 
-Consumer [93](https://github.com/diegoami/better-borg-c/issues/93), canonical
+Consumer [93](https://github.com/diegoami/patched-borg-c/issues/93), canonical
 source [287](https://github.com/diegoami/neo-angband-tracker/issues/287)
 (text-287, revised kit). Correction applied as `60034c84c` (`cherry-pick -x` of
 source PR335 head `e7f670fa4d4f0672dc346637fc7be20c814a4b62`, patch

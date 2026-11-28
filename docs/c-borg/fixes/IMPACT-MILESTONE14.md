@@ -15,7 +15,7 @@ where an independent verdict goes.
 | Head | `cdfb6d477` (PR 539, the last `src` change; `origin/main` is at `857307ebc`, session/docs after) |
 | Size | 11 first-parent merges, 453 files changed, +96385/-703 (the bulk is committed kit evidence and the death registry) |
 | Runtime surface | `src/`: 5 files, +37/-17 — one file per carried unit |
-| Compare view | https://github.com/diegoami/better-borg-c/compare/4.2.6-impact-v13...cdfb6d477 |
+| Compare view | https://github.com/diegoami/patched-borg-c/compare/4.2.6-impact-v13...cdfb6d477 |
 
 The window also contains: the milestone-13 review record and its closure (#521: Kimi,
 approve-with-corrections -> re-review **approve**, all findings reproduced), the milestone-13

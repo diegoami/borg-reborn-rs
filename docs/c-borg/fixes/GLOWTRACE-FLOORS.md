@@ -1,6 +1,6 @@
 # Glowtrace Floors-branch carry: verified product scenario, ready for adoption
 
-Consumer [224](https://github.com/diegoami/better-borg-c/issues/224),
+Consumer [224](https://github.com/diegoami/patched-borg-c/issues/224),
 canonical source
 [213](https://github.com/diegoami/neo-angband-tracker/issues/213)
 (glowtrace-213). Fix applied as

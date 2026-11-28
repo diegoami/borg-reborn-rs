@@ -1,6 +1,6 @@
 # Impact milestone 10: two improvement units, the 0099 crash correction and the kit restoration since impact v9
 
-Review package for [milestone 10](https://github.com/diegoami/better-borg-c/milestone/10).
+Review package for [milestone 10](https://github.com/diegoami/patched-borg-c/milestone/10).
 
 Base: impact v9, tag `4.2.6-impact-v9` on runtime snapshot `33207fbee` (placed 2026-11-09 after
 the milestone 9 review and its corrections). Head when this package was written: `25d1ce6a7`
@@ -229,7 +229,7 @@ can open the milestone for the external reviewer with the remaining `artifacts/`
 disclosed rather than with an un-restored kit gap.
 
 **External review, 2026-11-10:** the owner launched an independent reviewer on
-[issue 420](https://github.com/diegoami/better-borg-c/issues/420) with the prompt in this
+[issue 420](https://github.com/diegoami/patched-borg-c/issues/420) with the prompt in this
 milestone's review map. The verdict was **approve with corrections**; the reviewer read the 53
 `src/` lines, reproduced the 0099 fail-before/pass-after on the v9 build, reran the 36 restored
 groups (91/91) and `necrolight-crash` (5/5), reproduced the summary and ledger comparisons at

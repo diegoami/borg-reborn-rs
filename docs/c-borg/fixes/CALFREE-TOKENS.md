@@ -1,6 +1,6 @@
 # Calculation token-array carry: verified product scenario, ready for adoption
 
-Consumer [124](https://github.com/diegoami/better-borg-c/issues/124), canonical
+Consumer [124](https://github.com/diegoami/patched-borg-c/issues/124), canonical
 source [323](https://github.com/diegoami/neo-angband-tracker/issues/323)
 (calfree-323, priority low). Fix applied as
 `dc1ea0c3a3554b69b9a70920cd8981351b685389` (import of source PR341

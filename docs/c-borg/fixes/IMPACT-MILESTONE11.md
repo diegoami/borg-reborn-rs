@@ -1,6 +1,6 @@
 # Milestone 11: the v11 carry cycle since impact v10
 
-Package for [milestone 11](https://github.com/diegoami/better-borg-c/milestone/11). It records what
+Package for [milestone 11](https://github.com/diegoami/patched-borg-c/milestone/11). It records what
 the cycle contains, where the evidence is, and what is **not** measured. The review map
 (`docs/review/MILESTONE11.md`) holds the reviewer's checks and prompt.
 
@@ -14,7 +14,7 @@ where an independent verdict goes.
 | Base | tag `4.2.6-impact-v10` on runtime snapshot `6944d88e8` (tag object `fa0f6639`) |
 | Head | `39268ca8a` (PR 470, current `origin/main` when this package was written) |
 | Size | 28 first-parent merges, 610 files changed, +77973/-171 |
-| Compare view | https://github.com/diegoami/better-borg-c/compare/4.2.6-impact-v10...39268ca8a |
+| Compare view | https://github.com/diegoami/patched-borg-c/compare/4.2.6-impact-v10...39268ca8a |
 | Runtime surface | 18 units, 11 files, **+102/-75 lines** - the whole behavioural gameplay change |
 
 The window opens at the v10 tag, so it also contains the milestone-10 tail (PRs 422-425: review

@@ -1,6 +1,6 @@
 # Spasticscore-147 carry: verified product scenario on a consumer-designed fixture
 
-Consumer [288](https://github.com/diegoami/better-borg-c/issues/288),
+Consumer [288](https://github.com/diegoami/patched-borg-c/issues/288),
 canonical source
 [147](https://github.com/diegoami/neo-angband-tracker/issues/147)
 (spasticscore-147; source fix `6e54def8`, source kit `5b38022e`).

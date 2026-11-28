@@ -182,8 +182,8 @@ These follow from the sources. Each cites the evidence behind it.
    not a weapon (REDESIGN-LESSONS L7–L9). *Evidence:* bbc D0001 (Phase
    Door at home), bbc D0009 (food), bbc D0011–D0012 (unidentified cures),
    bbc D0013 (rings bought, no cure), owner priorities
-   [better-borg-c#41](https://github.com/diegoami/better-borg-c/issues/41)
-   and [#180](https://github.com/diegoami/better-borg-c/issues/180).
+   [better-borg-c#41](https://github.com/diegoami/patched-borg-c/issues/41)
+   and [#180](https://github.com/diegoami/patched-borg-c/issues/180).
 8. **Depth readiness is one policy, per class.** Stairs, Deep Descent,
    trapdoors and recall depth all go through it, and every level change is
    judged by its destination. In 4.2, Deep Descent goes to max_depth + 5,

@@ -6,8 +6,8 @@ stale-counter spots and both are needed.
 
 | patch | consumer | source | applied | source commit |
 | --- | --- | --- | --- | --- |
-| 0062 | [266](https://github.com/diegoami/better-borg-c/issues/266) | [184](https://github.com/diegoami/neo-angband-tracker/issues/184) respois-184 | `089acfae4735f1b76d2fa2723cdbc44786647c4f` | `5e8d4c5e6c1006ce4c90e21a973b0f95bb9fa0db` |
-| 0063 | [267](https://github.com/diegoami/better-borg-c/issues/267) | [185](https://github.com/diegoami/neo-angband-tracker/issues/185) respoiswar-185 | `b81495995bad7e1c17cbf7ce7b51d7f22a9808ea` | `c056daabf55e6a1713e68381ef4a72ec6fd349b9` |
+| 0062 | [266](https://github.com/diegoami/patched-borg-c/issues/266) | [184](https://github.com/diegoami/neo-angband-tracker/issues/184) respois-184 | `089acfae4735f1b76d2fa2723cdbc44786647c4f` | `5e8d4c5e6c1006ce4c90e21a973b0f95bb9fa0db` |
+| 0063 | [267](https://github.com/diegoami/patched-borg-c/issues/267) | [185](https://github.com/diegoami/neo-angband-tracker/issues/185) respoiswar-185 | `b81495995bad7e1c17cbf7ce7b51d7f22a9808ea` | `c056daabf55e6a1713e68381ef4a72ec6fd349b9` |
 
 ## Defects
 

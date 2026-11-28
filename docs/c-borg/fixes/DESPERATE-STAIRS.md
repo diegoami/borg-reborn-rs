@@ -1,6 +1,6 @@
 # Desperate nearest-staircase carry: verified product scenario
 
-Consumer [252](https://github.com/diegoami/better-borg-c/issues/252),
+Consumer [252](https://github.com/diegoami/patched-borg-c/issues/252),
 canonical source [153](https://github.com/diegoami/neo-angband-tracker/issues/153)
 (deskstair-153 / CBUG-0137). Fix applied as
 `4a88e67f96e55ab354e94d65d8dd5b98d5171252` (`cherry-pick -x` of source

@@ -1,6 +1,6 @@
 # Urgentshop-23 carry: verified product scenario
 
-Consumer [336](https://github.com/diegoami/better-borg-c/issues/336),
+Consumer [336](https://github.com/diegoami/patched-borg-c/issues/336),
 canonical source
 [23](https://github.com/diegoami/neo-angband-tracker/issues/23)
 (urgentshop-23; source fix `09c28cd59`, evidence fixture `dbd9ddf1b`).

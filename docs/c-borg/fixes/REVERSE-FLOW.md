@@ -6,8 +6,8 @@ reverse flow starts at the Borg's own grid (cost 0) and stops before reaching an
 
 | patch | consumer | source | file | applied | source commit |
 | --- | --- | --- | --- | --- | --- |
-| 0064 | [268](https://github.com/diegoami/better-borg-c/issues/268) | [146](https://github.com/diegoami/neo-angband-tracker/issues/146) spastic-146 | `borg-flow-misc.c` | `dafc4bd45c5cc45fa0a435ced1a956512fbdcafc` | `f97311e5d52de4dda8d75058114c52acbdac2674` |
-| 0065 | [269](https://github.com/diegoami/better-borg-c/issues/269) | [345](https://github.com/diegoami/neo-angband-tracker/issues/345) glyphflow-345 | `borg-flow-glyph.c` | `e66b1dca298523c84a8a7a0d9ae009ddf6562b10` | `f618381294dcf5bff1f0bc95f0fbe259412a53b9` |
+| 0064 | [268](https://github.com/diegoami/patched-borg-c/issues/268) | [146](https://github.com/diegoami/neo-angband-tracker/issues/146) spastic-146 | `borg-flow-misc.c` | `dafc4bd45c5cc45fa0a435ced1a956512fbdcafc` | `f97311e5d52de4dda8d75058114c52acbdac2674` |
+| 0065 | [269](https://github.com/diegoami/patched-borg-c/issues/269) | [345](https://github.com/diegoami/neo-angband-tracker/issues/345) glyphflow-345 | `borg-flow-glyph.c` | `e66b1dca298523c84a8a7a0d9ae009ddf6562b10` | `f618381294dcf5bff1f0bc95f0fbe259412a53b9` |
 
 Each is a `cherry-pick -x` of one reviewed C-only source commit.
 

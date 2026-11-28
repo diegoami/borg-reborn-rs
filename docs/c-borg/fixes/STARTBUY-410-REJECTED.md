@@ -2,7 +2,7 @@
 
 Unit: starting purchases - reserve gold for 4 Phase Door + 3 cure potions
 before gear during the first-visit window
-([#410](https://github.com/diegoami/better-borg-c/issues/410), contract and
+([#410](https://github.com/diegoami/patched-borg-c/issues/410), contract and
 evidence there; owner direction 2026-11-10 "do 410"). Branch
 `task/imp-003-startbuy` (commits `a1a5a948a`, `c02a34253`, `49cb377bd`);
 **not merged** - main is untouched. Local improvement unit, never proposed

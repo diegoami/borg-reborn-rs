@@ -1,6 +1,6 @@
 # Reserve bolt carry: verified product scenario, ready for adoption
 
-Consumer [78](https://github.com/diegoami/better-borg-c/issues/78), canonical
+Consumer [78](https://github.com/diegoami/patched-borg-c/issues/78), canonical
 source [258](https://github.com/diegoami/neo-angband-tracker/issues/258)
 (reserve-258). Fix applied as `21c672a856079167820d22dbf299f39c98faa24d`
 (import of source PR318 `7b4ecd6b888a1d87b526f273c769449eb013ad9b`, patch

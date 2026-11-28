@@ -1,6 +1,6 @@
 # Shopline-125 carry: verified product scenario
 
-Consumer [307](https://github.com/diegoami/better-borg-c/issues/307),
+Consumer [307](https://github.com/diegoami/patched-borg-c/issues/307),
 canonical source
 [125](https://github.com/diegoami/neo-angband-tracker/issues/125)
 (shopline-125; source fix `9d35babe`, evidence fixture `330deefd6`).

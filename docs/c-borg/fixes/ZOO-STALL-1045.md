@@ -1,7 +1,7 @@
 # M4 munchkin seed1045 stall investigation
 
 Canonical original-C finding: [source403](https://github.com/diegoami/neo-angband-tracker/issues/403).
-Tracking: [consumer204](https://github.com/diegoami/better-borg-c/issues/204).
+Tracking: [consumer204](https://github.com/diegoami/patched-borg-c/issues/204).
 Read-only origin: [borg-zoo workflow42416417481](https://github.com/diegoami/borg-zoo/actions/runs/42416417481),
 results branch `results/dive-styles-early/42416417481-1/cells.jsonl`.
 This is a liveness investigation, not a survival comparison or a gameplay fix.
@@ -51,7 +51,7 @@ The observer counts those original counters rather than causing this behavior.
 The native pristine control reaches100000 alive. M3 and carry-prefix tests
 localise the triggering trajectory; the loaded-state check demonstrates the
 original mechanism. Curated results and exact binary identities are in
-[zoo-stall-1045/results.json](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/zoo-stall-1045/results.json).
+[zoo-stall-1045/results.json](https://github.com/diegoami/patched-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/zoo-stall-1045/results.json).
 
 ## Carry-prefix bisection
 

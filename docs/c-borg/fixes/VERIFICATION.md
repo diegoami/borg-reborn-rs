@@ -20,7 +20,7 @@ builds/scenarios from different tasks don't run concurrently.
 Native verification runs on GitHub-hosted `ubuntu-latest` for main/PR/manual
 events. The explicitly owner-requested donor inventory also runs weekly on
 Mondays 09:15 Europe/Berlin and by manual dispatch, reporting to
-[ongoing issue24](https://github.com/diegoami/better-borg-c/issues/24). It reads
+[ongoing issue24](https://github.com/diegoami/patched-borg-c/issues/24). It reads
 public C source metadata and queues semantic review; it never executes/imports
 fork code or proves better play from activity. Bugs still take priority.
 

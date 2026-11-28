@@ -1,6 +1,6 @@
 # Glyph tracker carry: verified product scenario, ready for adoption
 
-Consumer [48](https://github.com/diegoami/better-borg-c/issues/48), canonical
+Consumer [48](https://github.com/diegoami/patched-borg-c/issues/48), canonical
 source [118](https://github.com/diegoami/neo-angband-tracker/issues/118)
 (CBUG-0102). Fix applied as `40b002da088ac48e7c1322aca2159e22c593fd73`
 (import of source PR283 `ec172531ec38fdd3ac2783d21e3faf6dc1e2b3f3`, patch

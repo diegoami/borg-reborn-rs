@@ -1,6 +1,6 @@
 # Excessive-danger flee carry: verified product scenario, cohort divergence recorded
 
-Consumer [247](https://github.com/diegoami/better-borg-c/issues/247),
+Consumer [247](https://github.com/diegoami/patched-borg-c/issues/247),
 canonical source [156](https://github.com/diegoami/neo-angband-tracker/issues/156)
 (dangerflee-156 / CBUG-0140). Fix applied as
 `26811540dd23b382f0a80ab2f3011806f1f81b50` (`cherry-pick -x` of source

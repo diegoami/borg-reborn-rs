@@ -1,6 +1,6 @@
 # Healchance-364 carry: verified product scenario
 
-Consumer [363](https://github.com/diegoami/better-borg-c/issues/363),
+Consumer [363](https://github.com/diegoami/patched-borg-c/issues/363),
 canonical source
 [364](https://github.com/diegoami/neo-angband-tracker/issues/364)
 (healchance-364; source fix `b366550f7`, evidence fixture `3adc1b812`).

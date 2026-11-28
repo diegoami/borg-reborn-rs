@@ -76,7 +76,7 @@ Locally carried/open+patch-active awaits actual upstream incorporation/rebuild.
 ## Merged-source v1 results
 
 Actual merge45eac63bd9f7cabe3c4ef1607703324ca8dae0fc was rebuilt and run.
-[Machine-readable outcomes](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/potion-timing-v1.json) retain all three cases and
+[Machine-readable outcomes](https://github.com/diegoami/patched-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/potion-timing-v1.json) retain all three cases and
 all controlled case outcomes. Exact-head hosted42219307029 numerical logs have
 29 tooling tests,965/965unit+5/5frontend; merged-main42219457629 also succeeded.
 

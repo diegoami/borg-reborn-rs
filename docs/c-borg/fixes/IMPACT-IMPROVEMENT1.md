@@ -1,7 +1,7 @@
 # Improvement I-001 impact record
 
 Unit: attack a lone adjacent monster one blow would kill
-([#324](https://github.com/diegoami/better-borg-c/issues/324), contract and
+([#324](https://github.com/diegoami/patched-borg-c/issues/324), contract and
 evidence there; ledger `patches/improvements.json`; merged 8a0c1ba09, PR #394).
 Local-only improvement, never proposed upstream (charter, PR #389).
 

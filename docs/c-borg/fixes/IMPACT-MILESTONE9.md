@@ -1,6 +1,6 @@
 # Impact milestone 9: ten patch units since impact v8 (patches 0090-0099)
 
-Review package for [milestone 9](https://github.com/diegoami/better-borg-c/milestone/9): the
+Review package for [milestone 9](https://github.com/diegoami/patched-borg-c/milestone/9): the
 verified C carries after the v8 tag `017e038e8726a7a423887a366b5d40e89c0550a1` (patches through
 0089): the 0090-0096 board batch (starvealch-18, torodvalue-549, healchance-364, homebuyqty-19,
 tradehist-20, torodpower-560, tporod-17) and 0097-0099 (panelrows-348 as a memory-safety carry,

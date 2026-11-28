@@ -1,6 +1,6 @@
 # Gloves-armour-swap carry: verified product scenario, ready for adoption
 
-Consumer [201](https://github.com/diegoami/better-borg-c/issues/201), canonical
+Consumer [201](https://github.com/diegoami/patched-borg-c/issues/201), canonical
 source [205](https://github.com/diegoami/neo-angband-tracker/issues/205)
 (gloves-205). Fix applied as
 `175ef6feb555bbf67bcdfff7f628d686decf63a8` (import of source PR377-head
