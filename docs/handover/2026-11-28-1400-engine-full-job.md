@@ -40,8 +40,14 @@ change is that a failure shows in the job that holds the failing output.
 ### What was checked
 
 - The workflow parses; the `scope` shell is byte for byte the one of #1389.
-- Locally, the `engine-full` commands in order: the test build, the full
-  suite, the diff against `full-rust`, both checks (results in the PR).
+- Locally, the `engine-full` commands in order, with the death tools at
+  `death-tools-pin.txt` as the `cemetery-tools` action provides them: the test
+  build; `suite.sh full` (45 runs, 4 jobs, 456 s, result OK); `harness/diff`
+  against `full-rust` (45/45 identical); `check-perception.py` on `full-test`
+  (45 runs, 0 differences); `check-no-time.py` on `full-test` (45 traces, 0
+  violations). A first attempt failed only because the sibling
+  `borg-cemetery` checkout did not match the pin, so the exporter refused
+  every death; this is why the job runs `cemetery-tools`.
 - Not checked: the timing of a real CI run (it needs the PR's own run), and
   the skipped path (`full=0`), which only a docs-only PR exercises. The
   `if:` conditions are the ones the old steps used.
