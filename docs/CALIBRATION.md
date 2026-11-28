@@ -411,7 +411,7 @@ tests.
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `caution_breeder_danger_damage_only` | 0 | flag | 0–1 | `borg_caution.rs:6089` |
-| `caution_breeder_boost_damage_only` | 0 | flag | 0–1 | `borg_caution.rs:6817` |
+| `caution_breeder_boost_damage_only` | 0 | flag | 0–1 | `borg_caution.rs:6811` |
 
 - `caution_breeder_danger_damage_only` = 1: the stand pause reads
   `borg_danger_damage_only` (#878) at horizon 1, as before. The stand holds
@@ -4922,7 +4922,7 @@ not asserted to be accurate engine models.
 
 | Name | Default | Unit | Bounds | Source |
 | --- | ---: | --- | --- | --- |
-| `item_use_idle` | 0 | flag | 0–1 | `borg_item_use.rs:1342` |
+| `item_use_idle` | 0 | flag | 0–1 | `borg_item_use.rs:1364` |
 
 The owner set the shipped value to 1. The Borg uses one item
 from the smallest eligible known stack during a quiet dungeon turn. Each
