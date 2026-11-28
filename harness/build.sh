@@ -33,12 +33,10 @@ if [ "$ARG_ORDER" != rtl ] && [ "${BORG_ALLOW_OTHER_GAMES:-0}" != 1 ]; then
     echo "  harness/reference/ and the zoo from the same seed (#855). Use GCC on x86-64, or set BORG_ALLOW_OTHER_GAMES=1." >&2
     exit 2
 fi
-# A compiler launcher caches objects without changing the compiler or build identity.
-C_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER-$(command -v ccache || true)}
 SRC_BEFORE=$("$ID" source-hash "$IMPL")
 cmake -S "$ROOT/engine" -B "$BUILD" -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -DSUPPORT_BORG_RECORDING=OFF -DBORG_FEATURES="$TEST_FEATURES" -DSUPPORT_X11="${BORG_X11:-OFF}" \
-    -DSUPPORT_GCU="${BORG_GCU:-OFF}" -DCMAKE_C_COMPILER_LAUNCHER="$C_LAUNCHER" >"$BUILD.cmake.log" 2>&1 || {
+    -DSUPPORT_GCU="${BORG_GCU:-OFF}" >"$BUILD.cmake.log" 2>&1 || {
     cat "$BUILD.cmake.log"; exit 1; }
 # #823/#824: whichever generator CMake chose (Make here, Ninja under MSYS2),
 # with as many jobs as the machine has (no nproc on macOS).

@@ -412,6 +412,7 @@ jobs:
         with:
           cache-bin: false
           cache-workspace-crates: true
+          # The job ID keeps this target separate from the reborn fixture build.
           workspaces: |
             . -> build/rust-test/cargo
           save-if: ${{ matrix.shard == 1 }}
@@ -420,8 +421,8 @@ jobs:
           packages: cmake libx11-dev libssl-dev ccache
       - uses: ./.github/actions/ccache
         with:
-          variant: engine
-          save: 'false'
+          variant: engine-test
+          save: ${{ matrix.shard == 1 }}
       # Perception against the engine and the RNG isolation asserts use the test build.
       - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception,test-stair-handoff harness/build.sh
       - run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh "$RUNNER_TEMP/full-shard-${{ matrix.shard }}" harness/out/full-test
@@ -465,6 +466,6 @@ jobs:
       - uses: ./.github/actions/ccache
         with:
           variant: recorder
-      - run: cmake -S engine -B build/recorder -DCMAKE_C_COMPILER_LAUNCHER=ccache -DSUPPORT_BORG_RECORDING=ON -DCMAKE_BUILD_TYPE=Release
+      - run: cmake -S engine -B build/recorder -DSUPPORT_BORG_RECORDING=ON -DCMAKE_BUILD_TYPE=Release
       - run: cmake --build build/recorder -j4
       - run: python3 harness/check-recorder.py --binary build/recorder/game/angband --output "$RUNNER_TEMP/recorder-check"
