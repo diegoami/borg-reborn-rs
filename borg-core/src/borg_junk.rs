@@ -868,6 +868,13 @@ pub(crate) fn surplus_drop(st: &mut BorgState, lighten: bool) -> Option<SurplusD
         .map(|(slot, _, _)| SurplusDrop { slot, quantity: 1, sell_first: false })
 }
 
+/// borg-reborn-rs (#1397, review of #1398): a drop stays on the Borg's grid
+/// only on open floor with no trap (a glyph counts: obj-pile.c:drop_find_grid
+/// skips `square_istrap` grids, its own start included) and no visible pile.
+fn drop_lands_here(feat: u32, trap: bool, pile: bool) -> bool {
+    feat == FEAT_FLOOR && !trap && !pile
+}
+
 /// Make sure a discard drop lands under the Borg. obj-pile.c:drop_find_grid
 /// scatters a drop made off plain floor (a shop entrance or stairs, which
 /// hold no objects: cave-square.c:square_isobjectholding) or onto a visible
@@ -880,7 +887,10 @@ pub(crate) fn surplus_drop(st: &mut BorgState, lighten: bool) -> Option<SurplusD
 /// there. `Some(false)`: no such grid; do not drop now.
 pub(crate) fn step_to_drop_floor(st: &mut BorgState) -> Option<bool> {
     let (x, y) = (st.borg.c.x, st.borg.c.y);
-    if !off_floor(st) && engine::top_floor_object(&st.access, x, y).is_none() {
+    let here = st.cave.grid(x, y);
+    if drop_lands_here(u32::from(here.feat), here.trap,
+        engine::top_floor_object(&st.access, x, y).is_some())
+    {
         return None;
     }
     for direction in 0..8 {
@@ -2491,6 +2501,20 @@ mod tests {
             *dest = src as core::ffi::c_char;
         }
         item
+    }
+
+    /// borg-reborn-rs (#1397, review of #1398): a drop stays under the Borg
+    /// only on open floor with no trap and no pile; a shop entrance, stairs,
+    /// a trap or glyph, or a pile makes the engine scatter it.
+    #[test]
+    fn drop_lands_only_on_clear_trap_free_floor() {
+        use crate::headers::list_terrain_h::{FEAT_HOME, FEAT_LESS, FEAT_MORE, FEAT_STORE_ALCHEMY};
+        assert!(drop_lands_here(FEAT_FLOOR, false, false));
+        assert!(!drop_lands_here(FEAT_FLOOR, true, false), "a trap or glyph");
+        assert!(!drop_lands_here(FEAT_FLOOR, false, true), "a visible pile");
+        for feat in [FEAT_STORE_ALCHEMY, FEAT_HOME, FEAT_LESS, FEAT_MORE] {
+            assert!(!drop_lands_here(feat, false, false), "feature {feat}");
+        }
     }
 
     #[test]
