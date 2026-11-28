@@ -628,6 +628,33 @@ fn uninspected_cleanup_slot(item: &borg_item, can_identify: bool) -> Option<usiz
         .then(|| ranked_slot(item)).flatten()
 }
 
+/// #1416: a spare melee weapon stack for the cap.
+struct CapEntry {
+    copies: u8,
+    /// A swap or staged loadout: counted, never released.
+    pinned: bool,
+    power: i32,
+    weight: i32,
+    source: GearLocation,
+}
+
+/// #1416: how many copies of each stack stay under a cap of `cap` spares.
+/// Pinned stacks stay and use the room first; the others follow by power,
+/// then the lighter weapon, then the earlier location.
+fn cap_spares(entries: &[CapEntry], cap: usize) -> Vec<u8> {
+    let mut order: Vec<usize> = (0..entries.len()).collect();
+    order.sort_by_key(|&i| (std::cmp::Reverse(entries[i].pinned), std::cmp::Reverse(entries[i].power),
+        entries[i].weight, entries[i].source));
+    let mut room = cap;
+    let mut allowed = vec![0u8; entries.len()];
+    for i in order {
+        let entry = &entries[i];
+        allowed[i] = if entry.pinned { entry.copies } else { entry.copies.min(room.min(255) as u8) };
+        room = room.saturating_sub(usize::from(allowed[i]));
+    }
+    allowed
+}
+
 pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> GearPlan {
     let pack = inven_wield() as usize;
     let ring = slot == pack + 3;
@@ -764,7 +791,10 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
     // exemption.
     // Review of #1325: from the snapshot taken before the trials, which
     // leave the last candidate in the equipment slots.
-    let worn_kit = crate::borg_town_live::home_backup_protections().then(|| {
+    // #1416: the protection exemption never applies to melee weapons while
+    // the cap is on.
+    let melee_cap = if slot == pack { crate::borg_town_live::home_melee_spares() } else { 0 };
+    let worn_kit = (crate::borg_town_live::home_backup_protections() && melee_cap == 0).then(|| {
         let wield = inven_wield() as usize;
         combined_properties(items[wield..quiver_start() as usize].iter().filter(|item| item.iqty > 0))
     });
@@ -839,8 +869,34 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
         // to replace. Fill it first if the pair changes both slots.
         .min_by_key(|&(target, _)| choices[target].item.iqty != 0)
         .map(|(target, &i)| (choices[i].source, destinations[target]));
+    let worn_copies = |index: usize| best.iter().filter(|&&i| i == index).count() as u8;
+    // #1416: at most `melee_cap` spare melee weapons in all. An artifact or
+    // a known activation no longer lifts a weapon out of the count.
+    let hard_protected = |entry: &GearChoice| {
+        matches!(entry.source, GearLocation::Home(i) if crate::borg_town_live::retained_home_gear(st, i))
+            || entry.item.desc.contains(&(b'{' as core::ffi::c_char))
+            || matches!(entry.source, GearLocation::Pack(i) if crate::borg_junk::is_swap(st, i as i32))
+    };
+    let allowed: Option<Vec<u8>> = (melee_cap > 0).then(|| {
+        let entries: Vec<_> = choices.iter().zip(&keep).enumerate().skip(capacity).map(|(index, (entry, &kept))| {
+            let pinned = hard_protected(entry) || entry.observed;
+            let present = entry.item.iqty.saturating_sub(worn_copies(index));
+            let counted = if pinned || protected_gear(st, &entry.item, entry.source) { present }
+                else { kept.saturating_sub(worn_copies(index)) };
+            CapEntry { copies: counted, pinned, power: entry.power,
+                weight: i32::from(entry.item.weight), source: entry.source }
+        }).collect();
+        cap_spares(&entries, melee_cap)
+    });
     let mut stock: Vec<_> = choices.iter().zip(&keep).enumerate().skip(capacity).map(|(index, (entry, &keep))| {
         let item = entry.item;
+        if let Some(allowed) = &allowed {
+            let allowed = allowed[index - capacity];
+            let pinned = hard_protected(entry) || entry.observed;
+            let stash = if entry.observed { 0 } else { (keep - worn_copies(index)).min(allowed) };
+            let release = if pinned { 0 } else { item.iqty.saturating_sub(worn_copies(index) + allowed) };
+            return GearStock { source: entry.source, stash, release, beats_worn: beats_worn[index] };
+        }
         // #1307: the active weapon or armour swap stays, as in every other
         // cleanup path.
         let protected = protected_gear(st, &item, entry.source)
@@ -848,7 +904,7 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
             || matches!(entry.source, GearLocation::Pack(i) if crate::borg_junk::is_swap(st, i as i32));
         GearStock {
             source: entry.source,
-            stash: if entry.observed { 0 } else { keep - best.iter().filter(|&&i| i == index).count() as u8 },
+            stash: if entry.observed { 0 } else { keep - worn_copies(index) },
             release: if protected || entry.observed { 0 } else { item.iqty - keep },
             beats_worn: beats_worn[index],
         }
@@ -1162,6 +1218,11 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
         println!("#1264 exploration pack passed: {case}");
         std::process::exit(0);
     }
+    if case == "melee-cap" {
+        melee_cap_fixture(st);
+        println!("#1264 exploration pack passed: {case}");
+        std::process::exit(0);
+    }
     if case == "ranked-cleanup" {
         ranked_cleanup_fixture(st);
         println!("#1264 exploration pack passed: {case}");
@@ -1254,6 +1315,72 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
         std::process::exit(0);
     }
     true
+}
+
+/// #1416: at most `town_home_melee_spares` spare melee weapons at Home and in
+/// the pack together, an artifact counting like any other. Runs with
+/// `junk_gear_alternatives` 3, so that spares with distinct brands are kept
+/// as extras and only the cap can release them.
+#[cfg(feature = "test-town-loadout")]
+fn melee_cap_fixture(st: &mut BorgState) {
+    use GearLocation::{Home, Pack};
+    let cap = crate::borg_town_live::home_melee_spares();
+    assert!(crate::borg_town_live::gear_home_backups(), "the fixture runs the ranked policy");
+    assert_eq!(crate::borg_junk::gear_alternatives(), 3, "three alternatives keep every distinct spare");
+    let wield = inven_wield() as usize;
+    let home = crate::borg_store::BORG_HOME;
+    let empty = crate::borg_item::blank_item();
+    let reset = |st: &mut BorgState| {
+        st.items.items[..wield].fill(empty);
+        st.store.shops[home].ware.fill(empty);
+        st.trait_swap.weapon_swap = 0;
+        st.trait_swap.armour_swap = 0;
+    };
+    let weapon = borg_item { iqty: 1, aware: true, ident: true, weight: 40, value: 500,
+        tval: TV_SWORD as u8, dd: 6, ds: 12, to_h: 30, to_d: 60, ..empty };
+    let spare = |to_d: i16, brand: usize, artifact: bool| {
+        let mut item = borg_item { to_d, art_idx: u8::from(artifact) * 7, dd: 2, ds: 6, to_h: 10, ..weapon };
+        item.brands[brand] = true;
+        item
+    };
+    let kept = |st: &mut BorgState| -> Vec<(GearLocation, u8)> {
+        gear_plan(st, wield, true).stock.iter().map(|entry| (entry.source, 1 - entry.release)).collect()
+    };
+    let total = |kept: &[(GearLocation, u8)]| kept.iter().map(|(_, n)| u32::from(*n)).sum::<u32>();
+    let release = |kept: &[(GearLocation, u8)], source| kept.iter().find(|(s, _)| *s == source).map(|(_, n)| 1 - n);
+
+    // At Home: three plain spares and the lowest-ranked is an artifact in the pack.
+    reset(st);
+    st.items.items[wield] = weapon;
+    st.store.shops[home].ware[0] = spare(18, 1, false);
+    st.store.shops[home].ware[1] = spare(17, 2, false);
+    st.store.shops[home].ware[2] = spare(16, 3, false);
+    st.items.items[0] = spare(10, 4, true);
+    assert_eq!(gear_plan(st, wield, true).upgrade, None, "the worn weapon stays the best");
+    let plan = kept(st);
+    if cap == 0 {
+        assert_eq!(total(&plan), 4, "no cap: the artifact is never released");
+        assert_eq!(release(&plan, Pack(0)), Some(0));
+    } else {
+        assert_eq!(total(&plan), cap as u32, "the cap counts Home and the pack together");
+        assert_eq!(release(&plan, Home(0)), Some(0), "the best spare stays");
+        assert_eq!(release(&plan, Pack(0)), Some(1), "the lowest-ranked spare, an artifact, leaves");
+    }
+
+    // In the pack alone, on a quiet dungeon turn: three spares, one an artifact.
+    reset(st);
+    st.items.items[wield] = weapon;
+    st.items.items[0] = spare(18, 1, false);
+    st.items.items[1] = spare(17, 2, false);
+    st.items.items[2] = spare(10, 3, true);
+    st.store.shops[home].ware[0] = empty;
+    let drop = crate::borg_junk::ranked_pack_spare(st, crate::borg_junk::gear_alternatives());
+    if cap == 0 {
+        assert!(drop.is_none(), "no cap: three distinct spares stay");
+    } else {
+        let drop = drop.expect("the third spare is dropped");
+        assert_eq!((drop.slot, drop.quantity), (2, 1), "the artifact ranks lowest");
+    }
 }
 
 /// #1307: one cleanup routine must not block or undo another. Runs with the
@@ -1582,6 +1709,24 @@ mod tests {
         choices[2].source = GearLocation::Pack(2);
         assert_eq!(backup_counts(&choices, &[0], 1, 0, false, Some(&kit)), [1, 1, 0, 1, 0],
             "a carried extra still needs Home room");
+    }
+
+    /// #1416: a cap of two spares counts artifacts like any other spare.
+    #[test]
+    fn the_melee_cap_ranks_by_power_then_weight() {
+        use GearLocation::{Home, Pack};
+        let entry = |source, copies, power, weight, pinned| CapEntry { copies, pinned, power, weight, source };
+        let stacks = [entry(Home(0), 1, 50, 120, false), entry(Home(1), 1, 80, 150, false),
+            entry(Pack(0), 1, 80, 100, false), entry(Pack(1), 1, 10, 50, false)];
+        assert_eq!(cap_spares(&stacks, 2), [0, 1, 1, 0], "power first, the lighter on a tie");
+        assert_eq!(cap_spares(&stacks, 0), [0, 0, 0, 0]);
+        assert_eq!(cap_spares(&stacks, 8), [1, 1, 1, 1]);
+        let stack = [entry(Pack(0), 3, 40, 100, false), entry(Home(0), 1, 90, 100, false)];
+        assert_eq!(cap_spares(&stack, 2), [1, 1], "copies of one stack share the room");
+        let swap = [entry(Pack(0), 1, 10, 100, true), entry(Home(0), 1, 90, 100, false), entry(Home(1), 1, 80, 100, false)];
+        assert_eq!(cap_spares(&swap, 2), [1, 1, 0], "a pinned swap counts and stays");
+        let pinned = [entry(Pack(0), 1, 10, 100, true), entry(Pack(1), 1, 10, 100, true), entry(Home(0), 1, 90, 100, false)];
+        assert_eq!(cap_spares(&pinned, 1), [1, 1, 0], "pinned stacks stay even over the cap");
     }
 
     #[test]

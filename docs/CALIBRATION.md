@@ -9156,7 +9156,7 @@ cannot be selected. Zero disables this trim.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_quiver_trim_reserve` | 0 | usable quivered ammunition | 0–999 | `borg_town_live.rs:927` |
+| `town_quiver_trim_reserve` | 0 | usable quivered ammunition | 0–999 | `borg_town_live.rs:1028` |
 
 ## Town-arrival unloading and weight-limited shopping (#1256)
 
@@ -9193,7 +9193,7 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:690` |
+| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:696` |
 
 ### Drops from clear floor (#1397)
 
@@ -9207,7 +9207,7 @@ replays pin it to 0, since it changes their recorded routes.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_drop_clear_floor` | 1 | flag | 0–1 | `borg_town_live.rs:1275` |
+| `town_drop_clear_floor` | 1 | flag | 0–1 | `borg_town_live.rs:1281` |
 
 ### Spare lanterns (#1413)
 
@@ -9472,7 +9472,7 @@ identified spares.
 |---|---:|---|---|---|
 | `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2369` |
 | `junk_gear_alternatives` | 1 | count | 0–3 | `borg_junk.rs:64` |
-| `town_gear_home_backups` | 1 | flag | 0–1 | `borg_town_live.rs:250` |
+| `town_gear_home_backups` | 1 | flag | 0–1 | `borg_town_live.rs:256` |
 
 The removal establishes the control for the paired pilot of the #1264
 redesign. [Handover](handover/2026-11-25-1265-remove-sandal-flag.md)
@@ -9616,6 +9616,25 @@ backups per slot).
 | `town_home_backup_protections` | 0 | flag | 0–1 | `borg_town_live.rs:246` |
 
 [Handover](handover/2026-11-27-1316-distinct-backups.md)
+
+## At most two spare melee weapons (#1416)
+
+With `town_home_melee_spares` above 0 and the ranked Home backup plan on
+(`town_gear_home_backups`), `borg_spare_gear::gear_plan` keeps at most that
+many spare melee weapons in all, at Home and in the pack together. Spares
+rank by `GearChoice::power`, then by weight (the lighter first), then by
+location. An artifact or a weapon with a known activation counts like any
+other spare, and the #1316 protection exemption does not apply to weapons.
+The active weapon swap and a staged Home loadout stay and count; a spare past
+the cap is sold in town (identification at no cost with `birth_no_selling`)
+or dropped on a quiet dungeon turn. Owner decision 2026-11-28: shipped at 2.
+0 restores the earlier plan. A hypothesis until the zoo measures the Home
+composition at each visit (`BORG_TOWN_DUMP`); the lighter alternative can now
+leave when two stronger spares outrank it.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `town_home_melee_spares` | 0 | count | 0–8 | `borg_town_live.rs:252` |
 
 ## Carried swaps and the Home (#1315)
 

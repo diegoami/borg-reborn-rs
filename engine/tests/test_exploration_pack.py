@@ -18,7 +18,7 @@ FIXTURES = ROOT / "engine/tests/fixtures"
 
 
 class ExplorationPackTest(unittest.TestCase):
-    def run_case(self, harmful, *, fixture=None, enabled=True, full_pack=True):
+    def run_case(self, harmful, *, fixture=None, enabled=True, full_pack=True, params=None):
         game = FEATURE_GAME if fixture else GAME
         if not game.is_file():
             self.skipTest(f"native build required for {game.parent.parent.name}")
@@ -56,6 +56,12 @@ class ExplorationPackTest(unittest.TestCase):
                 env["BORG_PARAM_TOWN_SHOP_OVERLOADED"] = "2"
             if fixture == "protection-backup":
                 env["BORG_PARAM_TOWN_HOME_BACKUP_PROTECTIONS"] = "1"
+            if fixture == "melee-cap":
+                # #1416: every distinct spare is kept, so only the cap releases one.
+                env["BORG_PARAM_JUNK_GEAR_ALTERNATIVES"] = "3"
+                env["BORG_PARAM_TOWN_GEAR_HOME_BACKUPS"] = "1"
+                env["BORG_PARAM_TOWN_SHOP_OVERLOADED"] = "2"
+            env.update(params or {})
             result = subprocess.run(
                 [str(game), "-mborgh", "-n", *(f"-d{name}={path}" for name, path in paths.items()),
                  "--", "-seed", "101", "-race", "0", "-class", "0", "-start-depth", "3",
@@ -87,6 +93,11 @@ class ExplorationPackTest(unittest.TestCase):
     def test_a_trailing_protection_backup_is_judged_against_the_real_kit(self):
         # #1316 (review of #1325): the last trial must not count as worn.
         self.run_case(harmful=False, fixture="protection-backup")
+
+    def test_two_spare_melee_weapons_at_home_and_in_the_pack(self):
+        # #1416: an artifact counts against the cap; 0 restores the old play.
+        self.run_case(harmful=False, fixture="melee-cap", params={"BORG_PARAM_TOWN_HOME_MELEE_SPARES": "2"})
+        self.run_case(harmful=False, fixture="melee-cap", params={"BORG_PARAM_TOWN_HOME_MELEE_SPARES": "0"})
 
     def test_weight_blocked_home_upgrade_leaves_the_carried_upgrade_available(self):
         self.run_case(harmful=False, fixture="weight-blocked-upgrade")

@@ -246,6 +246,12 @@ pub(crate) fn home_backup_protections() -> bool {
     gear_home_backups() && crate::params::value(crate::params::Param::town_home_backup_protections) != 0
 }
 
+/// #1416: the most spare melee weapons kept at Home and in the pack
+/// together; 0 is no cap.
+pub(crate) fn home_melee_spares() -> usize {
+    if gear_home_backups() { crate::params::value(crate::params::Param::town_home_melee_spares) as usize } else { 0 }
+}
+
 pub(crate) fn gear_home_backups() -> bool {
     crate::params::value(crate::params::Param::town_gear_home_backups) > 0
         && crate::borg_junk::gear_alternatives() > 0

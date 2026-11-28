@@ -1395,6 +1395,13 @@ borg_param_town_gear_home_backups: 1
 # junk_gear_alternatives, at Home and while Home has room. 0 = #1310's limit.
 borg_param_town_home_backup_protections: 1
 
+# #1416 (owner, 2026-11-28): at most two spare melee weapons in all, at Home
+# and in the pack together, so the Home slots go to consumables. An artifact
+# or a known activation counts like any spare, ranked by the same power, and
+# the protection exemption above does not apply to weapons. A spare past the
+# cap is sold in town or dropped on a quiet dungeon turn. 0 = no cap.
+borg_param_town_home_melee_spares: 2
+
 # #1250: idle use of expendable consumables from DL1.
 borg_param_item_use_idle: 1
 
