@@ -7057,10 +7057,22 @@ miss at an adjacent monster wrote granite under the Borg (Paladin 1194051723:
   from (54,27), in a corridor) has engine path (54,28)–(54,34) known floor,
   (54,35)–(54,36) unseen floor, then granite at (55,37); C's hallway rule
   skips the Borg's own column, so the guess is (55,37).
+  Review of #1431 (the owner): (1) "flees in terror!" from the goal's
+  monster (`STATE__FEAR`, Scare Monster, no damage) and (2) a melee `HIT` or
+  `MISS` at it (Leap into Battle, effect `MOVE_ATTACK`,
+  src/effect-handler-attack.c:1787-1854, sets -1 and swings) now count as
+  reached (`goal_reached`); recovering courage does not. (3) With the guard,
+  when the hallway rule passes over every unknown grid of the path (a target
+  straight down the Borg's corridor), the guess is the first of them, not the
+  step back from the target: that step can be remembered floor, which the
+  map pass writes back (`screen_overwrites`), leaving the shot eligible.
   Tests: `a_wasted_cast_is_not_a_miss`,
   `a_wasted_cloud_guesses_the_engines_blocker`,
   `the_borg_walks_the_engines_path_to_the_gallant`,
-  `the_corridor_cloud_guesses_the_engines_blocker` (borg_update.rs).
+  `the_corridor_cloud_guesses_the_engines_blocker`,
+  `fear_and_a_melee_swing_show_the_shot_reached`,
+  `a_corridor_guess_survives_the_map_pass_and_stops_the_next_aim`
+  (borg_update.rs).
 - Evidence (replays, not a measurement): both Fang games and the three smoke
   games play the same key stream with 0 and 1 (Paladin `7fb11d46a041a04a`,
   Druid `3687ca84c5cdeb34`). The Borg's grid was remembered in all seven
