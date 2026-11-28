@@ -373,11 +373,16 @@ borg_param_town_second_stat_potions_by_class: 0
 # potions. The class must drink it (borg_junk's table) and the expected gain
 # must reach the margin times the expected loss of a random other stat, in
 # engine table steps. Refused offers are skipped, refused copies are sold or
-# dropped in town, accepted copies are drunk on a quiet turn, and known
-# refused or never-used kinds are not picked up. The weights and the margin
-# are neutral hypotheses (per class with __<class>).
+# dropped in town, and accepted copies are drunk on a quiet turn. The stats
+# are the permanent ones (stat_max). The weights and the margin are neutral
+# hypotheses (per class with __<class>).
 borg_param_town_stat_trade_policy: 1
 borg_param_town_stat_trade_margin_percent: 100
+# Review of #1372: the engine's pickup_always picks up whatever the Borg steps
+# on, so a refused potion is also not walked to, and one in the dungeon pack is
+# dropped (this stack only) on a quiet turn. Shipped on with the policy
+# (RULES 28: a fix ships on).
+borg_param_town_stat_trade_floor: 1
 
 # Staples lose value (#863, owner: "make staple objects start losing value";
 # "it must be a decaying curve"; "Food and Light start decaying from 4, phase

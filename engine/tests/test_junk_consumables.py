@@ -167,6 +167,25 @@ class JunkConsumablesTest(unittest.TestCase):
         self.assertNotIn("Selling Potion of Contemplation", messages)
         self.assertIn("You had 2 Mushrooms of Second Sight", messages)
 
+    def test_dungeon_drops_a_refused_stat_potion_the_engine_picked_up(self):
+        # Review of #1372 (P3). pickup_always picks up whatever the Borg steps
+        # on, so the floor filter alone leaves a refused stack in the pack. A
+        # Warrior never drinks Contemplation; a quiet dungeon turn drops that
+        # stack ("This item only": it is then not picked up again) and keeps
+        # Nimbleness, which it drinks, and its healing reserve.
+        kit = [(CONTEMPLATION, 1, True, 0), (CURE_LIGHT_WOUNDS, 2, True, 0)]
+        params = {"town_stat_trade_policy": 1, "town_stat_trade_floor": 1}
+        messages, frames = self.launch(kit, distance=11, keys=30, params=params)
+        self.assertIn("# Dropping refused stat potion", messages)
+        self.assertIn("You drop a Potion of Contemplation", messages)
+        self.assertNotIn("Quaffing Potion of Contemplation", messages)
+        self.assertNotIn("Quaffing Potion of Cure Light Wounds", messages)
+
+        # Floor switch off, the control: the stack stays in the pack.
+        messages, _ = self.launch(kit, distance=11, keys=30,
+                                  params={"town_stat_trade_policy": 1, "town_stat_trade_floor": 0})
+        self.assertNotIn("Dropping refused stat potion", messages)
+
 
 if __name__ == "__main__":
     unittest.main()

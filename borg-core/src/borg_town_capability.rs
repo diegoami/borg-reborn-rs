@@ -247,7 +247,10 @@ pub(crate) fn drinks_second_stat_potion(class: i32, stat: usize) -> bool {
 /// gain-one/lose-one potion (Brawn, Intellect, Contemplation, Nimbleness,
 /// Toughness: `object.txt`, `RESTORE_STAT`, `GAIN_STAT`, `LOSE_RANDOM_STAT`).
 pub(crate) fn second_stat_kind(st: &BorgState, sval: i32) -> Option<usize> {
-    let iv = &st.item_val;
+    second_stat_kind_of(&st.item_val, sval)
+}
+
+fn second_stat_kind_of(iv: &crate::borg_item_val::ItemValState, sval: i32) -> Option<usize> {
     [iv.sv_potion_inc_str2, iv.sv_potion_inc_int2, iv.sv_potion_inc_wis2, iv.sv_potion_inc_dex2, iv.sv_potion_inc_con2]
         .iter().position(|&kind| kind >= 0 && kind == sval)
 }
@@ -308,14 +311,24 @@ pub(crate) fn stat_trade_worth(stats: [i32; 5], stat: usize, weights: [i64; 5], 
 /// borg-reborn-rs (#1371): whether this character buys, keeps and drinks the
 /// gain-one/lose-one potion of `stat`: a class that drinks it
 /// (`drinks_second_stat_potion`, `borg_junk`'s table) and a trade that is
-/// worth it at its base stats (`stat_trade_worth`), with the weights
-/// `town_stat_trade_weight_*` and the margin `town_stat_trade_margin_percent`
-/// (per class with `__<class>`). The stats are the current base values; a
-/// drained stat is restored first (`RESTORE_STAT`), so a drained character
-/// gains at least what is counted.
+/// worth it (`stat_trade_worth`), with the weights `town_stat_trade_weight_*`
+/// and the margin `town_stat_trade_margin_percent` (per class with
+/// `__<class>`). The stats are the permanent ones, `player->stat_max`
+/// (review of #1372): the potion restores the stat it gains before
+/// `GAIN_STAT` (`RESTORE_STAT`, `effect_handler_RESTORE_STAT`), so the gain
+/// starts from the maximum, and `LOSE_RANDOM_STAT` lowers the maximum of
+/// another (`player_stat_dec` with `permanent`). A temporary drain changes
+/// neither. The restoration itself is not priced: the engine undoes a drain
+/// at the next level-up and a Restore potion does it for less.
 pub(crate) fn second_stat_potion_wanted(st: &BorgState, stat: usize) -> bool {
-    if !drinks_second_stat_potion(st.borg.tr(BI_CLASS), stat) { return false; }
-    let stats = [BI_CSTR, BI_CINT, BI_CWIS, BI_CDEX, BI_CCON].map(|bi| st.borg.tr(bi));
+    let stats = engine::player_notice().stat_max.map(i32::from);
+    second_stat_potion_wanted_at(st.borg.tr(BI_CLASS), stats, stat)
+}
+
+/// `second_stat_potion_wanted` at the given permanent stats (strength ..
+/// constitution), without the game state.
+pub(crate) fn second_stat_potion_wanted_at(class: i32, stats: [i32; 5], stat: usize) -> bool {
+    if !drinks_second_stat_potion(class, stat) { return false; }
     let weights = [
         param(Param::town_stat_trade_weight_str), param(Param::town_stat_trade_weight_int),
         param(Param::town_stat_trade_weight_wis), param(Param::town_stat_trade_weight_dex),
@@ -335,20 +348,45 @@ pub(crate) fn refused_second_stat_potion(st: &BorgState, item: &borg_item) -> bo
 /// is refused once an identification discloses it).
 fn refuses_second_stat_potion(st: &BorgState, item: &borg_item) -> bool {
     item.kind != 0 && item.aware && item.flavour_aware
-        && u32::from(item.tval) == TV_POTION
-        && second_stat_kind(st, i32::from(item.sval)).is_some_and(|stat| !second_stat_potion_wanted(st, stat))
+        && stat_trade_refused_at(&st.item_val, st.borg.tr(BI_CLASS),
+            engine::player_notice().stat_max.map(i32::from), u32::from(item.tval), i32::from(item.sval))
 }
 
-/// borg-reborn-rs (#1371): a floor object of a known kind the Borg refuses
-/// to carry (`worthless`, or a refused gain-one/lose-one potion), not worth
-/// a walk under town_stat_trade_policy: the town would only sell or drop it.
+/// The gain-one/lose-one potion `sval` is a kind this character will not
+/// drink at these permanent stats.
+fn stat_trade_refused_at(
+    iv: &crate::borg_item_val::ItemValState, class: i32, stats: [i32; 5], tval: u32, sval: i32,
+) -> bool {
+    tval == TV_POTION
+        && second_stat_kind_of(iv, sval).is_some_and(|stat| !second_stat_potion_wanted_at(class, stats, stat))
+}
+
+/// borg-reborn-rs (#1371, review of #1372): under `town_stat_trade_floor`, a
+/// floor object of a known gain-one/lose-one potion this character will not
+/// drink is not worth a walk, and a carried one is dropped on a quiet dungeon
+/// turn (`borg_junk::borg_discard_refused_stack`). Only these five kinds: the
+/// rest of the never-used list (#443) still has dungeon uses (Treasure
+/// Detection with `item_use_idle`, the junk potions thrown with
+/// `attack_throw_junk_potions`). A separate switch from
+/// `town_stat_trade_policy`, which prices the shop, the pack and Home.
 pub(crate) fn refused_take_kind(st: &BorgState, kidx: usize) -> bool {
-    if !stat_trade_policy() || kidx == 0 { return false; }
+    if !stat_trade_floor() || kidx == 0 { return false; }
     let kind = engine::kind(kidx);
-    if !kind.aware { return false; }
-    let (tval, sval) = (kind.tval as u32, i32::from(kind.sval));
-    worthless(tval, sval)
-        || tval == TV_POTION && second_stat_kind(st, sval).is_some_and(|stat| !second_stat_potion_wanted(st, stat))
+    kind.aware && refused_stat_trade_kind(st, kind.tval as u32, i32::from(kind.sval))
+}
+
+/// borg-reborn-rs (#1371): the one place the floor rules ask: a refused
+/// gain-one/lose-one potion kind, at the permanent stats.
+pub(crate) fn refused_stat_trade_kind(st: &BorgState, tval: u32, sval: i32) -> bool {
+    tval == TV_POTION && second_stat_kind(st, sval).is_some()
+        && stat_trade_refused_at(&st.item_val, st.borg.tr(BI_CLASS),
+            engine::player_notice().stat_max.map(i32::from), tval, sval)
+}
+
+/// borg-reborn-rs (#1371, review of #1372): the floor and dungeon rules for
+/// the refused stat-trade potions are on (needs `town_stat_trade_policy`).
+pub(crate) fn stat_trade_floor() -> bool {
+    stat_trade_policy() && param(Param::town_stat_trade_floor) != 0
 }
 
 const COUNT: usize = NAMES.len();
@@ -3365,59 +3403,71 @@ mod recall_value_tests {
         assert_eq!((loss(18 + 50), loss(18 + 5), loss(15), loss(3)), (10, 5, 10, 0));
     }
 
-    fn ranger(stats: [i32; 5]) -> crate::state::BorgState {
-        use crate::borg_headers::borg_trait_h::*;
-        let mut st = crate::state::BorgState::default();
-        st.borg.trait_ = vec![0; BI_MAX as usize];
-        st.borg.trait_[BI_CLASS as usize] = super::CLASS_RANGER;
-        for (bi, v) in [BI_CSTR, BI_CINT, BI_CWIS, BI_CDEX, BI_CCON].into_iter().zip(stats) {
-            st.borg.trait_[bi as usize] = v;
-        }
-        let iv = &mut st.item_val;
+    fn kinds() -> crate::borg_item_val::ItemValState {
+        let mut iv = crate::borg_item_val::ItemValState::default();
         (iv.sv_potion_inc_str2, iv.sv_potion_inc_int2, iv.sv_potion_inc_wis2, iv.sv_potion_inc_dex2, iv.sv_potion_inc_con2)
             = (40, 41, 42, 43, 44);
         iv.sv_potion_cure_light = 8;
-        st
+        iv
     }
 
     /// #1371 (owner: "a Ranger would choose to drink Nimbleness"): the
-    /// Ranger's trade at its own stats, with the shipped neutral weights.
+    /// Ranger's trade at its own permanent stats, with the shipped neutral
+    /// weights.
     #[test]
     fn a_ranger_drinks_nimbleness_only_while_the_dexterity_gain_outweighs_the_loss() {
-        use super::{second_stat_kind, second_stat_potion_wanted as wanted, stat_trade_worth};
+        use super::{second_stat_kind_of, second_stat_potion_wanted_at as wanted, stat_trade_worth, CLASS_RANGER};
         // Strength 18/40, Intelligence 14, Wisdom 18/20, Dexterity 18/50,
         // Constitution 18/30: 14.5 tenths expected against 10.
-        let st = ranger([18 + 40, 14, 18 + 20, 18 + 50, 18 + 30]);
-        assert_eq!(second_stat_kind(&st, 43), Some(3));
-        assert!(wanted(&st, 3), "worthwhile: Nimbleness");
-        assert!(!wanted(&st, 2), "Contemplation: the class table refuses it");
-        assert!(!wanted(&ranger([18 + 40, 14, 18 + 20, 18 + 100, 18 + 30]), 3), "Dexterity capped");
-        assert!(!wanted(&ranger([18 + 40, 14, 18 + 20, 18 + 95, 18 + 30]), 3),
+        let stats = [18 + 40, 14, 18 + 20, 18 + 50, 18 + 30];
+        assert_eq!(second_stat_kind_of(&kinds(), 43), Some(3));
+        assert!(wanted(CLASS_RANGER, stats, 3), "worthwhile: Nimbleness");
+        assert!(!wanted(CLASS_RANGER, stats, 2), "Contemplation: the class table refuses it");
+        assert!(!wanted(CLASS_RANGER, [18 + 40, 14, 18 + 20, 18 + 100, 18 + 30], 3), "Dexterity capped");
+        assert!(!wanted(CLASS_RANGER, [18 + 40, 14, 18 + 20, 18 + 95, 18 + 30], 3),
             "5 tenths to 18/100 against a table step lost");
         // The class's own weights: Strength, Wisdom (its casting stat) and
         // Constitution at twice a Dexterity step outweigh the gain at 18/50.
-        let stats = [18 + 40, 14, 18 + 20, 18 + 50, 18 + 30];
         assert!(stat_trade_worth(stats, 3, [100; 5], 100));
         assert!(!stat_trade_worth(stats, 3, [200, 100, 200, 100, 200], 100));
         assert!(!stat_trade_worth(stats, 3, [100; 5], 150), "a margin asks for more gain");
     }
 
-    /// #1371: the same rule refuses a known stack, and an unknown one only
-    /// once an identification discloses it.
+    /// Review of #1372: the rule reads the permanent stats. Nimbleness
+    /// restores Dexterity before `GAIN_STAT` (`RESTORE_STAT`), so a Ranger
+    /// whose Dexterity is drained to 18/90 from 18/100 gains nothing, and
+    /// `LOSE_RANDOM_STAT` lowers the maximum of another stat, so a stat drained
+    /// now still costs its maximum.
     #[test]
-    fn a_refused_stack_is_refused_once_its_kind_is_known() {
-        use crate::headers::list_tvals_h::TV_POTION;
-        let st = ranger([18 + 40, 14, 18 + 20, 18 + 50, 18 + 30]);
-        let potion = |sval: u8, known: bool| {
-            let mut item = crate::borg_item::blank_item();
-            (item.kind, item.tval, item.sval, item.iqty) = (300, TV_POTION as u8, sval, 1);
-            (item.aware, item.flavour_aware) = (known, known);
-            item
-        };
-        assert!(!super::refuses_second_stat_potion(&st, &potion(42, false)), "unknown: kept to learn");
-        assert!(super::refuses_second_stat_potion(&st, &potion(42, true)), "Contemplation, identified");
-        assert!(!super::refuses_second_stat_potion(&st, &potion(43, true)), "Nimbleness is drunk");
-        assert!(!super::refuses_second_stat_potion(&st, &potion(8, true)), "Cure Light Wounds is not a trade");
+    fn the_trade_is_priced_at_the_permanent_stats_not_the_drained_ones() {
+        use super::{second_stat_potion_wanted_at as wanted, CLASS_RANGER};
+        // Four other stats at 17 (a table step lost each); Dexterity 18/90
+        // drained from 18/100.
+        let at_cap = [17, 17, 17, 18 + 100, 17];
+        let drained = [17, 17, 17, 18 + 90, 17];
+        assert!(wanted(CLASS_RANGER, drained, 3), "the drained value alone looks like an even trade");
+        assert!(!wanted(CLASS_RANGER, at_cap, 3), "the maximum is capped: no gain");
+        // Dexterity 18/70 gains 9 tenths on average. Four other stats at
+        // 18/50 lose 10 each; with Strength drained to 3 the current values
+        // would lose only 7.5 and accept, but the permanent loss is the
+        // maximum's.
+        let maxima = [18 + 50, 18 + 50, 18 + 50, 18 + 70, 18 + 50];
+        let current = [3, 18 + 50, 18 + 50, 18 + 70, 18 + 50];
+        assert!(!wanted(CLASS_RANGER, maxima, 3), "9 gained against 10 lost");
+        assert!(wanted(CLASS_RANGER, current, 3), "the drained Strength hides a table step of loss");
+    }
+
+    /// #1371: the one rule refuses a gain-one/lose-one potion whatever the
+    /// shelf, and nothing else.
+    #[test]
+    fn a_refused_stat_trade_is_a_potion_the_class_will_not_drink() {
+        use super::{stat_trade_refused_at as refused, CLASS_RANGER};
+        use crate::headers::list_tvals_h::{TV_POTION, TV_SCROLL};
+        let (iv, stats) = (kinds(), [18 + 40, 14, 18 + 20, 18 + 50, 18 + 30]);
+        assert!(refused(&iv, CLASS_RANGER, stats, TV_POTION, 42), "Contemplation, by the class table");
+        assert!(!refused(&iv, CLASS_RANGER, stats, TV_POTION, 43), "Nimbleness is drunk");
+        assert!(!refused(&iv, CLASS_RANGER, stats, TV_POTION, 8), "Cure Light Wounds is not a trade");
+        assert!(!refused(&iv, CLASS_RANGER, stats, TV_SCROLL, 42), "a scroll of the same sval is not a potion");
     }
 
     #[test]
