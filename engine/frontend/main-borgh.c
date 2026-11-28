@@ -832,7 +832,14 @@ static void place_start_monsters(const char *spec)
 static void prepare_borg_start(void)
 {
 	if (junk_consumables_town_fixture()) {
+		/* A caster's record makes the engine say how many spells it can
+		 * learn; that message must not wait for a key before the Borg
+		 * exists (as the start-depth path below). */
+		bool auto_more = OPT(player, auto_more);
+		option_set("auto_more", true);
 		synthetic_build_apply(opt_start_build, start_build_sha256);
+		event_signal(EVENT_MESSAGE_FLUSH);
+		option_set("auto_more", auto_more);
 		square_set_feat(cave, player->grid, FEAT_MORE);
 		square_memorize(cave, player->grid);
 	}

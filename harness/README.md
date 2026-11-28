@@ -149,9 +149,13 @@ and validates the bytes it applies. Summary/config use
 `borg-reborn-rs/synthetic-start@2`, `start_build=record` and
 `start_build_sha256`. Both birth and record starts use @2. The earlier @1 checkpoint is superseded: it did not prove the cave transition had completed before activation.
 
-The P1 native adapter is intentionally restricted to Human Warriors, levels
+The P1 native adapter is restricted to the character the run started (the
+record's race and class must be the ones the harness birthed, any of them;
+#1378 lifted the Human Warrior limit for applying a record, with Ranger and
+Necromancer fixtures; capture from play is still Human Warrior only), levels
 1..15, and mundane base-kind items with their observed quantities, combat
-bonuses, charges/fuel, equipped slots and kind awareness. It rejects artifacts,
+bonuses, charges/fuel, equipped slots and kind awareness. It does not
+restore spell knowledge. It rejects artifacts,
 egos, curses, brands/slays, nonzero item modifiers, changed kind flags/elements,
 invalid slots/counts, inconsistent experience and HP progression, or a native
 HP/SP calculation that differs from the declared record. It never drops an
