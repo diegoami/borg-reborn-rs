@@ -16,6 +16,7 @@ concurrency:
 jobs:
   rust:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/cemetery-tools
@@ -384,7 +385,7 @@ jobs:
                   re.DOTALL,
               )
               recorder = any(not docs_only(path) for path in changed)
-              # Engine tests read the engine API inventory and calibration examples.
+              # Engine scope includes recorder changes and the docs its tests consume.
               engine = recorder or any(
                   path == b'docs/ENGINE-READS.md' or path.startswith(b'docs/examples/')
                   for path in changed
@@ -493,7 +494,10 @@ jobs:
           RECORDER: ${{ needs.engine-scope.outputs.recorder }}
         run: |
           test "$SCOPE_RESULT" = success
-          test "$RECORDER" = 0 || test "$RECORDER" = 1
+          case "$RECORDER" in
+            0|1) ;;
+            *) echo "Unexpected recorder scope: $RECORDER"; exit 1 ;;
+          esac
       - if: needs.engine-scope.outputs.recorder == '1'
         uses: actions/checkout@v4
       - if: needs.engine-scope.outputs.recorder == '1'

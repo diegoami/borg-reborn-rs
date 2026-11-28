@@ -6,6 +6,6 @@ keeping the required checks. `docs/deaths/` changes still run the core
 checks and recorder. Changes to `docs/ENGINE-READS.md` or `docs/examples/`
 also run the core checks because engine tests read those files. The recorder
 can skip those changes. The full suite keeps its existing reborn scope.
-The Rust job keeps its existing coverage and timeout policy. Pushes run
-the full workflow. Core jobs, full-suite
-shards and their required check jobs have 30-minute timeouts.
+The Rust job always runs, with a 15-minute timeout like the recorder.
+Pushes run the full workflow. Core jobs, full-suite shards and their
+required check jobs have 30-minute timeouts.
