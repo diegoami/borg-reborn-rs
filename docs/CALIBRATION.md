@@ -2007,7 +2007,7 @@ object with less value at home, untile they are not overcarrying again".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:313` |
+| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:316` |
 
 ## No detection prayer by panel at low level (#685)
 
@@ -9142,7 +9142,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:1168` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1141` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1150` |
 
 ## Quiver surplus in town (#1168, #1272)
 
@@ -9193,7 +9193,7 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:696` |
+| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:704` |
 
 ### Drops from clear floor (#1397)
 
@@ -9207,7 +9207,7 @@ replays pin it to 0, since it changes their recorded routes.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_drop_clear_floor` | 1 | flag | 0–1 | `borg_town_live.rs:1281` |
+| `town_drop_clear_floor` | 1 | flag | 0–1 | `borg_town_live.rs:1289` |
 
 ### Spare lanterns (#1413)
 
@@ -9635,6 +9635,96 @@ leave when two stronger spares outrank it.
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `town_home_melee_spares` | 0 | count | 0–8 | `borg_town_live.rs:252` |
+
+## The Home slot budget (#1435)
+
+With `town_home_slot_groups` the Home's 24 slots (`store:inven-max`,
+`lib/gamedata/constants.txt:155`) are two budgets: **16 for gear** (weapons,
+armour, jewellery, artifacts, launchers, lights; unknown wearables count) and
+**8 for supplies** (the potions, scrolls, mushrooms, devices and spare
+dungeon book of the #1417 gate reserve). `town_home_gear_slots` plus
+`town_home_supply_slots` may not exceed 24: the game refuses to start. Each
+group is ranked on its own so Home covers as many capabilities and
+resistances as possible (`borg_town_home_budget.rs`):
+
+- **Supplies**: `town_home_rank_<capability>` x coverage x fill. Coverage is
+  100 percent for the first Home stack of a capability, `town_home_repeat_percent`
+  for the second and 0 for a third, and 0 for a capability a spell the Borg can
+  cast at `town_home_spell_fail` percent or better already renews. Fill is the
+  stack's copies against the target (the `prepared_*` gate counts, else
+  `town_home_reserve_target`), at least `town_home_fill_min_percent`. The 14
+  capabilities and their weights are in the table below.
+- **Gear**: a greedy cover of the properties the worn kit and the pieces
+  already kept do not give, with `borg_home_power.rs`'s `home_<property>_one_weight`
+  for the first piece and two less one for the second, times
+  `town_home_gear_cover_percent`, plus `town_home_gear_power_percent` of the
+  piece's power. Ties go to the lighter piece, then the earlier slot.
+
+A stack outside its group's budget takes the role `Overflow`
+(`borg_town_home::Role`): the planner never stores or buys it, and clears it
+at Home (sold, or dropped when no shop buys it). Stock that is `Renewable`,
+`Common` or `Reject` has no budget and is cleared as before. The soft
+one-third supply goal (`home_supply_balance`) and its gear-for-supply
+replacements are off while the groups are; no stack inside a budget is traded
+for one of the other group. `town_home_borrow_free` lets a group place stacks in
+the other's empty slots. The rules that a borrowed slot is the first given back
+and that nothing is bought into one are not built (a borrowed slot holds a stack
+a group has placed, like any other).
+
+**Loop guards** (#368, #651, #1048): the visit's decisions are made once, from
+the state on arrival, and stand for the visit (`Memory::decided`); an incumbent
+keeps its slot unless a challenger's score is higher by
+`town_home_replace_margin_percent`; an evicted kind (for gear, the variant) is
+not bought, stored or withdrawn again for `town_home_evict_cooldown_visits`
+visits unless its score has risen past the margin; the stacks this visit
+bought, stored or withdrew are never evicted; after `town_home_max_moves`
+Home stores, withdrawals and evictions the visit places nothing new
+(`shopping_max_bounces` stays the backstop); a kind is not both stored and taken in a
+visit (`home_moves`, borg-rs#90).
+
+**Version 2** (off): `town_home_shift_depth_step` above 0 gives the supply group
+one slot from the gear group per that many levels of max depth past
+`town_home_shift_from_depth`, up to `town_home_supply_slots_max`. The issue's
+cross-group exchange (a stack of ten or more taking the weakest gear piece's
+slot) is not built.
+
+Shipped off (RULES 28: it fixes no observed defect; the owner decides when it is
+on, PLAN P9). Every value is a hypothesis; nothing here is measured.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `town_home_slot_groups` | 0 | flag | 0–1 | `borg_town_home_budget.rs:45` |
+| `town_home_gear_slots` | 16 | slots | 0–24 | `borg_town_home_budget.rs:66` |
+| `town_home_supply_slots` | 8 | slots | 0–24 | `borg_town_home_budget.rs:67` |
+| `town_home_borrow_free` | 0 | flag | 0–1 | `borg_town_home_budget.rs:77` |
+| `town_home_repeat_percent` | 25 | percent | 0–100 | `borg_town_home_budget.rs:226` |
+| `town_home_spell_fail` | 25 | percent | 0–100 | `borg_town_home_budget.rs:204` |
+| `town_home_fill_min_percent` | 10 | percent | 0–100 | `borg_town_home_budget.rs:231` |
+| `town_home_reserve_target` | 5 | copies | 1–40 | `borg_town_home_budget.rs:151` |
+| `town_home_gear_power_percent` | 100 | percent | 0–1000 | `borg_town_home_budget.rs:422` |
+| `town_home_gear_cover_percent` | 100 | percent | 0–1000 | `borg_town_home_budget.rs:312` |
+| `town_home_replace_margin_percent` | 25 | percent | 0–1000 | `borg_town_home_budget.rs:78` |
+| `town_home_evict_cooldown_visits` | 3 | visits | 0–100 | `borg_town_home_budget.rs:79` |
+| `town_home_max_moves` | 8 | moves | 0–1000 | `borg_town_home_budget.rs:80` |
+| `town_home_shift_depth_step` | 0 | levels | 0–127 | `borg_town_home_budget.rs:68` |
+| `town_home_shift_from_depth` | 30 | depth | 0–127 | `borg_town_home_budget.rs:70` |
+| `town_home_supply_slots_max` | 12 | slots | 0–24 | `borg_town_home_budget.rs:71` |
+| `town_home_rank_teleport` | 100 | weight | 0–1000 | `borg_town_home_budget.rs:120` |
+| `town_home_rank_heal` | 90 | weight | 0–1000 | `borg_town_home_budget.rs:121` |
+| `town_home_rank_speed` | 85 | weight | 0–1000 | `borg_town_home_budget.rs:122` |
+| `town_home_rank_big_heal` | 80 | weight | 0–1000 | `borg_town_home_budget.rs:123` |
+| `town_home_rank_level_escape` | 70 | weight | 0–1000 | `borg_town_home_budget.rs:124` |
+| `town_home_rank_restore_life` | 60 | weight | 0–1000 | `borg_town_home_budget.rs:125` |
+| `town_home_rank_mana` | 60 | weight | 0–1000 | `borg_town_home_budget.rs:126` |
+| `town_home_rank_book` | 60 | weight | 0–1000 | `borg_town_home_budget.rs:127` |
+| `town_home_rank_teleport_other` | 55 | weight | 0–1000 | `borg_town_home_budget.rs:128` |
+| `town_home_rank_restore_stats` | 50 | weight | 0–1000 | `borg_town_home_budget.rs:129` |
+| `town_home_rank_poison` | 45 | weight | 0–1000 | `borg_town_home_budget.rs:130` |
+| `town_home_rank_destruction` | 40 | weight | 0–1000 | `borg_town_home_budget.rs:131` |
+| `town_home_rank_banishment` | 35 | weight | 0–1000 | `borg_town_home_budget.rs:132` |
+| `town_home_rank_glyph` | 30 | weight | 0–1000 | `borg_town_home_budget.rs:133` |
+
+[Handover](handover/2026-11-28-1435-home-slot-budget.md)
 
 ## Carried swaps and the Home (#1315)
 

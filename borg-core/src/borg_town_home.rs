@@ -24,6 +24,9 @@ pub enum Role {
     SpareWeapon,
     LatePotion,
     Artifact,
+    /// #1435: outside the group budget (`borg_town_home_budget`): never
+    /// stored or bought, and cleared at Home. Rank 0.
+    Overflow,
 }
 
 // Leave low bits for utility and stay inside the integer range of JSON
@@ -43,6 +46,7 @@ impl Role {
             8 => Self::SpareWeapon,
             9 => Self::LatePotion,
             10 => Self::Artifact,
+            11 => Self::Overflow,
             _ => Self::Ordinary,
         }
     }
@@ -167,6 +171,10 @@ fn late_potion(st: &BorgState, item: &borg_item) -> bool {
     // Gain-one/lose-one potions are unsuitable as a recovery reserve.
     let effects = engine::kind_effect_values(item.kind as usize, st.borg.tr(BI_CLEVEL));
     safe_stat_restoration(&effects)
+}
+
+pub(crate) fn stat_restoring(effects: &[(u16, i32, i64)]) -> bool {
+    safe_stat_restoration(effects)
 }
 
 fn safe_stat_restoration(effects: &[(u16, i32, i64)]) -> bool {

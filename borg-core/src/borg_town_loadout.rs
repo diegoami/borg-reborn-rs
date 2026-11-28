@@ -517,10 +517,10 @@ impl Swap {
 pub(crate) fn fixture(st: &mut BorgState, case: &str) {
     use std::sync::atomic::{AtomicU8, Ordering::Relaxed};
     static SETUP: AtomicU8 = AtomicU8::new(0);
-    assert!(matches!(case, "trim" | "arrival" | "arrival-shop" | "restore" | "no-storage" | "reserve-overlap" | "reserve-swap" | "reserve-book" | "swap-spare" | "digger-swap" | "reserve-overweight" | "reserve-overweight-shop"));
+    assert!(matches!(case, "trim" | "arrival" | "arrival-shop" | "restore" | "no-storage" | "reserve-overlap" | "reserve-swap" | "reserve-book" | "reserve-budget" | "swap-spare" | "digger-swap" | "reserve-overweight" | "reserve-overweight-shop"));
     let shop_reserve = case == "reserve-overweight-shop";
     let reserve = shop_reserve || case == "reserve-overweight";
-    let overlap = matches!(case, "reserve-overlap" | "reserve-swap" | "reserve-book");
+    let overlap = matches!(case, "reserve-overlap" | "reserve-swap" | "reserve-book" | "reserve-budget");
     if SETUP.load(Relaxed) == 1 { return; }
     let wield = inven_wield() as usize;
     if SETUP.load(Relaxed) == 0 {
@@ -593,6 +593,32 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
                 assert_eq!(role(Place::Home, u32::from(priest.kind)), Some(Role::Scarce));
                 assert_eq!(role(Place::Pack, u32::from(priest.kind)), Some(Role::Ordinary),
                     "a single carried copy is the one the Borg reads, not a spare");
+            }
+            if case == "reserve-budget" {
+                // #1435: tiny group budgets over the fixture's Home. Every
+                // stack in a group is inside it or at Overflow, the plan is
+                // the same when asked again (one decision per visit), and a
+                // staged loadout stays.
+                use crate::borg_town_dispose::Place;
+                use crate::borg_town_home_budget::{group_of, Group};
+                assert!(crate::borg_town_home_budget::enabled(), "the case runs the slot groups");
+                let roles = |st: &mut BorgState| {
+                    crate::borg_town_shadow::live_plan(st);
+                    crate::borg_town_shadow::kit_for_test(st).iter()
+                        .filter(|k| k.place == Place::Home).map(|k| (k.kind, k.slot, k.home_role)).collect::<Vec<_>>()
+                };
+                let first = roles(st);
+                let inside = |group| first.iter().filter(|(_, _, role)| group_of(*role) == Some(group)).count();
+                let overflow = first.iter().filter(|(_, _, role)| *role == Role::Overflow).count();
+                let (gear, supply) = (crate::params::value(crate::params::Param::town_home_gear_slots) as usize,
+                    crate::params::value(crate::params::Param::town_home_supply_slots) as usize);
+                assert!(inside(Group::Gear) <= gear && inside(Group::Supply) <= supply, "{first:?}");
+                assert!(overflow > 0, "the fixture's Home holds more than the tiny budget: {first:?}");
+                assert_eq!(roles(st), first, "the same visit, the same decisions");
+                let evictions = st.think.town_live.home_budget.evictions();
+                assert!(evictions > 0, "the stacks outside the budget are recorded as evicted");
+                assert_eq!(roles(st), first);
+                assert_eq!(st.think.town_live.home_budget.evictions(), evictions, "no stack is evicted twice");
             }
             println!("#1239 town loadout passed: {case}");
             std::process::exit(0);

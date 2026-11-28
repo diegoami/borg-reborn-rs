@@ -304,6 +304,9 @@ pub(crate) struct Storing {
     pub(crate) recall_reserve: i32,
     pub(crate) recall_floor: i32,
     pub(crate) home_stack_limit: i32,
+    /// #1435: `town_home_slot_groups`. Recorded in bit 1 of the
+    /// `only_overweight` slot of a plan record's `storing` row.
+    pub(crate) slot_groups: bool,
 }
 
 impl Storing {
@@ -316,19 +319,22 @@ impl Storing {
             recall_reserve: param(Param::town_recall_reserve),
             recall_floor: crate::borg_store_buy::recall_purchase_floor(),
             home_stack_limit: param(Param::town_home_stack_limit),
+            slot_groups: crate::borg_town_home_budget::enabled(),
         }
     }
 
     /// As a plan record writes them: `[free weight, free slots, keep_min,
     /// only_overweight, recall_reserve, recall_floor, home_stack_limit]`.
     pub(crate) fn to_array(self) -> [i64; 7] {
-        [self.room.weight, i64::from(self.room.slots), i64::from(self.keep_min), i64::from(self.only_overweight),
+        [self.room.weight, i64::from(self.room.slots), i64::from(self.keep_min),
+            i64::from(self.only_overweight) | i64::from(self.slot_groups) << 1,
             i64::from(self.recall_reserve), i64::from(self.recall_floor), i64::from(self.home_stack_limit)]
     }
 
     pub(crate) fn from_array(a: [i64; 7]) -> Self {
         Storing {
-            only_overweight: a[3] != 0,
+            only_overweight: a[3] & 1 != 0,
+            slot_groups: a[3] & 2 != 0,
             room: Room { weight: a[0], slots: a[1] as i32 },
             keep_min: a[2] as i32,
             recall_reserve: a[4] as i32,
@@ -462,10 +468,11 @@ fn prune_low_priority_home(
     let mut stock: Vec<_> = input.kit.iter().enumerate().filter(|(i, item)| {
         item.place == Place::Home && out[*i] == Disposition::Keep
             && (item.home_role == Role::Reject || item.home_role == Role::Renewable
+                || item.home_role == Role::Overflow
                 || input.revision < 23 && item.home_role == Role::Common
                 || reserved_scarce_book(item) && item.qty > 1)
     }).collect();
-    stock.sort_by_key(|(_, item)| (item.home_role != Role::Reject, item.qty, item.slot));
+    stock.sort_by_key(|(_, item)| (item.home_role != Role::Reject, item.home_role != Role::Overflow, item.qty, item.slot));
     for (i, item) in stock {
         let book_surplus = reserved_scarce_book(item) && item.qty > 1;
         if item.just_bought || item.protect_disposal || item.keep_last_book && !book_surplus || item.unknown_flavour
@@ -513,10 +520,18 @@ fn prune_low_priority_home(
     }
 }
 
+/// #1435: the plan was made with the Home slot groups.
+pub(crate) fn grouped(input: &StepInput) -> bool {
+    input.storing.is_some_and(|storing| storing.slot_groups)
+}
+
 /// Aim for a third of Home slots in scarce supplies. This only affects
 /// priorities when choosing what to store or replace, never slot capacity.
 pub(crate) fn home_supply_balance(input: &StepInput, out: &[Disposition]) -> Option<(i32, i32)> {
     if input.revision < crate::borg_town_record::HOME_BALANCE_SCHEMA { return None; }
+    // #1435: with the slot groups the supply share is a hard budget (the roles
+    // outside it are Overflow), not a goal.
+    if grouped(input) { return None; }
     let mut capacity = input.home_slots;
     let mut supplies = 0;
     for (i, item) in input.kit.iter().enumerate() {
@@ -538,6 +553,11 @@ pub(crate) fn home_replacement(input: &StepInput, u: &Utility, out: &[Dispositio
     let incoming_supply = Role::supply_rank(priority);
     input.kit.iter().enumerate().filter_map(|(i, item)| {
         let rank = item.home_role.rank();
+        // #1435: with the slot groups a stack inside its group's budget is
+        // never traded for one of the other group (the ranking decided).
+        if grouped(input) && crate::borg_town_home_budget::group_of(item.home_role).is_some() {
+            return None;
+        }
         if item.place != Place::Home || out[i] != Disposition::Keep
             || item.kind == kind || item.just_bought || item.keep_last_book || item.protect_disposal
             || item.unknown && item.home_role != Role::Reject
@@ -866,7 +886,9 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         let useful_spare = !optional_stock || (future > home_cost && home_free > 0
             && !input.kit.iter().enumerate().any(|(j, k)| k.kind == it.kind
                 && (k.place == Place::Home && out[j] == Disposition::Keep || out[j] == Disposition::Store)));
-        let store = !capped && !low_priority && useful_spare && !(input.revision >= 12 && recent_purchase)
+        // #1435: a stack outside the Home budget is carried (or sold), not stored.
+        let outside_budget = it.home_role == Role::Overflow;
+        let store = !capped && !low_priority && useful_spare && !outside_budget && !(input.revision >= 12 && recent_purchase)
             && !urgent_loss && (input.revision < 6 || future > 0 || protected || loss > 0 || stash_for_later)
             && (home_free > 0 || spare.is_some())
             && (stash_for_later || worth_more_at_home || overweight && (loss > 0 || future > 0 || protected));
@@ -880,7 +902,8 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // (`execute_outside`); it drops other stacks whole.
         let excess = input.revision >= 20 && partial && (it.sell_shop >= 0 || it.fuel > 0)
             && input.limits.weight + freed.weight < 0;
-        let worthless = capped || loss <= cost && (future <= home_cost || low_priority || !useful_spare) && !it.home_role.reserve();
+        let worthless = capped || loss <= cost && (future <= home_cost || low_priority || !useful_spare) && !it.home_role.reserve()
+            && !(outside_budget && it.place == Place::Pack);
         let action = if store { Disposition::Store }
             else if !protected && (worthless || excess || bought_surplus) {
                 if it.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop }
@@ -1433,6 +1456,54 @@ mod tests {
             assert_eq!(home_replacement(&inp, &u, &out, potion.kind, Role::LatePotion.rank(), 1), expected,
                 "protected {protected}");
         }
+    }
+
+    /// #1435: a full Home with the slot groups. A stack the budget put at
+    /// Overflow is cleared at Home and never stored from the pack; a stack
+    /// inside its group's budget is not traded for one of the other group.
+    #[test]
+    fn the_slot_groups_clear_overflow_and_keep_every_admitted_stack() {
+        use crate::borg_town_record::PLAN_SCHEMA;
+        let st = state(10, 23, 160);
+        let stock = KitItem { need: -1, reduction: 0, sell_shop: 4, ..recall(Place::Home) };
+        let gear = KitItem { home_role: Role::Gear, power: 0, ..stock };
+        let mut kit: Vec<_> = (0..24).map(|slot| KitItem { kind: 10 + u32::from(slot), slot, ..gear }).collect();
+        // The 24 Home slots: 16 gear, 7 supplies and one stack outside the budget.
+        for item in &mut kit[16..23] { item.home_role = Role::Scarce; }
+        kit[23].home_role = Role::Overflow;
+        let incoming = KitItem { place: Place::Pack, slot: 0, kind: 99, home_role: Role::Scarce, sell_shop: -1, ..stock };
+        kit.push(incoming);
+        let grouped = Storing { only_overweight: true, slot_groups: true, ..Storing::default() };
+        let mut inp = input(&kit);
+        inp.revision = PLAN_SCHEMA;
+        inp.home_slots = 0;
+        inp.storing = Some(grouped);
+        let mut u = Utility::of(&st, &kit, false);
+        let (actions, _, _) = dispositions(&inp, &mut u, &st);
+        assert_eq!(actions[23], Disposition::Sell, "the Overflow stack is cleared: {actions:?}");
+        assert!(actions[..23].iter().all(|&a| a == Disposition::Keep), "{actions:?}");
+        // With every Home stack inside, a full Home takes no trade of gear for a supply.
+        kit[23].home_role = Role::Gear;
+        let inp = StepInput { storing: Some(grouped), revision: PLAN_SCHEMA, home_slots: 0, ..input(&kit) };
+        let out = vec![Disposition::Keep; kit.len()];
+        let u = Utility::of(&st, &kit, false);
+        assert_eq!(home_supply_balance(&inp, &out), None, "the share is a budget, not a goal");
+        assert_eq!(home_replacement(&inp, &u, &out, 99, Role::LatePotion.rank(), 1), None,
+            "no admitted stack is replaced by the other group");
+        // The same Home without the groups trades a zero-power gear piece for the potion.
+        let single = StepInput { storing: Some(Storing { slot_groups: false, ..grouped }), ..inp };
+        assert!(home_replacement(&single, &u, &out, 99, Role::LatePotion.rank(), 1).is_some());
+        // A carried Overflow stack is not stored.
+        kit[23].home_role = Role::Reject;
+        kit[24].home_role = Role::Overflow;
+        kit[16].home_role = Role::Reject;
+        let mut inp = input(&kit);
+        inp.revision = PLAN_SCHEMA;
+        inp.home_slots = 1;
+        inp.storing = Some(Storing { only_overweight: false, slot_groups: true, ..Storing::default() });
+        let mut u = Utility::of(&st, &kit, false);
+        let (actions, _, _) = dispositions(&inp, &mut u, &st);
+        assert_ne!(actions[24], Disposition::Store, "a stack outside the budget is not stored: {actions:?}");
     }
 
     /// #1318: a spare dungeon book is Scarce. An incoming intermittent

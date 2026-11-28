@@ -39,7 +39,7 @@ class TownLoadoutTest(unittest.TestCase):
                 BORG_PARAM_TOWN_LOADOUT_POWER_LOSS="3000",
                 BORG_PARAM_TOWN_QUIVER_TRIM_RESERVE__PRIEST=ammo_reserve,
                 BORG_PARAM_TOWN_RECALL_URGENT_DEPTH="5",
-                BORG_PARAM_TOWN_HOME_RESERVE="1" if reserve or case in ("reserve-overlap", "reserve-swap", "reserve-book", "swap-spare", "arrival-shop") else "0",
+                BORG_PARAM_TOWN_HOME_RESERVE="1" if reserve or case in ("reserve-overlap", "reserve-swap", "reserve-book", "reserve-budget", "swap-spare", "arrival-shop") else "0",
                 BORG_PARAM_CAUTION_TOWN_NEVER_SCARY="1",
                 BORG_PARAM_CAUTION_SCARY_NAMED_MONSTERS="0",
                 BORG_PARAM_CAUTION_SCARY_DAMAGE_PERCENT="0",
@@ -111,6 +111,11 @@ class TownLoadoutTest(unittest.TestCase):
         # #1318: a Priest dungeon book at Home is Scarce; the Mage one and the
         # single carried copy are not.
         self.run_case("reserve-book")
+
+    def test_tiny_slot_groups_put_the_rest_of_the_home_outside_the_budget(self):
+        # #1435: no slot in either group over the Priest's Home.
+        self.run_case("reserve-budget", BORG_PARAM_TOWN_HOME_SLOT_GROUPS="1", BORG_PARAM_TOWN_HOME_GEAR_SLOTS="0",
+                      BORG_PARAM_TOWN_HOME_SUPPLY_SLOTS="0")
 
     def test_the_active_swap_stays_in_the_pack(self):
         # #1315: the active armour swap is never stored, sold or dropped.

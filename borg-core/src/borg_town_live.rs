@@ -311,6 +311,13 @@ pub struct LiveState {
     arrival_sale_planned: bool,
     retained_gear: Vec<crate::borg_headers::borg_item_h::borg_item>,
     pub(crate) recall_loadout: recall_loadout::Loadout,
+    /// #1435: the Home budget's loop guards, across visits.
+    pub(crate) home_budget: crate::borg_town_home_budget::Memory,
+}
+
+/// #1435: the Home stores and withdrawals this visit has confirmed.
+pub(crate) fn home_moves_count(st: &BorgState) -> usize {
+    st.think.town_live.home_moves.len()
 }
 
 /// Confirm a queued Home move against the refreshed inventory, even if
@@ -341,8 +348,9 @@ pub(crate) fn settle_sale(st: &mut BorgState) {
             home.ware.iter().any(|item| borg_town_loadout::same_item(item, saved))));
         let mut recall_loadout = std::mem::take(&mut st.think.town_live.recall_loadout);
         recall_loadout.new_visit();
+        let home_budget = std::mem::take(&mut st.think.town_live.home_budget).new_visit();
         st.think.town_live = LiveState {
-            clock: Some(st.borg.time.level), retained_gear, recall_loadout, ..LiveState::default()
+            clock: Some(st.borg.time.level), retained_gear, recall_loadout, home_budget, ..LiveState::default()
         };
     }
     settle_home(st);
@@ -1489,6 +1497,7 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
                     // #1315: the active swap is carried; a swap at Home is
                     // never used (borg_trait_swap.rs reads the pack only).
                     if entry.stash > 0 && stash.is_none()
+                        && !crate::borg_town_home_budget::outside(st, item)
                         && !crate::borg_junk::is_swap(st, slot as i32)
                         && !sale_rejected(st, BORG_HOME as i16, item)
                         && crate::engine::inven_object(&st.access, slot)
@@ -1509,6 +1518,19 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
         release_pack = crate::borg_junk::unplanned_pack_excess(st, false)
             .or_else(|| crate::borg_spare_gear::unknown_rune_excess(st, false))
             .and_then(|drop| pack_gear_disposal(st, drop.slot, drop.quantity));
+    }
+    // #1435: gear the Home budget has put outside the gear group leaves
+    // (sold, or dropped when no shop buys it), the lowest ranked first by
+    // the order of the stock; a staged loadout stays.
+    if release_home.is_none() && crate::borg_town_home_budget::enabled() {
+        for slot in 0..st.store.shops[BORG_HOME].ware.len() {
+            let item = &st.store.shops[BORG_HOME].ware[slot];
+            if item.iqty == 0 || !crate::borg_town_home_budget::outside(st, item)
+                || crate::borg_town_home::gear_slot(item).is_none() || retained_home_gear(st, slot)
+            { continue; }
+            release_home = release_home_gear(st, slot, item.iqty);
+            if release_home.is_some() { break; }
+        }
     }
     if release_home.is_none() {
         for slot in 0..st.store.shops[BORG_HOME].ware.len() {

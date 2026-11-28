@@ -1615,8 +1615,12 @@ mod tests {
     #[test]
     fn the_storing_settings_travel_with_a_v14_record() {
         use crate::borg_town_utility::{Room, Storing};
-        let storing = Storing { only_overweight: false, room: Room { weight: 50, slots: 2 }, keep_min: 3, recall_reserve: 2, recall_floor: 200, home_stack_limit: 2 };
+        let storing = Storing { only_overweight: false, room: Room { weight: 50, slots: 2 }, keep_min: 3, recall_reserve: 2, recall_floor: 200, home_stack_limit: 2, slot_groups: false };
         assert_eq!(Storing::from_array(storing.to_array()), storing);
+        // #1435: the slot groups ride in bit 1 of the overweight slot.
+        let grouped = Storing { only_overweight: true, slot_groups: true, ..storing };
+        assert_eq!(grouped.to_array()[3], 3);
+        assert_eq!(Storing::from_array(grouped.to_array()), grouped);
         let stock = stock();
         let (_, mut rec) = produce(&stock, 300, &traits(), &[], &[]);
         let mut line = String::new();

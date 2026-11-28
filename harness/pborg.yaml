@@ -1402,6 +1402,12 @@ borg_param_town_home_backup_protections: 1
 # cap is sold in town or dropped on a quiet dungeon turn. 0 = no cap.
 borg_param_town_home_melee_spares: 2
 
+# #1435: split the Home's 24 slots into 16 for gear and 8 for supplies, each
+# ranked by what it covers, with loop guards (docs/CALIBRATION.md). Shipped
+# off until the owner turns it on (RULES 28, PLAN P9); 0 = the single pool
+# and the one-third supply goal.
+borg_param_town_home_slot_groups: 0
+
 # #1250: idle use of expendable consumables from DL1.
 borg_param_item_use_idle: 1
 

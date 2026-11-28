@@ -503,6 +503,9 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
     }
 
     reserve_books(&mut kit);
+    // borg-reborn-rs (#1435): the Home slot budget puts the stacks outside it
+    // at Overflow, once every role is known.
+    crate::borg_town_home_budget::apply(st, &mut kit, live);
 
     st.borg = borg;
     st.traits = traits;
@@ -745,6 +748,12 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
         let gain = tryon.iter().find(|t| t.shop == c.shop && t.slot == c.slot)
             .map_or(0, |t| t.value);
         let role = borg_town_home::classify(st, item, false, gain);
+        // #1435: a stack the supply budget has no room for is not bought for Home.
+        if matches!(role, Role::LatePotion | Role::Device | Role::Scarce)
+            && !crate::borg_town_home_budget::supply_fits(st, item, c.qty)
+        {
+            return 0;
+        }
         if role == Role::LatePotion {
             // Healing is budgeted against the trip separately. Even a potion
             // with no current coverage gain can start a future Home reserve.
