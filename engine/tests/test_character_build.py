@@ -27,9 +27,9 @@ class CharacterBuildTest(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def launch(self, name, flags='menu,start-depth=10', extra=(), turns=1000):
+    def launch(self, name, flags='menu,start-depth=10', extra=(), turns=1000, player_class=0):
         out = self.base / name
-        result = subprocess.run(['bash', str(ROOT / 'harness/run.sh'), str(out), '101', '0', '0', str(turns), flags,
+        result = subprocess.run(['bash', str(ROOT / 'harness/run.sh'), str(out), '101', '0', str(player_class), str(turns), flags,
                                  '--', *extra], env=self.env, capture_output=True, text=True, timeout=45)
         return out, result
 
@@ -121,6 +121,31 @@ class CharacterBuildTest(unittest.TestCase):
         _, result = self.launch('duplicate', extra=('-start-build', str(FIXTURE), '-start-build', str(FIXTURE)))
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('duplicate start-build', result.stderr)
+
+    def test_a_record_names_the_class_the_run_started(self):
+        # The tier is no longer Human Warrior only: the record's race and
+        # class are the started character's, its mana is checked against the
+        # native calculation like its hit points, and nothing else about the
+        # class (spell knowledge) is restored.
+        for name, player_class, hp, sp in (('ranger', 7, 57, 6), ('necromancer', 4, 40, 12)):
+            fixture = ROOT / f'engine/tests/fixtures/{name}-level5.build'
+            out, result = self.launch(name, extra=('-start-build', str(fixture)), player_class=player_class)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            summary = json.loads((out / 'summary.json').read_text())
+            self.assertEqual(summary['start_build_sha256'], hashlib.sha256(fixture.read_bytes()).hexdigest())
+            self.assertEqual((summary['initial_clevel'], summary['initial_max_hp'], summary['initial_max_sp']), (5, hp, sp))
+            self.assertFalse((out / 'save/input.save').exists())
+            # A record for another class, or another mana value, never falls back to birth.
+            for index, text in enumerate((
+                    fixture.read_text(),  # started as the Warrior below
+                    fixture.read_text().replace(f'identity:0:{player_class}:5', 'identity:0:0:5'),
+                    fixture.read_text().replace(f':{hp}:{sp}\n', f':{hp}:{sp + 1}\n'))):
+                record = self.base / f'{name}-bad-{index}.build'
+                record.write_text(text)
+                bad, result = self.launch(f'{name}-bad-{index}', extra=('-start-build', str(record)),
+                                          player_class=0 if index == 0 else player_class)
+                self.assertNotEqual(result.returncode, 0, (name, index))
+                self.assertFalse((bad / 'summary.json').exists(), (name, index))
 
     def test_both_cores_start_only_after_the_requested_cave_exists(self):
         for core in ('reborn', 'borg-rs'):
