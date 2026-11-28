@@ -478,6 +478,8 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
     if borg_choose_shop(st) {
         if crate::borg_town_live::active(st) {
             if crate::borg_town_live::execute_store(st) { return true; }
+            // borg-reborn-rs (#1395): nothing done here; trace why.
+            crate::borg_town_live::note_idle_visit(st);
             leave(st);
             st.borg.in_shop = false;
             return true;
@@ -514,7 +516,11 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
     }
 
     /* No shop */
-    if crate::borg_town_live::active(st) { st.borg.in_shop = false; }
+    if crate::borg_town_live::active(st) {
+        // borg-reborn-rs (#1395): the planner chose nothing here; trace why.
+        crate::borg_town_live::note_idle_visit(st);
+        st.borg.in_shop = false;
+    }
     clear_shop_goal(st);
 
     /* Leave the store */

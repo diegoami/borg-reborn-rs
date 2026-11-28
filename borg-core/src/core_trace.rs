@@ -19,6 +19,31 @@ struct Selection {
     source: Option<&'static str>,
     attacks: Vec<AttackRanking>,
     prepared: Vec<PreparedCheck>,
+    store_exit: Option<StoreExit>,
+}
+
+/// borg-reborn-rs (#1395): a store left without a transaction, and why. Only
+/// the live town planner records it, when it leaves a store with no command
+/// queued; `planned_shop` and `planned_action` are the goal it still holds
+/// (-1 and `None` once cleared).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+struct StoreExit {
+    shop: i32,
+    reason: String,
+    planned_shop: i32,
+    planned_action: Option<i64>,
+}
+
+/// Record why the store of this think is left without a transaction.
+pub(crate) fn record_store_exit(shop: i16, reason: &str, planned_shop: i16, planned_action: Option<i64>) {
+    FRAMES.with(|frames| {
+        if let Some(frame) = frames.borrow_mut().last_mut() {
+            frame.store_exit = Some(StoreExit {
+                shop: i32::from(shop), reason: reason.into(),
+                planned_shop: i32::from(planned_shop), planned_action,
+            });
+        }
+    });
 }
 
 /// One native attack-selector invocation. Multiple attempts in one think are
@@ -225,6 +250,8 @@ struct Line {
     trip_id: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     previous_prepared_outcome: Option<PreparedOutcome>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    store_exit: Option<StoreExit>,
 }
 
 fn failure(error: impl std::fmt::Display) -> ! {
@@ -344,6 +371,7 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
         prepared: frame.prepared,
         trip_id: None,
         previous_prepared_outcome: None,
+        store_exit: frame.store_exit,
     };
     let writer = WRITER.get_or_init(|| {
         let path = PATH
@@ -467,6 +495,7 @@ mod tests {
             prepared: vec![],
             trip_id: None,
             previous_prepared_outcome: None,
+            store_exit: None,
         };
         let text = serde_json::to_string(&line).unwrap();
         assert!(!text.contains('\n'));
