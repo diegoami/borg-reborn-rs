@@ -7043,9 +7043,14 @@ miss at an adjacent monster wrote granite under the Borg (Paladin 1194051723:
   (b)'s guess, the first unknown grid of the path ((162,30) here), and the
   next ball path stops there. A missile at a monster sensed only by ESP
   behind unknown ground can still be taken for a miss (follow-up issue).
+  The recurrence at turn 3,511,372 (2,772 casts at a soldier at (55,46)
+  from (54,27), in a corridor) has engine path (54,28)–(54,34) known floor,
+  (54,35)–(54,36) unseen floor, then granite at (55,37); C's hallway rule
+  skips the Borg's own column, so the guess is (55,37).
   Tests: `a_wasted_cast_is_not_a_miss`,
   `a_wasted_cloud_guesses_the_engines_blocker`,
-  `the_borg_walks_the_engines_path_to_the_gallant` (borg_update.rs).
+  `the_borg_walks_the_engines_path_to_the_gallant`,
+  `the_corridor_cloud_guesses_the_engines_blocker` (borg_update.rs).
 - Evidence (replays, not a measurement): both Fang games and the three smoke
   games play the same key stream with 0 and 1 (Paladin `7fb11d46a041a04a`,
   Druid `3687ca84c5cdeb34`). The Borg's grid was remembered in all seven

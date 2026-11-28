@@ -2937,6 +2937,34 @@ mod miss_wall_guess_tests {
         );
         assert_eq!(guess, crate::borg_projection::WallGuess::Unknown(BLOCKER));
     }
+
+    /// #1425, the recurrence at turn 3,511,372 (borg-cemetery#168): the same
+    /// Druid at (54,27), in a north-south corridor, cast Stinking Cloud 2,772
+    /// times at a soldier at (55,46) sensed by ESP. The engine's path from
+    /// that save (probe, not committed): (54,28) to (54,34) known floor,
+    /// (54,35) and (54,36) floor the player has not seen, then granite at
+    /// (55,37), unknown. The Borg walks the same ten steps, and C's hallway
+    /// rule (`x_hall`: no guess in the Borg's own column) skips the two
+    /// unknown floor grids, so the guess is the real blocker.
+    #[test]
+    fn the_corridor_cloud_guesses_the_engines_blocker() {
+        let druid = loc { x: 54, y: 27 };
+        let soldier = loc { x: 55, y: 46 };
+        let blocker = loc { x: 55, y: 37 };
+        let (mut y, mut x) = (druid.y, druid.x);
+        let mut steps = Vec::new();
+        for _ in 0..10 {
+            crate::borg_projection::borg_inc_motion(&mut y, &mut x, druid.y, druid.x, soldier.y, soldier.x);
+            steps.push(loc { x, y });
+        }
+        let mut engine: Vec<loc> = (28..=36).map(|y| loc { x: 54, y }).collect();
+        engine.push(blocker);
+        assert_eq!(steps, engine);
+        // Known on the Borg's map: the corridor (53..=55, 25..=34).
+        let known = |g: loc| (53..=55).contains(&g.x) && (25..=34).contains(&g.y);
+        let guess = crate::borg_projection::wall_guess_walk(druid, soldier, (true, false), true, |_| false, |g| !known(g));
+        assert_eq!(guess, crate::borg_projection::WallGuess::Unknown(blocker));
+    }
 }
 
 #[cfg(test)]
