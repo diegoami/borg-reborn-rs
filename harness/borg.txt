@@ -496,7 +496,8 @@ borg_param_caution_recall_heal_loss = 150
 # 1 = add the return requests below; 0 = only the C Borg's own returns.
 # Go back when:
 # - borg_trip_pack_slack: this many pack slots or fewer are free; higher
-#   goes back sooner;
+#   goes back sooner (0 = only when the pack is full; -1 = never for this
+#   reason, #1385);
 # - borg_trip_unknown_stacks: this many unknown stacks could be identified in
 #   town (0 = never for this reason); lower goes back sooner;
 # - borg_trip_return_gold: gold plus the pack's sale value reaches this per
