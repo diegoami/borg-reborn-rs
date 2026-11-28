@@ -79,15 +79,19 @@ jobs:
       # and skips it. Those files can change the borg-rs core's play, which
       # this suite never measures: the borg-rs steps below do (the default
       # core's smoke against smoke-borg-rs, #606, plays the shipped
-      # harness/borg.txt), and they run on every PR; the zoo measures more. Any other file, and every push to main or
-      # track-p, runs the full suite. On a pull request HEAD is the merge
-      # commit and HEAD^1 the base.
+      # harness/borg.txt), and they run on every PR; the zoo measures more.
+      # #1389: so do scripts/ (reference tooling and checks; only
+      # scripts/make-world.py is run by harness/run.sh, so it stays a full
+      # run), .gitattributes and the pr-base workflow. Any other file
+      # (ci.yml included), and every push to main or track-p, runs the full
+      # suite. On a pull request HEAD is the merge commit and HEAD^1 the base.
       - id: scope
         run: |
           full=1
           if [ "${{ github.event_name }}" = pull_request ] \
               && ! git diff --name-only HEAD^1 HEAD \
-                | grep -qvE '^(docs/|reference/|borg-core/|harness/borg(_[a-z]+)?\.txt$|harness/scary_monsters[a-z_]*\.txt$|harness/plans/|[^/]+\.md$)'; then
+                | grep -qvE '^(docs/|reference/|borg-core/|harness/borg(_[a-z]+)?\.txt$|harness/scary_monsters[a-z_]*\.txt$|harness/plans/|[^/]+\.md$|scripts/|\.gitattributes$|\.github/workflows/pr-base\.yml$)' \
+              && ! git diff --name-only HEAD^1 HEAD | grep -qx scripts/make-world.py; then
               full=0
           fi
           echo "full=$full" >> "$GITHUB_OUTPUT"
