@@ -16,9 +16,9 @@ continuation entry point.
 [Engine controls](../../engine/tests/test_stair_handoff.py#L186) ·
 [R5 coverage reader](../../harness/check-shadow.py)
 
-The shipped smoke at `5d72cbf34f1a3c26d24e35c836c0588cdbb18f6d` matched
-native `24be98732748230062882fe2b7d9601dba5e2cc0` in off on all three
-starts. Check and switch matched off for keys, messages, state, summaries,
+The local shipped smoke at `5d72cbf34f1a3c26d24e35c836c0588cdbb18f6d`
+matched native `24be98732748230062882fe2b7d9601dba5e2cc0` in off on all
+three starts. Check and switch matched off for keys, messages, state, summaries,
 and core traces. Each shadow mode recorded 3,177 continuation comparisons
 and zero mismatches. The 4,255 core trace rows also matched the #1405
 smoke after mapping the per-goal source lines to their new locations.
