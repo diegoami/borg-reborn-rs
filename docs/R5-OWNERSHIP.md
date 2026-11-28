@@ -161,12 +161,23 @@ refusals, and the different up/down move-cap paths. For dungeon modes
 require copied-state controls for
 representative failed attempts, normal/urgent/errand precedence, repeated
 flow calls, and bravery restore. Compare selected action and trace, queued
-keys, return value, state and dependency/RNG order. Run small exact
-off/check/switch smoke when a new entry is wired. Use Zoo for the full
-45-start comparison, with accepted native and a newly pinned candidate
-built under the shipped settings. [Existing stair cases](../engine/tests/test_stair_handoff.py#L57) ·
+keys, return value, state and dependency/RNG order.
+
+When a new entry is wired, run the three-start `smoke` suite in `off`,
+`check`, and `switch`. Check each active arm with
+`harness/check-shadow.py --r5 --expect-mode MODE ARM_ROOT`, using `check`
+or `switch` for `MODE`. Compare each arm against off with
+`harness/diff --suite smoke --expect-impl rust OFF_ROOT ARM_ROOT`. Both roots
+are `harness/suite.sh smoke` output directories. For entry-point coverage,
+CI runs `--r5 --require-all-entries` separately for check and switch across
+each mode's smoke, `stateful-entries`, and constructed fixture runs. Use
+Zoo for the full 45-start comparison, with accepted native and a newly
+pinned candidate built under the shipped settings.
+[Existing stair cases](../engine/tests/test_stair_handoff.py#L57) ·
 [Weighted route controls](../borg-core/src/borg_flow.rs#L1968) ·
-[Shadow gate](../harness/check-r45-suite.py)
+[R5 shadow reader](../harness/check-shadow.py#L232) ·
+[Exact gameplay diff](../harness/diff#L4) ·
+[Strict CI coverage](../.github/workflows/ci.yml#L360)
 
 This task is a source audit. The control list describes validation for
 future code ports. A later main carry needs its own receiving pin and a
