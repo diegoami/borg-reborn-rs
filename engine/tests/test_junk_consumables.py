@@ -50,7 +50,7 @@ class JunkConsumablesTest(unittest.TestCase):
                 line for line in base_kit.read_text().splitlines()
                 if line != "end" and (
                     not line.startswith("item:") or line.split(":")[4] != "-1"
-                    or line.startswith(("item:19:", "item:28:"))
+                    or line.startswith(("item:19:", "item:28:", "item:32:", "item:33:"))
                 )
             ]
             for (tval, sval), qty, known, charges in items:
