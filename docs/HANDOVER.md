@@ -2207,6 +2207,22 @@ One PR, owner's request (supersedes #441):
 - Wrap the ERRANDS.md paragraph noted by review292 F4. Required validation,
   evidence retention and task CI are pending. No experiment is launched.
 
+## 2026-11-15: tactical LLM adviser proposal (#306, PR #309)
+
+- #308 is now an opt-in class-specific errands_plan.txt runtime POC, not
+  an inline borg.txt language. It supports only loop-levels and is kept
+  out of measured arms until plan/death-replay provenance is integrated.
+
+- Separate opt-in adviser/host design, extending Q/#153/#212. No network
+  or runtime implementation; the measured Borg stays model-free.
+- #308 now uses the owner's plain level-phase block in borg.txt, not YAML
+  or the full DSL. The minimal runner has no live parameter/profile setters.
+  Configuration suggestions are for reviewed later plans, while active
+  fight actions need a separately accepted R/Q capability API.
+- The adviser cannot smuggle scripts or new parameter setters into that
+  small format. Structured packets, bounded control, validation, fallbacks
+  and replay remain in this independent draft for owner review.
+
 ## 2026-11-15: final #292 synchronization validation complete (#298)
 
 - Combined source15289917 passes full 45/45 v12 play parity, 295,464 named
