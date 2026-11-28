@@ -67,8 +67,10 @@ Home gate reserve").
   `test-town-loadout` build.
 - Off, the shipped value, the new code is read only through
   `town_home_gate_reserve` (`keep`, `wants_more` and `withdraw` return at
-  once); the smoke comparison against `smoke-borg-rs` is in the session
-  summary.
+  once). Smoke at the shipped settings of all three tasks (#1416 on at 2,
+  #1435 and this one off) equals `smoke-borg-rs`: 4/4 runs identical, at
+  `af0c0162c29f`, so no re-record. Those games stay on DL1-2 and hold no
+  spare weapons or Home stock, so this checks only that nothing else moved.
 - Not checked: the issue's native town cases (a Home with 5 Teleportation and
   3 carried, the Recall depth at DL26's gate, the Borg leaving with 8; and a
   case where the gate is not reached and Home stock is untouched). The unit
