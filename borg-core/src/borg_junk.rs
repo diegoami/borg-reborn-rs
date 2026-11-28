@@ -1471,6 +1471,19 @@ pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
         return false;
     }
 
+    // borg-reborn-rs (#1413, review of #1415): a full pack gives up an empty
+    // lantern shell before it scores anything else, whatever the junk
+    // settings, under the safe-drop conditions of the ranked cleanup below.
+    if st.borg.goal.recalling == 0 && !engine::player_is_shapechanged()
+        && danger_here(st) <= st.borg.tr(BI_CURHP) / 20
+    {
+        if let Some(slot) = crate::borg_light::lantern_shell_slot(st) {
+            note_desc(st, "# Dropping empty lantern shell to make pack room ", slot as i32, ".");
+            drop_ignored_pack_stack(st, slot as i32);
+            return true;
+        }
+    }
+
     let protect_supplies = exploration_first();
     if protect_supplies && !desperate && st.borg.goal.recalling == 0
         && !engine::player_is_shapechanged()
@@ -2389,6 +2402,15 @@ pub(crate) fn borg_drop_inferior_spare(st: &mut BorgState) -> bool {
         item.iqty > 0 && i64::from(item.value) * i64::from(item.iqty) <= i64::from(EARLY_JUNK_VALUE)
     };
     let safe_to_drop = |st: &mut BorgState| !engine::player_is_shapechanged() && danger_here(st) == 0;
+    // borg-reborn-rs (#1413, review of #1415): an empty lantern shell goes
+    // whatever the gear cleanup settings are, under the same safe-drop check.
+    if let Some(slot) = crate::borg_light::lantern_shell_slot(st) {
+        if safe_to_drop(st) {
+            note_desc(st, "# Dropping empty lantern shell ", slot as i32, ".");
+            drop_ignored_pack_stack(st, slot as i32);
+            return true;
+        }
+    }
     let light = surplus_light_drop(st);
     let cutoff = gear_alternatives();
     if cutoff > 0 {

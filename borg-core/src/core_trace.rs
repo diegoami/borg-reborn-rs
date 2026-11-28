@@ -19,6 +19,58 @@ struct Selection {
     source: Option<&'static str>,
     attacks: Vec<AttackRanking>,
     prepared: Vec<PreparedCheck>,
+    store_exit: Option<StoreExit>,
+}
+
+/// borg-reborn-rs (#1395): a town planner action as the trace records it:
+/// the store it targets, the action code and its four arguments (the
+/// `TownAction` of borg_town_shadow.rs).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub(crate) struct PlannedAction {
+    pub(crate) shop: i32,
+    pub(crate) code: i64,
+    pub(crate) at: [i64; 4],
+}
+
+/// borg-reborn-rs (re-review of #1414): one attempt inside a store visit:
+/// the action chosen there before execution could clear it, and its
+/// outcome (`queued`, a reason it was not, or what settlement then found).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub(crate) struct StoreAttempt {
+    pub(crate) action: PlannedAction,
+    pub(crate) outcome: String,
+}
+
+/// borg-reborn-rs (#1395): a store left without a transaction, and why. Only
+/// the live town planner records it, when it leaves a store with no command
+/// queued. `requested` is the store action chosen outside that brought the
+/// Borg in, kept for the whole visit; `attempts` each action tried inside
+/// during the visit, follow-up re-entries of the same store included
+/// (reviews of #1414); `planned_shop` and `planned_action` are the goal
+/// still held at exit (-1 and `None` once cleared).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+struct StoreExit {
+    shop: i32,
+    reason: String,
+    requested: Option<PlannedAction>,
+    attempts: Vec<StoreAttempt>,
+    planned_shop: i32,
+    planned_action: Option<i64>,
+}
+
+/// Record why the store of this think is left without a transaction.
+pub(crate) fn record_store_exit(
+    shop: i16, reason: &str, requested: Option<PlannedAction>, attempts: Vec<StoreAttempt>,
+    planned_shop: i16, planned_action: Option<i64>,
+) {
+    FRAMES.with(|frames| {
+        if let Some(frame) = frames.borrow_mut().last_mut() {
+            frame.store_exit = Some(StoreExit {
+                shop: i32::from(shop), reason: reason.into(), requested, attempts,
+                planned_shop: i32::from(planned_shop), planned_action,
+            });
+        }
+    });
 }
 
 /// One native attack-selector invocation. Multiple attempts in one think are
@@ -225,6 +277,8 @@ struct Line {
     trip_id: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     previous_prepared_outcome: Option<PreparedOutcome>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    store_exit: Option<StoreExit>,
 }
 
 fn failure(error: impl std::fmt::Display) -> ! {
@@ -344,6 +398,7 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
         prepared: frame.prepared,
         trip_id: None,
         previous_prepared_outcome: None,
+        store_exit: frame.store_exit,
     };
     let writer = WRITER.get_or_init(|| {
         let path = PATH
@@ -467,6 +522,15 @@ mod tests {
             prepared: vec![],
             trip_id: None,
             previous_prepared_outcome: None,
+            store_exit: Some(StoreExit {
+                shop: 4, reason: "the planned ware is gone".into(),
+                requested: Some(PlannedAction { shop: 4, code: 1, at: [4, 2, 1, 0] }),
+                attempts: vec![StoreAttempt {
+                    action: PlannedAction { shop: 4, code: 1, at: [4, 2, 1, 0] },
+                    outcome: "the purchase made no progress".into(),
+                }],
+                planned_shop: -1, planned_action: None,
+            }),
         };
         let text = serde_json::to_string(&line).unwrap();
         assert!(!text.contains('\n'));
