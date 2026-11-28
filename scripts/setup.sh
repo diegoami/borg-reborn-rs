@@ -122,6 +122,13 @@ sys.exit(0 if ok else 1)
 PY
 fi
 
+# #1382: params.rs and docs/CALIBRATION.md merge without their cited line
+# numbers (.gitattributes); the repository's config is shared by every worktree.
+if git rev-parse --git-dir >/dev/null 2>&1; then
+    git config merge.citations.name "parameter citations, line numbers masked"
+    git config merge.citations.driver "python3 scripts/merge-citations.py %O %A %B"
+fi
+
 if [ $problems -ne 0 ]; then
     say "finished with problems (see above)"
     [ $strict -eq 1 ] && exit 1
