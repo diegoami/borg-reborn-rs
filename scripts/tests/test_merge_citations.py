@@ -40,6 +40,12 @@ class MergeCitations(unittest.TestCase):
         self.assertIn('"Ours."', merged)
         self.assertIn('"Theirs."', merged)
 
+    def test_a_repeated_masked_line_keeps_each_copys_numbers(self):
+        base = '| `a` | `borg_x.rs:10` |\n| `a` | `borg_x.rs:20` |\nz\n'
+        merged, conflicts = mc.merge(base, base, base.replace('z', 'Z'))
+        self.assertEqual(conflicts, 0)
+        self.assertEqual(merged, base.replace('z', 'Z'))
+
 
 if __name__ == '__main__':
     unittest.main()

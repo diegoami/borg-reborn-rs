@@ -33,12 +33,12 @@ def mask(line):
 
 
 def numbers(text):
-    """{masked line: original line}, first occurrence wins, for lines with a citation."""
+    """{masked line: [original lines in order]} for the lines with a citation."""
     out = {}
     for line in text.split('\n'):
         masked = mask(line)
         if masked != line:
-            out.setdefault(masked, line)
+            out.setdefault(masked, []).append(line)
     return out
 
 
@@ -55,11 +55,15 @@ def merge(base, ours, theirs):
     if run.returncode < 0 or run.returncode > 127:
         raise RuntimeError(run.stderr)
     maps = [numbers(t) for t in (ours, theirs, base)]
+    seen = {}
     lines = []
     for line in run.stdout.split('\n'):
         for known in maps:
             if line in known:
-                line = known[line]
+                # the n-th copy of a masked line takes the n-th original (a repeated line keeps its numbers)
+                n = seen.get(line, 0)
+                seen[line] = n + 1
+                line = known[line][min(n, len(known[line]) - 1)]
                 break
         lines.append(line)
     return '\n'.join(lines), run.returncode
@@ -67,13 +71,14 @@ def merge(base, ours, theirs):
 
 def main(argv):
     base_p, ours_p, theirs_p = (Path(a) for a in argv[1:4])
+    ours = ours_p.read_text()
     try:
-        merged, conflicts = merge(base_p.read_text(), ours_p.read_text(), theirs_p.read_text())
+        merged, conflicts = merge(base_p.read_text(), ours, theirs_p.read_text())
         ours_p.write_text(merged)
     except Exception as exc:  # fall back to git's own merge of the unmasked files
         print(f'merge-citations: {exc}; merging as usual', file=sys.stderr)
         conflicts = subprocess.run(['git', 'merge-file', str(ours_p), str(base_p), str(theirs_p)]).returncode
-    if conflicts == 0:
+    if conflicts == 0 and ours_p.read_text() != ours:
         print('merge-citations: run python3 scripts/check-param-citations.py --fix', file=sys.stderr)
     return 1 if conflicts else 0
 

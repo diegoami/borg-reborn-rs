@@ -9,8 +9,8 @@ cpb = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cpb)
 
 
-def v(base='main', head='task/T1-x', labels=(), files=(), issue=()):
-    return cpb.violation(base, head, set(labels), list(files), set(issue))
+def v(base='main', head='task/T1-x', labels=(), files=(), issue=(), cross=False):
+    return cpb.violation(base, head, set(labels), list(files), set(issue), cross)
 
 
 class CheckPrBase(unittest.TestCase):
@@ -32,6 +32,14 @@ class CheckPrBase(unittest.TestCase):
         self.assertIsNone(v(head='track-p', files=['borg-core/a.rs']))
         self.assertIsNone(v(head='feature/track-r', issue=['track:R']))
         self.assertIsNone(v(files=['borg-core/a.rs'], labels=['base-main-ok']))
+
+    def test_a_fork_branch_named_like_a_track_branch_is_not_a_promotion(self):
+        self.assertIn('changes borg-core/', v(head='track-p', files=['borg-core/a.rs'], cross=True))
+
+    def test_issues_named_without_a_closing_keyword_are_found(self):
+        body = 'Part of #1004. Stacked on #12. Refs #7, closes #9 and fixes #3.'
+        self.assertEqual(cpb.referenced_issues(body), [3, 7, 9, 1004])
+        self.assertEqual(cpb.referenced_issues(None), [])
 
 
 if __name__ == '__main__':
