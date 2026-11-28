@@ -768,7 +768,10 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // copy goes to Home at a time; the rest stay carried.
         let book_floor = if reserved_scarce_book(whole) { whole.qty - 1 }
             else { i32::from(whole.keep_last_book && whole.qty > 1) };
-        let floor = capped_floor.max(restore_keep).max(reserve).max(book_floor)
+        // #1417: a reserve kind keeps what the gates need and the Home does not still want.
+        let gate_stash = whole.gate_reserve.is_some_and(|keep| keep < whole.qty);
+        let gate_floor = if gate_stash { whole.gate_reserve.unwrap_or(0) } else { 0 };
+        let floor = capped_floor.max(restore_keep).max(reserve).max(book_floor).max(gate_floor)
             .max(if surplus(whole) { keep_min } else { 0 });
         let qty = whole.qty - floor;
         let proceeds = if restore_keep > 0 || capped || reserve > 0 || book_floor > 0 {
@@ -874,12 +877,16 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // Different artifacts can share the same base kind (e.g. the
         // elemental daggers), but each artifact is already unique.
         let spare_is_unique = it.home_role.reserve() && (it.home_role == Role::Artifact
+            || gate_stash
             || !input.kit.iter().enumerate().any(|(j, k)| {
                 k.kind == it.kind && (k.place == Place::Home && out[j] == Disposition::Keep
                     || ranked_home && out[j] == Disposition::Store)
             }));
-        let stash_for_later = spare_is_unique && loss <= cost
-            && (it.home_role.gear() || it.home_role == Role::LatePotion
+        // The copies join the stack Home already holds: no new slot.
+        let merges_at_home = input.kit.iter().enumerate().any(|(j, k)| k.place == Place::Home
+            && k.kind == it.kind && out[j] == Disposition::Keep);
+        let stash_for_later = spare_is_unique && (loss <= cost || gate_stash)
+            && (it.home_role.gear() || it.home_role == Role::LatePotion || gate_stash
                 || future > (if ranked_home { 0 } else { home_cost }));
         let low_priority = if ranked_home { it.home_role == Role::Renewable } else { it.home_role.common() };
         let optional_stock = ranked_home && it.home_role == Role::Common;
@@ -890,7 +897,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         let outside_budget = it.home_role == Role::Overflow;
         let store = !capped && !low_priority && useful_spare && !outside_budget && !(input.revision >= 12 && recent_purchase)
             && !urgent_loss && (input.revision < 6 || future > 0 || protected || loss > 0 || stash_for_later)
-            && (home_free > 0 || spare.is_some())
+            && (home_free > 0 || spare.is_some() || gate_stash && merges_at_home)
             && (stash_for_later || worth_more_at_home || overweight && (loss > 0 || future > 0 || protected));
         // borg-reborn-rs (#1151, plan schema 20): over the weight allowance
         // itself, with no room at Home, the copies past a stack's floor (the
@@ -1210,7 +1217,7 @@ mod tests {
     }
 
     fn recall(place: Place) -> KitItem {
-        KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot: 0, kind: 42, qty: 1, weight: 5, need: index(Need::Trip) as i8,
+        KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, gate_reserve: None, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot: 0, kind: 42, qty: 1, weight: 5, need: index(Need::Trip) as i8,
             reduction: UNIT, serves: 0, power: 0, proceeds: 0, sell_shop: 4, unknown: false, unknown_flavour: false, just_bought: false, cursed_spare: false, fuel: 0 }
     }
 
@@ -1504,6 +1511,38 @@ mod tests {
         let mut u = Utility::of(&st, &kit, false);
         let (actions, _, _) = dispositions(&inp, &mut u, &st);
         assert_ne!(actions[24], Disposition::Store, "a stack outside the budget is not stored: {actions:?}");
+    }
+
+    /// #1417: a second deposit of a reserve kind. Home holds Teleportation and
+    /// is full; the carried copies the pack does not need are stored into that
+    /// stack. With the pack at its keep, or without the reserve, nothing moves.
+    #[test]
+    fn a_reserve_kind_below_its_target_is_stored_into_the_stack_home_holds() {
+        use crate::borg_town_record::PLAN_SCHEMA;
+        let st = state(10, 23, 160);
+        let stock = KitItem { need: -1, reduction: 0, sell_shop: -1, ..recall(Place::Home) };
+        let teleport = KitItem { home_role: Role::Scarce, kind: 7, qty: 2, slot: 0, ..stock };
+        let filler = KitItem { home_role: Role::Gear, power: 50, protect_disposal: true, ..stock };
+        let mut kit = vec![teleport];
+        kit.extend((1..24).map(|slot| KitItem { kind: 100 + u32::from(slot), slot, ..filler }));
+        let carried = KitItem { place: Place::Pack, slot: 0, qty: 3, ..teleport };
+        kit.push(carried);
+        let store = |kit: &[KitItem], only_overweight: bool| {
+            let mut inp = input(kit);
+            inp.revision = PLAN_SCHEMA;
+            inp.home_slots = 0;
+            inp.storing = Some(Storing { only_overweight, ..Storing::default() });
+            let mut u = Utility::of(&st, kit, false);
+            let (actions, _, copies) = dispositions(&inp, &mut u, &st);
+            (actions[24], copies.get(24).copied().unwrap_or(0))
+        };
+        assert_eq!(store(&kit, false).0, Disposition::Keep, "today: one Home stack per kind");
+        // Home wants every copy beyond the pack's keep of 1: two go.
+        kit[24].gate_reserve = Some(1);
+        assert_eq!(store(&kit, true), (Disposition::Store, 2), "stored although not overweight");
+        // The pack keeps everything when Home is at the target.
+        kit[24].gate_reserve = Some(3);
+        assert_eq!(store(&kit, true).0, Disposition::Keep, "nothing more is wanted");
     }
 
     /// #1318: a spare dungeon book is Scarce. An incoming intermittent
@@ -2655,7 +2694,7 @@ mod tests {
         assert_eq!(copies, [1]);
         assert_eq!(freed.gold, 50);
         let home = KitItem { place: Place::Home, ..book };
-        let spare = KitItem { keep_last_book: false, ..book };
+        let spare = KitItem { keep_last_book: false, gate_reserve: None, ..book };
         assert_eq!(solve(&[spare, home]).0, [Disposition::Sell, Disposition::Keep]);
         assert_eq!(solve(&[KitItem { qty: 2, sell_shop: -1, ..book }]).0, [Disposition::Keep]);
     }

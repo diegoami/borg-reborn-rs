@@ -67,6 +67,10 @@ pub struct KitItem {
     pub protect_disposal: bool,
     /// This stack holds the reserved copy of an owned class spellbook.
     pub keep_last_book: bool,
+    /// #1417: a carried stack of a gate-reserve kind: the copies the pack
+    /// keeps (for the next gate and up to the Home's target); the rest may
+    /// go to Home, merging into the stack there (no new slot).
+    pub gate_reserve: Option<i32>,
     /// A known kind the capability planner deliberately declines.
     pub home_unwanted: bool,
     /// A known repeatable consumable subject to the per-kind Home limit.
@@ -296,7 +300,7 @@ mod tests {
     }
 
     fn item(place: Place, slot: u8, need: i8, qty: i32) -> KitItem {
-        KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false,
+        KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, gate_reserve: None, protect_disposal: false, home_unwanted: false, home_limited: false,
             joins_pack: false,
             place,
             slot,

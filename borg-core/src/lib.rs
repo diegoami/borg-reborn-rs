@@ -89,6 +89,7 @@ pub(crate) mod borg_think_dungeon_util;
 pub(crate) mod borg_think_store;
 mod borg_town_home; // borg-reborn-rs (#1241): Home reserve policy
 mod borg_town_home_budget; // borg-reborn-rs (#1435): the Home slot budget
+mod borg_town_gate_reserve; // borg-reborn-rs (#1417): the Home gate reserve
 pub(crate) mod borg_town_capability;
 pub(crate) mod borg_town_packing;
 pub(crate) mod borg_town_budget;

@@ -1015,6 +1015,10 @@ fn choose_plan(st: &mut BorgState) -> bool {
         };
         if let Some(cleanup) = cleanup { return set_action(st, cleanup); }
     }
+    // #1417: before Recall, bring the pack up to the gate the descent reaches.
+    if !no_sale && !plan.urgent_action && !loadout_pending(st) {
+        if let Some(withdraw) = crate::borg_town_gate_reserve::withdraw(st) { return set_action(st, withdraw); }
+    }
     // #1264: the earlier policy offers inferior spares before other disposals.
     if cutoff == 0 && !no_sale && matches!(a.code,
         action::LEAVE | action::DROP | action::SELL | action::STORE | action::SELL_HOME | action::DROP_HOME)

@@ -244,7 +244,7 @@ fn kit_row(k: &KitItem, schema: i64) -> [i64; 12] {
         k.power,
         k.proceeds,
         i64::from(k.sell_shop),
-        i64::from(k.unknown) | i64::from(k.unknown_flavour) << 1 | i64::from(k.just_bought) << 2 | i64::from(k.joins_pack) << 3 | i64::from(k.protect_disposal) << 6 | i64::from(k.home_limited) << 4 | i64::from(k.home_unwanted) << 5 | i64::from(k.cursed_spare) << 7 | i64::from(k.keep_last_book) << 8
+        i64::from(k.unknown) | i64::from(k.unknown_flavour) << 1 | i64::from(k.just_bought) << 2 | i64::from(k.joins_pack) << 3 | i64::from(k.protect_disposal) << 6 | i64::from(k.home_limited) << 4 | i64::from(k.home_unwanted) << 5 | i64::from(k.cursed_spare) << 7 | i64::from(k.keep_last_book) << 8 | k.gate_reserve.map_or(0, |keep| i64::from(keep.clamp(0, 254) + 1) << 16)
             | (if schema >= 21 { k.home_role as i64 } else { 0 }) << 9,
         i64::from(k.serves),
     ]
@@ -646,6 +646,7 @@ impl PlanRecord {
                             Some([r[12] as i32, r[13] as i32, r[14] as i32])
                         } else { None },
                         keep_last_book: flags & 256 != 0,
+                        gate_reserve: ((flags >> 16) & 255 > 0).then(|| ((flags >> 16) & 255) as i32 - 1),
                         protect_disposal: schema >= 14 && flags & 64 != 0,
                         home_limited: schema >= 14 && flags & 16 != 0,
                         home_unwanted: schema >= 14 && flags & 32 != 0,
@@ -1817,7 +1818,7 @@ mod tests {
         assert_eq!(step(&input).home_purchase, None);
         let ranked = [WareFact { home_value: crate::borg_town_home::Role::Gear.offer_value(9000), ..facts[0] }];
         let expendable = [KitItem { home_role: crate::borg_town_home::Role::Common, home_room: Some([3, 0, 3]),
-            keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false,
+            keep_last_book: false, gate_reserve: None, protect_disposal: false, home_unwanted: false, home_limited: false,
             joins_pack: false, place: Place::Home, slot: 4, kind: 50, qty: 3, weight: 5, need: -1,
             reduction: 0, serves: 0, power: 0, proceeds: 10, sell_shop: 4, unknown: false,
             unknown_flavour: false, just_bought: false, cursed_spare: false, fuel: 0 }];
@@ -1890,7 +1891,7 @@ mod tests {
         let stock = stock();
         let (line, _) = produce(&stock, 300, &traits(), &[], &[]);
         let (_, mut out) = replay(&line).unwrap();
-        let pack = KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place: Place::Pack, slot: 0, kind: 1, qty: 1,
+        let pack = KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, gate_reserve: None, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place: Place::Pack, slot: 0, kind: 1, qty: 1,
             weight: 1, need: -1, reduction: 0, power: 0, proceeds: 0,
             sell_shop: 4, unknown: false, unknown_flavour: false,
             just_bought: false, cursed_spare: false, fuel: 0, serves: 0 };
@@ -2082,7 +2083,7 @@ mod tests {
     #[test]
     fn the_step_disposes_then_buys() {
         let s = stock();
-        let junk = KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false,
+        let junk = KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, gate_reserve: None, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false,
             serves: 0,
             place: Place::Pack,
             slot: 4,
@@ -2214,7 +2215,7 @@ mod tests {
     fn full_pack_frees_room_before_urgent_buy_and_does_not_queue_an_impossible_buy() {
         let stock=stock();let (line,_)=produce(&stock,300,&traits(),&[],&[]);
         let (_,mut out)=replay(&line).unwrap();
-        let pack=KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false, cursed_spare: false, fuel: 0,joins_pack:false,place:Place::Pack,slot:0,kind:1,qty:1,weight:1,need:-1,reduction:0,power:0,
+        let pack=KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, gate_reserve: None, protect_disposal: false, home_unwanted: false, home_limited: false, cursed_spare: false, fuel: 0,joins_pack:false,place:Place::Pack,slot:0,kind:1,qty:1,weight:1,need:-1,reduction:0,power:0,
             proceeds:0,sell_shop:4,unknown:false,unknown_flavour:false,just_bought:false,serves:0};
         let kit=[pack];out.dispositions=vec![Disposition::Sell];
         let urgent=[UrgentPurchase {candidate:0,needs:vec![Need::Food]}];
@@ -2287,7 +2288,7 @@ mod tests {
     fn urgent_buy_over_the_weight_allowance_frees_weight_first() {
         let stock=stock();let (line,_)=produce(&stock,300,&traits(),&[],&[]);
         let (_,mut out)=replay(&line).unwrap();
-        let pack=KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false, cursed_spare: false, fuel: 0,joins_pack:false,place:Place::Pack,slot:0,kind:1,qty:1,weight:50,need:-1,reduction:0,power:0,
+        let pack=KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, gate_reserve: None, protect_disposal: false, home_unwanted: false, home_limited: false, cursed_spare: false, fuel: 0,joins_pack:false,place:Place::Pack,slot:0,kind:1,qty:1,weight:50,need:-1,reduction:0,power:0,
             proceeds:0,sell_shop:4,unknown:false,unknown_flavour:false,just_bought:false,serves:0};
         let kit=[pack];out.dispositions=vec![Disposition::Store];
         let urgent=[UrgentPurchase {candidate:0,needs:vec![Need::Food]}];

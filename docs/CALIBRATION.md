@@ -9142,7 +9142,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:1168` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1150` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1155` |
 
 ## Quiver surplus in town (#1168, #1272)
 
@@ -9207,7 +9207,7 @@ replays pin it to 0, since it changes their recorded routes.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_drop_clear_floor` | 1 | flag | 0–1 | `borg_town_live.rs:1289` |
+| `town_drop_clear_floor` | 1 | flag | 0–1 | `borg_town_live.rs:1293` |
 
 ### Spare lanterns (#1413)
 
@@ -9725,6 +9725,58 @@ on, PLAN P9). Every value is a hypothesis; nothing here is measured.
 | `town_home_rank_glyph` | 30 | weight | 0–1000 | `borg_town_home_budget.rs:133` |
 
 [Handover](handover/2026-11-28-1435-home-slot-budget.md)
+
+## The Home gate reserve (#1417)
+
+The shops sell few of what the next depth gates ask the pack for (Scrolls of
+Teleportation, Potions of Healing, *Healing*, Life and Speed are in no regular
+shop, `lib/gamedata/store.txt`), so a reserve builds only from what the Borg
+finds or sees in the Black Market. With `town_home_gate_reserve` it banks the
+kinds below at Home once max depth reaches `town_home_gate_min_depth` (5,
+owner), well before the gates (`borg_town_gate_reserve.rs`). Version 1 of the
+reserve fills the supply group of #1435 (`town_home_slot_groups`).
+
+- **Kinds**: Scroll of Teleportation (the charges of a Staff of Teleportation
+  count toward it), Teleport Level, Mass Banishment, Rune of Protection;
+  Potions of Healing, *Healing*, Life, Speed, Restore Life Levels, Restore
+  Mana (casters), Resist Poison; Mushrooms of Vigor and Purging and the stat
+  potions that restore; Staffs of Teleportation, Healing, Speed, the Magi and
+  *Destruction*, Wands and Rods of Teleport Other (one Home stack per kind,
+  charges summed; the engine stacks them whatever the charges,
+  `obj-pile.c:object_similar`). Not Clear Mind, Emergency or Terror (the Borg
+  never eats them for their effect, `borg_junk.rs`), not Cure Serious or
+  Critical Wounds (#1433), not staves or wands as stock for their own sake.
+- **Target** (copies in the pack and at Home together): the count the
+  `town_home_gate_lookahead`-th gate past max depth asks (`prepared_*`:
+  Teleportation `dl10`/`dl26_min_teleports`, Healing `dl46`/`dl56_min_heal`/
+  `dl100_min_healing_potions`, *Healing* and Life `..star_heal`/`dl100_min_star_heal_or_life`,
+  Speed `dl100_min_speed_potions`, Restore Mana `dl100_min_restore_mana`), at least
+  the count of the gate already passed; a kind no gate names uses
+  `town_home_reserve_target`.
+- **Deposit**: a carried stack keeps what the coming gate asks (the descent
+  target, max depth + 1) and every copy beyond what Home still wants, and stores the
+  rest, although it is not overweight and Home already holds the kind (the
+  copies join that stack: no new slot). The planner's floor (`KitItem::gate_reserve`,
+  bits 16-23 of a plan record's kit flags) takes it as one more reserve.
+- **Buy**: a Home purchase of a kind below its target is offered although the
+  kit holds the kind (`home_value`). It goes through the existing reserve
+  purchase: after the trip's needs, within the gold reserve and
+  `borg_black_market_max_percentage`, one copy a visit.
+- **Withdraw**: before Recall, when the descent target reaches a gate,
+  `withdraw` takes from Home what the pack lacks for the gate, one copy a step.
+  The gates (`borg_prepared`) still count the pack only; a Home reserve helps
+  a gate only once withdrawn. A kind stored this visit is not taken out, and one
+  taken out is not stored again (`home_moves`, borg-rs#90).
+
+Shipped off (RULES 28, PLAN P9); every number is a hypothesis.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `town_home_gate_reserve` | 0 | flag | 0–1 | `borg_town_gate_reserve.rs:83` |
+| `town_home_gate_min_depth` | 5 | depth | 0–127 | `borg_town_gate_reserve.rs:84` |
+| `town_home_gate_lookahead` | 1 | gates | 0–10 | `borg_town_gate_reserve.rs:70` |
+
+[Handover](handover/2026-11-28-1417-home-gate-reserve.md)
 
 ## Carried swaps and the Home (#1315)
 

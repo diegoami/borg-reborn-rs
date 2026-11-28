@@ -1408,6 +1408,12 @@ borg_param_town_home_melee_spares: 2
 # and the one-third supply goal.
 borg_param_town_home_slot_groups: 0
 
+# #1417: bank the consumables the next depth gates ask the pack for (Teleportation,
+# Healing, Speed, ...) at Home from max depth 5, top them up below target and
+# bring the pack up to a gate before Recall (docs/CALIBRATION.md). Shipped off
+# until the owner turns it on (RULES 28, PLAN P9).
+borg_param_town_home_gate_reserve: 0
+
 # #1250: idle use of expendable consumables from DL1.
 borg_param_item_use_idle: 1
 

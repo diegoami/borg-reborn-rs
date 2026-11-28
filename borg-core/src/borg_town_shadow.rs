@@ -388,6 +388,8 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             home_role,
             home_room,
             keep_last_book: protects_class_book(it),
+            // #1417: a carried reserve kind keeps what the gates need, and may store the rest.
+            gate_reserve: if place == Place::Pack { crate::borg_town_gate_reserve::keep(st, it) } else { None },
             protect_disposal: protected_supply
                 || (place == Place::Home && (retained_at_home
                     || (home_policy && it.art_idx != 0 || ranked_item) && !redundant_dagger))
@@ -738,8 +740,11 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
         {
             return -1;
         }
+        // #1417: a reserve kind below its target is topped up though the kit holds it.
+        let top_up = may_buy_for_home && c.shop < BORG_HOME as u8 && item.flavour_aware && !item.cursed
+            && crate::borg_town_gate_reserve::wants_more(st, item);
         if !may_buy_for_home || c.shop >= BORG_HOME as u8 || c.qty <= 0 || !item.flavour_aware
-            || item.cursed || c.stack_count > 0 || kit.iter().any(|k| k.kind == c.kind)
+            || item.cursed || !top_up && (c.stack_count > 0 || kit.iter().any(|k| k.kind == c.kind))
             || !engine::store_stock(&st.access, usize::from(c.shop)).get(usize::from(c.slot))
                 .is_some_and(|offer| offer.carry_capacity() >= 1)
         {
@@ -760,7 +765,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
             return role.offer_value(capability.home_offer(c.shop, c.slot).max(1));
         }
         if matches!(role, Role::Device | Role::Scarce) {
-            return role.offer_value(capability.home_offer(c.shop, c.slot));
+            return role.offer_value(capability.home_offer(c.shop, c.slot).max(i64::from(top_up)));
         }
         if !c.is_black_market() || !item.ident || !borg_town_home::known_special(item) {
             return 0;
