@@ -1549,3 +1549,71 @@ unsafe fn spell_damage(mut effect: *mut b::effect) -> Option<crate::observation:
     }
     None
 }
+
+/// Optional Cemetery capture called only by the guarded native frontend hook.
+#[cfg(feature = "borgh")]
+#[no_mangle]
+extern "C" fn borg_capture_encounter() {
+    crate::encounter_capture::record();
+}
+
+/// The incident miner's small subset of L1. Same panel/visibility tests as
+/// `perceive`, without rebuilding gear descriptions, spells, stores or grids
+/// at every command. Full initial coverage still comes from `perceive`.
+#[cfg(feature = "borgh")]
+pub(crate) fn perceive_encounter() -> Option<crate::encounter_capture::Frame> {
+    use crate::encounter_capture::{Frame, Monster, Status};
+    // SAFETY: the same engine-thread pointers, panel bounds and visible
+    // monster checks as `perceive`. Callers isolate and restore engine RNG.
+    unsafe {
+        let (p, c, t) = (b::player, b::cave, b::Term);
+        if p.is_null() || c.is_null() || t.is_null() {
+            return None;
+        }
+        let (pl, term) = (&*p, &*t);
+        let mode = (term.sidebar_mode as usize).min(2);
+        let screen_hgt = (term.hgt - b::row_top_map[mode] - b::row_bottom_map[mode])
+            / i32::from(b::tile_height).max(1);
+        let screen_wid = (term.wid - b::col_map[mode] - 1) / i32::from(b::tile_width).max(1);
+        let (x0, y0) = (term.offset_x.max(0), term.offset_y.max(0));
+        let width = screen_wid.min((*c).width - x0).max(0);
+        let height = screen_hgt.min((*c).height - y0).max(0);
+        let mut monsters = Vec::new();
+        for y in y0..y0 + height {
+            for x in x0..x0 + width {
+                let grid = b::loc { x, y };
+                if !b::square_in_bounds_fully(c, grid) {
+                    continue;
+                }
+                let mut g: b::grid_data = core::mem::zeroed();
+                b::map_info(grid, &mut g);
+                if g.m_idx > 0 {
+                    let m = b::cave_monster(c, g.m_idx as c_int);
+                    if !m.is_null()
+                        && !(*m).race.is_null()
+                        && (*m).grid.x == x
+                        && (*m).grid.y == y
+                        && b::monster_is_visible(m)
+                    {
+                        monsters.push(Monster {
+                            index: (*m).midx,
+                            race: (*(*m).race).ridx,
+                        });
+                    }
+                }
+            }
+        }
+        Some(Frame {
+            turn: b::turn as i64,
+            status: Status {
+                hp: pl.chp as i32,
+                max_hp: pl.mhp as i32,
+                sp: pl.csp as i32,
+                max_sp: pl.msp as i32,
+                level: pl.lev as i32,
+                depth: pl.depth as i32,
+            },
+            monsters,
+        })
+    }
+}

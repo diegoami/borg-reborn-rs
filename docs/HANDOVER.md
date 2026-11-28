@@ -785,6 +785,36 @@ group of its own (the run id), so those are never queued or cancelled. The
 session's practice from now on: batch review fixes into one push, and re-sync
 a PR with main only right before merging, when needed.
 
+## 2026-11-17: optional core-independent encounter capture (#506)
+
+Owner explicitly authorized capture support here to finish borg-zoo#184 and
+harvest Suite 2 on the updated source. This is measurement support, not a new
+strategy or Track P milestone. The dedicated source PR starts from main
+`28360152`; no vendored core, shipped configuration or upstream game file changes.
+
+- The guarded native frontend samples before each game-command boundary and
+  retains the initial birth/loaded state before the first played key.
+- `BORG_ENCOUNTER_LOG` writes one full initial L1 observation, then compact
+  turn/status/player-visible-monster frames. `BORG_ENCOUNTER_KNOWLEDGE_LOG`
+  dumps static knowledge once, independently of the controller.
+- For borg-rs, legacy `BORG_OBSERVATION_LOG` / `BORG_KNOWLEDGE_LOG` also work.
+  Reborn's existing per-think observation/world replay writers are unchanged.
+- Capture uses a private diagnostic RNG inside the existing save/restore
+  wrapper: neither the controller RNG nor saved engine RNG is advanced.
+  No level filter is applied. Output errors fail visibly.
+- Ongoing compact capture reads only the same status/visible-monster subset
+  of L1; a native compact/full comparison verifies identical incident channels.
+  Full gear/spell/store descriptions are read only for the initial frame or
+  an explicitly requested full observation log.
+- Native logging-on/off tests cover both controllers and level-1 Mage/Warrior
+  starts, compare complete key/state/message streams and final engine RNG,
+  and check exact first observation turn on four saved-start loads.
+
+Canonical preparation/validation evidence belongs in borg-cemetery#68;
+borg-zoo#202 owns suite discovery and gated dispatch. Source PR merge still
+waits for the owner's review completion (RULES 1a). The requested harvest can
+pin the clean candidate commit explicitly; do not describe it as merged main.
+
 ## 2026-11-17: explicit gold reserve, shipped 0 (#493)
 
 Owner: the gold reserve is a borg.txt setting, fixed and percent, and it
