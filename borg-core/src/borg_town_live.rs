@@ -87,6 +87,26 @@ impl HomeStock {
     }
 }
 
+/// borg-reborn-rs (#1399): a queued drop is not proof that the stack left
+/// the pack. Settled with the sales and purchases (`settle_sale`).
+#[derive(Clone, Copy)]
+struct DropAttempt {
+    stock: HomeStock,
+    carried: u32,
+    turn: i32,
+}
+
+/// The drop took when fewer copies are carried than when it was queued.
+fn drop_took(attempt: DropAttempt, carried_now: u32) -> bool {
+    carried_now < attempt.carried
+}
+
+/// A drop that made no inventory change is not sent again while the game
+/// turn stands still (a refused drop costs no game time).
+fn drop_rejected_at(rejected: &[(HomeStock, i32)], stock: HomeStock, turn: i32) -> bool {
+    rejected.iter().any(|&(s, t)| s == stock && t == turn)
+}
+
 struct HomeMove {
     stock: HomeStock,
     stored: bool,
@@ -219,6 +239,10 @@ pub struct LiveState {
     pending_buy: Option<BuyAttempt>,
     rejected_buys: Vec<BuyAttempt>,
     pending_home: Option<HomeMove>,
+    // borg-reborn-rs (#1399): the last queued drop, and drops that made no
+    // inventory change, with the game turn they were refused at.
+    pending_drop: Option<DropAttempt>,
+    rejected_drops: Vec<(HomeStock, i32)>,
     /// Home transactions confirmed this visit: (item kind, true = stored,
     /// false = taken out). The planner re-solves after every action and one
     /// unit can look better on each side in turn; the reverse of a confirmed
@@ -321,6 +345,12 @@ pub(crate) fn settle_sale(st: &mut BorgState) {
         if st.items.items.get(attempt.slot).is_some_and(|it| attempt.matches(it)) {
             st.think.town_live.rejected_sales.push(attempt);
             borg_note(st, "# Town plan: sale made no inventory change; exclude that offer this visit");
+        }
+    }
+    if let Some(attempt) = st.think.town_live.pending_drop.take() {
+        if !drop_took(attempt, attempt.stock.carried(st)) {
+            st.think.town_live.rejected_drops.push((attempt.stock, attempt.turn));
+            borg_note(st, "# Town plan: drop made no inventory change; not repeated this game turn");
         }
     }
 }
@@ -1009,6 +1039,11 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     let Some(item) = st.items.items.get(slot) else { clear(st); return false; };
     let qty = i64::from(item.iqty);
     if qty == 0 { clear(st); return false; }
+    let stock = HomeStock::of(item);
+    if drop_rejected_at(&st.think.town_live.rejected_drops, stock, crate::engine::game_turn()) {
+        clear(st);
+        return false;
+    }
     if slot >= crate::borg_item::quiver_start() as usize {
         let reserve = crate::params::value(crate::params::Param::town_quiver_trim_reserve);
         if reserve == 0 || a.at[2] != qty { clear(st); return false; }
@@ -1024,6 +1059,7 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
                 crate::borg_junk::usable_quiver_count(st), crate::engine::pack_slots_free()));
         }
         crate::borg_junk::town_drop_quiver_stack(st, slot, qty);
+        note_pending_drop(st, stock);
         clear(st);
         return true;
     }
@@ -1066,8 +1102,17 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
         borg_keypresses(st, drop_qty.to_string().as_bytes());
         borg_keypress(st, KC_ENTER);
     }
+    note_pending_drop(st, stock);
     clear(st);
     true
+}
+
+/// borg-reborn-rs (#1399): remember the drop just queued, to settle it on
+/// the next town decision.
+fn note_pending_drop(st: &mut BorgState, stock: HomeStock) {
+    st.think.town_live.pending_drop = Some(DropAttempt {
+        stock, carried: stock.carried(st), turn: crate::engine::game_turn(),
+    });
 }
 
 fn settle_quiver_trim(st: &mut BorgState) -> bool {
@@ -1281,6 +1326,25 @@ pub(crate) fn test_home_attempt(st: &mut BorgState, stored: bool, success: bool,
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// borg-reborn-rs (#1399): a drop whose stack is still carried is
+    /// refused while the game turn stands still, and allowed once it moves;
+    /// a drop that took is not refused.
+    #[test]
+    fn failed_drop_is_refused_for_its_game_turn_only() {
+        let stock = HomeStock::Kind(42);
+        let attempt = DropAttempt { stock, carried: 3, turn: 4325 };
+        assert!(drop_took(attempt, 0));
+        assert!(drop_took(attempt, 2), "a split drop that left some copies took");
+        assert!(!drop_took(attempt, 3));
+        assert!(!drop_took(attempt, 4), "picked up again: the drop did not take");
+        let rejected = [(stock, attempt.turn)];
+        assert!(drop_rejected_at(&rejected, stock, 4325));
+        assert!(!drop_rejected_at(&rejected, stock, 4335));
+        assert!(!drop_rejected_at(&rejected, HomeStock::Kind(43), 4325));
+        assert!(!drop_rejected_at(&rejected, HomeStock::Artifact(7), 4325));
+    }
+
     #[test]
     fn a_queued_sale_requires_observed_inventory_progress() {
         let mut it = crate::borg_item::blank_item();

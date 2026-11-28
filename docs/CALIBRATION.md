@@ -9108,7 +9108,7 @@ cannot be selected. Zero disables this trim.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_quiver_trim_reserve` | 0 | usable quivered ammunition | 0–999 | `borg_town_live.rs:675` |
+| `town_quiver_trim_reserve` | 0 | usable quivered ammunition | 0–999 | `borg_town_live.rs:797` |
 
 ## Town-arrival unloading and weight-limited shopping (#1256)
 
@@ -9145,7 +9145,7 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:466` |
+| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:496` |
 
 ### Recall-first trial
 
@@ -9381,7 +9381,7 @@ identified spares.
 |---|---:|---|---|---|
 | `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2343` |
 | `junk_gear_alternatives` | 1 | count | 0–3 | `borg_junk.rs:64` |
-| `town_gear_home_backups` | 1 | flag | 0–1 | `borg_town_live.rs:210` |
+| `town_gear_home_backups` | 1 | flag | 0–1 | `borg_town_live.rs:230` |
 
 The removal establishes the control for the paired pilot of the #1264
 redesign. [Handover](handover/2026-11-25-1265-remove-sandal-flag.md)
@@ -9522,7 +9522,7 @@ backups per slot).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_home_backup_protections` | 0 | flag | 0–1 | `borg_town_live.rs:206` |
+| `town_home_backup_protections` | 0 | flag | 0–1 | `borg_town_live.rs:226` |
 
 [Handover](handover/2026-11-27-1316-distinct-backups.md)
 
