@@ -51,7 +51,7 @@ use crate::borg_headers::borg_magic_h::{
     TURN_STONE_TO_MUD,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_AEZHEAL, BI_ALIFE, BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_CURHP, BI_CURSP, BI_FOOD, BI_GOLD,
+    BI_ACCW, BI_AEZHEAL, BI_ALIFE, BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_CURHP, BI_CURSP, BI_FOOD, BI_GOLD,
     BI_ISFIXEXP, BI_ISFIXLEV, BI_ISHUNGRY, BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL,
     BI_MAXDEPTH, BI_MAXSP, BI_PREP_BIG_FIGHT, BI_QUIVER_SLOTS, BI_RECALL, BI_REG,
     BI_SAURON_DEAD,
@@ -1209,6 +1209,17 @@ fn leave_town(st: &mut BorgState, bored: bool) -> bool {
                 let reason = crate::borg_prepared::prepared_c_for_decision(st, check_depth);
                 if let Some(reason) = reason.filter(|_| !risky) {
                     note_with(st, b"# Way too scary to recall down there!   ", &reason, b"");
+                    // borg-reborn-rs (#1438): a Cure Critical Wounds shortage is
+                    // reported as one; Serious and Light Wounds do not cover it.
+                    let wanted = crate::params::value(crate::params::Param::prepared_dl10_min_cure_critical);
+                    let carried = st.borg.tr(BI_ACCW);
+                    if check_depth >= crate::params::value(crate::params::Param::prepared_dl10_min_depth)
+                        && st.borg.tr(BI_MAXCLEVEL) < crate::params::value(crate::params::Param::prepared_dl10_cure_critical_until_clevel)
+                        && carried < wanted
+                    {
+                        borg_note(st, &format!(
+                            "# Town: Cure Critical Wounds short of the DL10 floor, {carried} of {wanted} (weaker cures do not count) (#1438)"));
+                    }
                 } else if borg_recall(st) {
                     borg_note(st, "# Recalling into dungeon.");
                     return true;
@@ -1236,6 +1247,8 @@ pub(crate) fn check_town_recall(st: &mut BorgState, case: &str) -> ! {
 
     let (max_depth, saved, force, persist, teleports, destination) = match case {
         "blocked" => (16, 16, false, false, 0, Some(16)),
+        // #1438: one usable long-range teleport is ready for DL10 and later.
+        "one-escape" => (16, 16, false, false, 1, Some(16)),
         "two-escapes" => (16, 16, false, false, 2, Some(16)),
         "ready" => (16, 16, false, false, 3, Some(16)),
         "saved" | "sixty" | "zero" => (18, 16, false, false, 0, Some(16)),
@@ -1262,12 +1275,11 @@ pub(crate) fn check_town_recall(st: &mut BorgState, case: &str) -> ! {
 
     let recalled = "# Recalling into dungeon.";
     let expected_note = match case {
-        "ready" | "sixty" | "zero" | "shallower-than-100" => recalled,
+        "ready" | "one-escape" | "two-escapes" | "sixty" | "zero" | "shallower-than-100" => recalled,
         "persistent" => "# Recall requires a destination choice; taking the stairs",
         "persistent-new" => "# Not deep enough to recall",
         "endgame" => "# Borg must crawl to deep dungeon- no recall to 100.",
-        "two-escapes" => "# Way too scary to recall down there!   teleports: 2 < 3",
-        _ => "# Way too scary to recall down there!   restock tele + tele staff < 2",
+        _ => "# Way too scary to recall down there!   teleports: 0 < 1",
     };
     assert!(st.io.queued_keys().is_empty());
     let _ = borg_leave_level(st, true);

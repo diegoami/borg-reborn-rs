@@ -1659,7 +1659,14 @@ fn observe_supplies(st: &BorgState, stock: &Stock, kit: Option<&[KitItem]>, jour
             for (row, copies, row_percent) in [(PREP_CCW, Param::town_prepared_ccw, Param::town_prepared_ccw_percent),
                 (PREP_NEUTRALIZE, Param::town_prepared_neutralize, Param::town_prepared_neutralize_percent)] {
                 let copies = param(copies);
-                let (weight, demand) = if copies > 0 && dear {
+                // borg-reborn-rs (#1438): the copies the next depth band's gate
+                // wants are a requirement of the trip, not a luxury, so they are
+                // bought before the Borg is rich enough for the dear rows.
+                let floor = if row == PREP_CCW { ccw_gate_floor(st, &journey) } else { 0 };
+                let (weight, demand) = if floor > 0 {
+                    let percent = if param(row_percent) > 0 { param(row_percent) } else { percent };
+                    prepared_row(trip_weight, percent, copies.max(floor))
+                } else if copies > 0 && dear {
                     prepared_row(trip_weight, own(row_percent), copies)
                 } else { (0, UNIT) };
                 curve(row, weight, demand);
@@ -2514,6 +2521,26 @@ mod tests {
         let neutralize = first(&mut m, PREP_NEUTRALIZE, 40, 2);
         assert!(neutralize * 15 >= detect * 75, "its own row at five times: Neutralize Poison {neutralize}/75 at least Detect Invisible {detect}/15");
         assert_eq!(m.gain(&[(PREP_NEUTRALIZE, 3 * UNIT)]) - m.gain(&[(PREP_NEUTRALIZE, 2 * UNIT)]), 0, "the 3rd past 2 copies is worth nothing");
+    }
+
+    /// #1438: the Cure Critical Wounds the DL10 gate wants are a requirement of
+    /// the row, not a luxury: the third copy is worth something at a floor of 3
+    /// and nothing at 2 copies; the floor ends with the level limit, and below DL10.
+    #[test]
+    fn the_ccw_row_covers_the_departure_gate() {
+        assert_eq!(ccw_floor(true, 10, 10, 29, 30, 3), 3);
+        assert_eq!(ccw_floor(true, 9, 10, 29, 30, 3), 0, "above the band");
+        assert_eq!(ccw_floor(true, 12, 10, 30, 30, 3), 0, "the gate stops at CL30");
+        assert_eq!(ccw_floor(false, 12, 10, 20, 30, 3), 0, "switched off");
+        let gain = |copies: i32, held: i64| {
+            let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: Vec::new() };
+            let (w, d) = prepared_row(50 * 1000, 8 * 14, copies);
+            m.curves[PREP_CCW] = [PREP_CCW as i64, w, d, 0, 0];
+            m.gain(&[(PREP_CCW, (held + 1) * UNIT)]) - m.gain(&[(PREP_CCW, held * UNIT)])
+        };
+        assert_eq!(gain(2, 2), 0, "without the floor a third copy is worth nothing");
+        assert!(gain(2.max(3), 2) > 0, "with the floor of 3 it is bought");
+        assert_eq!(gain(2.max(3), 3), 0, "and a fourth is not");
     }
 
     /// #1137 (owner: "when he is rich enough to get a WoR he starts buying
@@ -3403,6 +3430,20 @@ fn prepared_on(st: &BorgState) -> bool { variety_started(st) && param(Param::tow
 
 /// borg-reborn-rs (#1134): whether the Cure Critical Wounds row exists.
 fn prepared_ccw_on(st: &BorgState) -> bool { prepared_on(st) && param(Param::town_prepared_ccw) > 0 }
+
+/// borg-reborn-rs (#1438): the Cure Critical Wounds the departure gate wants
+/// for this trip (`prepared_dl10_min_cure_critical` from DL10, until
+/// `prepared_dl10_cure_critical_until_clevel`), or 0 when
+/// `town_ccw_gate_floor` is off, the trip stays above the band, or the
+/// character is past that level. Weaker cures never count toward it.
+pub(crate) fn ccw_gate_floor(st: &BorgState, journey: &Journey) -> i32 {
+    ccw_floor(param(Param::town_ccw_gate_floor) != 0, journey.depth, i64::from(param(Param::prepared_dl10_min_depth)),
+        st.borg.tr(BI_MAXCLEVEL), param(Param::prepared_dl10_cure_critical_until_clevel), param(Param::prepared_dl10_min_cure_critical))
+}
+
+fn ccw_floor(on: bool, depth: i64, band_depth: i64, clevel: i32, until_clevel: i32, wanted: i32) -> i32 {
+    if on && depth >= band_depth && clevel < until_clevel { wanted } else { 0 }
+}
 
 /// borg-reborn-rs (#1137): whether the Neutralize Poison row exists.
 fn prepared_neutralize_on(st: &BorgState) -> bool { prepared_on(st) && param(Param::town_prepared_neutralize) > 0 }
