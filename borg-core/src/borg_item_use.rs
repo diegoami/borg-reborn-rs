@@ -1020,11 +1020,49 @@ fn drink_wanted_second_stat_potion(st: &mut BorgState) -> bool {
     }) else {
         return false;
     };
-    let (y, x) = (st.borg.c.y, st.borg.c.x);
-    if crate::borg_danger::borg_danger(st, y, x, 1, true, false) > st.borg.tr(BI_CURHP) / 10 {
+    if !quiet_for_a_drink(st) {
         return false;
     }
     borg_quaff_potion(st, sval)
+}
+
+/// borg-reborn-rs (#1371, #1373): the danger here is at most a tenth of the
+/// current HP (the quiet turn of `borg_discard_town_consumable`). A potion
+/// drunk on purpose takes a turn, and `borg_use_things` also runs in the
+/// hungry path, before the caution checks.
+fn quiet_for_a_drink(st: &mut BorgState) -> bool {
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    crate::borg_danger::borg_danger(st, y, x, 1, true, false) <= st.borg.tr(BI_CURHP) / 10
+}
+
+/// borg-reborn-rs (#1373, #1374): quaff a known Potion of Experience
+/// (`item_use_drink_experience`; `object.txt`: `GAIN_EXP` 200000, no
+/// downside) and a known Potion of *Enlightenment*
+/// (`item_use_star_enlightenment`), on a quiet turn (`quiet_for_a_drink`: the
+/// pure stat gains above take none, but they sit first, and this runs in the
+/// hungry path too).
+///
+/// - Experience is drunk while the engine would grant it: `GAIN_EXP` does
+///   nothing at `PY_MAX_EXP` (`effect_handler_GAIN_EXP`).
+/// - *Enlightenment* restores and gains Intelligence and Wisdom and maps and
+///   detects the level (`object.txt`). It is drunk wherever a stat can gain or
+///   is drained (`star_enlightenment_gains`), and otherwise saved for a
+///   dungeon level, where the mapping is of use: in town it would be wasted.
+fn drink_permanent_gain(st: &mut BorgState) -> bool {
+    use crate::borg_town_capability::{experience_potion_useful, star_enlightenment_gains, star_enlightenment_sval};
+    let exp = param(Param::item_use_drink_experience) != 0
+        && st.items.items.iter().take(usize::from(engine::z_info().pack_size))
+            .any(|item| item.iqty > 0 && item.aware && i32::from(item.sval) == st.item_val.sv_potion_inc_exp
+                && u32::from(item.tval) == TV_POTION)
+        && experience_potion_useful();
+    let sval = star_enlightenment_sval();
+    let star = param(Param::item_use_star_enlightenment) != 0 && sval >= 0
+        && crate::borg_inventory::borg_slot(st, TV_POTION as i32, sval) >= 0
+        && (star_enlightenment_gains() || st.borg.tr(BI_CDEPTH) != 0);
+    if !(exp || star) || !quiet_for_a_drink(st) {
+        return false;
+    }
+    (exp && borg_quaff_potion(st, st.item_val.sv_potion_inc_exp)) || (star && borg_quaff_potion(st, sval))
 }
 
 /// Use things in a useful, but non-essential, manner.
@@ -1049,6 +1087,14 @@ pub fn borg_use_things(st: &mut BorgState) -> bool {
         || borg_quaff_potion(st, st.item_val.sv_potion_inc_dex)
         || borg_quaff_potion(st, st.item_val.sv_potion_inc_con)
     {
+        return true;
+    }
+
+    // borg-reborn-rs (#1373, #1374): a Potion of Experience and a Potion of
+    // *Enlightenment* have no harmful effect and their benefit is the drink
+    // (`GAIN_EXP`; `GAIN_STAT` for Intelligence and Wisdom). Carrying one is
+    // the defect #1371 fixed for Nimbleness.
+    if drink_permanent_gain(st) {
         return true;
     }
 

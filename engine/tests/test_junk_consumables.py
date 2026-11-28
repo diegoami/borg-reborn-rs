@@ -14,6 +14,9 @@ from pborg_fixture import write_pborg_config
 ROOT = Path(__file__).resolve().parents[2]
 GAME = ROOT / "build/rust-test/game/angband"
 BASE_KIT = ROOT / "engine/tests/fixtures/warrior-level5.build"
+RANGER_KIT = ROOT / "engine/tests/fixtures/ranger-level5.build"
+NECROMANCER_KIT = ROOT / "engine/tests/fixtures/necromancer-level5.build"
+RANGER, NECROMANCER = 7, 4
 
 # tval and sval from list-tvals.h and object.txt at the pin in engine/UPSTREAM.
 BLINDNESS = (26, 35)
@@ -29,11 +32,14 @@ DARKNESS_WAND = (23, 19)
 CONTEMPLATION = (26, 19)
 NIMBLENESS = (26, 20)
 SECOND_SIGHT = (29, 1)
+EXPERIENCE = (26, 7)
+STAR_ENLIGHTENMENT = (26, 23)
 
 
 @unittest.skipUnless(GAME.is_file(), "test-junk-consumables build required")
 class JunkConsumablesTest(unittest.TestCase):
-    def launch(self, items, *, distance=None, monster="giant_white_mouse", keys=45, params=None):
+    def launch(self, items, *, distance=None, monster="giant_white_mouse", keys=45, params=None,
+               player_class=0, base_kit=BASE_KIT):
         with tempfile.TemporaryDirectory(prefix="junk-consumables-") as directory:
             out = Path(directory)
             paths = {name: out / name for name in ("user", "save", "archive", "panic", "scores")}
@@ -44,10 +50,10 @@ class JunkConsumablesTest(unittest.TestCase):
             # Keep equipped gear, food, and fuel from the known 72 HP build.
             # Replace its other pack contents with the items under test.
             records = [
-                line for line in BASE_KIT.read_text().splitlines()
+                line for line in base_kit.read_text().splitlines()
                 if line != "end" and (
                     not line.startswith("item:") or line.split(":")[4] != "-1"
-                    or line.startswith(("item:19:", "item:28:"))
+                    or line.startswith(("item:19:", "item:28:", "item:32:", "item:33:"))
                 )
             ]
             for (tval, sval), qty, known, charges in items:
@@ -68,7 +74,7 @@ class JunkConsumablesTest(unittest.TestCase):
             messages = out / "messages.log"
             args = [
                 str(GAME), "-mborgh", "-n", *(f"-d{key}={value}" for key, value in paths.items()),
-                "--", "-seed", "101", "-race", "0", "-class", "0", "-menu-letters",
+                "--", "-seed", "101", "-race", "0", "-class", str(player_class), "-menu-letters",
                 "-keys", str(keys), "-msglog", str(messages), "-start-build", str(build),
             ]
             if distance is not None:
@@ -185,6 +191,73 @@ class JunkConsumablesTest(unittest.TestCase):
         messages, _ = self.launch(kit, distance=11, keys=30,
                                   params={"town_stat_trade_policy": 1, "town_stat_trade_floor": 0})
         self.assertNotIn("Dropping refused stat potion", messages)
+
+    def test_town_drinks_experience_and_star_enlightenment_on_purpose(self):
+        # #1373, #1374. Both have no harmful effect and their benefit is the
+        # drink. Experience was drunk only by junk cleanup; *Enlightenment*
+        # was on WORTHLESS, so a carried copy was sold or dropped.
+        kit = [(EXPERIENCE, 1, True, 0), (STAR_ENLIGHTENMENT, 1, True, 0),
+               (CURE_LIGHT_WOUNDS, 2, True, 0)]
+        params = {"item_use_drink_experience": 1, "item_use_star_enlightenment": 1}
+        messages, frames = self.launch(kit, keys=120, params=params)
+        self.assertEqual(frames[1]["check"], "borg_use_things")
+        self.assertIn("# Quaffing Potion of Experience.", messages)
+        self.assertIn("You feel more experienced.", messages)
+        self.assertIn("# Quaffing Potion of *Enlightenment*.", messages)
+        self.assertIn("You feel very smart!", messages)
+        self.assertIn("You feel very wise!", messages)
+        self.assertNotIn("Selling Potion of *Enlightenment*", messages)
+        self.assertNotIn("Quaffing Potion of Cure Light Wounds", messages)
+
+        # The earlier play, the control: the kinds are not drunk on purpose.
+        no = {"item_use_drink_experience": 0, "item_use_star_enlightenment": 0}
+        messages, _ = self.launch(kit, keys=120, params=no)
+        self.assertNotIn("Quaffing Potion of Experience", messages)
+        self.assertNotIn("Quaffing Potion of *Enlightenment*", messages)
+        self.assertNotIn("You feel more experienced.", messages)
+
+    def test_experience_waits_for_a_quiet_turn(self):
+        # #1373 (review): the drink takes a turn, and borg_use_things also
+        # runs before the caution checks. With a hill giant next to the Borg
+        # (danger above a tenth of its hit points) the potion stays in the pack.
+        kit = [(EXPERIENCE, 1, True, 0), (CURE_LIGHT_WOUNDS, 2, True, 0)]
+        params = {"item_use_drink_experience": 1}
+        messages, frames = self.launch(kit, distance=1, monster="hill_giant", keys=20, params=params)
+        self.assertGreaterEqual(frames[0]["danger"], frames[0]["hp"] // 10)
+        self.assertNotIn("Quaffing Potion of Experience", messages)
+        self.assertNotEqual(frames[0]["check"], "borg_use_things")
+
+    def test_a_ranger_drinks_nimbleness_and_sells_contemplation(self):
+        # #1371 (owner: "a Ranger would choose to drink Nimbleness"), natively
+        # with the Ranger fixture (#1378): Strength 18/40, Intelligence 14,
+        # Wisdom 18/20, Dexterity 18/50, Constitution 18/30. Its class table
+        # refuses Contemplation.
+        kit = [(NIMBLENESS, 1, True, 0), (CONTEMPLATION, 1, True, 0), (CURE_LIGHT_WOUNDS, 2, True, 0)]
+        messages, _ = self.launch(kit, keys=120, params={"town_stat_trade_policy": 1},
+                                  player_class=RANGER, base_kit=RANGER_KIT)
+        self.assertIn("# Quaffing Potion of Nimbleness.", messages)
+        self.assertIn("You feel very dextrous!", messages)
+        self.assertIn("# Selling Potion of Contemplation", messages)
+        self.assertNotIn("Quaffing Potion of Contemplation", messages)
+        messages, _ = self.launch(kit, keys=120, params={"town_stat_trade_policy": 0},
+                                  player_class=RANGER, base_kit=RANGER_KIT)
+        self.assertNotIn("Quaffing Potion of Nimbleness", messages)
+        self.assertNotIn("Selling Potion of Contemplation", messages)
+
+    def test_a_necromancer_sells_the_torches_it_cannot_use(self):
+        # #1375, natively with the Necromancer fixture (#1378). The Scrolls of
+        # Light are dropped as a kind either way (#1273); the Wooden Torches
+        # (an Unlight class sees without one) are sold under the one rule and
+        # kept without it.
+        kit = [((25, 23), 2, True, 0), (CURE_LIGHT_WOUNDS, 2, True, 0)]
+        messages, _ = self.launch(kit, keys=150, params={"town_refused_kind_policy": 1},
+                                  player_class=NECROMANCER, base_kit=NECROMANCER_KIT)
+        self.assertIn("# Discarding Scrolls of Light (Necromancer)", messages)
+        self.assertIn("# Selling Wooden Torches (5000 turns)", messages)
+        messages, _ = self.launch(kit, keys=150, params={"town_refused_kind_policy": 0},
+                                  player_class=NECROMANCER, base_kit=NECROMANCER_KIT)
+        self.assertIn("# Discarding Scrolls of Light (Necromancer)", messages)
+        self.assertNotIn("Selling Wooden Torch", messages)
 
 
 if __name__ == "__main__":

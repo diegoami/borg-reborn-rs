@@ -654,6 +654,12 @@ pub(crate) fn junk_potion_to_throw(st: &BorgState, item: &borg_item) -> bool {
     if sval == st.item_val.sv_potion_slime_mold {
         return st.borg.tr(BI_ISHUNGRY) == 0 && st.borg.tr(BI_ISWEAK) == 0;
     }
+    throwable_junk_potion_kind(sval)
+}
+
+/// The Potion kind is one of the junk potions the throw policy keeps
+/// (`THROWABLE_HARMFUL_POTIONS`).
+pub(crate) fn throwable_junk_potion_kind(sval: i32) -> bool {
     static KINDS: OnceLock<Vec<i32>> = OnceLock::new();
     KINDS.get_or_init(|| THROWABLE_HARMFUL_POTIONS.iter().map(|name| {
         let sval = engine::lookup_sval(TV_POTION as i32, name);
