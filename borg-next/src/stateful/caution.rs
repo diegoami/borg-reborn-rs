@@ -23,6 +23,7 @@ use borg_rs::decision_api::borg_cave::{BorgGrid, AUTO_MAX_X, AUTO_MAX_Y};
 use borg_rs::decision_api::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid};
 use borg_rs::decision_api::borg_danger::borg_danger;
 use borg_rs::decision_api::borg_fight_defend::borg_defend;
+use borg_rs::decision_api::borg_flow::GOAL_FLEE;
 use borg_rs::decision_api::borg_flow_stairs::{
     borg_flow_stair_less, borg_flow_stair_more, borg_prep_leave_level_spells,
 };
@@ -64,8 +65,7 @@ const CLASS_PRIEST: i32 = 3;
 const CLASS_NECROMANCER: i32 = 4;
 const CLASS_PALADIN: i32 = 5;
 
-/// `GOAL_FLEE` (borg-flow.h): flee the level.
-const GOAL_FLEE: i32 = 7;
+/// `GOAL_BORE` (borg-flow.h): move the game along.
 const GOAL_BORE: i32 = 6;
 
 /// A literal key (`borg_keypress('R')` etc.).

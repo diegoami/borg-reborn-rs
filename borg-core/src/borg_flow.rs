@@ -66,7 +66,7 @@ const BORG_DIG_HARD: i32 = 40;
 pub(crate) const GOAL_DARK: i32 = 4;
 pub const GOAL_DIGGING: i32 = 10;
 /// `GOAL_FLEE` (borg-flow.h): flee the level (#551).
-const GOAL_FLEE: i32 = 7;
+pub const GOAL_FLEE: i32 = 7;
 
 /// Size of the step/door tracks (`borg_init_flow()`).
 const TRACK_SIZE: i16 = 100;

@@ -129,7 +129,7 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             shadow_cases = {
                 "flow-step": ("flow direction selection passed", "readonly_points", "flow.select_step", 8),
                 "up-stair-plan": ("up-stair plan passed", "readonly_points", "flow.plan_up_stair", 10 if weight else 8),
-                "down-stair-plan": ("down-stair plan passed", "root_points", "flow.plan_down_stair", 8 if weight else 6),
+                "down-stair-plan": ("down-stair plan passed", "root_points", "flow.plan_down_stair", 9 if weight else 7),
             }
             if case in shadow_cases:
                 message, points, point, count = shadow_cases[case]

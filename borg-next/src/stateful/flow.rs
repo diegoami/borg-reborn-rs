@@ -1,11 +1,11 @@
 //! Committed direction selection and stair route policy.
 
-use borg_rs::decision_api::borg_flow_stairs::{
-    more_refused, rising_holds_flee_descent, StairPlan, GOAL_FLEE,
-};
+use borg_rs::decision_api::borg_flow::GOAL_FLEE;
+use borg_rs::decision_api::borg_flow_stairs::{more_refused, rising_holds_flee_descent, StairPlan};
 use borg_rs::decision_api::engine;
 use borg_rs::decision_api::headers::list_options_h::OPT_birth_force_descend;
 use borg_rs::decision_api::headers::z_type_h::loc;
+
 use borg_rs::memory::{BorgState, AUTO_MAX_X, AUTO_MAX_Y, GOAL_DIGGING};
 
 struct CommittedFlow<'a> {

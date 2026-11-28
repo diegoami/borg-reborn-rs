@@ -13,13 +13,14 @@ from rust_ports import functions, mask_non_code, without_test_items
 ROOT = Path(__file__).resolve().parents[1]
 TARGET = '24be98732748230062882fe2b7d9601dba5e2cc0'
 RECEIPT = ROOT / 'docs/R45-PORT-SOURCE.json'
-# The R5 review compared the refactored selector and its helpers with the
-# native implementation. Pin the reviewed files alongside the R4.5 receipt.
+# Pin the R5 flow policy and its updated dependencies alongside the R4.5 receipt.
 R5_RECEIVING_FILES = {
-    'borg-core/src/decision_api.rs': '78b1f0c778d0ef323f35516ed1a4cfb65c47cb0a53f6603cf8d6c4a6e6c3b70e',
+    'borg-core/src/borg_caution.rs': '4d0de570382d361e2b82a676949e609345150f7f61fd73b11f2e047f8a3404b5',
+    'borg-core/src/decision_api.rs': 'e5898d4b5b08f3ba29dc5d574d24d1c912a2528572b79f59cde9d9de579ad4f6',
     'borg-core/src/decisions.rs': 'b6afa85fc2af722559514e7c04d0bc9c8b86f350b13ebda07555fd8b1adb3183',
     'borg-core/src/memory.rs': 'd147735a90b4016613343659e3a2250aa93140a43d017f81c470669082d892fe',
-    'borg-next/src/stateful/flow.rs': 'bf5b2111a33e5d1de3906c2434195249b2640c6ff64c237eacc09cf148459c0d',
+    'borg-next/src/stateful/caution.rs': '1c2308a13e1db61ecd5f7061638dc19d68e4839091e53a6f7f8d721d404605c4',
+    'borg-next/src/stateful/flow.rs': '435dc0586038d06fb041497ef333ea6e025963b48f0765c3deccf0603214b212',
     'borg-next/src/stateful/mod.rs': 'e3d6b9a82a50992fa0ca9e9c5930dfe2084ea8a28892cefc491e21ce1ce5294d',
 }
 MODULES = {

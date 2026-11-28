@@ -17,6 +17,7 @@
 //! The known up and down staircases (`track_less`, `track_more`) live in
 //! `StairsState`. The flow itself is `borg_flow`.
 
+use crate::borg_flow::GOAL_FLEE;
 use crate::borg_headers::borg_magic_h::{
     BERSERK_STRENGTH, BLESS, DEMON_BANE, HASTE_SELF, HEROISM, MANA_CHANNEL, PROTECTION_FROM_EVIL,
     RAPID_REGENERATION, RESISTANCE, SMITE_EVIL, VENOM,
@@ -25,12 +26,11 @@ use crate::borg_headers::borg_trait_h::{
     BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_CURSP, BI_FOOD, BI_ISHUNGRY, BI_ISWEAK, BI_LIGHT,
     BI_MAXSP, BI_WB_POIS, BI_WS_EVIL,
 };
+
 use crate::decisions::StairPlan;
 use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 
-/// `GOAL_FLEE` (borg-flow.h): flee the level.
-pub const GOAL_FLEE: i32 = 7;
 use crate::{borg_flow, borg_io, borg_magic, engine};
 
 /// A list of known stairs (`struct borg_track` as used for `track_less`
@@ -1651,6 +1651,10 @@ fn run_down_stair_plan_regression(st: &mut BorgState) -> ! {
     st.borg.trait_[BI_LIGHT as usize] = 0;
     assert_eq!(plan_down_stair(st, GOAL_FLEE, true), StairPlan::Refused, "a brave exit still needs light with an up stair known");
     st.borg.trait_[BI_LIGHT as usize] = 1;
+    // Zero food fails the shallow preparedness check. The same state
+    // must permit descent when the caller requests a brave route.
+    st.borg.trait_[BI_FOOD as usize] = 0;
+    assert_eq!(plan_down_stair(st, GOAL_FLEE, false), StairPlan::Refused, "an unprepared descent requires bravery");
     let weight = value(Param::caution_stairs_flight_threat_weight);
     let expected = if weight > 0 { StairPlan::Weighted { weight, avoid: false } } else { StairPlan::Unweighted };
     assert_eq!(plan_down_stair(st, GOAL_FLEE, true), expected);
