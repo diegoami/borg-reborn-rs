@@ -1006,10 +1006,13 @@ fn covers_spare_light(permanent: &BorgItem, spare: &BorgItem) -> bool {
 }
 
 pub(crate) fn surplus_light(st: &BorgState) -> Option<usize> {
-    if !crate::borg_town_live::gear_home_backups() { return None; }
     let worn = &st.items.items[inven_light() as usize];
-    if !permanent_light(worn) { return None; }
     let pack = &st.items.items[..inven_wield() as usize];
+    if param(Param::light_spare_lanterns) != 0 {
+        if let Some(slot) = empty_lantern_shell(worn, pack) { return Some(slot); }
+    }
+    if !crate::borg_town_live::gear_home_backups() { return None; }
+    if !permanent_light(worn) { return None; }
     pack.iter().position(|item| {
         if item.iqty == 0 || u32::from(item.tval) != TV_LIGHT || !item.aware || item.needs_ident
             || item.cursed || item.curses.contains(&true) || item.art_idx != 0
@@ -1023,6 +1026,69 @@ pub(crate) fn surplus_light(st: &BorgState) -> Option<usize> {
         covers_spare_light(worn, item)
             || pack.iter().any(|light| permanent_light(light) && covers_spare_light(light, item))
     })
+}
+
+/// borg-reborn-rs (#1413): the empty shell a refuel from a lantern stack
+/// leaves behind. `refill_lamp` splits one copy off the donor stack and sets
+/// its fuel to 0 (cmd-obj.c:1008), and no other cleanup releases a fuelled
+/// light, so the shell stayed in the pack for tens of thousands of turns.
+/// It is plain: known, clean, not an artifact or ego, no brighter than the
+/// worn lantern and carrying no inscription or unknown rune ({..}).
+fn plain_lantern_shell(item: &BorgItem, worn: &BorgItem) -> bool {
+    refillable_lantern(item)
+        && item.timeout == 0
+        && item.aware
+        && !item.needs_ident
+        && !item.cursed
+        && !item.curses.contains(&true)
+        && item.art_idx == 0
+        && item.ego_idx == 0
+        && !item.desc.contains(&(b'{' as core::ffi::c_char))
+        && light_contribution(item) <= light_contribution(worn)
+}
+
+/// The pack slot of a plain empty lantern while a clean lantern with fuel is
+/// worn: the shell adds no fuel and no light the worn lantern lacks, and
+/// refuelling the worn lantern beats refuelling the shell, so nothing makes it
+/// a backup. A worn lantern that is empty, cursed or not a refillable lantern
+/// keeps every shell (#1413).
+pub(crate) fn empty_lantern_shell(worn: &BorgItem, pack: &[BorgItem]) -> Option<usize> {
+    if !refillable_lantern(worn) || worn.timeout <= 0 || worn.cursed || worn.curses.contains(&true) {
+        return None;
+    }
+    pack.iter().position(|item| plain_lantern_shell(item, worn))
+}
+
+/// The turns a worn lantern can still burn from what is carried: its own
+/// fuel, every clean refillable lantern's and every clean Flask of Oil's.
+/// `None` when the worn light is not a clean, refillable lantern.
+fn lantern_fuel_on_hand(worn: &BorgItem, pack: &[BorgItem], oil: i32) -> Option<i64> {
+    if !refillable_lantern(worn) || worn.cursed || worn.curses.contains(&true) { return None; }
+    let spare = |item: &BorgItem| -> i64 {
+        if item.cursed || item.curses.contains(&true) { 0 }
+        else if refillable_lantern(item) { i64::from(item.timeout.max(0)) * i64::from(item.iqty) }
+        else if is_oil_flask(item, oil) { i64::from(item.pval.max(0)) * i64::from(item.iqty) }
+        else { 0 }
+    };
+    Some(i64::from(worn.timeout.max(0)) + pack.iter().map(spare).sum::<i64>())
+}
+
+/// A floor lantern is not worth the walk when the carried fuel already meets
+/// the trip's light goal (`fuel_goal`, #1413). Below the goal the walk
+/// stays, so a character that needs the fuel still takes it; the engine's
+/// `pickup_always` still takes a lantern stepped on. The floor object's
+/// runes are not read (fair information): an ego or Everburning lantern looks
+/// like any other until picked up.
+pub(crate) fn skip_floor_lantern(st: &BorgState, kidx: usize) -> bool {
+    if param(Param::light_spare_lanterns) == 0 || kidx == 0 { return false; }
+    let kind = engine::kind(kidx);
+    if kind.tval as u32 != TV_LIGHT || i32::from(kind.sval) != st.item_val.sv_light_lantern {
+        return false;
+    }
+    let worn = &st.items.items[inven_light() as usize];
+    let pack = &st.items.items[..inven_wield() as usize];
+    lantern_fuel_on_hand(worn, pack, st.item_val.sv_flask_oil)
+        .is_some_and(|fuel| fuel >= fuel_goal(st, crate::borg_town_utility::Journey::of(st)))
 }
 
 /// borg-reborn-rs (#1235): a clean torch that will be consumed when its fuel runs out.
@@ -1839,6 +1905,123 @@ mod lightless_tests {
         );
     }
 
+}
+
+// borg-reborn-rs (#1413): the empty shell a lantern refuel leaves, and the fuel
+// a floor lantern is weighed against.
+#[cfg(test)]
+mod spare_lantern_tests {
+    use super::*;
+    use crate::borg_item::blank_item;
+    use crate::headers::list_object_flags_h::OF_LIGHT_2;
+
+    const OIL: i32 = 1;
+
+    fn lantern(timeout: i16) -> BorgItem {
+        let mut item = blank_item();
+        item.iqty = 1;
+        item.tval = TV_LIGHT as u8;
+        item.sval = 2;
+        item.aware = true;
+        item.timeout = timeout;
+        for flag in [OF_TAKES_FUEL, OF_LIGHT_2] {
+            let offset = (flag as i32 - engine::FLAG_START) as usize;
+            item.flags[offset / 8] |= 1 << (offset % 8);
+        }
+        item
+    }
+
+    fn torch_item() -> BorgItem {
+        let mut item = blank_item();
+        item.iqty = 1;
+        item.tval = TV_LIGHT as u8;
+        item
+    }
+
+    fn oil(quantity: u8) -> BorgItem {
+        let mut item = blank_item();
+        item.iqty = quantity.into();
+        item.tval = TV_FLASK as u8;
+        item.sval = OIL as u8;
+        item.aware = true;
+        item.pval = 7500;
+        item
+    }
+
+    #[test]
+    fn a_plain_empty_shell_goes_while_a_fuelled_lantern_is_worn() {
+        let worn = lantern(4824);
+        let full = BorgItem { iqty: 2, ..lantern(7500) };
+        let shell = lantern(0);
+        // The Druid of #1413: two full lanterns, the shell and a flask.
+        assert_eq!(empty_lantern_shell(&worn, &[full, shell, oil(1)]), Some(1));
+        // Full spares are fuel; they never count as a shell.
+        assert_eq!(empty_lantern_shell(&worn, &[full, oil(1)]), None);
+    }
+
+    #[test]
+    fn the_shell_stays_when_it_could_be_the_only_lantern_or_is_special() {
+        let shell = lantern(0);
+        // An empty, cursed or non-lantern light worn: the shell may still be wanted.
+        assert_eq!(empty_lantern_shell(&lantern(0), &[shell]), None);
+        assert_eq!(empty_lantern_shell(&BorgItem { cursed: true, ..lantern(500) }, &[shell]), None);
+        assert_eq!(empty_lantern_shell(&blank_item(), &[shell]), None);
+        let torch = BorgItem { timeout: 500, ..torch_item() };
+        assert_eq!(empty_lantern_shell(&torch, &[shell]), None);
+        // Only a plain, known, clean shell no brighter than the worn lantern goes.
+        let worn = lantern(500);
+        let not_plain = [
+            BorgItem { cursed: true, ..shell },
+            BorgItem { ego_idx: 3, ..shell },
+            BorgItem { art_idx: 3, ..shell },
+            BorgItem { aware: false, ..shell },
+            BorgItem { needs_ident: true, ..shell },
+            BorgItem { iqty: 0, ..shell },
+        ];
+        for item in not_plain {
+            assert_eq!(empty_lantern_shell(&worn, &[item]), None);
+        }
+        let mut inscribed = shell;
+        inscribed.desc[0] = b'{' as core::ffi::c_char;
+        assert_eq!(empty_lantern_shell(&worn, &[inscribed]), None);
+        let mut curses = shell;
+        curses.curses[1] = true;
+        assert_eq!(empty_lantern_shell(&worn, &[curses]), None);
+        let mut bright = shell;
+        bright.modifiers[OBJ_MOD_LIGHT as usize] = 1;
+        assert_eq!(empty_lantern_shell(&worn, &[bright]), None);
+    }
+
+    #[test]
+    fn fuel_on_hand_is_the_worn_lantern_the_spare_lanterns_and_the_oil() {
+        let worn = lantern(4824);
+        let full = BorgItem { iqty: 2, ..lantern(7500) };
+        // The listed stock of #1413: 4,824 worn, 15,000 in spares, 7,500 of oil.
+        assert_eq!(lantern_fuel_on_hand(&worn, &[full, lantern(0), oil(1)], OIL), Some(27_324));
+        // Cursed lanterns, another kind of flask and torches are no fuel for it.
+        let cursed = BorgItem { cursed: true, ..lantern(7500) };
+        let mut other_flask = oil(3);
+        other_flask.sval = 9;
+        let torch = BorgItem { timeout: 5000, ..torch_item() };
+        assert_eq!(lantern_fuel_on_hand(&worn, &[cursed, other_flask, torch], OIL), Some(4_824));
+        // A worn torch or empty slot has no lantern fuel to count.
+        assert_eq!(lantern_fuel_on_hand(&torch, &[full], OIL), None);
+        assert_eq!(lantern_fuel_on_hand(&blank_item(), &[full], OIL), None);
+    }
+
+    #[test]
+    fn full_spares_are_wanted_below_the_light_goal_and_skipped_at_it() {
+        let worn = lantern(4824);
+        let full = BorgItem { iqty: 2, ..lantern(7500) };
+        let fuel = lantern_fuel_on_hand(&worn, &[full, oil(1)], OIL).unwrap();
+        // The goal is the larger of the trip's turns and the reserve, scaled
+        // while breadth-first exploration applies (20,000 at 150 percent).
+        assert!(fuel >= scaled_goal(20_000, 100), "off: the reserve is met");
+        assert!(fuel < scaled_goal(20_000, 150), "at 150 percent a third spare is still wanted");
+        // A character that has burned most of its fuel takes every lantern.
+        let low = lantern_fuel_on_hand(&lantern(900), &[oil(1)], OIL).unwrap();
+        assert!(low < scaled_goal(20_000, 100));
+    }
 }
 
 #[cfg(test)]

@@ -9161,6 +9161,31 @@ replays pin it to 0, since it changes their recorded routes.
 |---|---|---|---|---|
 | `town_drop_clear_floor` | 1 | flag | 0–1 | `borg_town_live.rs:1034` |
 
+### Spare lanterns (#1413)
+
+Refuelling from a lantern stack splits one copy off and empties it
+(`cmd-obj.c:1008`, `refill_lamp`), and no cleanup released that shell while a
+fuelled lantern was worn: `surplus_light` returns early unless the worn light
+is permanent, the gear plan ranks permanent lights alone, and the junk path
+keeps a 35-gold lantern at shallow depth and sees no power gain from its
+removal. Pickup had no fuel test either: `borg_new_take` values a floor
+lantern at its cost, so every one was chased.
+
+With `light_spare_lanterns` a plain empty lantern shell (known, clean, no
+artifact or ego, no brighter than the worn lantern) goes through the
+spare-light cleanup (`surplus_light`) while a clean lantern with fuel is worn.
+A floor lantern is not walked to while the worn lantern's fuel, the carried
+lanterns' and the Flasks of Oil together reach the light goal
+(`borg_light::fuel_goal`: the trip's turns or `town_light_reserve_turns`,
+scaled by `explore_bfs_light_percent`). Below the goal the walk stays. A
+lantern stepped on is still picked up (`pickup_always`). The floor object's
+runes are not read, so an ego or Everburning lantern is skipped like a plain
+one at that point. Not measured by the zoo.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `light_spare_lanterns` | 0 (shipped 1) | flag | 0–1 | `borg_light.rs:1008` |
+
 ### Recall-first trial
 
 Set `town_shop_overloaded = 0` and a positive

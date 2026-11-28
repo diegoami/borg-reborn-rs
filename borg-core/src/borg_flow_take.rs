@@ -615,6 +615,8 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, deferred: &mut
         if take.value <= 0 || unwanted_light_scroll(st, &take)
             // borg-reborn-rs (#1371): a known kind the town would only sell or drop.
             || crate::borg_town_capability::refused_take_kind(st, take.kidx as usize)
+            // borg-reborn-rs (#1413): a lantern when the carried fuel meets the light goal.
+            || crate::borg_light::skip_floor_lantern(st, take.kidx as usize)
         {
             continue;
         }
@@ -806,6 +808,8 @@ fn scum_select(
         if take.value <= 0 || unwanted_light_scroll(st, &take)
             // borg-reborn-rs (#1371): a known kind the town would only sell or drop.
             || crate::borg_town_capability::refused_take_kind(st, take.kidx as usize)
+            // borg-reborn-rs (#1413): a lantern when the carried fuel meets the light goal.
+            || crate::borg_light::skip_floor_lantern(st, take.kidx as usize)
         {
             continue;
         }
