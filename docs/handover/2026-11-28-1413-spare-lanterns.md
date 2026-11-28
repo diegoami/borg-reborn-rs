@@ -60,9 +60,13 @@ borg-cemetery), not replayed:
   (`lantern_fuel_on_hand`, with a boundary test: 900 worn and two 15,000-turn
   donors count 28,902, not 30,900).
 - P3: the dungeon drop ignored the shell when `junk_gear_alternatives` was 0 or
-  `junk_exploration_first` off. `borg_drop_inferior_spare` and the full-pack
-  clearing now take the shell first (`borg_light::lantern_shell_slot`), under
-  the unchanged safe-drop check. Not covered by a test: it needs a game.
+  `junk_exploration_first` off. `borg_drop_inferior_spare` takes the shell
+  first (`borg_light::lantern_shell_slot`), and so does `borg_drop_hole` in a
+  block of its own, outside `protect_supplies` (re-review: with
+  `junk_exploration_first` 0 the full-pack path went straight to legacy scoring
+  and could discard another item), under the ranked cleanup's safe-drop
+  conditions (no recall, not shapechanged, danger at most HP/20). Not covered
+  by a test: it needs a game.
 
 ### How it was checked, and not
 
