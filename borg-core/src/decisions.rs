@@ -76,11 +76,12 @@ ItemUseThings,
 ItemRecharging,
 FlowPlanDownStair { why: i32, brave: bool },
 FlowPlanCombinedStairs { why: i32, only: Option<StairDirection> },
+FlowContinueExploration,
 
 
 }
 #[derive(Clone,Copy,Debug,PartialEq,Serialize)]
-pub enum Value { Acted(bool), Score(i32), Unit, HomeSale {acted:bool,best_home_power:i32}, UpStair(StairPlan), DownStair(StairPlan), CombinedStairs(CombinedStairPlan) }
+pub enum Value { Acted(bool), Score(i32), Unit, HomeSale {acted:bool,best_home_power:i32}, UpStair(StairPlan), DownStair(StairPlan), CombinedStairs(CombinedStairPlan), ExplorationFlow(Option<ExplorationGoal>) }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum StairPlan {
@@ -101,6 +102,17 @@ pub enum CombinedStairPlan {
     Refused,
     Unweighted { up: bool, down: bool },
     Weighted { only: Option<StairDirection>, weight: i32 },
+}
+
+/// The five committed flows attempted before the normal exploration block.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[repr(i32)]
+pub enum ExplorationGoal {
+    Misc = crate::borg_think_dungeon::GOAL_MISC,
+    Dark = crate::borg_think_dungeon::GOAL_DARK,
+    Xtra = crate::borg_think_dungeon::GOAL_XTRA,
+    Bore = crate::borg_think_dungeon::GOAL_BORE,
+    Vault = crate::borg_think_dungeon::GOAL_VAULT,
 }
 
 impl Decision {
@@ -176,6 +188,7 @@ Self::ItemUseThings=>"item_use.borg_use_things",
 Self::ItemRecharging=>"item_use.borg_recharging",
 Self::FlowPlanDownStair {..}=>"flow.plan_down_stair",
 Self::FlowPlanCombinedStairs {..}=>"flow.plan_combined_stairs",
+Self::FlowContinueExploration=>"flow.continue_exploration",
 
 
 } }
@@ -251,6 +264,7 @@ Self::ItemUseThings=>Value::Acted(crate::borg_item_use::borg_use_things_native(s
 Self::ItemRecharging=>Value::Acted(crate::borg_item_use::borg_recharging_native(st)),
 Self::FlowPlanDownStair { why, brave }=>Value::DownStair(crate::borg_flow_stairs::plan_down_stair_native(st, why, brave)),
 Self::FlowPlanCombinedStairs { why, only }=>Value::CombinedStairs(crate::borg_flow_stairs::plan_combined_stairs_native(st, why, only)),
+Self::FlowContinueExploration=>Value::ExplorationFlow(crate::borg_think_dungeon::continue_exploration_native(st)),
 
 
 } }

@@ -102,17 +102,17 @@ const GOAL_KILL: i32 = 1;
 /// `GOAL_TAKE` (borg-flow.h)
 const GOAL_TAKE: i32 = 2;
 /// `GOAL_MISC` (borg-flow.h)
-const GOAL_MISC: i32 = 3;
+pub(crate) const GOAL_MISC: i32 = 3;
 /// `GOAL_DARK` (borg-flow.h)
-const GOAL_DARK: i32 = 4;
+pub(crate) const GOAL_DARK: i32 = 4;
 /// `GOAL_XTRA` (borg-flow.h)
-const GOAL_XTRA: i32 = 5;
+pub(crate) const GOAL_XTRA: i32 = 5;
 /// `GOAL_BORE` (borg-flow.h)
-const GOAL_BORE: i32 = 6;
+pub(crate) const GOAL_BORE: i32 = 6;
 /// `GOAL_FLEE` (borg-flow.h)
 const GOAL_FLEE: i32 = 7;
 /// `GOAL_VAULT` (borg-flow.h)
-const GOAL_VAULT: i32 = 8;
+pub(crate) const GOAL_VAULT: i32 = 8;
 /// `GOAL_RECOVER` (borg-flow.h)
 const GOAL_RECOVER: i32 = 9;
 /// `GOAL_DIGGING` (borg-flow.h)
@@ -1339,28 +1339,28 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /*** Exploration ***/
 
-    /* Continue flowing (see below) */
-    if borg_flow_old(st, GOAL_MISC) {
-        return choice!("borg_flow_old");
-    }
+    use crate::decisions::ExplorationGoal::{Bore, Dark, Misc, Vault, Xtra};
+    match continue_exploration(st) {
+        Some(Misc) => {
+            return choice!("borg_flow_old");
+        }
 
-    /* Continue flowing (see below) */
-    if borg_flow_old(st, GOAL_DARK) {
-        return choice!("borg_flow_old");
-    }
+        Some(Dark) => {
+            return choice!("borg_flow_old");
+        }
 
-    /* Continue flowing (see below) */
-    if borg_flow_old(st, GOAL_XTRA) {
-        return choice!("borg_flow_old");
-    }
+        Some(Xtra) => {
+            return choice!("borg_flow_old");
+        }
 
-    /* Continue flowing (see below) */
-    if borg_flow_old(st, GOAL_BORE) {
-        return choice!("borg_flow_old");
-    }
+        Some(Bore) => {
+            return choice!("borg_flow_old");
+        }
 
-    if borg_flow_old(st, GOAL_VAULT) {
-        return choice!("borg_flow_old");
+        Some(Vault) => {
+            return choice!("borg_flow_old");
+        }
+        None => {}
     }
 
     /*** Explore the dungeon ***/
@@ -1725,4 +1725,83 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* Oops */
     false
+}
+
+fn continue_exploration(st: &mut BorgState) -> Option<crate::decisions::ExplorationGoal> {
+    use crate::decisions::{Decision, Value};
+
+    match crate::shadow::decision(st, Decision::FlowContinueExploration) {
+        Value::ExplorationFlow(goal) => goal,
+        _ => unreachable!("exploration continuation must return a goal or fall through"),
+    }
+}
+
+pub(crate) fn continue_exploration_native(st: &mut BorgState) -> Option<crate::decisions::ExplorationGoal> {
+    use crate::decision_api::borg_flow::borg_flow_old;
+    use crate::decisions::ExplorationGoal::{Bore, Dark, Misc, Vault, Xtra};
+
+    crate::decision_tape::mark("policy::flow.continue_exploration", String::new());
+    if borg_flow_old(st, GOAL_MISC) {
+        return Some(Misc);
+    }
+    if borg_flow_old(st, GOAL_DARK) {
+        return Some(Dark);
+    }
+    if borg_flow_old(st, GOAL_XTRA) {
+        return Some(Xtra);
+    }
+    if borg_flow_old(st, GOAL_BORE) {
+        return Some(Bore);
+    }
+    if borg_flow_old(st, GOAL_VAULT) {
+        return Some(Vault);
+    }
+    None
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn run_exploration_flow_regression(st: &mut BorgState) -> ! {
+    use crate::decisions::ExplorationGoal::{Bore, Dark, Misc, Vault, Xtra};
+    use crate::headers::list_terrain_h::FEAT_FLOOR;
+
+    assert_eq!(st.borg.tr(BI_CDEPTH), 5);
+    crate::borg_cave::borg_init_cave(st);
+    st.borg.c = loc { x: 40, y: 20 };
+    st.cave.grid_mut(40, 20).feat = FEAT_FLOOR as u8;
+    st.cave.grid_mut(41, 20).feat = FEAT_FLOOR as u8;
+    for row in &mut st.flow.data_flow {
+        row.fill(255);
+    }
+    st.flow.data_flow[20][40] = 1;
+    st.flow.data_flow[20][41] = 0;
+    crate::borg_io::borg_flush(st);
+
+    for goal in [Misc, Dark, Xtra, Bore, Vault] {
+        st.borg.goal.type_0 = goal as i16;
+        assert_eq!(continue_exploration(st), Some(goal));
+        assert_eq!(st.borg.goal.type_0, goal as i16);
+        assert_eq!(st.io.queued_keys(), [u32::from(b'6')]);
+        crate::borg_io::borg_flush(st);
+    }
+
+    for goal in [0, GOAL_FLEE as i16] {
+        st.borg.goal.type_0 = goal;
+        let before = st.clone();
+        assert_eq!(continue_exploration(st), None);
+        assert!(*st == before, "unrelated goal leaves Borg state alone");
+    }
+
+    // A matching route can fail with an effect. The caller falls through
+    // with the old goal cleared before the Recall wait is considered.
+    st.borg.goal.type_0 = GOAL_DARK as i16;
+    st.borg.goal.recalling = 1;
+    st.flow.data_flow[20][41] = 255;
+    assert_eq!(continue_exploration(st), None);
+    assert_eq!(st.borg.goal.type_0, 0);
+    assert_eq!(st.borg.goal.recalling, 1);
+    assert!(st.io.queued_keys().is_empty());
+
+    crate::shadow::after_think(st);
+    println!("exploration flow passed");
+    std::process::exit(0);
 }
