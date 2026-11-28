@@ -77,6 +77,15 @@ class TownSpareSaleTest(unittest.TestCase):
         self.assertRegex(sandals, r"You drop 3 Pairs of Leather Sandals \[1,\+0\] \{borg ignore\}")
         # Angband also says "You drop" when putting gear safely in Home.
         self.assertNotRegex(sandals, r"You (?:had|sold)[^\n]*\[1,\+4\]|You drop[^\n]*\[1,\+4\] \{borg ignore")
+        # #1397: the drop is planned on the Home entrance, which holds no
+        # object. The Borg steps to clear floor first, so the drop lands
+        # under it and is ignored there, never scattered and picked up again.
+        disposal = messages[messages.index("# Home reserve: withdrawing low-priority stock"):]
+        step = disposal.index("# Stepping to clear floor before dropping")
+        drop = disposal.index("You drop 3 Pairs of Leather Sandals [1,+0] {borg ignore}")
+        self.assertLess(step, drop, disposal[:2000])
+        self.assertRegex(disposal[drop:], r"# Destroying floor item [^\n]*Leather Sandals")
+        self.assertNotRegex(disposal[drop:], r"You have \d+ Pairs of Leather Sandals \[1,\+0\] \{borg ignore\}")
 
     def test_full_home_supplies_upgrade_and_keeps_two_useful_backups(self):
         messages = self.run_town(1, gear_case="gear-full-home")

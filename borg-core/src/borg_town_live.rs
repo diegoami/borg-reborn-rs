@@ -1012,10 +1012,11 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     if slot >= crate::borg_item::quiver_start() as usize {
         let reserve = crate::params::value(crate::params::Param::town_quiver_trim_reserve);
         if reserve == 0 || a.at[2] != qty { clear(st); return false; }
+        // borg-reborn-rs (#1397): never drop from a shop entrance or stairs.
+        let (enchanted, kind) = (item.to_h != 0 || item.to_d != 0, item.kind);
+        if let Some(stepped) = crate::borg_junk::step_to_drop_floor(st) { clear(st); return stepped; }
         // borg-reborn-rs (#1239): settle the trim from refreshed inventory.
-        let enchanted = item.to_h != 0 || item.to_d != 0;
         if shop_overloaded() || enchanted {
-            let kind = item.kind;
             st.think.town_live.pending_quiver_trim = Some((kind, carried_kind(st, kind), enchanted));
         }
         if enchanted {
@@ -1043,6 +1044,9 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
         clear(st);
         return false;
     }
+    // borg-reborn-rs (#1397): the first think after a shop visit is on its
+    // entrance, where no object can lie: step to clear floor, then drop.
+    if let Some(stepped) = crate::borg_junk::step_to_drop_floor(st) { clear(st); return stepped; }
     let letter = crate::engine::all_letters_nohjkl(slot as i32) as i8 as u32;
     if home_disposal {
         st.think.town_live.disposal = None;
