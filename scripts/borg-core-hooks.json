@@ -314,7 +314,7 @@
     },
     "src/borg_flow_stairs.rs": {
       "donor_blob": "cfc8b5b2e21dd2a374f7fe4e749c96754505b6bb",
-      "receiving_sha256": "eab615348b140128ad104f599386d2de5909c0880aff66d28c567d82e3a6c683"
+      "receiving_sha256": "a8e06a0a4b1874a8462b85e208163fbcfcaa94733fedc13db30db676c4837595"
     },
     "src/borg_flow_take.rs": {
       "donor_blob": "f19b4b2933fbf4ccab7476b39e6abb17a5a07a87",
@@ -450,7 +450,7 @@
     },
     "src/borg_think_dungeon.rs": {
       "donor_blob": "c2a65f85c74c9c5423889598d5227b91ed9457fa",
-      "receiving_sha256": "995afb8a87f2c0685369278225617b3080e9ef5a04eb864347e13819514b263e"
+      "receiving_sha256": "87b7f6340a08310da19a439c1e143769618b85c62287f4aed639c082721d75fd"
     },
     "src/borg_think_dungeon_util.rs": {
       "donor_blob": "4b2b364e36ae2ad8852db7d8a5f5840d0c5408cb",

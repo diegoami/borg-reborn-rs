@@ -148,7 +148,7 @@ crate::decision_tape::engine("borg_flow_misc::borg_extract_dir",format!("{:?}",(
 }
 }
 pub mod borg_flow_stairs {
-    pub use crate::decisions::{CombinedStairPlan, StairDirection, StairPlan};
+    pub use crate::decisions::{CombinedStairPlan, FlightRoute, StairDirection, StairPlan};
 
     pub fn bounded_desperate_flight(st: &mut crate::state::BorgState, up: bool, max_moves: i32, ranged_reach: i32) -> bool {
         crate::decision_tape::effect(st, "borg_flow_stairs::bounded_desperate_flight", format!("{:?}", (up, max_moves, ranged_reach,)), |st| crate::borg_flow_stairs::bounded_desperate_flight(st, up, max_moves, ranged_reach))
@@ -198,6 +198,13 @@ use crate::borg_update::Detect;
 use crate::memory::BorgGrid;
 pub use crate::borg_light::BorgNeed;
 use crate::headers::ui_event_h::keycode_t;
+pub fn borg_flow_stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
+    if !crate::decision_tape::active() {
+        return crate::borg_flow_stairs::borg_flow_stair_both(st, why, sneak);
+    }
+    crate::decision_tape::effect(st, "borg_flow_stairs::borg_flow_stair_both", format!("{:?}", (why, sneak)), |st| crate::borg_flow_stairs::borg_flow_stair_both(st, why, sneak))
+}
+
 pub fn borg_flow_stair_less(st:&mut BorgState,why:i32,sneak:bool) -> bool {
 if !crate::decision_tape::active() { return crate::borg_flow_stairs::borg_flow_stair_less(st,why,sneak); }
 crate::decision_tape::effect(st,"borg_flow_stairs::borg_flow_stair_less",format!("{:?}",(why,sneak,)),|st| crate::borg_flow_stairs::borg_flow_stair_less(st,why,sneak))

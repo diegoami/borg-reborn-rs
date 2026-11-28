@@ -118,6 +118,8 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                 overrides.update(caution_rising_hold_flee_descent=1, caution_stairs_clean_path=2,
                                  caution_stairs_clean_path_flee=1, caution_stairs_block_danger_percent=0,
                                  caution_stairs_flight_ignore_danger=1)
+            if case == "active-flight":
+                overrides.update(caution_recall_wait_as_usual=0, caution_rising_explore_ticks=500)
             for name, value in overrides.items():
                 key = f"borg_param_{name}"
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
@@ -136,6 +138,7 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             shadow_cases = {
                 "flow-step": ("flow direction selection passed", "readonly_points", "flow.select_step", 8),
                 "exploration-flow": ("exploration flow passed", "root_points", "flow.continue_exploration", 8),
+                "active-flight": ("active flight passed", "root_points", "flow.active_flight", 7),
                 "up-stair-plan": ("up-stair plan passed", "readonly_points", "flow.plan_up_stair", 10 if weight else 8),
                 "down-stair-plan": ("down-stair plan passed", "root_points", "flow.plan_down_stair", 9 if weight else 7),
                 "combined-stair-plan": ("combined stair plan passed", "root_points", "flow.plan_combined_stairs", 11 if weight else 14),
@@ -151,13 +154,19 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                     row = json.loads(stats.read_text().splitlines()[-1])
                     self.assertEqual(row["mode"], shadow)
                     self.assertEqual(row["counts"][points][point], count)
-                    nested_steps = {
-                        "combined-stair-plan": 0 if weight else 1,
-                        "exploration-flow": EXPLORATION_STEP_REQUESTS,
-                    }.get(case, 0)
-                    if nested_steps:
-                        self.assertEqual(row["counts"]["readonly_points"]["flow.select_step"], nested_steps)
-                    self.assertEqual(row["counts"]["flow_calls"], count + nested_steps)
+                    nested_flow = {
+                        "combined-stair-plan": {("readonly_points", "flow.select_step"): 0 if weight else 1},
+                        "exploration-flow": {("readonly_points", "flow.select_step"): EXPLORATION_STEP_REQUESTS},
+                        "active-flight": {
+                            ("readonly_points", "flow.select_step"): 4,  # One step per successful route.
+                            ("readonly_points", "flow.plan_up_stair"): 4,  # Up, rising refusal, down, fallthrough.
+                            ("root_points", "flow.plan_down_stair"): 2,  # Down and fallthrough.
+                            ("root_points", "flow.plan_combined_stairs"): 1,  # Scary-level route.
+                        },
+                    }.get(case, {})
+                    for (points, point), expected in nested_flow.items():
+                        self.assertEqual(row["counts"][points].get(point, 0), expected)
+                    self.assertEqual(row["counts"]["flow_calls"], count + sum(nested_flow.values()))
             elif case == "stair-preview-wipe":
                 self.assertIn("stair preview wipe passed", result.stdout)
             else:
@@ -187,6 +196,11 @@ class EmergencyStairHandoffTest(unittest.TestCase):
         for shadow in ("off", "check", "switch"):
             with self.subTest(shadow=shadow):
                 self.run_case("exploration-flow", 0, shadow=shadow)
+
+    def test_active_flight_preserves_route_priority_and_fallthrough(self):
+        for shadow in ("off", "check", "switch"):
+            with self.subTest(shadow=shadow):
+                self.run_case("active-flight", 0, shadow=shadow)
 
     def test_stair_preview_consumes_wipe_and_restores_cached_danger(self):
         self.run_case("stair-preview-wipe", 0)

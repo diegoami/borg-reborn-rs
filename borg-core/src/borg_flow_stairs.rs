@@ -1357,6 +1357,9 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     if case == "exploration-flow" {
         crate::borg_think_dungeon::run_exploration_flow_regression(st);
     }
+    if case == "active-flight" {
+        crate::borg_think_dungeon::run_active_flight_regression(st);
+    }
     if case == "stair-preview-wipe" {
         run_stair_preview_wipe_regression(st);
     }
