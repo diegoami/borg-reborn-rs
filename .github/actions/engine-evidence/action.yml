@@ -1,5 +1,9 @@
 name: Engine death evidence
 description: Assemble the pinned evidence used to reconcile engine runs
+inputs:
+  incident-fixtures:
+    description: Additional sparse checkout paths for incident fixtures
+    required: false
 runs:
   using: composite
   steps:
@@ -21,9 +25,8 @@ runs:
         path: vendor/cemetery-evidence
         persist-credentials: false
         sparse-checkout: |
-          scenarios/planmage-wild-cat-fixtures
-          scenarios/planmage-town-phase-407718
           validation/borg-reborn-rs/native-controls
+          ${{ inputs.incident-fixtures }}
     # #403: new parameter provenance changes the encounter identity even
     # when neutral play is identical. Reconcile against retained, immutable
     # Cemetery evidence, never against the registry produced by this run.

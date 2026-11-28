@@ -95,6 +95,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/cemetery-tools
       - uses: ./.github/actions/engine-evidence
+        with:
+          incident-fixtures: |
+            scenarios/planmage-wild-cat-fixtures
+            scenarios/planmage-town-phase-407718
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
         with:
@@ -112,13 +116,6 @@ jobs:
           variant: engine
       - run: BORG_IMPL=rust harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
-      # P3: exercise the actual profile serializer and run_cell at our zoo pin.
-      - run: |
-          zoo_pin=$(cat harness/zoo-adapter-pin.txt)
-          git init -q vendor/borg-zoo-adapter
-          git -C vendor/borg-zoo-adapter fetch -q --depth 1 https://github.com/diegoami/borg-zoo "$zoo_pin"
-          git -C vendor/borg-zoo-adapter checkout -q --detach "$zoo_pin"
-          echo "BORG_ZOO_CONTRACT_REQUIRED=1" >> "$GITHUB_ENV"
       # Native preference tests use their own death registry. The original
       # core's observation/replay check below must continue to select one of
       # that core's deaths, rather than a differently configured native run.
@@ -143,7 +140,7 @@ jobs:
           with open(os.environ['GITHUB_ENV'], 'a') as env:
               env.write('BORG_PHASE_STOCK_FIXTURE_ZIP=' + str(target) + '\nBORG_PHASE_STOCK_FIXTURE_REQUIRED=1\n')
           PYPHASE
-      - run: bash .github/scripts/test-engine.sh
+      - run: bash .github/scripts/test-engine.sh test_core_profile_contract.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -263,6 +260,13 @@ jobs:
           save: 'false'
       - run: BORG_IMPL=rust harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
+      # P3: exercise the actual profile serializer and run_cell at our zoo pin.
+      - run: |
+          zoo_pin=$(cat harness/zoo-adapter-pin.txt)
+          git init -q vendor/borg-zoo-adapter
+          git -C vendor/borg-zoo-adapter fetch -q --depth 1 https://github.com/diegoami/borg-zoo "$zoo_pin"
+          git -C vendor/borg-zoo-adapter checkout -q --detach "$zoo_pin"
+      - run: BORG_ZOO_CONTRACT_REQUIRED=1 python3 -m unittest discover -s engine/tests -p test_core_profile_contract.py
       # Track P (#219): exercise the vendored core's real initialization,
       # not only the pure parser. Its named trace has a separate registry;
       # original-core dossiers below retain their trace.jsonl contract.
@@ -442,7 +446,7 @@ jobs:
 
           # Round robin spreads seeds from the same class across the runners.
           shard = rows[index::count]
-          (work / 'full-shard').write_text(''.join(row + '\n' for row in shard))
+          (work / f'full-shard-{index + 1}').write_text(''.join(row + '\n' for row in shard))
           subset = work / 'full-reference'
           subset.mkdir()
           for row in shard:
@@ -467,8 +471,8 @@ jobs:
           save: 'false'
       # Perception against the engine and the RNG isolation asserts use the test build.
       - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception,test-stair-handoff harness/build.sh
-      - run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh "$RUNNER_TEMP/full-shard" harness/out/full-test
-      - run: harness/diff --suite "$RUNNER_TEMP/full-shard" --expect-impl rust harness/out/full-test "$RUNNER_TEMP/full-reference"
+      - run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh "$RUNNER_TEMP/full-shard-${{ matrix.shard }}" harness/out/full-test
+      - run: harness/diff --suite "$RUNNER_TEMP/full-shard-${{ matrix.shard }}" --expect-impl rust harness/out/full-test "$RUNNER_TEMP/full-reference"
       - run: python3 tools/check-perception.py harness/out/full-test
       - run: python3 tools/check-no-time.py harness/out/full-test
 
