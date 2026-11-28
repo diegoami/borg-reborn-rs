@@ -101,3 +101,30 @@ budget").
   Home stock) where the issue names `GearChoice::power`; `town_home_gear_cover_percent`
   stays 100 until #1319 is decided.
 - Two identical gear pieces share one decision (the key is the variant).
+
+### Review of the design (Codex, GPT-6, issue comment 7245376597)
+
+Fixed:
+- Unknown wearables at Home count against the 16 whatever their role (pinned
+  gear entries), and a supply top-up of a kind Home holds merges without a new
+  slot (`supply_fits`). A gear purchase for Home needs a free gear slot
+  (`gear_fits`).
+- Over-cap stock converges: 20 gear pieces at a cap of 16 keep the best 16 and
+  a pinned piece (a staged loadout, `retained_home_gear`) is never the one to
+  go; a second pass moves nothing (`an_over_full_gear_group_converges_to_its_cap`).
+  Evictions are decided in one pass, so the 20/4 case needs four evictions, not
+  one per move budget. The ranked organizer's stash is gated by the decision;
+  the staged loadout's deposit is not hooked, it is pinned and the others yield
+  to it.
+
+Not fixed (left, each worth an issue):
+- Scoring a candidate as the first source after removing the only current one,
+  and comparing Home before and after the proposed move.
+- A failed command's retry guard beyond `buy_rejected`, a native refusal case,
+  and a loop test beyond the three-visit cooldown.
+- Planning the exact victim and the Home moves before buying into a full group.
+  A purchase into a full group without a victim is not made today
+  (`home_replacement` finds none), which is safe but never replaces.
+- The DL100 targets are voluntary hoarding targets (the static entry point
+  skips them); `Heal` still counts a Staff of Healing with the potions, and
+  #1433's surplus CCW/CSW clause is not reconciled.

@@ -96,3 +96,29 @@ Home gate reserve").
   pack (the first gate asks nothing before DL10); say if the reserve should
   hold the DL10 count from DL5 (`town_home_gate_lookahead` 1 already sets the
   target to 3, but the pack's keep is 0 until the descent reaches the gate).
+
+### Review of the design (Codex, GPT-6, issue comment 7245378019)
+
+Fixed:
+- Withdrawal and deposit use the real departure: the Recall destination at
+  `town_recall_prepared_depth_percent` as `leave_town` checks it, else max
+  depth + 1 (`departure_depth`), and the deficit comes from the traits the gates
+  read (`deficit`): teleports `BI_ATELEPORT + BI_AESCAPE` so a spell or any
+  other escape counts; Healing `BI_AHEAL` unless enough *Healing*
+  (`BI_AEZHEAL`) stands in; *Healing* only while the Healing count is short
+  too. The DL100 stock rows are no longer gates (`requirement` leaves them
+  out); they stay hoarding targets.
+- A due withdrawal wins over banking the same kind (`keep` keeps the whole
+  stack while a deficit stands).
+- Devices move in whole items by the engine's split, `floor(charges x taken /
+  items)` (`device_items_for`: three staves with five charges, a lack of 4
+  takes all three); only reliable devices count and are taken; a withdrawal is
+  limited to what Home can hand over (`carry_capacity`) and `buy_rejected`
+  holds a refused request.
+- The withdrawal quantity is the whole shortfall in one action, not one copy.
+
+Not fixed: a native game of the DL26 departure with a shallower saved Recall
+target; Rods (the split is by timeout); a test where a merged purchase is
+followed by a partial deposit; an explicit Home target distinct from the
+pack floor for kinds whose first gate is far (the target is the lookahead-th
+gate's count, 5 for kinds no gate names).

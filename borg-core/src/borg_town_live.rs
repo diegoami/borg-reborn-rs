@@ -1441,7 +1441,7 @@ fn release_home_gear(st: &BorgState, slot: usize, quantity: u8) -> Option<TownAc
     let quantity = i32::from(quantity).min(offer.carry_capacity());
     if quantity <= 0 { return None; }
     let sale = (0..BORG_HOME).find(|&shop| crate::borg_store_sell::borg_store_buys(item, shop as i32)
-        && !sale_rejected(st, shop as i16, item) && offer.sale_quote(shop, quantity) > 0);
+        && !sale_rejected(st, shop as i16, item) && sale_accepted(offer.sale_quote(shop, quantity)));
     Some(sale.map_or(
         TownAction { code: action::DROP_HOME, at: [BORG_HOME as i64, slot as i64, i64::from(quantity), 0] },
         |shop| TownAction { code: action::SELL_HOME, at: [shop as i64, slot as i64, i64::from(quantity), 0] }))
@@ -1565,6 +1565,13 @@ fn unknown_rune_gift(st: &BorgState, slot: usize, quantity: u8) -> Option<TownAc
     (1..=quantity).rev().find_map(|copies| spare_sale(st, slot, item, copies))
 }
 
+/// #1416 (review): under `birth_no_selling` (the game's default) every sale
+/// quotes 0 gold (store.c price_item) although the shop takes the item, so a
+/// zero quote is no refusal there; with selling on, a zero quote is.
+fn sale_accepted(quote: i32) -> bool {
+    quote > 0 || crate::engine::player_opt(crate::headers::list_options_h::OPT_birth_no_selling)
+}
+
 fn spare_sale(st: &BorgState, slot: usize, item: &borg_item, quantity: u8) -> Option<TownAction> {
     // #1308: a shop that accepts gear with unknown runes teaches every rune
     // on the sale, even when it pays nothing (store.c:532-534, 1948-1952).
@@ -1578,7 +1585,7 @@ fn spare_sale(st: &BorgState, slot: usize, item: &borg_item, quantity: u8) -> Op
         !sale_rejected(st, shop as i16, item)
             && crate::borg_store_sell::borg_store_buys(item, shop as i32)
             && native.store_accepts_quantity(shop, quantity)
-            && (crate::borg_junk::gear_alternatives() == 0 || teaches || native.sale_quote(shop, quantity) > 0)
+            && (crate::borg_junk::gear_alternatives() == 0 || teaches || sale_accepted(native.sale_quote(shop, quantity)))
     })?;
     Some(TownAction { code: action::SELL, at: [shop as i64, slot as i64, i64::from(quantity), 0] })
 }

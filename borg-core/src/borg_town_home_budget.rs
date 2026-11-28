@@ -565,6 +565,19 @@ pub(crate) fn apply(st: &mut BorgState, kit: &mut [KitItem], live: bool) {
         });
     }
 
+    // #1435 (review): an unknown wearable at Home counts against the gear
+    // group whatever role it has (the owner: no allowance of its own); it is
+    // kept to learn its runes, so it is pinned inside.
+    for (i, k) in kit.iter().enumerate() {
+        if k.place != Place::Home || group_of(k.home_role).is_some() || !k.unknown { continue; }
+        let item = item_of(st, k);
+        if crate::borg_town_home::gear_slot(&item).is_none() { continue; }
+        entries.push(Entry {
+            members: vec![i], group: Group::Gear, key: key_of(&item), incumbent: true, pinned: true,
+            weight: k.weight, slot: k.slot, score: 0, item: Some(item),
+        });
+    }
+
     let spent = exhausted(st, &budget, &memory);
     let placed = place(&entries, &budget, &memory, &worn, spent);
     for (e, (&inside, &value)) in entries.iter().zip(placed.inside.iter().zip(&placed.value)) {
@@ -593,6 +606,15 @@ pub(crate) fn outside(st: &BorgState, item: &borg_item) -> bool {
     enabled() && st.think.town_live.home_budget.outside(&key_of(item))
 }
 
+/// Whether Home has a free slot in the gear group for a purchase.
+pub(crate) fn gear_fits(st: &BorgState) -> bool {
+    if !enabled() { return true; }
+    let budget = Budget::of(st.borg.tr(BI_MAXDEPTH));
+    let gear = st.store.shops[BORG_HOME].ware.iter()
+        .filter(|w| w.iqty > 0 && crate::borg_town_home::gear_slot(w).is_some()).count();
+    gear < budget.gear
+}
+
 /// Whether a Home purchase of `item` (`copies` of it) would fit the supply
 /// budget: its capability's score reaches a free slot, or beats the weakest
 /// stack of the group by the margin.
@@ -604,6 +626,8 @@ pub(crate) fn supply_fits(st: &BorgState, item: &borg_item, copies: i32) -> bool
     if memory.cooling(&key_of(item)).is_some() { return false; }
     // The Home's own stacks of the group, scored as they stand.
     let home = &st.store.shops[BORG_HOME].ware;
+    // A top-up of a kind Home holds merges into that stack: no new slot.
+    let merges = st.store.shops[BORG_HOME].ware.iter().any(|w| w.iqty > 0 && w.kind == item.kind);
     let mut stacks = 0usize;
     let mut same = 0usize;
     let mut weakest = i64::MAX;
@@ -616,7 +640,7 @@ pub(crate) fn supply_fits(st: &BorgState, item: &borg_item, copies: i32) -> bool
     }
     let score = supply_score(capability, renewable(st, capability), same, copies);
     if score <= 0 { return false; }
-    stacks < budget.supply || score * 100 > weakest.saturating_mul(100 + budget.margin)
+    merges || stacks < budget.supply || score * 100 > weakest.saturating_mul(100 + budget.margin)
 }
 
 #[cfg(test)]
@@ -785,6 +809,23 @@ mod tests {
         let all: Vec<_> = full.iter().cloned().chain(entries.iter().cloned()).collect();
         let placed = place(&all, &borrowing, &Memory::default(), &Cover::of([]), false);
         assert_eq!(placed.inside.iter().filter(|&&x| x).count(), 16 + 2, "no free gear slot to borrow");
+    }
+
+    /// Stock over the budget converges: 20 gear pieces at Home with a cap of 16 keep
+    /// the best 16 in one decision, and a pinned piece (a staged loadout) is never
+    /// the one that goes.
+    #[test]
+    fn an_over_full_gear_group_converges_to_its_cap() {
+        let mut entries: Vec<Entry> = (0..20u8).map(|slot| Entry { group: Group::Gear, item: Some(crate::borg_item::blank_item()),
+            incumbent: true, score: i64::from(slot), ..supply(200 + i64::from(slot), slot, 0, true) }).collect();
+        entries[0].pinned = true;
+        let placed = place(&entries, &budget(16, 8), &Memory::default(), &Cover::of([]), false);
+        assert_eq!(placed.inside.iter().filter(|&&x| x).count(), 16);
+        assert!(placed.inside[0], "the pinned piece stays whatever it scores");
+        assert!(!placed.inside[1] && !placed.inside[2] && !placed.inside[3], "the lowest scores leave");
+        // The next pass over the survivors moves nothing.
+        let next: Vec<_> = entries.iter().zip(&placed.inside).filter(|(_, &i)| i).map(|(e, _)| e.clone()).collect();
+        assert!(place(&next, &budget(16, 8), &Memory::default(), &Cover::of([]), false).inside.iter().all(|&x| x));
     }
 
     #[test]

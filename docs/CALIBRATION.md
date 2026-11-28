@@ -9772,9 +9772,9 @@ Shipped off (RULES 28, PLAN P9); every number is a hypothesis.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_home_gate_reserve` | 0 | flag | 0–1 | `borg_town_gate_reserve.rs:83` |
-| `town_home_gate_min_depth` | 5 | depth | 0–127 | `borg_town_gate_reserve.rs:84` |
-| `town_home_gate_lookahead` | 1 | gates | 0–10 | `borg_town_gate_reserve.rs:70` |
+| `town_home_gate_reserve` | 0 | flag | 0–1 | `borg_town_gate_reserve.rs:124` |
+| `town_home_gate_min_depth` | 5 | depth | 0–127 | `borg_town_gate_reserve.rs:125` |
+| `town_home_gate_lookahead` | 1 | gates | 0–10 | `borg_town_gate_reserve.rs:111` |
 
 [Handover](handover/2026-11-28-1417-home-gate-reserve.md)
 

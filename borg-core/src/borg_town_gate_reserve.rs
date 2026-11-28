@@ -49,9 +49,50 @@ pub(crate) fn gates(capability: Capability) -> Vec<(i32, i32)> {
 }
 
 /// What the gates ask the pack for at `depth`: the count of the deepest gate
-/// at or above it.
+/// at or above it. The DL100 stock rows are left out: the static entry point
+/// (`borg_prepared.rs`, #1417 review) skips `borg_prepared_aux`, so they are
+/// hoarding targets only, not gates a departure checks.
 pub(crate) fn requirement(capability: Capability, depth: i32) -> i32 {
-    gates(capability).iter().filter(|&&(from, _)| from <= depth).map(|&(_, count)| count).max().unwrap_or(0)
+    let aux = param(Param::prepared_dl100_min_depth);
+    gates(capability).iter().filter(|&&(from, _)| from <= depth && from < aux).map(|&(_, count)| count).max().unwrap_or(0)
+}
+
+/// The depth the next trip is checked at: the Recall destination at
+/// `town_recall_prepared_depth_percent` as `leave_town` checks it, else the
+/// next depth below the max (the stair gate).
+pub(crate) fn departure_depth(st: &BorgState) -> i32 {
+    match crate::engine::town_recall_destination() {
+        Some(depth) => i32::from(depth) * param(Param::town_recall_prepared_depth_percent) / 100,
+        None => st.borg.tr(BI_MAXDEPTH) + 1,
+    }
+}
+
+/// The copies a gate still lacks at `depth`, by the traits `borg_prepared`
+/// reads, so any other provider (a spell, an escape item, *Healing*) counts:
+/// teleports `BI_ATELEPORT + BI_AESCAPE`; Healing `BI_AHEAL` unless enough
+/// *Healing* (`BI_AEZHEAL`) stands in; *Healing* only while the Healing count
+/// is short too.
+pub(crate) fn deficit(st: &BorgState, capability: Capability, depth: i32) -> i32 {
+    use crate::borg_headers::borg_trait_h::{BI_AESCAPE, BI_AEZHEAL, BI_AHEAL, BI_ATELEPORT};
+    let need = requirement(capability, depth);
+    let tr = |t| st.borg.tr(t);
+    let star = requirement(Capability::BigHeal, depth);
+    let heal_short = tr(BI_AEZHEAL) < star && tr(BI_AHEAL) < requirement(Capability::Heal, depth);
+    let lacks = match capability {
+        Capability::Teleport => need - (tr(BI_ATELEPORT) + tr(BI_AESCAPE)),
+        Capability::Heal if tr(BI_AEZHEAL) < star => need - tr(BI_AHEAL),
+        Capability::BigHeal if heal_short => need - tr(BI_AEZHEAL),
+        _ => 0,
+    };
+    lacks.max(0)
+}
+
+/// The whole devices to take so the charges the engine hands over
+/// (`floor(charges * taken / items)`, store.c / obj-util.c distribute) cover
+/// `lacks`; all of them when none does.
+pub(crate) fn device_items_for(lacks: i32, charges: i32, items: i32) -> i32 {
+    if items <= 0 || charges <= 0 { return 0; }
+    (1..=items).find(|&taken| charges * taken / items >= lacks).unwrap_or(items)
 }
 
 /// The copies to hold in all (pack and Home) at `max_depth`: the count of the
@@ -96,7 +137,8 @@ pub(crate) fn kind_of(st: &BorgState, item: &borg_item) -> Option<Capability> {
 
 /// (copies carried, copies at Home) of a capability.
 pub(crate) fn held(st: &BorgState, capability: Capability) -> (i32, i32) {
-    let count = |items: &[borg_item]| items.iter().filter(|it| it.iqty > 0 && capability_of(st, it) == Some(capability))
+    let count = |items: &[borg_item]| items.iter().filter(|it| it.iqty > 0 && capability_of(st, it) == Some(capability)
+        && (!device(it) || crate::borg_item_use::ranged_device_reliable(st, it)))
         .map(copies_of).sum::<i32>();
     let pack = crate::borg_item::inven_wield() as usize;
     (count(&st.items.items[..pack]), count(&st.store.shops[BORG_HOME].ware))
@@ -114,7 +156,9 @@ pub(crate) fn keep(st: &BorgState, item: &borg_item) -> Option<i32> {
     let capability = kind_of(st, item)?;
     let depth = st.borg.tr(BI_MAXDEPTH);
     let (pack, home) = held(st, capability);
-    let need = requirement(capability, depth + 1);
+    // A withdrawal that is due wins over banking the same kind.
+    if deficit(st, capability, departure_depth(st)) > 0 { return Some(i32::from(item.iqty)); }
+    let need = requirement(capability, departure_depth(st));
     let keep = pack_keep(pack, home, need, reserve_target(capability, depth));
     // This visit's withdrawal stays carried.
     if crate::borg_town_live::home_moved(st, item, false) { return Some(i32::from(item.iqty)); }
@@ -136,25 +180,15 @@ pub(crate) fn wants_more(st: &BorgState, item: &borg_item) -> bool {
     pack + home < reserve_target(capability, st.borg.tr(BI_MAXDEPTH))
 }
 
-/// The copies to take out of one Home stack for a carried count that falls
-/// short of a need: no more than the stack holds or Home can hand over.
-pub(crate) fn withdraw_copies(need: i32, pack: i32, stack_copies: i32, stack_items: i32, capacity: i32, is_device: bool) -> i32 {
-    if need <= pack || stack_copies <= 0 { return 0; }
-    if is_device { return stack_items.min(capacity).max(0); }
-    (need - pack).min(stack_copies).min(capacity).max(0)
-}
-
-/// Before Recall: when the descent target (the next depth below the max)
-/// reaches a gate, take from Home what the pack lacks for it. One copy a
-/// step is what the executor moves; the planner solves again.
+/// Before Recall or the stairs: when the departure depth reaches a gate the
+/// pack falls short of (by the traits `borg_prepared` reads), take from Home
+/// what it lacks, in whole items. The planner solves again after each step.
 pub(crate) fn withdraw(st: &BorgState) -> Option<TownAction> {
     if !active(st) { return None; }
-    let depth = st.borg.tr(BI_MAXDEPTH) + 1;
+    let depth = departure_depth(st);
     for capability in Capability::ALL {
-        let need = requirement(capability, depth);
-        if need == 0 { continue; }
-        let (pack, _) = held(st, capability);
-        if pack >= need { continue; }
+        let lacks = deficit(st, capability, depth);
+        if lacks == 0 { continue; }
         let ware = &st.store.shops[BORG_HOME].ware;
         let stock = crate::engine::store_stock(&st.access, BORG_HOME);
         for (slot, item) in ware.iter().enumerate() {
@@ -162,11 +196,16 @@ pub(crate) fn withdraw(st: &BorgState) -> Option<TownAction> {
                 || crate::borg_town_live::home_moved(st, item, true)
                 || crate::borg_town_live::buy_rejected(st, BORG_HOME as i16, slot)
                 || crate::borg_town_live::shopping_weight_capacity(st, item.weight) <= 0
+                || device(item) && !crate::borg_item_use::ranged_device_reliable(st, item)
             { continue; }
             let Some(offer) = stock.get(slot) else { continue; };
-            let copies = withdraw_copies(need, pack, copies_of(item), i32::from(item.iqty), offer.carry_capacity(), device(item));
+            let copies = if device(item) {
+                device_items_for(lacks, copies_of(item), i32::from(item.iqty)).min(offer.carry_capacity())
+            } else {
+                lacks.min(copies_of(item)).min(offer.carry_capacity())
+            };
             if copies > 0 {
-                return Some(TownAction { code: action::TAKE_HOME, at: [BORG_HOME as i64, slot as i64, 1, 0] });
+                return Some(TownAction { code: action::TAKE_HOME, at: [BORG_HOME as i64, slot as i64, i64::from(copies), 0] });
             }
         }
     }
@@ -213,15 +252,14 @@ mod tests {
         assert_eq!(pack_keep(2, 0, 3, 8), 2, "never more than the pack holds");
     }
 
+    /// The engine hands over `floor(charges * taken / items)` charges of a split stack.
     #[test]
-    fn the_withdrawal_brings_the_pack_up_to_the_gate() {
-        // The issue's case: Home 5 Teleportation, pack 3, the DL26 gate asks 8.
-        assert_eq!(withdraw_copies(8, 3, 5, 5, 40, false), 5);
-        assert_eq!(withdraw_copies(8, 3, 9, 9, 40, false), 5, "only what the pack lacks");
-        assert_eq!(withdraw_copies(8, 3, 5, 5, 2, false), 2, "or what the pack can carry");
-        assert_eq!(withdraw_copies(8, 8, 5, 5, 40, false), 0, "the gate is met: Home stock is untouched");
-        assert_eq!(withdraw_copies(8, 3, 0, 0, 40, false), 0);
-        // A Staff of Teleportation is taken whole, its charges counted.
-        assert_eq!(withdraw_copies(8, 3, 6, 1, 1, true), 1);
+    fn devices_are_taken_in_whole_items_by_the_engine_split() {
+        // Three staves, five charges: two give 3, so a lack of 4 takes all three.
+        assert_eq!(device_items_for(3, 5, 3), 2);
+        assert_eq!(device_items_for(4, 5, 3), 3);
+        assert_eq!(device_items_for(9, 5, 3), 3, "all of them when none covers");
+        assert_eq!(device_items_for(1, 0, 3), 0, "a depleted stack gives nothing");
+        assert_eq!(device_items_for(1, 5, 1), 1);
     }
 }

@@ -770,7 +770,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
         if !c.is_black_market() || !item.ident || !borg_town_home::known_special(item) {
             return 0;
         }
-        if !role.gear() {
+        if !role.gear() || !crate::borg_town_home_budget::gear_fits(st) {
             return 0;
         }
         let worn = borg_town_home::gear_slot(item).map(|slot| &st.items.items[slot]);
