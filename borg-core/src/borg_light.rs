@@ -1005,12 +1005,18 @@ fn covers_spare_light(permanent: &BorgItem, spare: &BorgItem) -> bool {
     crate::borg_spare_gear::known_properties_cover(permanent, &spare)
 }
 
+/// The empty lantern shell to release, with `light_spare_lanterns` on. It
+/// does not depend on the ranked gear cleanup: `surplus_light`'s other half
+/// needs `town_gear_home_backups` and `junk_gear_alternatives`, this does not.
+pub(crate) fn lantern_shell_slot(st: &BorgState) -> Option<usize> {
+    if param(Param::light_spare_lanterns) == 0 { return None; }
+    empty_lantern_shell(&st.items.items[inven_light() as usize], &st.items.items[..inven_wield() as usize])
+}
+
 pub(crate) fn surplus_light(st: &BorgState) -> Option<usize> {
     let worn = &st.items.items[inven_light() as usize];
     let pack = &st.items.items[..inven_wield() as usize];
-    if param(Param::light_spare_lanterns) != 0 {
-        if let Some(slot) = empty_lantern_shell(worn, pack) { return Some(slot); }
-    }
+    if let Some(slot) = lantern_shell_slot(st) { return Some(slot); }
     if !crate::borg_town_live::gear_home_backups() { return None; }
     if !permanent_light(worn) { return None; }
     pack.iter().position(|item| {
@@ -1060,15 +1066,21 @@ pub(crate) fn empty_lantern_shell(worn: &BorgItem, pack: &[BorgItem]) -> Option<
 }
 
 /// The turns a worn lantern can still burn from what is carried: its own
-/// fuel, every clean refillable lantern's and every clean Flask of Oil's.
+/// fuel plus what each clean refillable lantern copy and each clean Flask of
+/// Oil adds when it is poured in. The Borg refuels below `REFUEL_BELOW`, and
+/// the engine caps the lamp at `capacity` and empties the donor whatever
+/// overflowed (cmd-obj.c:1008, `refill_lamp`), so a copy adds at most
+/// `capacity` less the turns left at that moment (#1413, review).
 /// `None` when the worn light is not a clean, refillable lantern.
-fn lantern_fuel_on_hand(worn: &BorgItem, pack: &[BorgItem], oil: i32) -> Option<i64> {
+fn lantern_fuel_on_hand(worn: &BorgItem, pack: &[BorgItem], oil: i32, capacity: i64) -> Option<i64> {
     if !refillable_lantern(worn) || worn.cursed || worn.curses.contains(&true) { return None; }
+    let room = (capacity - i64::from(REFUEL_BELOW - 1)).max(0);
     let spare = |item: &BorgItem| -> i64 {
-        if item.cursed || item.curses.contains(&true) { 0 }
-        else if refillable_lantern(item) { i64::from(item.timeout.max(0)) * i64::from(item.iqty) }
-        else if is_oil_flask(item, oil) { i64::from(item.pval.max(0)) * i64::from(item.iqty) }
-        else { 0 }
+        let copy = if item.cursed || item.curses.contains(&true) { 0 }
+            else if refillable_lantern(item) { i64::from(item.timeout.max(0)) }
+            else if is_oil_flask(item, oil) { i64::from(item.pval.max(0)) }
+            else { 0 };
+        copy.min(room) * i64::from(item.iqty)
     };
     Some(i64::from(worn.timeout.max(0)) + pack.iter().map(spare).sum::<i64>())
 }
@@ -1087,7 +1099,7 @@ pub(crate) fn skip_floor_lantern(st: &BorgState, kidx: usize) -> bool {
     }
     let worn = &st.items.items[inven_light() as usize];
     let pack = &st.items.items[..inven_wield() as usize];
-    lantern_fuel_on_hand(worn, pack, st.item_val.sv_flask_oil)
+    lantern_fuel_on_hand(worn, pack, st.item_val.sv_flask_oil, i64::from(engine::z_info().fuel_lamp))
         .is_some_and(|fuel| fuel >= fuel_goal(st, crate::borg_town_utility::Journey::of(st)))
 }
 
@@ -1224,6 +1236,9 @@ enum LightMaintenance {
     Wear(usize),
 }
 
+/// A worn lantern is refuelled below this many turns (`light_maintenance`).
+const REFUEL_BELOW: i16 = 1000;
+
 fn light_maintenance(light: &BorgItem, pack: &[BorgItem], torch: i32, lantern: i32, oil: i32) -> LightMaintenance {
     use LightMaintenance::*;
     if u32::from(light.tval) == TV_LIGHT {
@@ -1239,7 +1254,7 @@ fn light_maintenance(light: &BorgItem, pack: &[BorgItem], torch: i32, lantern: i
         }
 
         /* Refuel current lantern if needed */
-        if i32::from(light.sval) == lantern && light.timeout < 1000 {
+        if i32::from(light.sval) == lantern && light.timeout < REFUEL_BELOW {
             return RefuelLantern;
         }
         NoNeed
@@ -1916,6 +1931,8 @@ mod spare_lantern_tests {
     use crate::headers::list_object_flags_h::OF_LIGHT_2;
 
     const OIL: i32 = 1;
+    /// object.txt / constants.txt: the most fuel a lamp holds.
+    const CAPACITY: i64 = 15_000;
 
     fn lantern(timeout: i16) -> BorgItem {
         let mut item = blank_item();
@@ -1997,29 +2014,44 @@ mod spare_lantern_tests {
         let worn = lantern(4824);
         let full = BorgItem { iqty: 2, ..lantern(7500) };
         // The listed stock of #1413: 4,824 worn, 15,000 in spares, 7,500 of oil.
-        assert_eq!(lantern_fuel_on_hand(&worn, &[full, lantern(0), oil(1)], OIL), Some(27_324));
+        assert_eq!(lantern_fuel_on_hand(&worn, &[full, lantern(0), oil(1)], OIL, CAPACITY), Some(27_324));
         // Cursed lanterns, another kind of flask and torches are no fuel for it.
         let cursed = BorgItem { cursed: true, ..lantern(7500) };
         let mut other_flask = oil(3);
         other_flask.sval = 9;
         let torch = BorgItem { timeout: 5000, ..torch_item() };
-        assert_eq!(lantern_fuel_on_hand(&worn, &[cursed, other_flask, torch], OIL), Some(4_824));
+        assert_eq!(lantern_fuel_on_hand(&worn, &[cursed, other_flask, torch], OIL, CAPACITY), Some(4_824));
         // A worn torch or empty slot has no lantern fuel to count.
-        assert_eq!(lantern_fuel_on_hand(&torch, &[full], OIL), None);
-        assert_eq!(lantern_fuel_on_hand(&blank_item(), &[full], OIL), None);
+        assert_eq!(lantern_fuel_on_hand(&torch, &[full], OIL, CAPACITY), None);
+        assert_eq!(lantern_fuel_on_hand(&blank_item(), &[full], OIL, CAPACITY), None);
+    }
+
+    #[test]
+    fn fuel_lost_at_the_lamps_capacity_is_not_counted() {
+        // Review of #1415: 900 turns worn and two full 15,000-turn donors is
+        // 30,900 turns if every donor turn counts. The Borg refuels at 999,
+        // the lamp holds 15,000 and the donor is emptied, so each pour adds
+        // 14,001 and the total is 28,902: under a 30,000-turn goal.
+        let worn = lantern(900);
+        let donors = BorgItem { iqty: 2, ..lantern(15_000) };
+        assert_eq!(lantern_fuel_on_hand(&worn, &[donors], OIL, CAPACITY), Some(28_902));
+        assert!(28_902 < scaled_goal(20_000, 150));
+        // Ordinary 7,500-turn donors and flasks lose nothing.
+        let full = BorgItem { iqty: 2, ..lantern(7500) };
+        assert_eq!(lantern_fuel_on_hand(&worn, &[full, oil(2)], OIL, CAPACITY), Some(900 + 15_000 + 15_000));
     }
 
     #[test]
     fn full_spares_are_wanted_below_the_light_goal_and_skipped_at_it() {
         let worn = lantern(4824);
         let full = BorgItem { iqty: 2, ..lantern(7500) };
-        let fuel = lantern_fuel_on_hand(&worn, &[full, oil(1)], OIL).unwrap();
+        let fuel = lantern_fuel_on_hand(&worn, &[full, oil(1)], OIL, CAPACITY).unwrap();
         // The goal is the larger of the trip's turns and the reserve, scaled
         // while breadth-first exploration applies (20,000 at 150 percent).
         assert!(fuel >= scaled_goal(20_000, 100), "off: the reserve is met");
         assert!(fuel < scaled_goal(20_000, 150), "at 150 percent a third spare is still wanted");
         // A character that has burned most of its fuel takes every lantern.
-        let low = lantern_fuel_on_hand(&lantern(900), &[oil(1)], OIL).unwrap();
+        let low = lantern_fuel_on_hand(&lantern(900), &[oil(1)], OIL, CAPACITY).unwrap();
         assert!(low < scaled_goal(20_000, 100));
     }
 }

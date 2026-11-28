@@ -9174,8 +9174,12 @@ lantern at its cost, so every one was chased.
 With `light_spare_lanterns` a plain empty lantern shell (known, clean, no
 artifact or ego, no brighter than the worn lantern) goes through the
 spare-light cleanup (`surplus_light`) while a clean lantern with fuel is worn.
-A floor lantern is not walked to while the worn lantern's fuel, the carried
-lanterns' and the Flasks of Oil together reach the light goal
+The shell goes whatever `junk_gear_alternatives`, `junk_exploration_first` and
+`town_gear_home_backups` are, under the usual safe-drop check. A floor lantern
+is not walked to while the worn lantern's fuel, what the carried lanterns and
+the Flasks of Oil add when poured in (each pour is capped at the lamp's 15,000
+turns less the 999 left when the Borg refuels, `cmd-obj.c:1008`) reach the
+light goal
 (`borg_light::fuel_goal`: the trip's turns or `town_light_reserve_turns`,
 scaled by `explore_bfs_light_percent`). Below the goal the walk stays. A
 lantern stepped on is still picked up (`pickup_always`). The floor object's
@@ -9184,7 +9188,7 @@ one at that point. Not measured by the zoo.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `light_spare_lanterns` | 0 (shipped 1) | flag | 0–1 | `borg_light.rs:1008` |
+| `light_spare_lanterns` | 0 (shipped 1) | flag | 0–1 | `borg_light.rs:1012` |
 
 ### Recall-first trial
 
