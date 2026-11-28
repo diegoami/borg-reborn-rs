@@ -19,6 +19,9 @@ ROOT = Path(__file__).resolve().parents[2]
 GAME = ROOT / "build/rust/game/angband"
 TEST_GAME = ROOT / "build/rust-test/game/angband"
 
+# Five successful committed routes and one blocked matching route each request a step.
+EXPLORATION_STEP_REQUESTS = 6
+
 
 def state_at(states, turn):
     return [state for state in states if int(state[0]) == turn]
@@ -150,7 +153,7 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                     self.assertEqual(row["counts"][points][point], count)
                     nested_steps = {
                         "combined-stair-plan": 0 if weight else 1,
-                        "exploration-flow": 6,
+                        "exploration-flow": EXPLORATION_STEP_REQUESTS,
                     }.get(case, 0)
                     if nested_steps:
                         self.assertEqual(row["counts"]["readonly_points"]["flow.select_step"], nested_steps)

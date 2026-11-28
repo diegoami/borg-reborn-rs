@@ -5,14 +5,15 @@ order and returns the first goal that acts. The tape records and replays
 each native continuation, including any changes made on a false return.
 The dungeon driver emits the existing choice label at a distinct source
 site for each goal. Its existing Recall wait runs on fallthrough.
-[Native caller](../../borg-core/src/borg_think_dungeon.rs#L1342) ·
+[Native caller](../../borg-core/src/borg_think_dungeon.rs#L1343) ·
+[Native continuation](../../borg-core/src/borg_think_dungeon.rs#L1739) ·
 [Owned priority](../../borg-next/src/stateful/flow.rs#L161)
 
 The constructed engine case exercises all five goals, two unmatched goal
 states, and a blocked route that clears its goal with Recall pending. It
 passed in off, check, and switch. The strict R5 gate now requires the
 continuation entry point.
-[Engine controls](../../engine/tests/test_stair_handoff.py#L183) ·
+[Engine controls](../../engine/tests/test_stair_handoff.py#L186) ·
 [R5 coverage reader](../../harness/check-shadow.py)
 
 The shipped smoke at `5d72cbf34f1a3c26d24e35c836c0588cdbb18f6d` matched
@@ -26,4 +27,8 @@ smoke after mapping the per-goal source lines to their new locations.
 
 All 11 stair and flow tests, all 15 pinned Zoo profile-contract tests,
 Rust and Python checks, and the historical R4.5 smoke verifier passed
-locally. The full 45-start Zoo comparison remains the R5 milestone gate.
+locally.
+
+The owner decides whether to merge this slice after review and CI, once
+#1405 has landed. The full 45-start Zoo comparison remains the R5 milestone
+gate. [Track R epic #217](https://github.com/diegoami/borg-reborn-rs/issues/217)
