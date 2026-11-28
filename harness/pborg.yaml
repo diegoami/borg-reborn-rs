@@ -808,20 +808,25 @@ borg_param_caution_recall_heal_loss: 150
 # 1 = add the return requests below; 0 = only the C Borg's own returns.
 # Go back when:
 # - borg_trip_pack_slack: this many pack slots or fewer are free; higher
-#   goes back sooner;
+#   goes back sooner (0 = only when the pack is full; -1 = never for this
+#   reason, #1385);
 # - borg_trip_unknown_stacks: this many unknown stacks could be identified in
 #   town (0 = never for this reason); lower goes back sooner;
 # - borg_trip_return_gold: gold plus the pack's sale value reaches this per
 #   character level (0 = never).
 # borg_trip_depth_margin is a diagnostic only. Since #479 the borg-zoo#170
-# speed30 bundle; borg_trip_unknown_stacks = 2 since fba1c6e0 (owner).
-# Impact (games of 6 that play differently with the value changed to):
+# speed30 bundle; borg_trip_unknown_stacks = 2 since fba1c6e0 (owner);
+# borg_trip_pack_slack = -1 (the pack never asks to go back) since #1385
+# (owner; it was 1).
+# Impact (historical: measured before borg_trip_pack_slack was set to -1, so
+# the pack_slack entry compares 2 with the old shipped value 1; games of 6 that
+# play differently with the value changed to):
 # trip_policy 0: 3; trip_pack_slack 2: 0; trip_unknown_stacks 4: 3;
 # trip_return_gold 1: 6; trip_depth_margin 1: 0.
 
 borg_trip_policy: 1
 borg_trip_depth_margin: 0
-borg_trip_pack_slack: 1
+borg_trip_pack_slack: -1
 borg_trip_unknown_stacks: 2
 borg_trip_return_gold: 0
 
