@@ -15,6 +15,7 @@ runs:
       run: |
         echo "CCACHE_DIR=$RUNNER_TEMP/ccache" >> "$GITHUB_ENV"
         echo "CCACHE_MAXSIZE=200M" >> "$GITHUB_ENV"
+        echo "CMAKE_C_COMPILER_LAUNCHER=ccache" >> "$GITHUB_ENV"
         compiler=$(cc --version | sha256sum | cut -d' ' -f1)
         echo "compiler=$compiler" >> "$GITHUB_OUTPUT"
         echo "image=${ImageOS:-unknown}" >> "$GITHUB_OUTPUT"

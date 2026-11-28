@@ -168,26 +168,7 @@ jobs:
       # (feature test-hallucinate). Perception against the engine (T2.5): each
       # think writes its comparison to truth.jsonl (feature test-perception).
       - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception,test-stair-handoff,test-combat-heal,test-town-loadout,test-cursed-spares,test-town-review,test-junk-consumables harness/build.sh
-      - run: python3 engine/tests/test_combat_heal.py
-      - run: python3 engine/tests/test_town_loadout.py
-      - run: python3 engine/tests/test_exploration_pack.py
-      - run: python3 engine/tests/test_town_recall_loadout.py
-      - run: python3 engine/tests/test_cursed_spares.py
-      - run: python3 engine/tests/test_junk_consumables.py
-      - run: python3 engine/tests/test_inferior_spares.py TownSpareSaleTest
-      - run: python3 engine/tests/test_stair_handoff.py EmergencyStairHandoffTest
-      - run: python3 engine/tests/test_stair_handoff.py TownRecallReadinessTest
-      - run: python3 engine/tests/test_stair_handoff.py HealingRestockTest
-      - run: python3 engine/tests/test_stair_handoff.py LeaveLevelUpstairsTest
-      - run: python3 engine/tests/test_stair_handoff.py DarkVeinLoopTest
-      - run: python3 engine/tests/test_stair_handoff.py RecoveryManaLoopTest
-      - run: python3 engine/tests/test_stair_handoff.py StaleStairMoreTest
-      - run: python3 engine/tests/test_stair_handoff.py MoreRefusedGatesTest
-      - run: python3 engine/tests/test_stair_handoff.py NoteStandingFlagsTest
-      - run: python3 engine/tests/test_stair_handoff.py BreederDoorLoopTest
-      - run: python3 engine/tests/test_stair_handoff.py DiggerSwapLoopTest
-      - run: python3 engine/tests/test_stair_handoff.py StaleKoboldDoorTest
-      - run: python3 engine/tests/test_stair_handoff.py StairScumLootRoutesTest
+      - run: bash .github/scripts/test-engine.sh --fixtures
       # A test build's deaths are not natural deaths of an arm: own registry.
       - run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-hallucinate
       # The full suite on the test build is the engine-full job's (#1400).
@@ -266,7 +247,7 @@ jobs:
           git init -q vendor/borg-zoo-adapter
           git -C vendor/borg-zoo-adapter fetch -q --depth 1 https://github.com/diegoami/borg-zoo "$zoo_pin"
           git -C vendor/borg-zoo-adapter checkout -q --detach "$zoo_pin"
-      - run: BORG_ZOO_CONTRACT_REQUIRED=1 python3 -m unittest discover -s engine/tests -p test_core_profile_contract.py
+      - run: BORG_ZOO_CONTRACT_REQUIRED=1 python3 engine/tests/test_core_profile_contract.py
       # Track P (#219): exercise the vendored core's real initialization,
       # not only the pure parser. Its named trace has a separate registry;
       # original-core dossiers below retain their trace.jsonl contract.
@@ -465,6 +446,7 @@ jobs:
         with:
           cache-bin: false
           cache-workspace-crates: true
+          # The job ID keeps this target separate from the reborn fixture build.
           workspaces: |
             . -> build/rust-test/cargo
           save-if: ${{ matrix.shard == 1 }}
@@ -473,8 +455,8 @@ jobs:
           packages: cmake libx11-dev libssl-dev ccache
       - uses: ./.github/actions/ccache
         with:
-          variant: engine
-          save: 'false'
+          variant: engine-test
+          save: ${{ matrix.shard == 1 }}
       # Perception against the engine and the RNG isolation asserts use the test build.
       - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception,test-stair-handoff harness/build.sh
       - run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh "$RUNNER_TEMP/full-shard-${{ matrix.shard }}" harness/out/full-test
@@ -534,7 +516,7 @@ jobs:
         with:
           variant: recorder
       - if: needs.engine-scope.outputs.recorder == '1'
-        run: cmake -S engine -B build/recorder -DCMAKE_C_COMPILER_LAUNCHER=ccache -DSUPPORT_BORG_RECORDING=ON -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S engine -B build/recorder -DSUPPORT_BORG_RECORDING=ON -DCMAKE_BUILD_TYPE=Release
       - if: needs.engine-scope.outputs.recorder == '1'
         run: cmake --build build/recorder -j4
       - if: needs.engine-scope.outputs.recorder == '1'

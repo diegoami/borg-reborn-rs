@@ -6,7 +6,7 @@ as a compiler launcher, with a separate recorder cache. The existing
 compiler probe, build identity and reference comparisons still run.
 
 Cargo caches are keyed by Rust toolchain and job. The C cache key also
-includes runner image family and compiler version. Local and zoo builds
-use ccache when it is installed and can select a launcher explicitly with
-`CMAKE_C_COMPILER_LAUNCHER`. The harness still probes the real compiler.
-CI restores Cargo targets and C compiler entries before building.
+includes runner image family and compiler version. The CI cache action
+sets the CMake launcher before configuration, and the harness still probes
+the real compiler. A dedicated C cache holds the full-suite build, and
+shard 1 populates it for later runs.
