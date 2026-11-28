@@ -27,7 +27,7 @@ use crate::borg_headers::borg_trait_h::{
     BI_MAXSP, BI_WB_POIS, BI_WS_EVIL,
 };
 
-use crate::decisions::StairPlan;
+use crate::decisions::{CombinedStairPlan, StairDirection as Which, StairPlan};
 use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 
@@ -237,13 +237,6 @@ pub(crate) fn record_off_stair_step(st: &mut BorgState, to: loc, exploring: bool
         let off_stair = exploring && !matches!(u32::from(st.cave.grid(step.from.x, step.from.y).feat), FEAT_LESS | FEAT_MORE);
         st.stairs.off_stair_handoff.record_dark_step(off_stair.then_some(step));
     }
-}
-
-/// Which stair list to enqueue.
-#[derive(Clone, Copy)]
-enum Which {
-    Less,
-    More,
 }
 
 fn track(st: &BorgState, which: Which) -> &StairTrack {
@@ -542,42 +535,15 @@ fn stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
 /// combined flight's rules, not `stair_less`/`stair_more`'s (whose
 /// `more_refused` the combined flow never applied).
 fn stair_kinds(st: &mut BorgState, why: i32, sneak: bool, only: Option<Which>) -> bool {
-    let up = !matches!(only, Some(Which::More));
-    let down = !matches!(only, Some(Which::Less));
-    /* None to flow to */
-    if (!up || st.stairs.less.num == 0) && (!down || st.stairs.more.num == 0) {
-        return false;
-    }
-
-    /* don't go down if hungry or low on food, unless fleeing a scary town */
-    if !st.borg.goal.fleeing
-        && !st.borg.mon.scary
-        && st.stairs.less.num == 0
-        && i32::from(st.borg.avoidance) <= st.borg.tr(BI_CURHP) * 15 / 10
-        && (st.borg.tr(BI_ISWEAK) != 0 || st.borg.tr(BI_ISHUNGRY) != 0 || st.borg.tr(BI_FOOD) < 2)
-    {
-        return false;
-    }
-
-    /* Absolutely no diving if no light */
-    if st.borg.tr(BI_LIGHT) == 0 && st.borg.tr(BI_CDEPTH) != 0 {
-        return false;
-    }
-
-    // borg-reborn-rs (#557): no down staircase for a flight while rising.
-    let down = down && !(why == GOAL_FLEE && crate::borg_caution::rising_holds_flee_descent(st));
-    let weight = crate::borg_caution::stair_flight_weight(why, false);
-    if weight > 0 {
-        let direction = match (up, down) {
-            (true, true) => None,
-            (true, false) => Some(Which::Less),
-            (false, true) => Some(Which::More),
-            (false, false) => return false,
-        };
-        return weighted_flight(st, why, direction, WeightedFlightOptions {
-            depth: 250, avoid: false, sneak, weight, ranged_reach: 0,
-        });
-    }
+    let (up, down) = match plan_combined_stairs(st, why, only) {
+        CombinedStairPlan::Refused => return false,
+        CombinedStairPlan::Weighted { only, weight } => {
+            return weighted_flight(st, why, only, WeightedFlightOptions {
+                depth: 250, avoid: false, sneak, weight, ranged_reach: 0,
+            });
+        }
+        CombinedStairPlan::Unweighted { up, down } => (up, down),
+    };
 
     /* Clear the flow codes */
     borg_flow::borg_flow_clear(st);
@@ -597,6 +563,56 @@ fn stair_kinds(st: &mut BorgState, why: i32, sneak: bool, only: Option<Which>) -
     borg_flow::borg_flow_spread_stairs(st, 250, false, false, false, -1, sneak);
 
     commit_and_step(st, c"stairs", why)
+}
+
+fn plan_combined_stairs(st: &mut BorgState, why: i32, only: Option<Which>) -> CombinedStairPlan {
+    use crate::decisions::{Decision, Value};
+
+    match crate::shadow::decision(st, Decision::FlowPlanCombinedStairs { why, only }) {
+        Value::CombinedStairs(plan) => plan,
+        _ => unreachable!("combined stair planner must return a combined stair plan"),
+    }
+}
+
+pub(crate) fn plan_combined_stairs_native(st: &mut BorgState, why: i32, only: Option<Which>) -> CombinedStairPlan {
+    crate::decision_tape::mark("policy::flow.plan_combined_stairs", String::new());
+    let up = !matches!(only, Some(Which::More));
+    let down = !matches!(only, Some(Which::Less));
+    /* None to flow to */
+    if (!up || st.stairs.less.num == 0) && (!down || st.stairs.more.num == 0) {
+        return CombinedStairPlan::Refused;
+    }
+
+    /* don't go down if hungry or low on food, unless fleeing a scary town */
+    if !st.borg.goal.fleeing
+        && !st.borg.mon.scary
+        && st.stairs.less.num == 0
+        && i32::from(st.borg.avoidance) <= st.borg.tr(BI_CURHP) * 15 / 10
+        && (st.borg.tr(BI_ISWEAK) != 0 || st.borg.tr(BI_ISHUNGRY) != 0 || st.borg.tr(BI_FOOD) < 2)
+    {
+        return CombinedStairPlan::Refused;
+    }
+
+    /* Absolutely no diving if no light */
+    if st.borg.tr(BI_LIGHT) == 0 && st.borg.tr(BI_CDEPTH) != 0 {
+        return CombinedStairPlan::Refused;
+    }
+
+    // borg-reborn-rs (#557): no down staircase for a flight while rising.
+    let down = down && !(why == GOAL_FLEE && crate::decision_api::borg_flow_stairs::rising_holds_flee_descent(st));
+    let weight = crate::borg_caution::stair_flight_weight(why, false);
+    if weight > 0 {
+        let direction = match (up, down) {
+            (true, true) => None,
+            (true, false) => Some(Which::Less),
+            (false, true) => Some(Which::More),
+            (false, false) => return CombinedStairPlan::Refused,
+        };
+        return CombinedStairPlan::Weighted { only: direction, weight };
+    }
+
+    // Preserve the empty unweighted attempt when rising vetoes a down-only flow.
+    CombinedStairPlan::Unweighted { up, down }
 }
 
 /// borg-reborn-rs (#736): spread the desperate stair flow (to the up stairs,
@@ -1347,6 +1363,9 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     if case == "down-stair-plan" {
         run_down_stair_plan_regression(st);
     }
+    if case == "combined-stair-plan" {
+        run_combined_stair_plan_regression(st);
+    }
 
     fn observe_move(st: &mut BorgState, direction: u8, expected: loc) {
         assert_eq!(st.io.queued_keys(), [u32::from(direction)], "movement from ({}, {})", st.borg.c.x, st.borg.c.y);
@@ -1668,5 +1687,102 @@ fn run_down_stair_plan_regression(st: &mut BorgState) -> ! {
     }
     crate::shadow::after_think(st);
     println!("down-stair plan passed");
+    std::process::exit(0);
+}
+
+#[cfg(feature = "test-stair-handoff")]
+fn run_combined_stair_plan_regression(st: &mut BorgState) -> ! {
+    use crate::borg_flow::GOAL_DARK;
+    use crate::borg_flow_kill::BorgKill;
+    use crate::borg_headers::borg_trait_h::{BI_ISAFRAID, BI_MAXCLEVEL, BI_MAXHP};
+    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE, FEAT_LESS, FEAT_MORE};
+    use crate::params::{value, Param};
+    use CombinedStairPlan::{Refused, Unweighted, Weighted};
+
+    let depth = st.borg.tr(BI_CDEPTH);
+    assert_eq!(depth, 5);
+    crate::borg_cave::borg_init_cave(st);
+    st.borg.c = loc { x: 40, y: 20 };
+    st.borg.goal.rising = false;
+    st.borg.goal.fleeing = false;
+    st.borg.mon.scary = false;
+    st.borg.avoidance = 89;
+    for (index, number) in [
+        (BI_CLEVEL, 35), (BI_MAXCLEVEL, 35), (BI_CURHP, 89), (BI_MAXHP, 89),
+        (BI_LIGHT, 1), (BI_FOOD, 0), (BI_ISAFRAID, 0), (BI_ISHUNGRY, 0), (BI_ISWEAK, 0),
+    ] {
+        st.borg.trait_[index as usize] = number;
+    }
+    st.kills.cnt = 0;
+    st.kills.nxt = 1;
+    st.danger = Default::default();
+    st.stairs.less.num = 0;
+    st.stairs.more.num = 0;
+    for y in 19..=21 {
+        for x in 37..=44 {
+            st.cave.grid_mut(x, y).feat = FEAT_GRANITE as u8;
+        }
+    }
+    for x in 39..=42 {
+        st.cave.grid_mut(x, 20).feat = FEAT_FLOOR as u8;
+    }
+    st.stairs.less.x[0] = 38;
+    st.stairs.less.y[0] = 20;
+    st.stairs.more.x[0] = 43;
+    st.stairs.more.y[0] = 20;
+    st.cave.grid_mut(38, 20).feat = FEAT_LESS as u8;
+    st.cave.grid_mut(43, 20).feat = FEAT_MORE as u8;
+    borg_io::borg_flush(st);
+
+    let up = Some(Which::Less);
+    let down = Some(Which::More);
+    assert_eq!(plan_combined_stairs(st, GOAL_FLEE, None), Refused, "no stairs");
+    st.stairs.more.num = 1;
+    assert_eq!(plan_combined_stairs(st, GOAL_FLEE, up), Refused, "up-only attempt requires an up stair");
+    assert_eq!(plan_combined_stairs(st, GOAL_FLEE, None), Refused, "no food and no up stair");
+
+    st.stairs.less.num = 1;
+    st.borg.trait_[BI_LIGHT as usize] = 0;
+    assert_eq!(plan_combined_stairs(st, GOAL_FLEE, None), Refused, "light required in the dungeon");
+    st.borg.trait_[BI_CDEPTH as usize] = 0;
+    assert_eq!(plan_combined_stairs(st, GOAL_DARK, None), Unweighted { up: true, down: true }, "lightless town is permitted");
+    st.borg.trait_[BI_CDEPTH as usize] = depth;
+    st.borg.trait_[BI_LIGHT as usize] = 1;
+
+    let weight = value(Param::caution_stairs_flight_threat_weight);
+    let expected = |only: Option<Which>| {
+        if weight > 0 {
+            Weighted { only, weight }
+        } else {
+            Unweighted { up: only != down, down: only != up }
+        }
+    };
+    st.borg.goal.recalling = 1;
+    assert_eq!(plan_combined_stairs(st, GOAL_FLEE, None), expected(None), "combined flight permits Recall");
+    assert_eq!(plan_combined_stairs(st, GOAL_FLEE, up), expected(up));
+    assert_eq!(plan_combined_stairs(st, GOAL_FLEE, down), expected(down), "a known up stair waives the food requirement even in a down-only attempt");
+    st.borg.goal.recalling = 0;
+
+    st.borg.goal.rising = true;
+    assert_eq!(plan_combined_stairs(st, GOAL_FLEE, None), expected(up));
+    let empty_descent = if weight > 0 { Refused } else { Unweighted { up: false, down: false } };
+    assert_eq!(plan_combined_stairs(st, GOAL_FLEE, down), empty_descent);
+    assert_eq!(plan_combined_stairs(st, GOAL_DARK, None), Unweighted { up: true, down: true });
+    st.borg.goal.rising = false;
+
+    if weight == 0 {
+        // With unweighted flow the closer up stair is considered first.
+        // Its blocked corridor forces the full entry point to try up and then down.
+        let blocker = loc { x: 39, y: 20 };
+        st.kills.kills[1] = BorgKill { r_idx: 54, awake: true, pos: blocker, ..BorgKill::BLANK };
+        st.kills.cnt = 1;
+        st.kills.nxt = 2;
+        st.cave.grid_mut(blocker.x, blocker.y).kill = 1;
+        assert!(borg_flow_stair_both(st, GOAL_FLEE, false), "the combined fallback takes the clean down route");
+        assert!(st.borg.flee_path_refused, "the first path was refused");
+        assert_eq!(st.io.queued_keys(), [u32::from(b'6')]);
+    }
+    crate::shadow::after_think(st);
+    println!("combined stair plan passed");
     std::process::exit(0);
 }

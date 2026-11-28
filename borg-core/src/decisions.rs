@@ -75,11 +75,12 @@ ItemActivateFailure { tval:i32,sval:i32 },
 ItemUseThings,
 ItemRecharging,
 FlowPlanDownStair { why: i32, brave: bool },
+FlowPlanCombinedStairs { why: i32, only: Option<StairDirection> },
 
 
 }
 #[derive(Clone,Copy,Debug,PartialEq,Serialize)]
-pub enum Value { Acted(bool), Score(i32), Unit, HomeSale {acted:bool,best_home_power:i32}, UpStair(StairPlan), DownStair(StairPlan) }
+pub enum Value { Acted(bool), Score(i32), Unit, HomeSale {acted:bool,best_home_power:i32}, UpStair(StairPlan), DownStair(StairPlan), CombinedStairs(CombinedStairPlan) }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum StairPlan {
@@ -87,6 +88,21 @@ pub enum StairPlan {
     Unweighted,
     Weighted { weight: i32, avoid: bool },
 }
+
+/// The direction of a tracked staircase.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub enum StairDirection {
+    Less,
+    More,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub enum CombinedStairPlan {
+    Refused,
+    Unweighted { up: bool, down: bool },
+    Weighted { only: Option<StairDirection>, weight: i32 },
+}
+
 impl Decision {
 pub fn name(&self)->&'static str { match self {
 Self::HomePower=>"store.borg_power_home",
@@ -159,6 +175,7 @@ Self::ItemActivateFailure {..}=>"item_use.borg_activate_failure",
 Self::ItemUseThings=>"item_use.borg_use_things",
 Self::ItemRecharging=>"item_use.borg_recharging",
 Self::FlowPlanDownStair {..}=>"flow.plan_down_stair",
+Self::FlowPlanCombinedStairs {..}=>"flow.plan_combined_stairs",
 
 
 } }
@@ -233,6 +250,7 @@ Self::ItemActivateFailure { tval,sval }=>Value::Score(crate::borg_item_use::borg
 Self::ItemUseThings=>Value::Acted(crate::borg_item_use::borg_use_things_native(st)),
 Self::ItemRecharging=>Value::Acted(crate::borg_item_use::borg_recharging_native(st)),
 Self::FlowPlanDownStair { why, brave }=>Value::DownStair(crate::borg_flow_stairs::plan_down_stair_native(st, why, brave)),
+Self::FlowPlanCombinedStairs { why, only }=>Value::CombinedStairs(crate::borg_flow_stairs::plan_combined_stairs_native(st, why, only)),
 
 
 } }
