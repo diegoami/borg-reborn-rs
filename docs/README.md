@@ -1,13 +1,23 @@
 # docs/
 
-The repository's documents, by audience. Playing the Borg starts at the
-[README](../README.md); working on the repository at [AGENTS.md](../AGENTS.md).
+The repository's documents, by audience. The [README](../README.md) is the
+front door: how to get the game with the Borg, and where to read next.
+Playing the Borg continues in the [play guide](user/GUIDE.md); helping with
+the project in the [contributor guide](contributing/README.md); a session
+working on the repository starts at [AGENTS.md](../AGENTS.md).
 Everything here is **ours**: written in this project, here or in our other
 repositories, and ours to change. Other authors' documents (the game's
 manual, the original C Borg's) stay untouched in `engine/angband/`;
 copies that a live tool still produces are in `reference/`. Which is which:
 [DOCUMENTATION-MAP.md](DOCUMENTATION-MAP.md). Reorganised on 2026-11-21
 (#816).
+
+## The guides (#817)
+
+| Document | What |
+| --- | --- |
+| [user/GUIDE.md](user/GUIDE.md) | **Layer 1, play**: install, watch, the Borg's commands, its settings, headless games, recording, deaths and measurement, the family of projects |
+| [contributing/](contributing/README.md) | **Layer 2, contribute**: how we work, building and testing, changing how the Borg plays, investigating a game, measuring with the zoo, the related repositories |
 
 ## The game and the Borgs
 
