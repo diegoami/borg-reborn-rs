@@ -868,6 +868,54 @@ pub(crate) fn surplus_drop(st: &mut BorgState, lighten: bool) -> Option<SurplusD
         .map(|(slot, _, _)| SurplusDrop { slot, quantity: 1, sell_first: false })
 }
 
+/// borg-reborn-rs (#1397, review of #1398): a drop stays on a grid only on
+/// open floor with no trap, no glyph and no visible pile.
+/// obj-pile.c:drop_find_grid skips `square_istrap` grids, its own start
+/// included, and a rune of protection is a trap there; the Borg's map keeps
+/// it apart, in `glyph` (borg_update.rs), from disarmable traps in `trap`.
+fn drop_lands_here(feat: u32, trap: bool, glyph: bool, pile: bool) -> bool {
+    feat == FEAT_FLOOR && !trap && !glyph && !pile
+}
+
+/// Make sure a discard drop lands under the Borg. obj-pile.c:drop_find_grid
+/// scatters a drop made off plain floor (a shop entrance or stairs, which
+/// hold no objects: cave-square.c:square_isobjectholding) or onto a visible
+/// pile. A scattered drop is never under the Borg, so `borg_destroy_floor`
+/// cannot ignore it, and with `pickup_always` on (cmd-pickup.c:169) the
+/// engine picks it up again when the Borg walks over it (#1397).
+///
+/// `None`: the Borg stands on clear floor, drop here. `Some(true)`: a step
+/// to an adjacent clear floor grid was queued; plan the drop again from
+/// there. `Some(false)`: no such grid; do not drop now.
+pub(crate) fn step_to_drop_floor(st: &mut BorgState) -> Option<bool> {
+    let (x, y) = (st.borg.c.x, st.borg.c.y);
+    let here = st.cave.grid(x, y);
+    if drop_lands_here(u32::from(here.feat), here.trap, here.glyph,
+        engine::top_floor_object(&st.access, x, y).is_some())
+    {
+        return None;
+    }
+    for direction in 0..8 {
+        let nx = x + i32::from(engine::ddx_ddd(direction));
+        let ny = y + i32::from(engine::ddy_ddd(direction));
+        if !engine::square_in_bounds_fully(nx, ny) {
+            continue;
+        }
+        let grid = st.cave.grid(nx, ny);
+        if drop_lands_here(u32::from(grid.feat), grid.trap, grid.glyph,
+                engine::top_floor_object(&st.access, nx, ny).is_some())
+            && grid.kill == 0
+            && grid.info & crate::borg_cave_view::BORG_VIEW != 0
+            && borg_danger(st, ny, nx, 1, true, false) <= st.borg.tr(BI_CURHP) / 20
+        {
+            borg_note(st, "# Stepping to clear floor before dropping");
+            borg_keypress(st, digit(i32::from(engine::ddd(direction))));
+            return Some(true);
+        }
+    }
+    Some(false)
+}
+
 pub(crate) fn drop_surplus(st: &mut BorgState, drop: SurplusDrop) -> bool {
     let item = &st.items.items[drop.slot];
     if harmful_item(item, engine::kind_effects)
@@ -884,28 +932,8 @@ pub(crate) fn drop_surplus(st: &mut BorgState, drop: SurplusDrop) -> bool {
         borg_keypress(st, key(selection));
         return true;
     }
-    // obj-pile.c:drop_find_grid scatters drops off stairs and away from
-    // visible piles. Use ordinary clear floor so the native ignore command
-    // can mark the dropped copies on the next think.
-    let (x, y) = (st.borg.c.x, st.borg.c.y);
-    if off_floor(st) || engine::top_floor_object(&st.access, x, y).is_some() {
-        for direction in 0..8 {
-            let nx = x + i32::from(engine::ddx_ddd(direction));
-            let ny = y + i32::from(engine::ddy_ddd(direction));
-            if !engine::square_in_bounds_fully(nx, ny) {
-                continue;
-            }
-            let grid = st.cave.grid(nx, ny);
-            if u32::from(grid.feat) == FEAT_FLOOR && !grid.trap && grid.kill == 0
-                && grid.info & crate::borg_cave_view::BORG_VIEW != 0
-                && engine::top_floor_object(&st.access, nx, ny).is_none()
-                && borg_danger(st, ny, nx, 1, true, false) <= st.borg.tr(BI_CURHP) / 20
-            {
-                borg_keypress(st, digit(i32::from(engine::ddd(direction))));
-                return true;
-            }
-        }
-        return false;
+    if let Some(stepped) = step_to_drop_floor(st) {
+        return stepped;
     }
     let slot = drop.slot as i32;
     let quantity = st.items.items[drop.slot].iqty;
@@ -2476,6 +2504,22 @@ mod tests {
             *dest = src as core::ffi::c_char;
         }
         item
+    }
+
+    /// borg-reborn-rs (#1397, review of #1398): a drop stays under the Borg
+    /// only on open floor with no trap, glyph or pile; a shop entrance,
+    /// stairs, a trap, a glyph (`glyph`, not `trap`, in the Borg's map) or a
+    /// pile makes the engine scatter it.
+    #[test]
+    fn drop_lands_only_on_clear_trap_free_floor() {
+        use crate::headers::list_terrain_h::{FEAT_HOME, FEAT_LESS, FEAT_MORE, FEAT_STORE_ALCHEMY};
+        assert!(drop_lands_here(FEAT_FLOOR, false, false, false));
+        assert!(!drop_lands_here(FEAT_FLOOR, true, false, false), "a disarmable trap");
+        assert!(!drop_lands_here(FEAT_FLOOR, false, true, false), "a glyph of warding");
+        assert!(!drop_lands_here(FEAT_FLOOR, false, false, true), "a visible pile");
+        for feat in [FEAT_STORE_ALCHEMY, FEAT_HOME, FEAT_LESS, FEAT_MORE] {
+            assert!(!drop_lands_here(feat, false, false, false), "feature {feat}");
+        }
     }
 
     #[test]
