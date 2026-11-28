@@ -45,3 +45,11 @@ sight, infravision or detection, so such a miss is an ordinary one.
 - With ESP, a real miss across unseen dark floor now gets granite on that
   floor, as in C, until the Borg sees the grid. That is the accepted cost of
   this option.
+
+### Review by the owner (at `74f8e379`, relayed on the PR)
+
+The finding on this PR, a straight-corridor blocker that leaves the same
+shot eligible, comes from the shared wall-guess walk. It is fixed in #1431
+(`8702735c`, see that handover) and merged here: with the guard, when the
+hallway rule passes over every unknown grid, the guess is the first of them,
+which the map pass keeps. The Stinking Cloud cast takes the same walk.
