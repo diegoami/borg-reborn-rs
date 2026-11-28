@@ -9108,7 +9108,7 @@ cannot be selected. Zero disables this trim.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_quiver_trim_reserve` | 0 | usable quivered ammunition | 0–999 | `borg_town_live.rs:797` |
+| `town_quiver_trim_reserve` | 0 | usable quivered ammunition | 0–999 | `borg_town_live.rs:927` |
 
 ## Town-arrival unloading and weight-limited shopping (#1256)
 
@@ -9145,7 +9145,7 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:518` |
+| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:614` |
 
 ### Drops from clear floor (#1397)
 
@@ -9159,7 +9159,7 @@ replays pin it to 0, since it changes their recorded routes.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_drop_clear_floor` | 1 | flag | 0–1 | `borg_town_live.rs:1034` |
+| `town_drop_clear_floor` | 1 | flag | 0–1 | `borg_town_live.rs:1161` |
 
 ### Recall-first trial
 
