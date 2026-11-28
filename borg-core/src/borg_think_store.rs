@@ -428,6 +428,9 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
         crate::borg_town_live::forget_idle_visit(st, st.think.shop_num);
     }
 
+    // borg-reborn-rs (re-review of #1414): open or continue this store's visit record.
+    crate::borg_town_live::begin_visit(st);
+
     /* Clear the goal (the goal was probably going to a shop number) */
     st.borg.goal.type_0 = 0;
 

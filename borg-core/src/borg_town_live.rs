@@ -258,11 +258,12 @@ pub struct LiveState {
     exit_reason: Option<&'static str>,
     idle_visits: Vec<IdleVisit>,
     idle_held: Option<(i16, i32)>,
-    /// The store action the planner chose outside before the Borg entered,
-    /// and the one it chose inside before executing it (review of #1414):
-    /// the handoff a `store_exit` trace record reconstructs.
+    /// The last store action the planner chose outside (review of #1414).
     entry_request: Option<crate::core_trace::PlannedAction>,
-    inside_choice: Option<crate::core_trace::PlannedAction>,
+    /// The current store visit: the outside request that brought the Borg
+    /// in and each attempt inside, kept until the visit ends (re-review of
+    /// #1414), through follow-up re-entries of the same store.
+    visit: Option<StoreVisit>,
     /// The game turn of the planner's current decision and the Borg clock
     /// (`time.now`, one per think) it was read at: set by `choose`, so the
     /// hold reads no engine state from `buy_rejected`/`sale_rejected` and
@@ -374,12 +375,14 @@ pub(crate) fn settle_sale(st: &mut BorgState) {
         } else {
             st.think.town_live.rejected_buys.push(attempt);
             borg_note(st, "# Town plan: purchase made no progress; exclude unchanged offer/context");
+            mark_queued_attempt(st, "the purchase made no progress");
         }
     }
     if let Some(attempt) = st.think.town_live.pending_sale.take() {
         if st.items.items.get(attempt.slot).is_some_and(|it| attempt.matches(it)) {
             st.think.town_live.rejected_sales.push(attempt);
             borg_note(st, "# Town plan: sale made no inventory change; exclude that offer this visit");
+            mark_queued_attempt(st, "the sale made no inventory change");
         }
     }
     if let Some(attempt) = st.think.town_live.pending_drop.take() {
@@ -488,6 +491,42 @@ struct IdleVisit {
     stock: Vec<(u32, u8, i32)>,
 }
 
+/// borg-reborn-rs (re-review of #1414): one store visit as a `store_exit`
+/// record reports it.
+struct StoreVisit {
+    shop: i16,
+    requested: Option<crate::core_trace::PlannedAction>,
+    attempts: Vec<crate::core_trace::StoreAttempt>,
+}
+
+/// Inside a store: open its visit, or continue it on a follow-up re-entry of
+/// the same store. The request is the last store action chosen outside.
+pub(crate) fn begin_visit(st: &mut BorgState) {
+    if !active(st) { return; }
+    let shop = st.think.shop_num;
+    if st.think.town_live.visit.as_ref().is_some_and(|v| v.shop == shop) { return; }
+    let requested = st.think.town_live.entry_request;
+    st.think.town_live.visit = Some(StoreVisit { shop, requested, attempts: Vec::new() });
+}
+
+/// Record an attempt inside the current visit.
+fn record_attempt(st: &mut BorgState, action: crate::core_trace::PlannedAction, outcome: &str) {
+    if let Some(visit) = st.think.town_live.visit.as_mut() {
+        visit.attempts.push(crate::core_trace::StoreAttempt { action, outcome: outcome.into() });
+    }
+}
+
+/// A queued attempt the engine did not carry out, as settlement found.
+fn mark_queued_attempt(st: &mut BorgState, outcome: &str) {
+    if let Some(attempt) = st.think.town_live.visit.as_mut()
+        .and_then(|v| v.attempts.iter_mut().rev().find(|a| a.outcome == QUEUED))
+    {
+        attempt.outcome = outcome.into();
+    }
+}
+
+const QUEUED: &str = "queued";
+
 /// The store's wares as the Borg last read them: kind, copies and price per
 /// slot (empty slots as empty). Review of #1414: a change releases the hold.
 fn stock_of(st: &BorgState, shop: i16) -> Vec<(u32, u8, i32)> {
@@ -528,9 +567,10 @@ pub(crate) fn note_idle_visit(st: &mut BorgState) {
     if !active(st) { return; }
     let shop = st.think.shop_num;
     let reason = st.think.town_live.exit_reason.take().unwrap_or("the planner chose no transaction here");
-    let requested = st.think.town_live.entry_request.take();
-    let inside = st.think.town_live.inside_choice.take();
-    crate::core_trace::record_store_exit(shop, reason, requested, inside, st.borg.goal.shop, st.think.town_action.map(|a| a.code));
+    // The visit ends here: the Borg leaves with nothing done.
+    let visit = st.think.town_live.visit.take().filter(|v| v.shop == shop);
+    let (requested, attempts) = visit.map_or((st.think.town_live.entry_request, Vec::new()), |v| (v.requested, v.attempts));
+    crate::core_trace::record_store_exit(shop, reason, requested, attempts, st.borg.goal.shop, st.think.town_action.map(|a| a.code));
     let visit = IdleVisit { shop, turn: crate::engine::game_turn(), context: Carried::of(st), stock: stock_of(st, shop) };
     st.think.town_live.idle_visits.retain(|v| v.shop != shop);
     st.think.town_live.idle_visits.push(visit);
@@ -863,13 +903,15 @@ pub fn choose(st: &mut BorgState) -> bool {
 }
 
 /// Outside, the store action the Borg walks to (or re-enters for) is the
-/// request a later `store_exit` record names; inside, what was chosen
-/// there before executing it (review of #1414).
+/// request a later `store_exit` record names (review of #1414). A decision
+/// outside for another store, or for none, ends the current visit; one for
+/// the same store keeps it (a follow-up re-entry).
 fn note_request(st: &mut BorgState, chosen: bool) {
-    if st.borg.in_shop {
-        st.think.town_live.inside_choice = if chosen { planned(st) } else { None };
-    } else if chosen && st.borg.goal.shop >= 0 {
-        st.think.town_live.entry_request = planned(st);
+    if st.borg.in_shop { return; }
+    let shop = if chosen { st.borg.goal.shop } else { -1 };
+    if shop >= 0 { st.think.town_live.entry_request = planned(st); }
+    if st.think.town_live.visit.as_ref().is_some_and(|v| v.shop != shop) {
+        st.think.town_live.visit = None;
     }
 }
 
@@ -1055,7 +1097,26 @@ fn note_departure_room(st: &mut BorgState) {
     borg_note(st, &note);
 }
 
+/// Execute the planned store action; each attempt and its outcome join the
+/// visit's record (re-review of #1414).
 pub fn execute_store(st: &mut BorgState) -> bool {
+    let action = planned(st);
+    let queued = execute_store_action(st);
+    #[cfg(feature = "test-town-review")]
+    if queued && std::env::var("BORG_TEST_DROP_STORE_COMMAND").ok().and_then(|v| v.parse::<i16>().ok()) == Some(st.think.shop_num) {
+        // The native regression drops the queued command, as if the game had
+        // refused it: settlement then finds that nothing changed.
+        crate::borg_io::borg_flush(st);
+        for _ in 0..3 { crate::borg_io::borg_keypress(st, crate::borg_io::ESCAPE); }
+    }
+    if let Some(action) = action {
+        let outcome = if queued { QUEUED } else { st.think.town_live.exit_reason.unwrap_or("not queued") };
+        record_attempt(st, action, outcome);
+    }
+    queued
+}
+
+fn execute_store_action(st: &mut BorgState) -> bool {
     let Some(a) = st.think.town_action else { why(st, "no planned action"); return false; };
     if st.borg.goal.shop != st.think.shop_num || st.think.shop_num < 0 {
         why(st, "the planned action is for another store");
@@ -1184,8 +1245,6 @@ pub fn execute_store(st: &mut BorgState) -> bool {
     if executed {
         st.think.town_live.pending_home = moved;
         st.think.town_action = None;
-        st.think.town_live.entry_request = None;
-        st.think.town_live.inside_choice = None;
     }
     else {
         st.think.town_live.pending_buy = None;
@@ -1569,6 +1628,41 @@ mod tests {
         st.store.shops[4].ware[1].kind = 9;
         st.store.shops[4].ware[1].iqty = 1;
         assert!(!idle_here(&visits, 4, 267_008, &Carried::of(&st), &stock_of(&st, 4)), "new stock");
+    }
+
+    /// Re-review of #1414: the outside request survives a queued attempt and
+    /// its failed settlement, and a follow-up re-entry of the same store;
+    /// an outside decision for another store ends the visit.
+    #[test]
+    fn store_visit_keeps_its_request_and_each_attempt() {
+        let mut st = BorgState::default();
+        st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
+        st.core.cfg[BORG_TOWN_PLAN as usize] = 1;
+        let buy = TownAction { code: action::BUY, at: [0, 4, 1, 6] };
+        st.think.town_action = Some(buy);
+        st.borg.goal.shop = 0;
+        note_request(&mut st, true);
+        let request = planned(&st);
+        st.borg.in_shop = true;
+        st.think.shop_num = 0;
+        begin_visit(&mut st);
+        record_attempt(&mut st, request.unwrap(), QUEUED);
+        st.think.town_action = None;
+        mark_queued_attempt(&mut st, "the purchase made no progress");
+        st.borg.in_shop = false;
+        st.think.town_action = Some(buy);
+        note_request(&mut st, true);
+        st.borg.in_shop = true;
+        begin_visit(&mut st);
+        let visit = st.think.town_live.visit.as_ref().expect("the visit continues");
+        assert_eq!(visit.requested, request);
+        assert_eq!(visit.attempts.len(), 1);
+        assert_eq!(visit.attempts[0].outcome, "the purchase made no progress");
+        st.borg.in_shop = false;
+        st.think.town_action = Some(TownAction { code: action::BUY, at: [4, 0, 1, 0] });
+        st.borg.goal.shop = 4;
+        note_request(&mut st, true);
+        assert!(st.think.town_live.visit.is_none(), "a decision for another store ends it");
     }
 
     /// Review of #1414: a store the human asked for is never held, and a

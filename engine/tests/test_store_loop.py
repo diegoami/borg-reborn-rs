@@ -9,7 +9,8 @@ Warrior did so 1,320 times. The fixture starts the ranked-home town case of
 including two purchases there at the same game turn (a follow-up in one
 visit). `BORG_TEST_REFUSE_STORE=0` (feature `test-town-review`) makes that
 store refuse every transaction and keep the destination, as the Warrior's
-store handler did.
+store handler did. `BORG_TEST_DROP_STORE_COMMAND=0` drops a queued command
+there instead, as if the game had refused it.
 """
 
 from collections import Counter
@@ -41,16 +42,31 @@ class StoreLoopTest(unittest.TestCase):
         # action chosen outside before entering and the one chosen inside.
         self.assertTrue(refused, exits[:5])
         first = next(e for e in exits if e["shop"] == 0 and e["reason"] == REFUSED)
-        for side in ("requested", "inside"):
-            self.assertIsNotNone(first[side], first)
-            self.assertEqual(first[side]["shop"], 0, first)
-            self.assertEqual(len(first[side]["at"]), 4, first)
+        self.assertEqual(first["requested"]["shop"], 0, first)
+        self.assertEqual(len(first["requested"]["at"]), 4, first)
+        self.assertEqual([(a["action"]["shop"], a["outcome"]) for a in first["attempts"]], [(0, REFUSED)], first)
         # Without the hold the Borg entered the store 177 times at turn 141.
         turn, visits = Counter(refused).most_common(1)[0]
         self.assertEqual(visits, 1, f"store 1 entered {visits} times at game turn {turn}")
         store_thinks = Counter(row["turn"] for row in trace if row["context"] == "store")
         self.assertLessEqual(max(store_thinks.values()), 2, store_thinks.most_common(3))
         self.assertIn("# Town plan: store 1 " + HOLD, messages)
+
+    def test_rejected_queued_command_keeps_the_entry_request(self):
+        # Re-review of #1414: the purchase is queued, then dropped
+        # (BORG_TEST_DROP_STORE_COMMAND), so the game never carries it out.
+        # The store_exit that ends the visit still names the outside request
+        # and each attempt inside, the failed purchase first.
+        _, trace = self.run_town(drop=0)
+        exits = [row["store_exit"] for row in trace if row.get("store_exit")]
+        failed = [e for e in exits if e["shop"] == 0
+                  and any(a["outcome"] == "the purchase made no progress" for a in e["attempts"])]
+        self.assertTrue(failed, exits[:5])
+        exit = failed[0]
+        self.assertIsNotNone(exit["requested"], exit)
+        self.assertEqual((exit["requested"]["shop"], exit["requested"]["code"]), (0, 1), exit)
+        self.assertGreaterEqual(len(exit["attempts"]), 2, exit)
+        self.assertEqual(exit["attempts"][0]["action"]["shop"], 0, exit)
 
     def test_ordinary_shopping_keeps_its_same_turn_follow_up(self):
         messages, trace = self.run_town()
@@ -61,7 +77,7 @@ class StoreLoopTest(unittest.TestCase):
         self.assertTrue([key for key, count in purchases.items() if count >= 2],
                         "no follow-up purchase at the same store and game turn: " + str(purchases))
 
-    def run_town(self, refuse=None):
+    def run_town(self, refuse=None, drop=None):
         with tempfile.TemporaryDirectory(prefix="store-loop-") as directory:
             root = Path(directory)
             paths = {key: root / key for key in ("user", "save", "archive", "panic", "scores")}
@@ -77,6 +93,8 @@ class StoreLoopTest(unittest.TestCase):
                        BORG_PARAM_TOWN_GEAR_HOME_BACKUPS="0", BORG_RUN_DIR=str(root))
             if refuse is not None:
                 env["BORG_TEST_REFUSE_STORE"] = str(refuse)
+            if drop is not None:
+                env["BORG_TEST_DROP_STORE_COMMAND"] = str(drop)
             run = subprocess.run(
                 [str(GAME), "-mborgh", "-n", *(f"-d{key}={path}" for key, path in paths.items()),
                  "--", "-seed", "101", "-race", "0", "-class", "0", "-keys", "900",
