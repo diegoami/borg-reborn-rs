@@ -867,7 +867,7 @@ class RecoveryManaLoopTest(unittest.TestCase):
 class TownRecallReadinessTest(unittest.TestCase):
     def test_destination_readiness(self):
         cases = (
-            "blocked", "two-escapes", "ready", "saved", "sixty", "zero", "forced", "persistent",
+            "blocked", "one-escape", "two-escapes", "ready", "saved", "sixty", "zero", "forced", "persistent",
             "persistent-new", "endgame", "shallower-than-100",
         )
         for case in cases:

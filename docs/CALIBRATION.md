@@ -996,8 +996,8 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:2352` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:2077` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2463` |
-| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:3630` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:3623` |
+| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:3671` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:3664` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1557` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1560` |
 | `town_csw_reserve_percent` | 0 | percent | 0–1000 | `borg_town_capability.rs:1903` |
@@ -3395,7 +3395,7 @@ digger 500 gold.
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:1616` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1167` |
 | `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1364` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:3294` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:3321` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:240` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -5946,7 +5946,7 @@ still run on their existing paths.
 | Parameter | Compiled default | Shipped value | Unit | Range | Source |
 |---|---|---|---|---|---|
 | `prepared_dl10_min_light_radius` | 2 (Necromancer 0) | 2 (Necromancer 0) | radius | 0–99 | `borg_prepared.rs:385` |
-| `prepared_dl10_min_teleports` | 2 | 3 | count | 0–999 | `borg_prepared.rs:394` |
+| `prepared_dl10_min_teleports` | 2 | 1 | count | 0–999 | `borg_prepared.rs:394` |
 | `prepared_dl10_cure_critical_until_clevel` | 30 | 30 | level | 0–50 | `borg_prepared.rs:418` |
 | `prepared_dl10_min_cure_critical` | 3 | 3 | count | 0–999 | `borg_prepared.rs:420` |
 | `prepared_dl10_min_see_invisible_detection_or_esp` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:430` |
@@ -5958,14 +5958,15 @@ still run on their existing paths.
 | `prepared_dl21_min_spell_stat` | 7 | 9 | stat | 0–118 | `borg_prepared.rs:485` |
 | `prepared_dl21_min_dexterity` | 7 | 9 | stat | 0–118 | `borg_prepared.rs:493` |
 | `prepared_dl21_min_constitution` | 7 | 9 | stat | 0–118 | `borg_prepared.rs:500` |
-| `prepared_dl21_min_basic_resists` | 2 | 2 | count | 0–3 | `borg_prepared.rs:468` |
+| `prepared_dl21_min_basic_resists` | 2 | 1 | count | 0–3 | `borg_prepared.rs:468` |
 | `prepared_dl21_min_depth` | 21 | 21 | depth | 0–127 | `borg_prepared.rs:449` |
-| `prepared_dl26_min_resist_cold` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:533` |
-| `prepared_dl26_min_resist_electricity` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:540` |
-| `prepared_dl26_min_resist_acid` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:547` |
-| `prepared_dl26_min_teleports` | 6 | 8 | count | 0–999 | `borg_prepared.rs:556` |
+| `prepared_dl26_min_resist_cold` | 1 | 0 | flag | 0–1 | `borg_prepared.rs:533` |
+| `prepared_dl26_min_resist_electricity` | 1 | 0 | flag | 0–1 | `borg_prepared.rs:540` |
+| `prepared_dl26_min_resist_acid` | 1 | 0 | flag | 0–1 | `borg_prepared.rs:547` |
+| `prepared_dl26_min_basic_resists` | 0 | 2 | count | 0–3 | `borg_prepared.rs:540` |
+| `prepared_dl26_min_teleports` | 6 | 2 | count | 0–999 | `borg_prepared.rs:556` |
 | `prepared_dl26_cure_serious_or_critical_until_clevel` | 30 | 30 | level | 0–50 | `borg_prepared.rs:564` |
-| `prepared_dl26_min_cure_serious_or_critical` | 10 | 12 | count | 0–999 | `borg_prepared.rs:566` |
+| `prepared_dl26_min_cure_serious_or_critical` | 10 | 8 | count | 0–999 | `borg_prepared.rs:566` |
 | `prepared_dl26_min_depth` | 26 | 26 | depth | 0–127 | `borg_prepared.rs:530` |
 | `prepared_dl34_min_depth` | 34 | 34 | depth | 0–127 | `borg_prepared.rs:575` |
 | `prepared_dl40_min_resist_poison` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:586` |
@@ -6015,13 +6016,13 @@ still run on their existing paths.
 | `restock_dl10_min_light_radius` | 2 (Necromancer 0) | 2 (Necromancer 0) | radius | 0–99 | `borg_prepared.rs:1105` |
 | `restock_dl10_cures_until_clevel` | 30 | 30 | level | 0–50 | `borg_prepared.rs:1113` |
 | `restock_dl10_min_cures` | 2 | 2 | count | 0–999 | `borg_prepared.rs:1115` |
-| `restock_dl10_min_teleports` | 2 | 2 | count | 0–999 | `borg_prepared.rs:1125` |
+| `restock_dl10_min_teleports` | 2 | 1 | count | 0–999 | `borg_prepared.rs:1125` |
 | `restock_dl10_min_depth` | 10 | 10 | depth | 0–127 | `borg_prepared.rs:1102` |
 | `restock_dl20_cure_serious_or_critical_until_clevel` | 30 | 30 | level | 0–50 | `borg_prepared.rs:1135` |
 | `restock_dl20_min_cure_serious_or_critical` | 4 | 5 | count | 0–999 | `borg_prepared.rs:1137` |
-| `restock_dl20_min_teleports` | 4 | 5 | count | 0–999 | `borg_prepared.rs:1147` |
+| `restock_dl20_min_teleports` | 4 | 2 | count | 0–999 | `borg_prepared.rs:1147` |
 | `restock_dl20_min_depth` | 20 | 20 | depth | 0–127 | `borg_prepared.rs:1133` |
-| `restock_dl36_min_teleport_or_teleport_level` | 2 | 3 | count | 0–999 | `borg_prepared.rs:1158` |
+| `restock_dl36_min_teleport_or_teleport_level` | 2 | 2 | count | 0–999 | `borg_prepared.rs:1158` |
 | `restock_dl36_min_depth` | 36 | 36 | depth | 0–127 | `borg_prepared.rs:1155` |
 | `restock_dl65_min_healing` | 1 | 2 | count | 0–999 | `borg_prepared.rs:1169` |
 | `restock_dl65_min_depth` | 65 | 65 | depth | 0–127 | `borg_prepared.rs:1166` |
@@ -7535,7 +7536,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:1426` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:1714` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:1715` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:3335` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:3362` |
 
 ## A monster at 0 HP is alive (#975)
 
@@ -7622,7 +7623,7 @@ lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:3429` |
+| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:3470` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1651` |
 
 ## Grouped monster messages (#915)
@@ -7917,9 +7918,9 @@ These are P9 candidates. The shipped settings are neutral during P8.
 |---|---|---|---|---|
 | `town_black_market_min_gold` | 0 | gold | 0–10000000 | `borg_town_budget.rs:326` |
 | `town_black_market_level_delta` | 0 | gold per level | 0–100000 | `borg_town_budget.rs:327` |
-| `town_restore_life_min_depth` | 12 | level | 1–127 | `borg_town_capability.rs:3624` |
+| `town_restore_life_min_depth` | 12 | level | 1–127 | `borg_town_capability.rs:3665` |
 | `town_restore_life_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1307` |
-| `town_restore_stat_min_depth` | 0 | level | 0–127 | `borg_town_capability.rs:3343` |
+| `town_restore_stat_min_depth` | 0 | level | 0–127 | `borg_town_capability.rs:3370` |
 | `town_restore_stat_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1686` |
 | `town_second_stat_potions_by_class` | 0 | flag | 0–1 | `borg_town_capability.rs:1187` |
 | `town_stat_trade_policy` | 0 | flag | 0–1 | `borg_town_capability.rs:260` |
@@ -9729,3 +9730,33 @@ native cases `digger-swap-loop` and `digger-only`.
 | `wear_digger_keeps_weapon` | 0 | flag | 0–1 | `borg_item_wear.rs:907` |
 
 [Handover](handover/2026-11-27-1361-digger-swap-loop.md)
+
+## Realistic depth gates and the Cure Critical Wounds floor (#1438)
+
+The registry holds **2681** parameters with these two.
+
+One usable long-range teleport now satisfies the DL10 gate and restock
+check (`prepared_dl10_min_teleports`, `restock_dl10_min_teleports`: 1). The
+shops sell no Scroll of Teleportation (`store.txt`, Alchemist); the Magic
+shop's Staff of Teleportation is normal stock, and a staff of a poor device
+user counts 1 rather than its charges (`borg_trait.rs`, activation failure
+of 50% or more), so the counts of 2, 3, 5 and 8 could only come from the
+dungeon. The shipped DL20 restock and DL26 gates want 2, DL36's teleport or
+Teleport Level 2. DL21 wants fire and one other basic resist, DL26 any two of
+cold, lightning and acid (permanent) through the new combined check, with
+its three single checks set to 0, and 8 Cure Serious or Critical Wounds,
+which the town targets can reach. All hypotheses, not yet measured.
+
+`town_ccw_gate_floor` makes the town planner's Cure Critical Wounds row
+cover the DL10 gate's copies (`prepared_dl10_min_cure_critical`, until
+`prepared_dl10_cure_critical_until_clevel`) as a requirement, before the
+dear rows' Recall gate (`town_prepared_dear_after_recall`) counts, and the
+Recall decision notes a shortage. The shipped Cure Critical staple is 4
+copies (was 2) and the Cure Serious staples 2 higher per class.
+
+| Parameter | Default | Shipped | Unit | Range | Read at |
+|---|---|---|---|---|---|
+| `prepared_dl26_min_basic_resists` | 0 | 2 | count | 0–3 | see the table above |
+| `town_ccw_gate_floor` | 0 | 1 | flag | 0–1 | see `params.rs` |
+
+[Handover](handover/2026-11-28-1438-dl10-teleport.md)

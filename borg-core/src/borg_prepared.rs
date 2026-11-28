@@ -551,6 +551,16 @@ fn deeper_requirements(
             return Some(reason);
         }
 
+        // borg-reborn-rs (#1438): how many of the three, when the single
+        // checks above are off (0 = no check; the C Borg wants all three).
+        if let Some(reason) = minimum(
+            Param::prepared_dl26_min_basic_resists,
+            b.tr(BI_SRCOLD) + b.tr(BI_SRELEC) + b.tr(BI_SRACID),
+            "basic resists", "permanent_basic_resists", &value,
+        ) {
+            return Some(reason);
+        }
+
         // Escape and Teleport
         if let Some(reason) = minimum(
             Param::prepared_dl26_min_teleports,
@@ -1341,6 +1351,104 @@ mod tests {
             assert_eq!(reason.requirement.name, "caster_ramp_depth");
             assert_eq!(reason.requirement.actual, 32);
         }
+    }
+
+    /// #1438: one usable long-range teleport (a scroll, a spell, or a staff the
+    /// Borg can use) is enough for DL10, in both the departure gate and the
+    /// restock check; zero is not. The deeper bands keep their own counts.
+    #[test]
+    fn one_teleport_is_enough_for_dl10_and_zero_is_not() {
+        use super::*;
+        use crate::params::test_class_values;
+
+        let shipped = crate::config_file::yaml_settings(include_str!("../../harness/pborg.yaml")).unwrap();
+        let value = test_class_values(&shipped, CLASS_NECROMANCER as usize);
+        let mut st = BorgState::default();
+        st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
+        st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+        for (index, actual) in [
+            (BI_LIGHT, 2), (BI_FOOD, 5), (BI_APHASE, 1), (BI_MAXCLEVEL, 24), (BI_SINV, 1), (BI_ACCW, 3),
+        ] {
+            st.borg.trait_[index as usize] = actual;
+        }
+        for depth in [10, 11] {
+            let teleports = |st: &BorgState| (
+                deeper_requirements(st, depth, &value, || -1).map(|r| r.requirement),
+                restock_static(st, depth, true, &value).map(|r| r.requirement),
+            );
+            let (prep, restock) = teleports(&st);
+            let wanted = Requirement { name: "teleports", actual: 0, required: 1, relation: ">=" };
+            assert_eq!(prep, Some(wanted.clone()), "DL{depth} gate with none");
+            assert_eq!(restock, Some(wanted), "DL{depth} restock with none");
+            // A scroll or spell (ATELEPORT) or a usable staff (ESCAPE) each pass alone.
+            for index in [BI_ATELEPORT, BI_AESCAPE] {
+                st.borg.trait_[index as usize] = 1;
+                assert_eq!(teleports(&st), (None, None), "DL{depth} with one, trait {index}");
+                st.borg.trait_[index as usize] = 0;
+            }
+        }
+        // CCW is still a separate, Critical-specific gate: Cure Serious does not cover it.
+        st.borg.trait_[BI_ATELEPORT as usize] = 1;
+        st.borg.trait_[BI_ACCW as usize] = 2;
+        st.borg.trait_[BI_ACSW as usize] = 20;
+        let reason = deeper_requirements(&st, 10, &value, || -1).unwrap();
+        assert_eq!((reason.requirement.name, reason.requirement.actual, reason.requirement.required), ("cure_critical", 2, 3));
+    }
+
+    /// #1438: DL20 and DL26 want two teleports, DL26 any two permanent basic
+    /// resists and 8 Cure Serious or Critical Wounds, DL21 fire and one other.
+    #[test]
+    fn deeper_bands_use_the_realistic_counts() {
+        use super::*;
+        use crate::params::test_class_values;
+
+        let shipped = crate::config_file::yaml_settings(include_str!("../../harness/pborg.yaml")).unwrap();
+        let value = test_class_values(&shipped, CLASS_NECROMANCER as usize);
+        let mut st = BorgState::default();
+        st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
+        // Risky play skips the character-level ceilings, which are not under test.
+        st.core.cfg[BORG_PLAYS_RISKY as usize] = 1;
+        st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+        for (index, actual) in [
+            (BI_LIGHT, 2), (BI_FOOD, 5), (BI_APHASE, 1), (BI_MAXCLEVEL, 24), (BI_SINV, 1),
+            (BI_ACCW, 3), (BI_ATELEPORT, 1), (BI_FRACT, 1), (BI_SRFIRE, 1), (BI_RACID, 1),
+            (BI_STR, 9), (BI_DEX, 9), (BI_CON, 9),
+        ] {
+            st.borg.trait_[index as usize] = actual;
+        }
+        let failing = |st: &BorgState, depth| deeper_requirements(st, depth, &value, || -1)
+            .map(|r| (r.requirement.name, r.requirement.actual, r.requirement.required));
+        let stock = |st: &mut BorgState, tele, curesw, resists: [i32; 3]| {
+            st.borg.trait_[BI_ATELEPORT as usize] = tele;
+            st.borg.trait_[BI_ACSW as usize] = curesw;
+            for (index, n) in [BI_SRCOLD, BI_SRELEC, BI_SRACID].into_iter().zip(resists) {
+                st.borg.trait_[index as usize] = n;
+            }
+        };
+        // DL21: fire (permanent) plus one other basic resist, one teleport.
+        assert_eq!(failing(&st, 21), None);
+        st.borg.trait_[BI_RACID as usize] = 0;
+        assert_eq!(failing(&st, 21), Some(("basic_resists", 0, 1)));
+        st.borg.trait_[BI_RACID as usize] = 1;
+        // DL26: two teleports, two of three permanent resists, 8 CSW+CCW.
+        stock(&mut st, 1, 5, [1, 1, 0]);
+        assert_eq!(failing(&st, 26), Some(("teleports", 1, 2)));
+        stock(&mut st, 2, 5, [1, 0, 0]);
+        assert_eq!(failing(&st, 26), Some(("permanent_basic_resists", 1, 2)));
+        stock(&mut st, 2, 4, [0, 1, 1]);
+        assert_eq!(failing(&st, 26), Some(("cure_serious_or_critical", 7, 8)));
+        stock(&mut st, 2, 5, [0, 1, 1]);
+        assert_eq!(failing(&st, 26), None);
+        // DL20 restock: two teleports; DL36: two of teleport or Teleport Level.
+        st.borg.trait_[BI_ACSW as usize] = 5;
+        st.borg.trait_[BI_ATELEPORT as usize] = 1;
+        let reason = restock_static(&st, 20, true, &value).unwrap().requirement;
+        assert_eq!((reason.name, reason.actual, reason.required), ("teleports", 1, 2));
+        st.borg.trait_[BI_ATELEPORT as usize] = 2;
+        assert!(restock_static(&st, 20, true, &value).is_none());
+        assert!(restock_static(&st, 36, true, &value).is_none(), "two teleports are two of teleport or Teleport Level");
+        st.borg.trait_[BI_ATELEPORT as usize] = 1;
+        assert!(restock_static(&st, 36, true, &value).is_some());
     }
 
     #[test]
