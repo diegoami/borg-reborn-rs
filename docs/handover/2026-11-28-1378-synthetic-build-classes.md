@@ -17,7 +17,8 @@ Two fixtures, `engine/tests/fixtures/ranger-level5.build` (Dexterity 18/50,
 the stats of #1371's Nimbleness case; 57 HP, 6 mana) and
 `necromancer-level5.build` (40 HP, 12 mana). The mana and HP were found by
 trying values the engine accepted, not copied from play. They carry the
-Warrior's kit.
+Warrior's kit and the class's first spellbook ([Lesser Charms], [Into the
+Shadows]): without one the Borg stops at "You can learn 2 more verses.".
 
 `test_character_build.py::test_a_record_names_the_class_the_run_started`
 applies both, and checks that a record for another class, or with another
