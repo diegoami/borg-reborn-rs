@@ -926,6 +926,9 @@ pub(crate) fn wall_guess_walk(
     if skip_player && (n_x != t.x || n_y != t.y) {
         borg_inc_motion(&mut n_y, &mut n_x, c.y, c.x, t.y, t.x);
     }
+    // borg-reborn-rs (review of #1431/#1432): the first unknown grid the
+    // hallway rule passed over.
+    let mut skipped: Option<loc> = None;
 
     loop {
         let n = loc { x: n_x, y: n_y };
@@ -934,12 +937,26 @@ pub(crate) fn wall_guess_walk(
         }
 
         let at_target = n_x == t.x && n_y == t.y;
-        if unknown(n) && !(skip_player && at_target) && (n_y != c.y || !y_hall) && (n_x != c.x || !x_hall) {
-            return WallGuess::Unknown(n);
+        if unknown(n) && !(skip_player && at_target) {
+            if (n_y != c.y || !y_hall) && (n_x != c.x || !x_hall) {
+                return WallGuess::Unknown(n);
+            }
+            skipped = skipped.or(Some(n));
         }
 
         /* Pathway found the target. */
         if at_target {
+            /* borg-reborn-rs (review of #1431/#1432): with `skip_player`,
+             * when the hallway rule passed over every unknown grid (a
+             * target straight down the Borg's corridor), guess the first
+             * of them, not the step back from the target. That step can be
+             * floor the player remembers, which the map pass of the same
+             * update writes back (`update_map_grid`), leaving the real
+             * blocker unknown and the same shot eligible. An unknown grid
+             * is never written back. */
+            if let (true, Some(g)) = (skip_player, skipped) {
+                return WallGuess::Unknown(g);
+            }
             /* end of the pathway */
             borg_inc_motion(&mut n_y, &mut n_x, t.y, t.x, c.y, c.x);
             if skip_player && n_x == c.x && n_y == c.y {

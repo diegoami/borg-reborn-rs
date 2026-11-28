@@ -443,6 +443,15 @@ fn view_needs_update(old_sight: bool, new_sight: bool, info: u16) -> bool {
     old_sight != new_sight && info & BORG_VIEW != 0
 }
 
+/// Whether the map pass writes the screen's feature `f_idx` over the
+/// Borg's grid (`update_map_grid`): a feature the player remembers, unless
+/// the grid is out of view and marked `BORG_IGNORE_MAP` (stone to mud). An
+/// unknown screen grid (`FEAT_NONE`) never overwrites, so a guessed wall on
+/// a grid the player has not seen stays until the player sees it.
+fn screen_overwrites(f_idx: u32, in_view: bool, info: u16) -> bool {
+    f_idx != FEAT_NONE && (in_view || info & BORG_IGNORE_MAP == 0)
+}
+
 /// One grid of `borg_update_map` (the body of its loop; a C `continue` is
 /// a `return`).
 fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
@@ -473,7 +482,7 @@ fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
     // Notice "knowledge": if this square is not in view and the borg
     // previously cast stone to mud here, ignore the map info so repeated
     // stone to mud aren't cast
-    if g.f_idx != FEAT_NONE && (g.in_view || ag.info & BORG_IGNORE_MAP == 0) {
+    if screen_overwrites(g.f_idx, g.in_view, ag.info) {
         if g.in_view {
             ag.info &= !BORG_IGNORE_MAP;
         }
@@ -1975,7 +1984,16 @@ fn goal_message(st: &mut BorgState, i: i32, msg: &[u8]) {
 
     if msg.starts_with(b"HIT:") || msg.starts_with(b"MISS:") {
         // Handle "You hit xxx." / "You miss xxx."
-        locate(st, args(what), g, 0, i, 2);
+        // borg-reborn-rs (review of #1431): a melee blow at the goal's
+        // monster reached it. Leap into Battle (`successful_target` -1)
+        // (effect MOVE_ATTACK) moves the player and swings
+        // (`effect_handler_MOVE_ATTACK`, effect-handler-attack.c:1787-1854,
+        // `py_attack_real`; "You miss", player-attack.c:767), so its miss is
+        // no wall.
+        let k = locate(st, args(what), g, 0, i, 2);
+        if goal_reached(msg, k > 0) {
+            target_worked(st);
+        }
     } else if msg.starts_with(b"AFRAID:") {
         // Handle "You too afraid of xxx."
         if st.cave.grid(g.x, g.y).kill > 0 {
@@ -2017,12 +2035,29 @@ fn goal_message(st: &mut BorgState, i: i32, msg: &[u8]) {
         target_worked(st);
     } else if msg.starts_with(b"STATE__FEAR:") || msg.starts_with(b"STATE__BOLD:") {
         // Handle "sleep"
-        locate(st, args(what), g, 0, i, 2);
+        // borg-reborn-rs (review of #1431): "flees in terror!" from the
+        // goal's monster means the shot reached it (Scare Monster deals no
+        // damage). Recovering courage is a timer, not the shot.
+        let k = locate(st, args(what), g, 0, i, 2);
+        if goal_reached(msg, k > 0) {
+            target_worked(st);
+        }
     } else if msg.starts_with(b"STATE_SLEEP:") || msg.starts_with(b"STATE_CONFUSED:") {
         // C tests "STATE__FEAR:" a second time between these two (never
         // reached, C bug 46)
         target_worked(st);
     }
+}
+
+/// borg-reborn-rs (review of #1431): whether a goal-pass message that names
+/// the monster on the goal grid (`located`) shows that the last attack
+/// reached it, beyond the C set (`PAIN`, `KILL`, `DIED`, `BLINK`,
+/// `STATE_SLEEP`, `STATE_CONFUSED`, which call `target_worked` themselves): a
+/// melee blow (`HIT`, `MISS`: Leap into Battle swings at the target) and
+/// fear (`STATE__FEAR`: Scare Monster deals no damage). Recovering courage
+/// (`STATE__BOLD`) is a timer running out, not the attack.
+fn goal_reached(msg: &[u8], located: bool) -> bool {
+    located && (msg.starts_with(b"HIT:") || msg.starts_with(b"MISS:") || msg.starts_with(b"STATE__FEAR:"))
 }
 
 /// One message of the "monsters near the old location" pass (use 3).
@@ -2936,6 +2971,79 @@ mod miss_wall_guess_tests {
             |g| !druid_known(g),
         );
         assert_eq!(guess, crate::borg_projection::WallGuess::Unknown(BLOCKER));
+    }
+
+    /// Review of #1431: a fear message, or a melee hit or miss, from the
+    /// goal's monster shows the attack reached it (Scare Monster; Leap into
+    /// Battle, `successful_target` -1). Recovering courage, an unmatched
+    /// name, or an unrelated message does not.
+    #[test]
+    fn fear_and_a_melee_swing_show_the_shot_reached() {
+        for msg in [&b"STATE__FEAR:the gallant"[..], b"MISS:the gallant", b"HIT:the gallant"] {
+            assert!(goal_reached(msg, true), "{}", String::from_utf8_lossy(msg));
+            assert!(!goal_reached(msg, false), "{}", String::from_utf8_lossy(msg));
+        }
+        assert!(!goal_reached(b"STATE__BOLD:the gallant", true));
+        assert!(!goal_reached(b"STATE_AWAKE:the gallant", true));
+        assert!(!goal_reached(b"HIT_BY:the gallant", true));
+    }
+
+    /// Review of #1432: a target straight down the Borg's corridor. The
+    /// hallway rule passes over the unknown grids in the Borg's column, and
+    /// C's walk then guesses the step back from the target, (54,29) here,
+    /// which the player remembers as floor. The map pass writes that floor
+    /// back (`screen_overwrites`), so the next aim is open again and the
+    /// shot is chosen again. With the guard, the guess is the first unknown
+    /// grid, (54,26), which the map pass keeps, and the next aim stops there.
+    #[test]
+    fn a_corridor_guess_survives_the_map_pass_and_stops_the_next_aim() {
+        use crate::borg_projection::{wall_guess_grid, wall_guess_walk, WallGuess};
+        use std::collections::HashMap;
+        let borg = loc { x: 54, y: 20 };
+        let target = loc { x: 54, y: 30 };
+        // The Borg's map: known floor (54,21..=25), unknown (54,26..=28),
+        // remembered floor (54,29), the target's grid unknown (ESP).
+        let mut map: HashMap<(i32, i32), u32> = HashMap::new();
+        for y in 21..=25 {
+            map.insert((54, y), FEAT_FLOOR);
+        }
+        map.insert((54, 29), FEAT_FLOOR);
+        let screen = map.clone();
+        let feat = |m: &HashMap<(i32, i32), u32>, g: loc| *m.get(&(g.x, g.y)).unwrap_or(&FEAT_NONE);
+        let unknown = |g: loc| feat(&screen, g) == FEAT_NONE;
+        // Guess, write granite, then the map pass of the same update.
+        let after = |guess: &WallGuess| {
+            let mut m = map.clone();
+            let g = wall_guess_grid(guess).expect("a wall is guessed");
+            m.insert((g.x, g.y), FEAT_GRANITE);
+            for (&g, &f) in &screen {
+                if screen_overwrites(f, true, 0) {
+                    m.insert(g, f);
+                }
+            }
+            m
+        };
+        // The next aim walks the same path and stops at a known wall.
+        let next_aim_blocked = |m: &HashMap<(i32, i32), u32>| {
+            let (mut y, mut x) = (borg.y, borg.x);
+            loop {
+                crate::borg_projection::borg_inc_motion(&mut y, &mut x, borg.y, borg.x, target.y, target.x);
+                if x == target.x && y == target.y {
+                    return false;
+                }
+                if feat(m, loc { x, y }) == FEAT_GRANITE {
+                    return true;
+                }
+            }
+        };
+        let c_walk = wall_guess_walk(borg, target, (true, false), false, |_| false, unknown);
+        assert_eq!(c_walk, WallGuess::BeforeTarget(loc { x: 54, y: 29 }));
+        assert!(!next_aim_blocked(&after(&c_walk)), "C's guess is written back over");
+        let guarded = wall_guess_walk(borg, target, (true, false), true, |_| false, unknown);
+        assert_eq!(guarded, WallGuess::Unknown(loc { x: 54, y: 26 }));
+        assert!(next_aim_blocked(&after(&guarded)));
+        // An unknown screen grid never overwrites the guess.
+        assert!(!screen_overwrites(FEAT_NONE, true, 0));
     }
 
     /// #1425, the recurrence at turn 3,511,372 (borg-cemetery#168): the same
