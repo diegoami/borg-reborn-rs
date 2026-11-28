@@ -955,6 +955,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_discard_town_consumable");
     }
 
+    // borg-reborn-rs (#1371, review of #1372): a refused stat-trade potion
+    // the engine's pickup_always put in the pack goes on a quiet turn.
+    if crate::borg_junk::borg_discard_refused_stack(st) {
+        return choice!("borg_discard_refused_stack");
+    }
+
     // borg-reborn-rs (#1153; review of #1158: caution first): a movement loop
     // (n moves among a few grids, the map unchanged, no danger) is broken, or
     // its exit continued, before any other flow.

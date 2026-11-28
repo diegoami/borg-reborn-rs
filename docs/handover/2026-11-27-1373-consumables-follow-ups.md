@@ -1,36 +1,19 @@
-## 2026-11-27: the #1372 review, and Experience, *Enlightenment* and one refused-kind rule (#1373, #1374, #1375)
+## 2026-11-28: Experience, *Enlightenment* and one refused-kind rule (#1373, #1374, #1375)
 
-Stacked on #1372 (`claude/friendly-cannon-6xxnck`, head `2f70ab1b`). One
-session owns the four issues. It writes this note, and not an edit of
-`2026-11-27-1371-consumables.md`, which says the stat-trade policy ships on.
-**That is no longer so: see "For the owner".**
+Stacked on #1372 (`claude/friendly-cannon-6xxnck`, head `a0f8e196`, which
+carries the review fixes: permanent stats, the narrowed floor filter, the
+dungeon drop and RULES 28). One session owns the four issues. The three new
+settings ship **on** (RULES 28, owner, 2026-11-28: "we do not have time to
+wait for zoo ... we have no customers or rollouts"). Nothing is measured and
+no improvement is claimed (RULES 14).
 
 ## Done
 
-**The Codex review of #1372** (comment on the PR, findings at `2f70ab1b`):
-
-- **P1, undrained base values.** `second_stat_potion_wanted` now reads
-  `player->stat_max` (`engine::player_notice().stat_max`), not `BI_C*`
-  (`stat_cur`). Nimbleness restores the stat before `GAIN_STAT`
-  (`effect_handler_RESTORE_STAT`), so the gain starts from the maximum. The
-  loss, `player_stat_dec` with `permanent`, lowers another stat's maximum, so
-  a stat drained right now still costs its maximum. A pure variant,
-  `second_stat_potion_wanted_at(class, stats, stat)`, carries the arithmetic
-  and the tests: the drained-at-cap Ranger (Dexterity 18/90 from 18/100) is
-  refused, and a drained Strength no longer hides a table step of loss.
-  The restoration itself is not priced: the engine undoes a drain at the next
-  level-up and a Restore potion does it for less. A drained stat's
-  restoration is therefore not a reason to drink.
-- **P2, the floor filter.** `refused_take_kind` no longer skips the whole
-  `WORTHLESS` list. It skips the refused stat-trade potions
-  (`town_stat_trade_policy`) and, with `town_refused_kind_policy`, the refused
-  kinds that no shipped dungeon policy uses: Treasure Detection stays wanted
-  with `item_use_idle`, and the junk potions (Poison, Surprise, Salt Water,
-  ...) with `attack_throw_junk_potions`.
-- **P8.** `harness/pborg.yaml` ships `town_stat_trade_policy: 0` again
-  (PLAN.md, P8: "No new capability"; new P9 capabilities may merge into
-  `track-p` only shipped off). It is one line to turn on in P9, after its own
-  zoo comparison. Every other new parameter ships 0 too.
+**The review of #1372** is fixed in #1372's own branch (its note,
+`2026-11-27-1371-consumables.md`): permanent stats, a floor filter of the five
+stat-trade potions only, the dungeon drop of a refused stack, and
+`town_stat_trade_policy` and `town_stat_trade_floor` shipped on. This work
+adds to it:
 
 **#1373, `item_use_drink_experience`.** `borg_use_things` drinks a known
 Potion of Experience next to the pure stat gains (`drink_permanent_gain`).
@@ -82,38 +65,27 @@ unconditionally, as before; they were left alone so that 0 keeps today's play.
 ## Checked
 
 - `cargo fmt --check -p borg-reborn-rs`, `cargo clippy --workspace
-  --all-targets -- -D warnings`, and `cargo test --release -p borg-core` (1017
-  passed: three new unit tests on top of #1372's 1014) pass. The parameter
-  citation check passes (2676 parameters).
-- The native case `test_town_drinks_experience_and_star_enlightenment_on_purpose`
-  (`test-junk-consumables`).
-- Smoke: every new parameter, and `town_stat_trade_policy`, ships 0.
-  `scripts/rerecord-smoke-borg-rs.sh` reported 4/4 games identical to
-  `smoke-borg-rs` (default core), so nothing is re-recorded. The unit tests,
-  scripts and tools tests, and the native cases passed as well.
+  --all-targets -- -D warnings`, `cargo test --release -p borg-core` (1017) and
+  the parameter citation check pass.
+- Native, at the shipped values: `test_junk_consumables.py` (the case for
+  Experience and *Enlightenment*, and the quiet-turn case), and the stair,
+  loadout and exploration-pack cases CI runs.
+- The shipped smoke result is in the PR.
 
 ## Not checked
 
-- **P3 of the review: a stack walked over on another route.** The Borg sets
-  `pickup_always`, so a refused stack stepped on is picked up (the engine's
-  `auto_pickup_okay`), whatever `take_select` chooses. This change only stops
-  the Borg walking to it. The stack then waits for town, where it is sold or
-  dropped, and costs a pack slot until then. Closing it needs a dungeon-side
-  ignore of the stack (`k`, "this item only": the engine drops it and filters
-  it from pickup) on a quiet turn, like `borg_discard_town_consumable`; that
-  drops the stack instead of selling it, and needs its own native case. See
-  "For the owner".
-- No native Necromancer case: the synthetic build is a Human Warrior only, so
-  the Light-scroll and torch rule is unit-tested (`unlight_refused`) and
-  covered by the same predicate path as the others.
-- No zoo comparison. Nothing here is turned on.
+- No native Necromancer or Ranger case: the synthetic build (`engine/frontend/
+  synthetic-build.c`) accepts only a Human Warrior with no mana, so the
+  Light-scroll and torch rule and the Ranger's Nimbleness are unit-tested
+  (`unlight_refused`, `second_stat_potion_wanted_at`) and covered natively only
+  through the shared predicate on a Warrior. Widening the build to other
+  classes is a change to the `character-build@1` contract's validation.
+- No native Experience case at the XP cap: the build derives experience from
+  the level, so the cap cannot be set.
+- No native walk over a refused stack on another route; the drop of it is
+  covered (#1372).
+- No zoo comparison (RULES 28).
 
 ## For the owner
 
-- **`town_stat_trade_policy` now ships 0** (it shipped 1 in #1372). That
-  follows PLAN.md P8 and the review. To ship it on during P8, record an
-  exception; otherwise turn it on in P9.
-- **The dungeon-side drop of a refused stack (review P3)** is not done. Say
-  if it is wanted: it is a small `borg_junk` routine, but it changes the
-  outcome from "sold in town" to "dropped where found".
 - The Rod of Restoration remains on `WORTHLESS` (a #443 gap: no zap code).

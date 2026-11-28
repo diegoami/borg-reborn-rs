@@ -375,3 +375,17 @@ No strategy, default frontend flags or measured baseline changes are implied.
     Door, food, and other replenishable supplies. When investigating an
     inventory problem, check offers, purchases, and departure stock at
     both low and ample budgets before proposing a new reserve.
+
+## Shipping
+
+28. **A fix ships on, in the PR that makes it** (owner, 2026-11-28: "we do
+    not have time to wait for zoo ... we have no customers or rollouts").
+    A change that fixes an observed defect sets its switch on in
+    `harness/pborg.yaml` in the same PR. A session does not ship it off
+    until a zoo comparison, and does not open a follow-up to turn it on
+    later. This overrides the "shipped off" gate for such fixes in PLAN.md
+    (P8, P9). Rule 14 still governs what the PR *claims*: it says the
+    effect is not measured, and claims no improvement. The switch keeps
+    its 0 as the earlier play, so a comparison can run when the owner
+    asks for one (rule 20). A new behaviour that fixes no observed defect
+    still waits for the owner's word.

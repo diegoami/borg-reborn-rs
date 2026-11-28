@@ -349,9 +349,7 @@ fn stat_trade_refused_at(
 /// borg-reborn-rs (#1371): under town_stat_trade_policy, a gain-one/lose-one
 /// potion this character will not drink (`second_stat_potion_wanted`).
 fn stat_trade_refused(st: &BorgState, tval: u32, sval: i32) -> bool {
-    stat_trade_policy() && tval == TV_POTION && second_stat_kind(st, sval).is_some()
-        && stat_trade_refused_at(&st.item_val, st.borg.tr(BI_CLASS),
-            engine::player_notice().stat_max.map(i32::from), tval, sval)
+    stat_trade_policy() && refused_stat_trade_kind(st, tval, sval)
 }
 
 /// borg-reborn-rs (#1375): one rule for kinds this character refuses to
@@ -394,20 +392,35 @@ fn used_in_the_dungeon(st: &BorgState, tval: u32, sval: i32) -> bool {
 
 /// borg-reborn-rs (#1371, #1375): a floor object of a known kind the Borg
 /// refuses to carry is not worth a walk: the town would only sell or drop it.
-/// The refused gain-one/lose-one potions (`town_stat_trade_policy`) always
-/// count; the rest of `refused_kind` counts under `town_refused_kind_policy`,
-/// except a kind a dungeon policy still uses (`used_in_the_dungeon`, review of
-/// #1372). Only this walk is skipped: a stack stepped on while going
-/// elsewhere is picked up by the engine's `pickup_always` and goes to the
-/// town's disposal.
+/// The refused gain-one/lose-one potions count under `town_stat_trade_floor`;
+/// the rest of `refused_kind` counts under `town_refused_kind_policy`, except
+/// a kind a dungeon policy still uses (`used_in_the_dungeon`, review of
+/// #1372). Only this walk is skipped: a stack stepped on while going elsewhere
+/// is picked up by the engine's `pickup_always`; a refused potion is then
+/// dropped on a quiet dungeon turn (`borg_junk::borg_discard_refused_stack`)
+/// and anything else goes to the town's disposal.
 pub(crate) fn refused_take_kind(st: &BorgState, kidx: usize) -> bool {
     if kidx == 0 { return false; }
     let kind = engine::kind(kidx);
     if !kind.aware { return false; }
     let (tval, sval) = (kind.tval as u32, i32::from(kind.sval));
-    stat_trade_refused(st, tval, sval)
+    (stat_trade_floor() && refused_stat_trade_kind(st, tval, sval))
         || (param(Param::town_refused_kind_policy) != 0
             && refused_kind(st, tval, sval) && !used_in_the_dungeon(st, tval, sval))
+}
+
+/// borg-reborn-rs (#1371): the one place the floor rules ask: a refused
+/// gain-one/lose-one potion kind, at the permanent stats.
+pub(crate) fn refused_stat_trade_kind(st: &BorgState, tval: u32, sval: i32) -> bool {
+    tval == TV_POTION && second_stat_kind(st, sval).is_some()
+        && stat_trade_refused_at(&st.item_val, st.borg.tr(BI_CLASS),
+            engine::player_notice().stat_max.map(i32::from), tval, sval)
+}
+
+/// borg-reborn-rs (#1371, review of #1372): the floor and dungeon rules for
+/// the refused stat-trade potions are on (needs `town_stat_trade_policy`).
+pub(crate) fn stat_trade_floor() -> bool {
+    stat_trade_policy() && param(Param::town_stat_trade_floor) != 0
 }
 
 const COUNT: usize = NAMES.len();
@@ -3509,10 +3522,10 @@ mod recall_value_tests {
         use super::{second_stat_potion_wanted_at as wanted, CLASS_RANGER};
         // Four other stats at 17 (a table step lost each); Dexterity 18/90
         // drained from 18/100.
-        let others = [17, 17, 17, 18 + 100, 17];
+        let at_cap = [17, 17, 17, 18 + 100, 17];
         let drained = [17, 17, 17, 18 + 90, 17];
         assert!(wanted(CLASS_RANGER, drained, 3), "the drained value alone looks like an even trade");
-        assert!(!wanted(CLASS_RANGER, others, 3), "the maximum is capped: no gain");
+        assert!(!wanted(CLASS_RANGER, at_cap, 3), "the maximum is capped: no gain");
         // Dexterity 18/70 gains 9 tenths on average. Four other stats at
         // 18/50 lose 10 each; with Strength drained to 3 the current values
         // would lose only 7.5 and accept, but the permanent loss is the

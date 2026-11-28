@@ -169,6 +169,25 @@ class JunkConsumablesTest(unittest.TestCase):
         self.assertNotIn("Selling Potion of Contemplation", messages)
         self.assertIn("You had 2 Mushrooms of Second Sight", messages)
 
+    def test_dungeon_drops_a_refused_stat_potion_the_engine_picked_up(self):
+        # Review of #1372 (P3). pickup_always picks up whatever the Borg steps
+        # on, so the floor filter alone leaves a refused stack in the pack. A
+        # Warrior never drinks Contemplation; a quiet dungeon turn drops that
+        # stack ("This item only": it is then not picked up again) and keeps
+        # Nimbleness, which it drinks, and its healing reserve.
+        kit = [(CONTEMPLATION, 1, True, 0), (CURE_LIGHT_WOUNDS, 2, True, 0)]
+        params = {"town_stat_trade_policy": 1, "town_stat_trade_floor": 1}
+        messages, frames = self.launch(kit, distance=11, keys=30, params=params)
+        self.assertIn("# Dropping refused stat potion", messages)
+        self.assertIn("You drop a Potion of Contemplation", messages)
+        self.assertNotIn("Quaffing Potion of Contemplation", messages)
+        self.assertNotIn("Quaffing Potion of Cure Light Wounds", messages)
+
+        # Floor switch off, the control: the stack stays in the pack.
+        messages, _ = self.launch(kit, distance=11, keys=30,
+                                  params={"town_stat_trade_policy": 1, "town_stat_trade_floor": 0})
+        self.assertNotIn("Dropping refused stat potion", messages)
+
     def test_town_drinks_experience_and_star_enlightenment_on_purpose(self):
         # #1373, #1374. Both have no harmful effect and their benefit is the
         # drink. Experience was drunk only by junk cleanup; *Enlightenment*
@@ -187,7 +206,8 @@ class JunkConsumablesTest(unittest.TestCase):
         self.assertNotIn("Quaffing Potion of Cure Light Wounds", messages)
 
         # The earlier play, the control: the kinds are not drunk on purpose.
-        messages, _ = self.launch(kit, keys=120)
+        no = {"item_use_drink_experience": 0, "item_use_star_enlightenment": 0}
+        messages, _ = self.launch(kit, keys=120, params=no)
         self.assertNotIn("Quaffing Potion of Experience", messages)
         self.assertNotIn("Quaffing Potion of *Enlightenment*", messages)
         self.assertNotIn("You feel more experienced.", messages)
