@@ -292,7 +292,7 @@ be fitted and confirmed (§10) before it can become the default.
 |---|---|---|---|
 | `borg_trip_policy` | 0/1 | 0 | 0: today's behaviour (the policy only records); 1: it acts |
 | `borg_trip_depth_margin` | levels | 0 | the **depth/return factor**: plan this many levels above `prepared_depth` |
-| `borg_trip_pack_slack` | pack slots | 2 | return when free slots <= this |
+| `borg_trip_pack_slack` | pack slots | 2 | return when free slots <= this (-1 = off, 0 = only when full) |
 | `borg_trip_unknown_stacks` | stacks | 4 | return when unknown equipment/device stacks >= this (0 = off) |
 | `borg_trip_return_gold` | gold per clevel | 0 | return when `gold + sale_value >= this x clevel` (0 = off) |
 
@@ -311,7 +311,8 @@ Priorities, highest first:
 2. **Unprepared** - not ready for this level: **ascend** one level (the
    return reasons below are still recorded).
 3. **The value of going back** - **return**, with every one that fired:
-   * pack pressure: free slots (per distinct stack) <= `pack_slack`;
+   * pack pressure: free slots (per distinct stack) <= `pack_slack` (off
+     when `pack_slack` is -1);
    * knowledge: unknown equipment/device stacks >= `unknown_stacks`;
      their unresolved powers can hide upgrades. Routine consumables and
      books have no independent knowledge-return vote; they still count
@@ -585,6 +586,7 @@ The trip policy cannot cancel an existing rising goal.
 
 `borg_trip_pack_slack=1` requests a return with at most one free pack slot.
 Zero means wait until the pack is full; it does **not** disable this trigger.
+`-1` (allowed since #1385) disables it: the pack never requests a return.
 `borg_trip_unknown_stacks=1` requests a return for at least one eligible
 learning stack. Zero explicitly disables that trigger via `threshold > 0`.
 Deferred unchanged tasks do not count as new learning opportunities. Either

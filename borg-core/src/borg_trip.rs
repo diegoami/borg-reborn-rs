@@ -181,6 +181,8 @@ pub struct TripParams {
     pub depth_margin: i32,
     /// `borg_trip_pack_slack`, pack slots: return when this many slots or
     /// fewer are free, counted per distinct stack (the town plan's count).
+    /// 0 = only when the pack is full; -1 = never for this reason
+    /// (borg-reborn-rs #1385).
     pub pack_slack: i32,
     /// `borg_trip_unknown_stacks`, stacks: return when this many carried
     /// unknown stacks have actionable or exploratory learning opportunities
@@ -214,8 +216,8 @@ pub fn config_error(cfg: &[i32]) -> Option<&'static str> {
     if !(0..=MAX_DEPTH).contains(&p.depth_margin) {
         return Some("borg_trip_depth_margin must be 0..127 levels");
     }
-    if !(0..=23).contains(&p.pack_slack) {
-        return Some("borg_trip_pack_slack must be 0..23 pack slots");
+    if !(-1..=23).contains(&p.pack_slack) {
+        return Some("borg_trip_pack_slack must be -1 (off) or 0..23 pack slots");
     }
     if p.unknown_stacks < 0 {
         return Some("borg_trip_unknown_stacks must be 0 (off) or more stacks");
@@ -455,7 +457,8 @@ pub fn decide(i: &TripInputs, p: &TripParams) -> Decision {
     }
 
     // 3. the value of going back (collected now; 2 outranks it below)
-    if i.pack_free() <= p.pack_slack {
+    // borg-reborn-rs (#1385): -1 switches this reason off
+    if p.pack_slack >= 0 && i.pack_free() <= p.pack_slack {
         back.push(Reason::PackFull { free: i.pack_free(), slack: p.pack_slack });
     }
     if p.unknown_stacks > 0 && i.knowledge_actionable + i.knowledge_exploratory >= p.unknown_stacks {
@@ -827,6 +830,7 @@ mod tests {
             (BORG_TRIP_POLICY, 2),
             (BORG_TRIP_DEPTH_MARGIN, -1),
             (BORG_TRIP_PACK_SLACK, 24),
+            (BORG_TRIP_PACK_SLACK, -2),
             (BORG_TRIP_UNKNOWN_STACKS, -1),
             (BORG_TRIP_RETURN_GOLD, -5),
         ] {
@@ -1101,6 +1105,27 @@ mod tests {
         assert_ne!(decide(&i,&p).action,Action::Return,"zero disables learning returns, not always true");
         i.pack_used=i.pack_capacity;
         assert_eq!(decide(&i,&p).action,Action::Return,"zero pack slack still returns when full");
+    }
+
+    /// #1385: -1 switches the pack reason off, as 0 does for the other two;
+    /// the range check accepts it, and a full pack no longer returns.
+    #[test]
+    fn minus_one_pack_slack_never_returns_for_the_pack() {
+        let mut p = params();
+        p.pack_slack = -1;
+        let mut i = base();
+        for used in [i.pack_capacity - 2, i.pack_capacity - 1, i.pack_capacity] {
+            i.pack_used = used;
+            let d = decide(&i, &p);
+            assert_ne!(d.action, Action::Return, "pack_used {used}");
+            assert!(!d.reasons.iter().any(|r| matches!(r, Reason::PackFull { .. })));
+        }
+        // the other reasons still fire with the pack reason off
+        i.knowledge_actionable = p.unknown_stacks;
+        assert_eq!(decide(&i, &p).action, Action::Return);
+        let mut cfg: Vec<i32> = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
+        cfg[BORG_TRIP_PACK_SLACK as usize] = -1;
+        assert_eq!(config_error(&cfg), None);
     }
 
     #[test]
