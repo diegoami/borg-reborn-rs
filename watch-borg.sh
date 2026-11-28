@@ -45,6 +45,9 @@ while [ "$#" -gt 0 ]; do
             NAME="$1"; NAME_SET=1; shift ;;
     esac
 done
+# A fresh checkout has no build/ yet, and the logs below are written beside
+# build/watch/ (#817).
+mkdir -p "$ROOT/build"
 if [ -f "$BUILD/CMakeCache.txt" ] && ! grep -qx "CMAKE_HOME_DIRECTORY:INTERNAL=$ROOT/engine" "$BUILD/CMakeCache.txt"; then
     rm -rf "$BUILD"
 fi

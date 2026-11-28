@@ -70,32 +70,6 @@ jobs:
     steps:
       - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      # #577: the full test suite (8 of this job's 12 minutes) plays the
-      # reborn core only (BORG_CORE=reborn; #606 made borg-rs the harness
-      # default). A pull request whose files are all docs, the
-      # vendored borg-rs core or its settings cannot change that core's play,
-      # and skips it. Those files can change the borg-rs core's play, which
-      # this suite never measures: the borg-rs steps below do (the default
-      # core's smoke against smoke-borg-rs, #606, plays the shipped
-      # harness/pborg.yaml), and they run on every PR; the zoo measures more.
-      # #1389: so do scripts/ (reference tooling and checks; only
-      # scripts/make-world.py is run by harness/run.sh, so it stays a full
-      # run), .gitattributes and the pr-base workflow. Any other file
-      # (ci.yml included), and every push to main or track-p, runs the full
-      # suite. On a pull request HEAD is the merge commit and HEAD^1 the base.
-      - id: scope
-        run: |
-          full=1
-          if [ "${{ github.event_name }}" = pull_request ] \
-              && ! git diff --name-only HEAD^1 HEAD \
-                | grep -qvE '^(docs/|reference/|borg-core/|harness/pborg\.yaml$|harness/scary_monsters[a-z_]*\.txt$|[^/]+\.md$|scripts/|\.gitattributes$|\.github/workflows/pr-base\.yml$)' \
-              && ! git diff --name-only HEAD^1 HEAD | grep -qx scripts/make-world.py; then
-              full=0
-          fi
-          echo "full=$full" >> "$GITHUB_OUTPUT"
-          echo "full test suite: $full"
       - uses: ./.github/actions/cemetery-tools
       - uses: dtolnay/rust-toolchain@stable
       # Canonical gameplay evidence is separate from the death-tool pin and
@@ -323,18 +297,12 @@ jobs:
       - run: python3 engine/tests/test_stair_handoff.py StairScumLootRoutesTest
       # A test build's deaths are not natural deaths of an arm: own registry.
       - run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-hallucinate
-      # Full too: smoke has too few monsters to meet every case (T2.5 found
-      # one only in full). The test build plays the reference's games, and
-      # perception agrees with the engine on every think.
-      - if: steps.scope.outputs.full == '1'
-        run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh full harness/out/full-test
+      # The full suite on the test build is the engine-full job's (#1400).
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-hallucinate harness/reference/smoke-rust
-      - if: steps.scope.outputs.full == '1'
-        run: harness/diff --suite full --expect-impl rust harness/out/full-test harness/reference/full-rust
-      - run: python3 tools/check-perception.py harness/out/smoke-hallucinate ${{ steps.scope.outputs.full == '1' && 'harness/out/full-test' || '' }}
+      - run: python3 tools/check-perception.py harness/out/smoke-hallucinate
       # No-time loops are visible too: level generation may not exceed its
       # declared cap at one game turn (M3 review, PR #135 finding 1).
-      - run: python3 tools/check-no-time.py harness/out/smoke-rust-1 ${{ steps.scope.outputs.full == '1' && 'harness/out/full-test' || '' }}
+      - run: python3 tools/check-no-time.py harness/out/smoke-rust-1
       # The run contract on the Rust arm (T1.4, T1.8).
       - run: BORG_CORE=reborn BORG_IMPL=rust harness/suite.sh smoke-exact harness/out/smoke-exact-rust
       - run: harness/check-boundary.py harness/out/smoke-exact-rust harness/out/smoke-rust-1
@@ -372,6 +340,69 @@ jobs:
       - run: shopt -s nullglob; for d in "$RUNNER_TEMP"/deaths/D-*/; do { test -s "$d/trace-tail.jsonl" && test -s "$d/params.json"; } || { test -s "$d/trace-core-tail.jsonl" && test -s "$d/params-core.json"; } || { echo "no trace or params in $d"; exit 1; }; done
       # A death reruns from its dossier with the Borg's logs, same keys (TE.6).
       - run: python3 tools/rerun-death.py "$(ls -d "$RUNNER_TEMP"/deaths/D-* | head -1)" "$RUNNER_TEMP/rerun"
+
+  engine-full:
+    # The full reborn-core suite on the test build, at the same time as the
+    # engine job (#1400): a full run takes the longer of the two, not their
+    # sum. A test build's deaths go to a registry of their own, never to
+    # docs/deaths. Every step after `scope` is skipped where the suite is skipped, so the
+    # job still passes (it is a required check, owner) with nothing to play.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      # #577: the full test suite (8 minutes, a job of its own since #1400)
+      # plays the reborn core only (BORG_CORE=reborn; #606 made borg-rs the harness
+      # default). A pull request whose files are all docs, the
+      # vendored borg-rs core or its settings cannot change that core's play,
+      # and skips it. Those files can change the borg-rs core's play, which
+      # this suite never measures: the borg-rs steps below do (the default
+      # core's smoke against smoke-borg-rs, #606, plays the shipped
+      # harness/pborg.yaml), and they run on every PR; the zoo measures more.
+      # #1389: so do scripts/ (reference tooling and checks; only
+      # scripts/make-world.py is run by harness/run.sh, so it stays a full
+      # run), .gitattributes and the pr-base workflow. Any other file
+      # (ci.yml included), and every push to main or track-p, runs the full
+      # suite. On a pull request HEAD is the merge commit and HEAD^1 the base.
+      - id: scope
+        run: |
+          full=1
+          if [ "${{ github.event_name }}" = pull_request ] \
+              && ! git diff --name-only HEAD^1 HEAD \
+                | grep -qvE '^(docs/|reference/|borg-core/|harness/pborg\.yaml$|harness/scary_monsters[a-z_]*\.txt$|[^/]+\.md$|scripts/|\.gitattributes$|\.github/workflows/pr-base\.yml$)' \
+              && ! git diff --name-only HEAD^1 HEAD | grep -qx scripts/make-world.py; then
+              full=0
+          fi
+          echo "full=$full" >> "$GITHUB_OUTPUT"
+          echo "full test suite: $full"
+      - if: steps.scope.outputs.full == '1'
+        uses: ./.github/actions/cemetery-tools
+      - if: steps.scope.outputs.full == '1'
+        uses: dtolnay/rust-toolchain@stable
+      - if: steps.scope.outputs.full == '1'
+        uses: ./.github/actions/apt-install
+        with:
+          packages: cmake libx11-dev libssl-dev
+      # Perception against the engine (T2.5) and the RNG isolation asserts
+      # are features of the test build (test-hallucinate, test-perception).
+      - if: steps.scope.outputs.full == '1'
+        run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception,test-stair-handoff harness/build.sh
+      # Full too: smoke has too few monsters to meet every case (T2.5 found
+      # one only in full). The test build plays the reference's games, and
+      # perception agrees with the engine on every think.
+      - if: steps.scope.outputs.full == '1'
+        run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh full harness/out/full-test
+      - if: steps.scope.outputs.full == '1'
+        run: harness/diff --suite full --expect-impl rust harness/out/full-test harness/reference/full-rust
+      # #1400: both checks read only per-run files, so each runs on the
+      # outputs its job has: the engine job on smoke-hallucinate and
+      # smoke-rust-1, this one on full-test. Together they cover the same runs
+      # as the one call with two directories did.
+      - if: steps.scope.outputs.full == '1'
+        run: python3 tools/check-perception.py harness/out/full-test
+      - if: steps.scope.outputs.full == '1'
+        run: python3 tools/check-no-time.py harness/out/full-test
 
   recorder:
     runs-on: ubuntu-24.04
