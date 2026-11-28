@@ -69,6 +69,14 @@ new gameplay reports under docs/ or add new validation dossiers to docs/deaths/
 to satisfy CI. The existing historical archive is retained unchanged until an
 explicitly reviewed migration; its existence is not a precedent for new reports.
 
+For a recorded gameplay bug, publish the reproducible save, Borg map, exact
+settings and relevant trace excerpts in a Borg Cemetery case. Link the
+Cemetery case from the source issue and implementation PR. If the case is
+still under review, link its Cemetery PR and state that it is pending.
+An `angband-workspace` release or another attachment link can supplement a
+Cemetery case when an original recording needs separate storage. A release
+alone does not publish the case.
+
 Player-cemetery may retain original player/mixed recordings and working saves;
 link those inputs from the Cemetery case. Case-specific alternative plays and
 scenario trials are Cemetery evidence. Do not duplicate canonical analysis in
