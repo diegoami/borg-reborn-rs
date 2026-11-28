@@ -35,7 +35,8 @@ STAR_ENLIGHTENMENT = (26, 23)
 
 @unittest.skipUnless(GAME.is_file(), "test-junk-consumables build required")
 class JunkConsumablesTest(unittest.TestCase):
-    def launch(self, items, *, distance=None, monster="giant_white_mouse", keys=45, params=None):
+    def launch(self, items, *, distance=None, monster="giant_white_mouse", keys=45, params=None,
+               player_class=0, base_kit=BASE_KIT):
         with tempfile.TemporaryDirectory(prefix="junk-consumables-") as directory:
             out = Path(directory)
             paths = {name: out / name for name in ("user", "save", "archive", "panic", "scores")}
@@ -46,7 +47,7 @@ class JunkConsumablesTest(unittest.TestCase):
             # Keep equipped gear, food, and fuel from the known 72 HP build.
             # Replace its other pack contents with the items under test.
             records = [
-                line for line in BASE_KIT.read_text().splitlines()
+                line for line in base_kit.read_text().splitlines()
                 if line != "end" and (
                     not line.startswith("item:") or line.split(":")[4] != "-1"
                     or line.startswith(("item:19:", "item:28:"))
@@ -70,7 +71,7 @@ class JunkConsumablesTest(unittest.TestCase):
             messages = out / "messages.log"
             args = [
                 str(GAME), "-mborgh", "-n", *(f"-d{key}={value}" for key, value in paths.items()),
-                "--", "-seed", "101", "-race", "0", "-class", "0", "-menu-letters",
+                "--", "-seed", "101", "-race", "0", "-class", str(player_class), "-menu-letters",
                 "-keys", str(keys), "-msglog", str(messages), "-start-build", str(build),
             ]
             if distance is not None:
