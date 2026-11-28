@@ -463,7 +463,13 @@ fn nearest_up_stair(st: &mut BorgState) -> (i32, i32) {
 
 /// Enqueue the grids of `borg_temp_*` into a fresh flow and spread it (the
 /// common middle of the three flows).
-fn spread_to_temp(st: &mut BorgState, nearness: i32, optimize: bool, viewable: bool, sneak: bool) {
+fn spread_to_temp(
+    st: &mut BorgState,
+    nearness: i32,
+    viewable: bool,
+    sneak: bool,
+    stair_scum: Option<&crate::borg_stair_scum::Map>,
+) {
     /* Clear the flow codes */
     borg_flow::borg_flow_clear(st);
 
@@ -480,15 +486,19 @@ fn spread_to_temp(st: &mut BorgState, nearness: i32, optimize: bool, viewable: b
     /* if we are not flowing toward items that we can see, make sure they */
     /* are at least easily reachable.  The second flag is weather or not  */
     /* to avoid unknown squares.  This was for performance. */
-    borg_flow::borg_flow_spread(st, nearness, optimize, !viewable, false, -1, sneak);
+    if let Some(map) = stair_scum {
+        borg_flow::spread_stair_scum_loot(st, nearness, !viewable, map);
+    } else {
+        borg_flow::borg_flow_spread(st, nearness, true, !viewable, false, -1, sneak);
+    }
 }
 
 /// Prepare to "flow" towards objects to "take" (`borg_flow_take`).
 ///
 /// Note that objects under the player are always deleted
 pub fn borg_flow_take(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
-    let mut phase_pruned: Vec<(i32, i32)> = Vec::new();
-    if !take_select(st, viewable, nearness, &mut phase_pruned) {
+    let mut deferred: Vec<(i32, i32)> = Vec::new();
+    if !take_select(st, viewable, nearness, &mut deferred) {
         return false;
     }
     if take_flow(st, viewable, nearness) {
@@ -498,19 +508,19 @@ pub fn borg_flow_take(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     // fail where the full list would not — a Phase Door past the flow's
     // depth (`borg_flow_spread`'s limit) or behind danger suppresses the
     // reachable loot. Restore what the rule dropped and flow once more.
-    if phase_pruned.is_empty() {
+    if deferred.is_empty() {
         return false;
     }
-    for &(y, x) in &phase_pruned {
+    for &(y, x) in &deferred {
         st.flow.temp_push(y, x);
     }
     take_flow(st, viewable, nearness)
 }
 
 /// The object selection of `borg_flow_take`: fills `borg_temp_*`; false when
-/// there is nothing to take. `phase_pruned` gets the candidates the
-/// Phase-first rule dropped, for the retry in `borg_flow_take`.
-fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: &mut Vec<(i32, i32)>) -> bool {
+/// there is nothing to take. `deferred` gets ordinary loot for the retry
+/// if the currently needed supplies turn out to be out of reach.
+fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, deferred: &mut Vec<(i32, i32)>) -> bool {
     let leash = borg_flow_misc::borg_get_leash(st, true);
     // borg-reborn-rs (#840): a short kit puts both leash checks on at any level.
     let kit_leash = crate::borg_kit::leash_active(st);
@@ -553,6 +563,9 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
     /* Check distance away from stairs, used later */
     let (b_stair, b_j) = nearest_up_stair(st);
 
+    // borg-reborn-rs (#1061): stair_scum takes only items inside its radius.
+    let scum = crate::borg_stair_scum::Map::of(st);
+
     /* borg-reborn-rs (#761): short of Phase Doors, one on the floor is exempt from the leash */
     let (phase_short_below, phase_first) = crate::borg_flow::take_phase_rule();
     // borg-reborn-rs (#761, review of #778): the threshold is the held
@@ -561,7 +574,8 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
     // PhaseDoor spell carefully"), which are not scrolls and hide a short
     // stock.
     let phase_short = short_of_phase(phase_short_below, carried_phase_scrolls(st));
-    let mut phase_pushed: Vec<bool> = Vec::new();
+    let ranged = crate::borg_ranged::pickup_need(st);
+    let mut priorities = Vec::new();
 
     /* Scan the object list */
     let mut i: i32 = 1;
@@ -581,7 +595,13 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
         let is_phase = phase_short && take_is_phase(st, take.kidx);
 
         /* Skip ones that make me wander too far */
-        if !is_phase && b_stair != -1 && (st.borg.tr(BI_CLEVEL) < c.take_near_max_level || kit_leash) {
+        // borg-reborn-rs (#1062): with `flow_leash_any_stair`, the nearest
+        // staircase of either kind in walking steps (`borg_leash::far_while_near`).
+        if let Some(skip) = crate::borg_leash::far_while_near(st, y, x, leash) {
+            if !is_phase && (st.borg.tr(BI_CLEVEL) < c.take_near_max_level || kit_leash) && skip {
+                continue;
+            }
+        } else if !is_phase && b_stair != -1 && (st.borg.tr(BI_CLEVEL) < c.take_near_max_level || kit_leash) {
             /* Check the distance of this 'take' to the stair */
             let (sy, sx) = st.stairs.less.at(b_stair as usize);
             let j = borg_distance(sy, sx, y, x);
@@ -592,7 +612,15 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
         }
 
         /* skip worthless items */
-        if take.value <= 0 {
+        if take.value <= 0 || unwanted_light_scroll(st, &take)
+            // borg-reborn-rs (#1371): a known kind the town would only sell or drop.
+            || crate::borg_town_capability::refused_take_kind(st, take.kidx as usize)
+        {
+            continue;
+        }
+
+        // borg-reborn-rs (#1061): outside stair_scum's radius.
+        if scum.as_ref().is_some_and(|m| !crate::borg_stair_scum::admit(st, m, y, x)) {
             continue;
         }
 
@@ -633,32 +661,38 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
         if !is_phase
             && nearness > c.take_nearness
             && (st.borg.tr(BI_CLEVEL) < c.take_max_level || kit_leash)
-            && crate::borg_flow_stairs::borg_flow_cost_stair(st, y, x, b_stair) > leash
+            // borg-reborn-rs (#1062): C's `borg_flow_cost_stair(..) > leash` with its switches off.
+            && crate::borg_leash::beyond(st, y, x, b_stair, leash)
         {
             continue;
         }
 
         /* Careful -- Remember it */
         st.flow.temp_push(y, x);
-        phase_pushed.push(is_phase);
+        priorities.push(take_priority(phase_first && is_phase,
+            || ranged.is_some_and(|need| need.floor_item(st, take.kidx))));
     }
 
-    /* borg-reborn-rs (#761): short of Phase Doors, only they, when one is in reach */
-    if phase_first && phase_pushed.iter().any(|&p| p) && phase_pushed.iter().any(|&p| !p) {
-        let n = st.flow.temp_n as usize;
-        let kept: Vec<(i32, i32)> = (0..n).filter(|&k| phase_pushed[k]).map(|k| st.flow.temp_at(k)).collect();
-        // borg-reborn-rs (#761, review of #778): remembered for the retry in
-        // `borg_flow_take`, when the Phase-only flow finds nothing in reach.
-        let dropped: Vec<(i32, i32)> = (0..n).filter(|&k| !phase_pushed[k]).map(|k| st.flow.temp_at(k)).collect();
-        st.flow.temp_n = 0;
-        for (y, x) in kept {
-            st.flow.temp_push(y, x);
+    if let Some(best) = priorities.iter().copied().max() {
+        if best > 0 && priorities.iter().any(|&p| p < best) {
+            let mut kept = Vec::new();
+            for (index, priority) in priorities.into_iter().enumerate() {
+                let grid = st.flow.temp_at(index);
+                if priority == best { kept.push(grid); } else { deferred.push(grid); }
+            }
+            st.flow.temp_n = 0;
+            for (y, x) in kept {
+                st.flow.temp_push(y, x);
+            }
         }
-        *phase_pruned = dropped;
     }
 
     /* Nothing to take */
     st.flow.temp_n != 0
+}
+
+fn take_priority(phase_first: bool, ranged: impl FnOnce() -> bool) -> u8 {
+    if phase_first { 2 } else { u8::from(ranged()) }
 }
 
 /// borg-reborn-rs (#761): the Borg holds fewer Phase Doors than the switch asks (0 = off).
@@ -692,6 +726,17 @@ fn carried_phase_scrolls_in(st: &BorgState, pack_end: i32) -> i32 {
 }
 
 /// borg-reborn-rs (#761): the object kind is a Scroll of Phase Door.
+/// borg-reborn-rs (#1273): skip known Light scrolls for the Necromancer.
+fn unwanted_light_scroll(st: &BorgState, take: &BorgTake) -> bool {
+    if st.borg.tr(crate::borg_headers::borg_trait_h::BI_CLASS) != crate::borg_light::CLASS_NECROMANCER
+        || take.tval != TV_SCROLL as i32
+    {
+        return false;
+    }
+    let kind = engine::kind(take.kidx as usize);
+    kind.aware && kind.sval == st.item_val.sv_scroll_light
+}
+
 fn take_is_phase(st: &BorgState, kidx: u32) -> bool {
     let k = engine::kind(kidx as usize);
     i64::from(k.tval) == i64::from(crate::headers::list_tvals_h::TV_SCROLL) && i32::from(k.sval) == st.item_val.sv_scroll_phase_door
@@ -699,7 +744,7 @@ fn take_is_phase(st: &BorgState, kidx: u32) -> bool {
 
 /// The flow part of `borg_flow_take`, after `take_select`.
 fn take_flow(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
-    spread_to_temp(st, nearness, true, viewable, false);
+    spread_to_temp(st, nearness, viewable, false, None);
 
     /* Attempt to Commit the flow */
     if !borg_flow::borg_flow_commit(st, c"item", i32::from(GOAL_TAKE)) {
@@ -718,24 +763,23 @@ fn take_flow(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
 /// Prepare to "flow" towards special objects to "take"
 /// (`borg_flow_take_scum`).
 pub fn borg_flow_take_scum(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
-    if !scum_select(st, viewable) {
+    if st.takes.cnt == 0 || st.items.items[(pack_slots(st) - 1) as usize].iqty != 0 {
         return false;
     }
-    scum_flow(st, viewable, nearness)
+    let stair_scum = crate::borg_stair_scum::Map::of(st);
+    if !scum_select(st, viewable, stair_scum.as_ref()) {
+        return false;
+    }
+    scum_flow(st, viewable, nearness, stair_scum.as_ref())
 }
 
 /// The object selection of `borg_flow_take_scum`: fills `borg_temp_*`; false when
 /// there is nothing to take.
-fn scum_select(st: &mut BorgState, viewable: bool) -> bool {
-    /* Efficiency -- Nothing to take */
-    if st.takes.cnt == 0 {
-        return false;
-    }
-
-    /* Require one empty slot */
-    if st.items.items[(pack_slots(st) - 1) as usize].iqty != 0 {
-        return false;
-    }
+fn scum_select(
+    st: &mut BorgState,
+    viewable: bool,
+    stair_scum: Option<&crate::borg_stair_scum::Map>,
+) -> bool {
 
     /* Nothing yet */
     st.flow.temp_n = 0;
@@ -759,7 +803,15 @@ fn scum_select(st: &mut BorgState, viewable: bool) -> bool {
         let y = i32::from(take.y);
 
         /* skip worthless items */
-        if take.value <= 0 {
+        if take.value <= 0 || unwanted_light_scroll(st, &take)
+            // borg-reborn-rs (#1371): a known kind the town would only sell or drop.
+            || crate::borg_town_capability::refused_take_kind(st, take.kidx as usize)
+        {
+            continue;
+        }
+
+        // borg-reborn-rs (#1061): outside stair_scum's radius.
+        if stair_scum.is_some_and(|m| !crate::borg_stair_scum::admit(st, m, y, x)) {
             continue;
         }
 
@@ -782,13 +834,19 @@ fn scum_select(st: &mut BorgState, viewable: bool) -> bool {
 }
 
 /// The flow part of `borg_flow_take_scum`, after `scum_select`.
-fn scum_flow(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
-    spread_to_temp(st, nearness, true, viewable, true);
+fn scum_flow(
+    st: &mut BorgState,
+    viewable: bool,
+    nearness: i32,
+    stair_scum: Option<&crate::borg_stair_scum::Map>,
+) -> bool {
+    spread_to_temp(st, nearness, viewable, true, stair_scum);
 
     /* Attempt to Commit the flow */
     if !borg_flow::borg_flow_commit(st, c"Scum item", i32::from(GOAL_TAKE)) {
         return false;
     }
+    st.flow.stair_scum_loot = stair_scum.is_some();
 
     /* Take one step */
     if !borg_flow::borg_flow_old(st, i32::from(GOAL_TAKE)) {
@@ -820,6 +878,11 @@ pub fn borg_free_flow_take(st: &mut BorgState) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn needed_range_outranks_loot_but_phase_door_still_comes_first() {
+        assert!(super::take_priority(true, || unreachable!()) > super::take_priority(false, || true));
+        assert!(super::take_priority(false, || true) > super::take_priority(false, || false));
+    }
     use super::*;
     use crate::borg_item::blank_item;
 

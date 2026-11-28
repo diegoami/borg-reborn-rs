@@ -20,7 +20,9 @@
 //! and its race from the engine's `r_info`.
 
 // borg-reborn-rs (#220): named danger/escape policy values; defaults preserve arithmetic.
-use crate::params::{value as param, Param};
+// borg-reborn-rs (#878): `danger_value` zeroes the fear terms inside
+// `params::damage_only`; elsewhere it is `value`.
+use crate::params::{danger_value as param, Param};
 use crate::borg_cave::{BorgGrid, AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid, borg_feature_protected};
 use crate::borg_cave_view::BORG_VIEW;
@@ -763,6 +765,7 @@ fn borg_danger_spell(
     x: i32,
     d: i32,
     average: bool,
+    reply: bool,
 ) -> i32 {
     let mut n: i32 = 0;
     let mut glyph = false;
@@ -1409,7 +1412,17 @@ fn borg_danger_spell(
 
             RSF_MIND_BLAST => {
                 if st.borg.tr(BI_SAV) < 100 {
-                    z = spell_power / 2 + 1;
+                    // borg-reborn-rs (#1353): borg-rs v15R (5e6cd07) prices
+                    // the spell as monster_spell.txt:665-670 has it: 8d8
+                    // damage, then 3+1d4 turns of confusion.
+                    if param(Param::danger_mind_blast_upstream) != 0 {
+                        z = 8 * 8;
+                        if st.borg.tr(BI_RCONF) == 0 {
+                            p += param(Param::danger_rsf_mind_blast_confusion_fear);
+                        }
+                    } else {
+                        z = spell_power / 2 + 1;
+                    }
                 }
             }
 
@@ -1936,8 +1949,8 @@ fn borg_danger_spell(
         }
 
         // A bolt spell cannot jump monsters to hit the borg.
-        if bolt && !borg_projectable_pure(st, kill.pos.y, kill.pos.x, st.borg.c.y, st.borg.c.x)
-        {
+        let (target_y, target_x) = if reply { (y, x) } else { (st.borg.c.y, st.borg.c.x) };
+        if bolt && !borg_projectable_pure(st, kill.pos.y, kill.pos.x, target_y, target_x) {
             z = 0;
         }
 
@@ -2074,6 +2087,25 @@ pub fn borg_danger_one_kill(
     danger_one_kill(st, &kill, y, x, c, i, average, full_damage)
 }
 
+/// The spell danger reduced for the race's cast frequency (`chance`, the
+/// mean of its innate and spell frequencies, percent), unless `full_damage`
+/// asks for the full possible damage: below
+/// `danger_frequency_low_percent` (11) it keeps `danger_frequency_low_tenths`
+/// (4) tenths, and so on for the mid and high bands.
+pub(crate) fn spell_frequency_discount(v2: i32, chance: i32, full_damage: bool) -> i32 {
+    if full_damage {
+        v2
+    } else if chance < param(Param::danger_frequency_low_percent) {
+        (v2 * param(Param::danger_frequency_low_tenths)) / 10
+    } else if chance < param(Param::danger_frequency_mid_percent) {
+        (v2 * param(Param::danger_frequency_mid_tenths)) / 10
+    } else if chance < param(Param::danger_frequency_high_percent) {
+        (v2 * param(Param::danger_frequency_high_tenths)) / 10
+    } else {
+        v2
+    }
+}
+
 /// `borg_danger_one_kill()` on a copy of `borg_kills[i]`.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn danger_one_kill(
@@ -2085,6 +2117,23 @@ pub(crate) fn danger_one_kill(
     i: i32,
     average: bool,
     full_damage: bool,
+) -> i32 {
+    danger_one_kill_with(st, kill, y, x, c, i, average, full_damage, false, false)
+}
+
+/// #1194: price the first ranged attack in reach and the melee reply.
+/// The grid-danger forecast scales ranged damage twice for a fast caster.
+/// At contact a caster can melee instead. Account for its cast frequency
+/// and for an action already spent on TELE_TO.
+pub(crate) fn combat_reply(
+    st: &mut BorgState, kill: &BorgKill, y: i32, x: i32, i: i32, pulled: bool,
+) -> i32 {
+    danger_one_kill_with(st, kill, y, x, 1, i, true, true, true, pulled)
+}
+
+fn danger_one_kill_with(
+    st: &mut BorgState, kill: &BorgKill, y: i32, x: i32, c: i32, i: i32,
+    average: bool, full_damage: bool, reply: bool, pulled: bool,
 ) -> i32 {
     let x9 = kill.pos.x;
     let y9 = kill.pos.y;
@@ -2195,6 +2244,13 @@ pub(crate) fn danger_one_kill(
     // But the monster is allowed to be faster than us.
     if q <= param(Param::danger_minimum_monster_energy) {
         q = param(Param::danger_minimum_monster_energy);
+    }
+
+    if pulled {
+        q -= 10; // The caster spends one action pulling.
+        if q <= 0 {
+            return 0;
+        }
     }
 
     // Danger from physical attacks
@@ -2372,7 +2428,7 @@ pub(crate) fn danger_one_kill(
     }
 
     // Ranged Attacks
-    v2 = borg_danger_spell(st, kill, flags, y, x, d, average);
+    v2 = borg_danger_spell(st, kill, flags, y, x, d, average, reply);
 
     // Never cast spells
     if r_ptr.freq_innate == 0 && r_ptr.freq_spell == 0 {
@@ -2408,8 +2464,8 @@ pub(crate) fn danger_one_kill(
     // ##############   moves and the D will be able to use a ranged attack
     //                  to grids 1, all in the same round. The borg should
     //                  not consider grid 1 as safe.
-    if q >= 20 {
-        let b_q = q;
+    if q >= 20 && (!reply || (!borg_projectable(st, y9, x9, y, x) && !borg_projectable(st, y, x, y9, x9))) {
+        let b_q = if reply { 10 } else { q };
         let mut b_v2 = 0;
 
         // Maximal speed check
@@ -2535,20 +2591,12 @@ pub(crate) fn danger_one_kill(
 
     // (C: `#if 0` -- scared monsters still cast spells, they are still
     // dangerous)
-    if !full_damage {
-        // reduce for frequency.
-        let chance = (r_ptr.freq_innate + r_ptr.freq_spell) / 2;
-        if chance < param(Param::danger_frequency_low_percent) {
-            v2 = (v2 * param(Param::danger_frequency_low_tenths)) / 10;
-        } else if chance < param(Param::danger_frequency_mid_percent) {
-            v2 = (v2 * param(Param::danger_frequency_mid_tenths)) / 10;
-        } else if chance < param(Param::danger_frequency_high_percent) {
-            v2 = (v2 * param(Param::danger_frequency_high_tenths)) / 10;
-        }
-    }
+    // borg-reborn-rs (#1066, re-review of #1075): the same arithmetic,
+    // lifted so the full-damage case can be tested without the engine.
+    v2 = spell_frequency_discount(v2, (r_ptr.freq_innate + r_ptr.freq_spell) / 2, full_damage);
 
     // Danger
-    if v2 != 0 {
+    if v2 != 0 && !reply {
         // Full power
         let r = q;
 
@@ -2556,8 +2604,14 @@ pub(crate) fn danger_one_kill(
         v2 = v2 * r / 10;
     }
 
-    // Maximal danger
-    let p = v1.max(v2);
+    // mon-spell.c:91 (574b618c) gates casting by the race's frequency.
+    // In contact, mix the excess spell damage into the melee reply. From
+    // range a single damaging cast is the threat even for a slow caster.
+    let p = if reply && d == 1 && v1 > 0 && v2 > v1 {
+        v1 + (v2 - v1) * r_ptr.freq_innate.max(r_ptr.freq_spell) / 100
+    } else {
+        v1.max(v2)
+    };
     if p > param(Param::danger_maximum) {
         param(Param::danger_maximum)
     } else {
@@ -2613,9 +2667,13 @@ pub fn borg_danger(
         return param(Param::danger_maximum);
     }
 
+    // borg-reborn-rs (#878): inside `params::damage_only` the fear maps are
+    // fear, not hit points: skipped.
+    let fear_maps = !crate::params::damage_only_active();
+
     // Base danger (from regional fear) but not within a vault.  Cheating the
     // floor grid
-    if !engine::square_isvault(x, y) && st.borg.tr(BI_CDEPTH) <= param(Param::danger_regional_fear_max_depth) {
+    if fear_maps && !engine::square_isvault(x, y) && st.borg.tr(BI_CDEPTH) <= param(Param::danger_regional_fear_max_depth) {
         p += i32::from(st.danger.fear_region[(y / 11) as usize][(x / 11) as usize]) * c;
     }
 
@@ -2627,7 +2685,7 @@ pub fn borg_danger(
     // Added danger (from a lot of monsters).
     // But do not add it if we have been bouncing for too long, or monster's
     // in a vault.  The fear_monsters[][] can induce some bouncy behavior.
-    if i32::from(st.borg.antibounce_count) <= param(Param::danger_monster_fear_bounce_limit) && !engine::square_isvault(x, y) {
+    if fear_maps && i32::from(st.borg.antibounce_count) <= param(Param::danger_monster_fear_bounce_limit) && !engine::square_isvault(x, y) {
         p += i32::from(st.danger.fear_monsters[y as usize][x as usize]) * c;
     }
 
@@ -2657,6 +2715,13 @@ pub fn borg_danger(
     } else {
         p
     }
+}
+
+/// borg-reborn-rs (#878): `borg_danger` without its fear prices
+/// (`params::damage_only`): the danger_*_fear terms, the breeder and friends
+/// bonuses and the fear maps at 0.
+pub(crate) fn borg_danger_damage_only(st: &mut BorgState, y: i32, x: i32, c: i32, average: bool, full_damage: bool) -> i32 {
+    crate::params::damage_only(|| borg_danger(st, y, x, c, average, full_damage))
 }
 
 #[cfg(test)]

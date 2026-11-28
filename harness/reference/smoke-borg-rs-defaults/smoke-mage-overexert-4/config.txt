@@ -1,0 +1,14 @@
+flags=menu,start-depth=2,start-monsters=kobold:2:4
+start_monsters=kobold:2:4
+synthetic=1
+start_depth=2
+start_build=birth
+dungeon_mode=one_way
+synthetic_contract=borg-reborn-rs/synthetic-start@2
+pborg_yaml_sha256=651b0fd0bb61718b3ebe7f134ee7ac331b55090efde99689fb1ced96c0df61c0
+profile=harness/profiles/reborn-default.txt
+profile_sha256=372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91
+borg_core=borg-rs
+borg_core_overrides=off
+borg_scary_list=none
+params_core_sha256=f34b5882eb891144e6f5369a0dd6376427fb7c5d18845f552e5b191febb1f312

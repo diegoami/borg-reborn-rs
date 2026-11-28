@@ -81,20 +81,9 @@ fn pad_right(s: &[u8], width: usize) -> Vec<u8> {
     v
 }
 
-/// `file_putf(f, ...)` with the formatted text: does nothing for a NULL
-/// file, cuts the text to 1023 bytes as `vstrnfmt` does.
-fn putf(f: &mut Option<OpenFile>, text: &[u8]) {
-    if let Some(f) = f {
-        f.put(&text[..text.len().min(PUTF_BUF - 1)]);
-    }
-}
-
-/// `file_put(f, s)`. C dereferences a NULL file here (a crash); so does
-/// this (a panic).
-fn put(f: &mut Option<OpenFile>, s: &[u8]) {
-    f.as_mut()
-        .expect("file_put on a NULL file (crashes in C)")
-        .put(s);
+/// Write formatted text, cutting it to 1023 bytes as `vstrnfmt` does.
+fn putf(f: &mut OpenFile, text: &[u8]) {
+    f.put(&text[..text.len().min(PUTF_BUF - 1)]);
 }
 
 /// `borg_timer(t)`: game turns since `t`.
@@ -123,18 +112,17 @@ pub fn borg_log_death(st: &mut BorgState) {
     let path = engine::path_build_archive(1024, b"borg-log.txt");
 
     // Append to the file
-    let Some(f) = engine::file_open(&path, WriteMode::Append) else {
+    let Some(mut f) = engine::file_open(&path, WriteMode::Append) else {
         // Failure
         return;
     };
-    let mut f = Some(f);
 
     // Get time of death
     let death_time = engine::time_now();
 
     // Save the date
     let date = engine::strftime_local(death_time, 80, c"%Y/%m/%d %H:%M\n");
-    put(&mut f, &date);
+    f.put(&date);
 
     let p = engine::player_summary();
     putf(
@@ -166,11 +154,9 @@ pub fn borg_log_death(st: &mut BorgState) {
         format!("Borg Compile Date: {}\n", st.core.engine_date).as_bytes(),
     );
 
-    put(&mut f, b"----------\n\n");
+    f.put(b"----------\n\n");
 
-    if let Some(f) = f {
-        f.close();
-    }
+    f.close();
 }
 
 /// Write a death to borg.dat
@@ -182,11 +168,10 @@ pub fn borg_log_death_data(st: &mut BorgState) {
     let path = engine::path_build_archive(1024, b"borg.dat");
 
     // Append to the file
-    let Some(f) = engine::file_open(&path, WriteMode::Append) else {
+    let Some(mut f) = engine::file_open(&path, WriteMode::Append) else {
         // Failure
         return;
     };
-    let mut f = Some(f);
 
     // Get time of death (unused, as in C)
     let _death_time = engine::time_now();
@@ -207,9 +192,7 @@ pub fn borg_log_death_data(st: &mut BorgState) {
         ]),
     );
 
-    if let Some(f) = f {
-        f.close();
-    }
+    f.close();
 }
 
 /// Convert an inventory index into a one character label.
@@ -270,22 +253,23 @@ pub fn borg_write_map(st: &mut BorgState, ask: bool) {
     let path = engine::path_build_archive(1024, &buf);
     buf2[..path.len()].copy_from_slice(&path);
 
-    let mut borg_map_file: Option<OpenFile> = None;
-
-    // XXX XXX XXX Get the name and open the map file
-    if ask && engine::get_string(st, c"Borg map File: ", &mut buf2, 70) {
+    // borg-reborn-rs (#1303): every write requires an open file.
+    let path = if ask {
+        if !engine::get_string(st, c"Borg map File: ", &mut buf2, 70) {
+            return;
+        }
         let n = buf2.iter().position(|&b| b == 0).unwrap_or(buf2.len());
+        &buf2[..n]
+    } else {
+        &path
+    };
 
-        // Open a new file
-        borg_map_file = engine::file_open(&buf2[..n], WriteMode::Write);
-
-        // Failure
-        if borg_map_file.is_none() {
+    let Some(mut borg_map_file) = engine::file_open(path, WriteMode::Write) else {
+        if ask {
             engine::msg(st, b"Cannot open that file.");
         }
-    } else if !ask {
-        borg_map_file = engine::file_open(&path, WriteMode::Write);
-    }
+        return;
+    };
     let f = &mut borg_map_file;
 
     putf(
@@ -498,14 +482,14 @@ pub fn borg_write_map(st: &mut BorgState, ask: bool) {
             let item = st.items.items[(weapon_swap - 1) as usize];
             putf(f, &cat(&[b"Swap Weapon:  ", &c_chars(&item.desc), b"\n"]));
         } else {
-            put(f, b"Swap Weapon:  NONE\n");
+            f.put(b"Swap Weapon:  NONE\n");
         }
         let armour_swap = st.trait_swap.armour_swap;
         if armour_swap != 0 {
             let item = st.items.items[(armour_swap - 1) as usize];
             putf(f, &cat(&[b"Swap Armour:  ", &c_chars(&item.desc), b"\n"]));
         } else {
-            put(f, b"Swap Armour:  NONE\n");
+            f.put(b"Swap Armour:  NONE\n");
         }
         putf(f, b"\n\n");
     }
@@ -716,11 +700,7 @@ pub fn borg_write_map(st: &mut BorgState, ask: bool) {
 
     // (The C file's "#if 0" artifact and unique dump is not compiled.)
 
-    // C bug 13: file_close(NULL) crashes in C when the map file was not
-    // opened (the `ask` path).
-    borg_map_file
-        .expect("file_close on a NULL file (crashes in C)")
-        .close();
+    borg_map_file.close();
 }
 
 /// The bytes of a C char array up to its NUL.

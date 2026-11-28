@@ -2,10 +2,8 @@
 #
 # Compiles a patched copy of the pristine upstream tree (engine/angband/,
 # engine/patches/), our headless frontend (engine/frontend/) and the Rust
-# Borg's staticlib into game/angband, with the game data in game/lib. The
-# C Borg (src/borg/) is not built: the Rust Borg exports do_cmd_borg in its
-# place. Upstream's own CMakeLists.txt is not used (it lists src/borg/
-# inside its core library); its source list is copied in sources.cmake.
+# Borg's staticlib alongside the native C Borg. The executable is installed
+# as game/angband, with the game data in game/lib.
 #
 #   cmake -S engine -B build/rust [-DBORG_FEATURES=test-hallucinate] [-DSUPPORT_X11=ON]
 #         [-DSUPPORT_GCU=ON] [-DBORG_RUST_TARGET=x86_64-pc-windows-gnu]
@@ -82,6 +80,9 @@ add_executable(angband ${ANGBAND_CORE_SOURCES} ${FRONTENDS})
 file(STRINGS "${ENGINE}/UPSTREAM" SYNTHETIC_PIN_LINE REGEX "^commit=")
 string(REPLACE "commit=" "" SYNTHETIC_PIN "${SYNTHETIC_PIN_LINE}")
 target_compile_definitions(angband PRIVATE SYNTHETIC_ENGINE_PIN="${SYNTHETIC_PIN}")
+if(BORG_FEATURES MATCHES "(^|,)test-junk-consumables(,|$)")
+    target_compile_definitions(angband PRIVATE BORGH_TEST_JUNK_CONSUMABLES)
+endif()
 set_target_properties(angband PROPERTIES C_STANDARD 99 C_EXTENSIONS ON)
 target_include_directories(angband PRIVATE "${TREE}/src" "${ENGINE}/frontend")
 # As upstream's self-contained build (SC_INSTALL): data in ./lib/ next to the

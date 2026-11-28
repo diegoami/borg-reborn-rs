@@ -31,6 +31,7 @@ use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, ESCAPE, KC_ENTER
 use crate::borg_item::{inven_wield, quiver_end, quiver_start};
 use crate::borg_item_analyze::borg_ego_has_random_power;
 use crate::borg_item_id::borg_item_note_needs_id;
+use crate::borg_light::{burning_torch, light_contribution, shorter_torch};
 use crate::borg_magic::{borg_spell, borg_spell_legal};
 use crate::borg_power::borg_power;
 use crate::borg_store::{borg_home_full, borg_inventory_full, BORG_HOME, SHOP_MENU_ITEMS};
@@ -812,6 +813,8 @@ pub fn borg_backup_swap(st: &mut BorgState, p: i32) -> bool {
 /// Wear `safe_items[i]` in `slot` (the old item goes to `hole`), evaluate
 /// power and danger, then restore (`borg_wear_stuff`'s trial block).
 fn wear_trial(st: &mut BorgState, hole: i32, slot: i32, i: i32) -> (i32, i32) {
+    let ranged = crate::borg_ranged::wear_coverage(st, slot as usize, &st.items.items[i as usize]);
+    let previous_danger = ranged.map(|_| danger_here(st));
     /* Take off old item */
     from_safe(st, hole, slot);
 
@@ -828,10 +831,15 @@ fn wear_trial(st: &mut BorgState, hole: i32, slot: i32, i: i32) -> (i32, i32) {
     crate::borg_trait::borg_notice(st, true);
 
     /* Evaluate the inventory */
-    let p = borg_power(st);
+    let mut p = borg_power(st);
 
     /* Evaluate local danger */
     let d = danger_here(st);
+    if previous_danger.is_some_and(|old| d >= old)
+        && ranged.is_some_and(|old| crate::borg_ranged::worsens(old, crate::borg_ranged::coverage_here(st)))
+    {
+        p = i32::MIN / 2;
+    }
 
     /* Restore the old item */
     from_safe(st, slot, slot);
@@ -843,6 +851,76 @@ fn wear_trial(st: &mut BorgState, hole: i32, slot: i32, i: i32) -> (i32, i32) {
     st.items.items[hole as usize].iqty = 0;
 
     (p, d)
+}
+
+// borg-reborn-rs (#1235): fuel can break a tie between eligible pack
+// upgrades. With no accepted upgrade, the usual power gain is required.
+fn prefer_wear_candidate(
+    power: i32,
+    best_power: i32,
+    min_gain: i32,
+    candidate: &borg_item,
+    best: Option<&borg_item>,
+) -> bool {
+    power > best_power + min_gain
+        || (power == best_power && best.is_some_and(|item| shorter_torch(candidate, item)))
+}
+
+pub(crate) fn ranked_wear_fits(st: &BorgState, source: usize, target: usize) -> bool {
+    let item = &st.items.items[source];
+    let old = &st.items.items[target];
+    if !allows_ranked_wear(item, old) { return false; }
+    let slot = borg_wield_slot(item);
+    let ring = slot == inven_left();
+    let both_rings = st.items.items[inven_left() as usize].iqty > 0 && st.items.items[inven_right() as usize].iqty > 0;
+    (if ring {
+        (inven_right()..=inven_left()).contains(&(target as i32)) && (old.iqty == 0 || both_rings)
+    } else { slot == target as i32 })
+        && (old.iqty == 0 || item.iqty == 1 || engine::pack_slots_free() > 0)
+}
+
+pub(crate) fn allows_ranked_wear(item: &borg_item, old: &borg_item) -> bool {
+    let marked = |gear: &borg_item| gear.desc.contains(&(b'!' as core::ffi::c_char));
+    item.iqty > 0 && !old.one_ring
+        && !engine::flag_has(&old.flags, crate::headers::list_object_flags_h::OF_STICKY as i32)
+        && !marked(old) && !marked(item)
+}
+
+pub(crate) fn wear_ranked_upgrade(st: &mut BorgState, source: usize, target: usize) -> bool {
+    if !ranked_wear_fits(st, source, target) || !ranked_wear_safe(st) { return false; }
+    let item = st.items.items[source];
+    note_desc(st, "# Wearing ", &item, ".");
+    borg_keypress(st, keycode_t::from(b'w'));
+    borg_keypress(st, letter(source as i32));
+    if u32::from(item.tval) == TV_RING && st.items.items[target].iqty > 0 {
+        // cmd-obj.c:do_cmd_wield asks which equipped ring to replace
+        // when there is no open finger.
+        borg_keypress(st, letter(target as i32 - inven_wield()));
+    }
+    antibounce(st);
+    true
+}
+
+/// #1361: `item` is a digger and `worn`, in its slot, a combat weapon it
+/// must not replace outside tunnelling.
+fn digger_waits_for_tunnelling(item: &borg_item, worn: &borg_item) -> bool {
+    param(Param::wear_digger_keeps_weapon) != 0
+        && u32::from(item.tval) == TV_DIGGING
+        && worn.iqty > 0
+        && u32::from(worn.tval) != TV_DIGGING
+}
+
+/// #1361: `item`, worn in `slot`, is an uncursed digger in the weapon slot,
+/// which the remove trial leaves in place.
+pub(crate) fn keeps_wielded_digger(slot: i32, item: &borg_item) -> bool {
+    param(Param::wear_digger_keeps_weapon) != 0
+        && slot == inven_wield()
+        && u32::from(item.tval) == TV_DIGGING
+        && !item.cursed
+}
+
+pub(crate) fn ranked_wear_safe(st: &mut BorgState) -> bool {
+    !engine::player_is_shapechanged() && danger_here(st) == 0
 }
 
 /// Wear useful equipment (`borg_wear_stuff`).
@@ -868,12 +946,6 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
         return false;
     }
 
-    /* We need an empty slot to simulate pushing equipment */
-    let hole = borg_first_empty_inventory_slot(st);
-    if hole == -1 {
-        return false;
-    }
-
     /* Forbid if been sitting on level forever */
     /*    Just come back and work through the loop later */
     if borg_timer(st, st.borg.time.level) > param(Param::wear_best_max_turns) {
@@ -882,6 +954,23 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
     if st.borg.antibounce_count > (param(Param::wear_best_max_bounces) as i16) {
         return false;
     }
+
+    let ranked = crate::borg_town_live::gear_home_backups();
+    if ranked && !st.borg.in_shop
+        && !crate::borg_town_live::preparing_loadout(st) && ranked_wear_safe(st)
+    {
+        use crate::borg_spare_gear::{gear_plan, planned_slot, GearLocation};
+        let groups: std::collections::BTreeSet<_> = st.items.items[..inven_wield() as usize]
+            .iter().filter_map(planned_slot).collect();
+        for group in groups {
+            if let Some((GearLocation::Pack(source), target)) = gear_plan(st, group, false).upgrade {
+                if wear_ranked_upgrade(st, source, target) { return true; }
+            }
+        }
+    }
+    /* The legacy trial needs a hole to simulate taking off equipment. */
+    let hole = borg_first_empty_inventory_slot(st);
+    if hole == -1 { return false; }
 
     /* Scan inventory */
     for i in 0..inven_wield() {
@@ -894,6 +983,7 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
         if item.iqty == 0 {
             continue;
         }
+        if ranked && crate::borg_spare_gear::planned_slot(item).is_some() { continue; }
 
         /* Require aware */
         if !item.aware {
@@ -907,6 +997,13 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
 
         /* do not wear not *idd* artifacts */
         if randarts() && item.art_idx != 0 && !item.ident {
+            continue;
+        }
+
+        // borg-reborn-rs (#1235): a replacement torch must be clean and fueled.
+        if u32::from(item.tval) == TV_LIGHT && i32::from(item.sval) == st.item_val.sv_light_torch
+            && !burning_torch(item)
+        {
             continue;
         }
 
@@ -937,6 +1034,18 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
 
         /* Cannot wear this item */
         if slot < 0 {
+            continue;
+        }
+
+        // borg-reborn-rs (#1361, `wear_digger_keeps_weapon`): under the
+        // ranked gear plan a digger in the weapon slot is only for
+        // tunnelling (borg_spare_gear::inferior), and the plan, which skips
+        // diggers, restores the combat weapon. This trial, on the whole
+        // kit's power, could prefer the digger again, one wield per turn.
+        // The engine wields a carried digger for each tunnelling turn by
+        // itself (cmd-cave.c:534-583). A digger is still worn when the
+        // weapon slot is empty or holds another digger.
+        if ranked && digger_waits_for_tunnelling(item, &st.items.items[slot as usize]) {
             continue;
         }
 
@@ -982,8 +1091,10 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
 
             /* XXX XXX XXX Consider if slot is empty */
 
-            /* Ignore "essentially equal" swaps */
-            if p <= b_p + param(Param::wear_min_power_gain) {
+            let best = usize::try_from(b_i).ok().map(|slot| &st.items.items[slot]);
+            if !prefer_wear_candidate(
+                p, b_p, param(Param::wear_min_power_gain), &st.items.items[i as usize], best,
+            ) {
                 continue;
             }
 
@@ -1112,6 +1223,21 @@ fn equip_slots_max() -> usize {
     usize::from(engine::z_info().equip_slots_max)
 }
 
+// borg-reborn-rs (#1235): recover the original radius and pick the shortest clean match.
+fn planned_wear_slot(want: BorgBest, items: &[borg_item]) -> Option<usize> {
+    let matches = |item: &borg_item| {
+        item.pval == want.pval && item.tval == want.tval && item.sval == want.sval
+    };
+    if let Some(radius) = want.torch_radius {
+        items.iter().enumerate()
+            .filter(|(_, item)| matches(item) && burning_torch(item) && light_contribution(item) == radius)
+            .min_by_key(|(slot, item)| (item.timeout, *slot))
+            .map(|(slot, _)| slot)
+    } else {
+        items.iter().position(matches)
+    }
+}
+
 /// Take one step in wearing the optimized equipment
 /// (`borg_one_step_wearing_best`). The `skipping` counter is set once,
 /// before the loop (better-borg-c milestone7 patch 0075).
@@ -1163,9 +1289,6 @@ fn borg_one_step_wearing_best(st: &mut BorgState, skip: i32) -> bool {
     /* Extract the slot */
     let slot = i32::from(borg_best_stuff_order(item_num as i32));
     let want = st.borg.goal.best_item[item_num];
-    let matches = |item: &borg_item| {
-        item.pval == want.pval && item.tval == want.tval && item.sval == want.sval
-    };
 
     /* if the item is a home item to be worn, */
     /*  * drop any item you already have in the slot */
@@ -1197,17 +1320,13 @@ fn borg_one_step_wearing_best(st: &mut BorgState, skip: i32) -> bool {
             return borg_one_step_wearing_best(st, skip + 1);
         }
 
-        let n = usize::from(engine::z_info().store_inven_max);
-        for (i, &menu) in SHOP_MENU_ITEMS.iter().enumerate().take(n) {
-            let item = &st.store.shops[BORG_HOME].ware[i];
-
-            if !matches(item) {
-                continue;
-            }
-            let qty = item.iqty;
+        let n = usize::from(engine::z_info().store_inven_max).min(SHOP_MENU_ITEMS.len());
+        let home = &st.store.shops[BORG_HOME].ware[..n];
+        if let Some(i) = planned_wear_slot(want, home) {
+            let qty = home[i].iqty;
 
             /* "Buy" the desired item from the home */
-            borg_keypress(st, menu as i8 as keycode_t);
+            borg_keypress(st, SHOP_MENU_ITEMS[i] as i8 as keycode_t);
             borg_keypress(st, keycode_t::from(b'p'));
             if qty > 1 {
                 borg_keypress(st, KC_ENTER);
@@ -1229,13 +1348,11 @@ fn borg_one_step_wearing_best(st: &mut BorgState, skip: i32) -> bool {
             borg_keypress(st, letter(slot - inven_wield()));
             return true;
         }
-        /* (INVEN_TOTAL: the pack and the equipment) */
-        for i in 0..quiver_start() {
-            if !matches(&st.items.items[i as usize]) {
-                continue;
-            }
+        // borg-reborn-rs (#1235): the torch must be in the pack to wield it.
+        let end = if want.torch_radius.is_some() { inven_wield() } else { quiver_start() };
+        if let Some(i) = planned_wear_slot(want, &st.items.items[..end as usize]) {
             borg_keypress(st, keycode_t::from(b'w'));
-            borg_keypress(st, letter(i));
+            borg_keypress(st, letter(i as i32));
 
             st.borg.goal.best_item[item_num] = BorgBest::default();
             return true;
@@ -1301,14 +1418,31 @@ fn borg_best_stuff_aux(st: &mut BorgState, n: i32, test: &mut [u16], best: &mut 
             if item.iqty == 0 {
                 continue;
             }
+            if crate::borg_town_live::gear_home_backups() && crate::borg_spare_gear::planned_slot(item).is_some() {
+                continue;
+            }
 
             /* Require aware */
             if !item.aware {
                 continue;
             }
 
+            // borg-reborn-rs (#1239): reconsider reserved upgrades with the
+            // departing kit's carry allowance and Home transaction preflight.
+            if !in_pack && crate::borg_town_live::retained_home_gear(st, (i - pack_size) as usize) {
+                continue;
+            }
+
             /* Ignore "worthless" items */
             if item.value == 0 {
+                continue;
+            }
+
+            // borg-reborn-rs (#1235): torch upgrades require clean fuel even
+            // when the town plan can decurse other equipment.
+            if u32::from(item.tval) == TV_LIGHT && i32::from(item.sval) == st.item_val.sv_light_torch
+                && !burning_torch(item)
+            {
                 continue;
             }
 
@@ -1425,6 +1559,7 @@ pub fn borg_best_stuff(st: &mut BorgState) -> bool {
         b.tval = tval;
         b.pval = pval;
         b.sval = sval;
+        b.torch_radius = burning_torch(item).then(|| light_contribution(item));
     }
     /* if we didn't change anything, clear out the changes */
     if !found {
@@ -1595,6 +1730,53 @@ pub fn borg_free_item_wear(st: &mut BorgState) {
 mod tests {
     use super::*;
 
+    fn full_torch_stack() -> borg_item {
+        use crate::headers::list_object_flags_h::{OF_BURNS_OUT, OF_LIGHT_2};
+
+        let mut full = crate::borg_item::blank_item();
+        full.tval = TV_LIGHT as u8;
+        full.sval = 1;
+        full.iqty = 4;
+        full.timeout = 5000;
+        for flag in [OF_BURNS_OUT, OF_LIGHT_2] {
+            let offset = (flag as i32 - engine::FLAG_START) as usize;
+            full.flags[offset / 8] |= 1 << (offset % 8);
+        }
+        full
+    }
+
+    #[test]
+    fn equipment_plan_finds_the_shortest_torch_at_the_chosen_brightness() {
+        use crate::headers::list_object_modifiers_h::OBJ_MOD_LIGHT;
+
+        let full = full_torch_stack();
+        let short = borg_item { iqty: 1, timeout: 73, ..full };
+        let spent = borg_item { timeout: 0, ..short };
+        let cursed = borg_item { timeout: 1, cursed: true, ..short };
+        let mut bright = full;
+        bright.modifiers[OBJ_MOD_LIGHT as usize] = 1;
+        let items = [full, bright, spent, cursed, short];
+        let mut want = BorgBest { tval: full.tval, sval: full.sval, ..BorgBest::default() };
+        want.torch_radius = Some(light_contribution(&full));
+        assert_eq!(planned_wear_slot(want, &items), Some(4));
+        want.torch_radius = Some(light_contribution(&bright));
+        assert_eq!(planned_wear_slot(want, &items), Some(1));
+    }
+
+    #[test]
+    fn torch_fuel_breaks_a_tie_only_after_accepting_a_pack_upgrade() {
+        let full = full_torch_stack();
+        let short = borg_item { iqty: 1, timeout: 73, ..full };
+        let lightless_power = 100;
+        let lit_power = 200;
+        let min_gain = 5;
+
+        assert!(!prefer_wear_candidate(lit_power, lit_power, min_gain, &short, None));
+        assert!(prefer_wear_candidate(lit_power, lightless_power, min_gain, &full, None));
+        assert!(prefer_wear_candidate(lit_power, lit_power, min_gain, &short, Some(&full)));
+        assert!(!prefer_wear_candidate(lit_power, lit_power, min_gain, &full, Some(&short)));
+    }
+
     #[test]
     fn ammo_tvals() {
         for tval in -2..300 {
@@ -1619,5 +1801,158 @@ mod tests {
         // neither candidate: the sentinel is returned, and the acceptance
         // threshold rejects it, so no key is queued from it
         assert_eq!(backup_swap_choice(0, 0, 9999, 9999), (9999, -1));
+    }
+}
+
+/// borg-reborn-rs (#1361): the recorded Dwarf Priest's weapons, played live
+/// on a dungeon level. `digger-swap-loop` wields 'Narthanc' with a Shovel of
+/// Earthquakes in the pack, as on the recorded save, where the routine wear
+/// trial wielded the shovel and the ranked gear plan put the dagger back,
+/// one wield per turn. The Borg must keep the dagger and leave the square it
+/// started on. `digger-only` carries the shovel with nothing wielded: the
+/// Borg must wield it and keep it until a plain Dagger, far weaker, enters
+/// the pack at think `DAGGER_AT`; then it must wield the dagger and keep it.
+/// `digger-dig-gate` checks the dig gate with the dagger kept (`dig_gate`).
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) mod digger_fixture {
+    use super::*;
+    use crate::borg_headers::borg_trait_h::BI_CDEPTH;
+    use std::cell::Cell;
+
+    thread_local! {
+        static START: Cell<Option<(i32, i32, i32)>> = const { Cell::new(None) };
+        static THINKS: Cell<u32> = const { Cell::new(0) };
+        static WIELDS: Cell<u32> = const { Cell::new(0) };
+        static WORN: Cell<u8> = const { Cell::new(0) };
+    }
+
+    /// Thinks watched after the setup: the recorded loop wields on every
+    /// eligible think, so a loop shows within a few of them.
+    const WATCH: u32 = 60;
+    /// `digger-only`: the think at which the dagger enters the pack. With
+    /// the flag at 0 the remove trial took the lone shovel off at thinks
+    /// 57 and 239 (review of #1361: the lone-shovel phase must cover them).
+    const DAGGER_AT: u32 = 260;
+
+    /// Review of #1361 (`digger-dig-gate`, a Human Priest): with the dagger
+    /// kept, the worn kit's digging skill is below granite's threshold
+    /// (borg_flow.rs:BORG_DIG_HARD, 40), and the carried shovel the engine
+    /// wields for each tunnelling turn lifts it above. borg_can_dig must
+    /// count the shovel: at the shipped settings it allows granite, at
+    /// `wear_digger_keeps_weapon` 0 it refuses, as before.
+    ///
+    /// Re-review: a missing carried digger is no skill of 0. At 20 twitches
+    /// magma's threshold falls from 10 to 0 (borg_can_dig). The engine
+    /// gives a skill of 5 no chance at magma (player-calcs.c:1656), so
+    /// with the shovel dropped, or at 0, magma must stay refused.
+    fn dig_gate(st: &mut BorgState) -> ! {
+        use crate::borg_headers::borg_trait_h::BI_DIG;
+        use crate::headers::list_terrain_h::{FEAT_GRANITE, FEAT_MAGMA};
+        let worn = st.borg.tr(BI_DIG);
+        let carried = crate::borg_flow::carried_digger_skill(st);
+        let on = param(Param::wear_digger_keeps_weapon) != 0;
+        let digs = crate::borg_flow::borg_can_dig(st, false, FEAT_GRANITE as u8);
+        println!("digger-dig-gate: worn skill {worn}, carried {carried:?}, granite {digs}");
+        assert!(worn < 40, "the worn kit alone must not dig granite");
+        assert_eq!(st.borg.tr(BI_DIG), worn, "the trial restores the kit");
+        assert_eq!(u32::from(st.items.items[inven_wield() as usize].tval), TV_SWORD, "the dagger stays wielded");
+        if on {
+            assert!(carried.is_some_and(|skill| skill >= 40), "the shovel lifts the skill to granite's threshold");
+            assert!(digs, "granite is dug with the carried shovel");
+        } else {
+            assert_eq!(carried, None);
+            assert!(!digs, "at 0 the inherited check judges the worn kit only");
+        }
+        // Second re-review: a present but weak tool. In the Borg's view the
+        // shovel loses its ego's STR and tunnelling, a plain Shovel. At
+        // twenty twitches granite's threshold falls from 40 to 30, and
+        // the plain shovel's skill reaches it, but the engine gives a
+        // skill of 40 or less no chance at granite (player-calcs.c:1658).
+        use crate::headers::list_object_modifiers_h::OBJ_MOD_TUNNEL;
+        use crate::headers::list_stats_h::OBJ_MOD_STR;
+        let wield = inven_wield() as usize;
+        for item in &mut st.items.items[..wield] {
+            if u32::from(item.tval) == TV_DIGGING {
+                item.modifiers[OBJ_MOD_STR as usize] = 0;
+                item.modifiers[OBJ_MOD_TUNNEL as usize] = 0;
+            }
+        }
+        st.borg.times_twitch = 20;
+        st.borg.time.now += 1; // a new turn for the carried-digger cache
+        let weak = crate::borg_flow::carried_digger_skill(st);
+        println!("digger-dig-gate: plain shovel {weak:?}");
+        if on {
+            assert!(weak.is_some_and(|skill| (30..=40).contains(&skill)),
+                "the plain shovel reaches the lowered threshold, not the engine's");
+        }
+        assert!(!crate::borg_flow::borg_can_dig(st, false, FEAT_GRANITE as u8),
+            "a carried tool with no engine chance must not dig granite");
+
+        // Twenty twitches, the shovel gone from the Borg's view (or the
+        // flag at 0): no carried digger, and magma at threshold 0.
+        assert!(worn < 10, "the worn kit alone is below magma's threshold");
+        for item in &mut st.items.items[..wield] {
+            if u32::from(item.tval) == TV_DIGGING { item.iqty = 0; }
+        }
+        st.trait_swap.weapon_swap = 0; // nor is a digger the weapon swap
+        st.borg.time.now += 1; // a new turn for the carried-digger cache
+        assert_eq!(crate::borg_flow::carried_digger_skill(st), None);
+        assert!(!crate::borg_flow::borg_can_dig(st, false, FEAT_MAGMA as u8),
+            "with no carried digger the twitch allowance must not allow magma at skill {worn}");
+        println!("digger-dig-gate passed (#1361): {}", if on { "on" } else { "off" });
+        std::process::exit(0);
+    }
+
+    pub(crate) fn step(st: &mut BorgState, case: &str) {
+        let weapon = case != "digger-only";
+        let wield = inven_wield() as usize;
+        // main-borgh.c:borgh_key checks the synthetic start (max depth
+        // included) at the first key, so the kit replaces the gear after it.
+        if THINKS.get() == 0 && START.get().is_none() {
+            THINKS.set(u32::MAX);
+            return;
+        }
+        if START.get().is_none() {
+            THINKS.set(0);
+            assert_eq!(st.borg.tr(BI_CDEPTH), 5, "the fixture starts on DL5");
+            engine::setup_test_digger_kit(st, weapon);
+            crate::borg_item::borg_find_all_items(st);
+            crate::borg_trait::borg_notice(st, true);
+            let worn = st.items.items[wield];
+            assert_eq!(worn.tval as u32, if weapon { TV_SWORD } else { 0 });
+            if case == "digger-dig-gate" { dig_gate(st); }
+            START.set(Some((st.borg.tr(BI_CDEPTH), st.borg.c.x, st.borg.c.y)));
+            WORN.set(worn.tval);
+            return;
+        }
+        let worn = st.items.items[wield].tval;
+        let think = THINKS.get();
+        if worn != WORN.replace(worn) {
+            WIELDS.set(WIELDS.get() + 1);
+            println!("{case}: think {think} wields tval {worn}");
+            if !weapon {
+                // Before the dagger, only the shovel; after it, only the dagger.
+                let want = if think < DAGGER_AT { TV_DIGGING } else { TV_SWORD };
+                assert_eq!(u32::from(worn), want, "{case}: think {think} wields the wrong weapon");
+            }
+        }
+        let limit = if weapon { 0 } else if think < DAGGER_AT { 1 } else { 2 };
+        assert!(WIELDS.get() <= limit, "{case}: {} weapon changes in {think} thinks", WIELDS.get());
+        if !weapon && think == DAGGER_AT {
+            assert_eq!((u32::from(worn), WIELDS.get()), (TV_DIGGING, 1), "{case}: the lone shovel is wielded and kept");
+            engine::carry_test_dagger(st);
+            crate::borg_item::borg_find_all_items(st);
+            crate::borg_trait::borg_notice(st, true);
+        }
+        THINKS.set(think + 1);
+        let watch = if weapon { WATCH } else { DAGGER_AT + 30 };
+        if THINKS.get() < watch { return; }
+        let start = START.get().unwrap();
+        let moved = start != (st.borg.tr(BI_CDEPTH), st.borg.c.x, st.borg.c.y);
+        assert!(moved, "{case}: still on the starting square after {watch} thinks");
+        assert_eq!(u32::from(worn), TV_SWORD, "{case}: the combat weapon is wielded");
+        assert_eq!(WIELDS.get(), limit);
+        println!("{case} passed (#1361)");
+        std::process::exit(0);
     }
 }

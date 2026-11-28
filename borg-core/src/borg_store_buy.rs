@@ -1400,8 +1400,8 @@ pub fn borg_think_shop_buy(st: &mut BorgState) -> bool {
     buy_selected(st, true)
 }
 
-/// A Home withdrawal intended for sale is not a newly purchased keeper.
-pub fn take_selected_for_sale(st: &mut BorgState) -> bool {
+/// Withdraw Home stock for disposal without protecting it as a keeper.
+pub fn take_selected_for_disposal(st: &mut BorgState) -> bool {
     buy_selected(st, false)
 }
 

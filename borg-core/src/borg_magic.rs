@@ -414,7 +414,7 @@ pub fn borg_get_spell_entry(st: &BorgState, book: i32, entry: i32) -> Option<usi
 }
 
 /// Find the spell index for a given spell (`borg_get_spell_number`)
-fn borg_get_spell_number(st: &BorgState, spell: borg_spells) -> i32 {
+pub(crate) fn borg_get_spell_number(st: &BorgState, spell: borg_spells) -> i32 {
     // The borg must be able to "cast" spells
     if st.magic.magics.is_empty() {
         return -1;
@@ -708,6 +708,9 @@ pub fn borg_spell(st: &mut BorgState, spell: borg_spells) -> bool {
 
     // increment the spell counter
     st.magic.magics[spell_num].times += 1;
+
+    // borg-reborn-rs (#1062): the cause of the next jump
+    crate::borg_leash::own_spell(st, spell);
 
     // Success
     true

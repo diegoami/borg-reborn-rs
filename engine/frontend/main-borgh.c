@@ -28,7 +28,7 @@
  * What it does:
  *  - provides an 80x24 terminal that draws nothing and never sleeps;
  *  - feeds a scripted key sequence that creates a character (given race and
- *    class, point-based stats, default name) and then sends ^Z z to start
+ *    class, point-based stats, default name) and then sends Ctrl-Z z to start
  *    the Borg;
  *  - logs every key returned by inkey_hack (one line per key:
  *    "<game turn> <event type> <key code hex> <mods hex>");
@@ -39,6 +39,8 @@
  *  - writes a JSON summary on exit.
  *
  * Usage: angband -mborgh -n -u<name> -d... -- [options]
+ *   -cborg           switch to CBorg through the normal command prompt
+ *   -borg-help       exercise the help-screen Borg switch in both directions
  *   -seed N       seed the game RNG (also settable with $ANGBAND_SEED)
  *   -race N       race index (0-based, as in p_race.txt); explicit only
  *   -class N      class index (0-based, as in class.txt); explicit only
@@ -190,11 +192,14 @@ static unsigned long keys_logged = 0;
 static struct timeval start_tv;
 static bool finished = false;
 static bool borg_started = false;
+static bool opt_cborg = false;
+static bool test_map_export = false;
+static bool opt_borg_help = false;
 static int startup_acks = 0;	/* "-more-" prompts answered before the Borg's first key */
 
 /* Scripted keys (before the Borg is running) */
 #define SCRIPT_MAX 64
-#define SCRIPT_START_BORG 0x7fffffff /* marker: set options, then ^Z */
+#define SCRIPT_START_BORG 0x7fffffff /* marker: set options, then Ctrl-Z */
 static keycode_t script[SCRIPT_MAX];
 static int script_len = 0;
 static int script_pos = 0;
@@ -730,6 +735,38 @@ static void borgh_checkpoint(void)
 #endif
 
 
+static bool junk_consumables_town_fixture(void)
+{
+#ifdef BORGH_TEST_JUNK_CONSUMABLES
+	const char *fixture = getenv("BORGH_TEST_JUNK_CONSUMABLES");
+	return fixture && streq(fixture, "town");
+#else
+	return false;
+#endif
+}
+
+#ifdef BORGH_TEST_JUNK_CONSUMABLES
+/* Give the attack a known line of fire and a target at an exact range. */
+static void place_junk_consumables_target(struct monster_race *race, int distance)
+{
+	struct monster_group_info info = { 0, 0 };
+	struct loc target = loc(player->grid.x + distance, player->grid.y);
+	for (int step = 1; step <= distance; step++) {
+		struct loc grid = loc(player->grid.x + step, player->grid.y);
+		if (!square_in_bounds_fully(cave, grid) || square_monster(cave, grid))
+			quit("borgh: junk consumables fixture line is obstructed");
+		square_set_feat(cave, grid, FEAT_FLOOR);
+		sqinfo_on(square(cave, grid)->info, SQUARE_GLOW);
+		square_memorize(cave, grid);
+	}
+	if (!place_new_monster(cave, target, race, false, false, info, ORIGIN_DROP_WIZARD))
+		quit("borgh: could not place junk consumables fixture monster");
+	player->upkeep->update |= PU_UPDATE_VIEW | PU_MONSTERS;
+	update_stuff(player);
+	start_monsters_placed++;
+}
+#endif
+
 /**
  * borg-reborn-rs (#722): place the monsters of -start-monsters near the
  * player, as the debug command's summon does (cmd-wizard.c,
@@ -768,6 +805,15 @@ static void place_start_monsters(const char *spec)
 		if (!race || !race->name || my_stricmp(race->name, name) != 0)
 			quit_fmt("borgh: -start-monsters: no monster named exactly '%s'", name);
 		start_monsters_requested += (int)count;
+#ifdef BORGH_TEST_JUNK_CONSUMABLES
+		const char *fixture = getenv("BORGH_TEST_JUNK_CONSUMABLES");
+		if (fixture && streq(fixture, "throw")) {
+			if (count != 1 || dist > 11)
+				quit("borgh: junk consumables fixture needs one target at range 1..11");
+			place_junk_consumables_target(race, (int)dist);
+			return;
+		}
+#endif
 		while (count-- > 0) {
 			int tries;
 			for (tries = 0; tries < 10; tries++) {
@@ -785,6 +831,18 @@ static void place_start_monsters(const char *spec)
 
 static void prepare_borg_start(void)
 {
+	if (junk_consumables_town_fixture()) {
+		/* A caster's record makes the engine say how many spells it can
+		 * learn; that message must not wait for a key before the Borg
+		 * exists (as the start-depth path below). */
+		bool auto_more = OPT(player, auto_more);
+		option_set("auto_more", true);
+		synthetic_build_apply(opt_start_build, start_build_sha256);
+		event_signal(EVENT_MESSAGE_FLUSH);
+		option_set("auto_more", auto_more);
+		square_set_feat(cave, player->grid, FEAT_MORE);
+		square_memorize(cave, player->grid);
+	}
 	if (opt_start_depth) {
 		bool auto_more = OPT(player, auto_more);
 		if (opt_start_depth >= z_info->max_depth)
@@ -886,12 +944,15 @@ static errr term_xtra_borgh(int n, int v)
 		 */
 		if (script_pos < script_len) {
 			if (!v) return 0;
-			/* Loading can trigger msg_flush() after the splash. Leave
-			 * the start marker queued while any such prompt is open. */
-			if (opt_load && script[script_pos] == SCRIPT_START_BORG
+			/* Keep scripted input queued while msg_flush() waits for
+			 * acknowledgment during load or the map export test. */
+			bool load_start = opt_load && script[script_pos] == SCRIPT_START_BORG;
+			if ((load_start || (test_map_export && borg_started))
 					&& !inkey_flag && more_prompt_shown()) {
-				if (getenv("BORGH_DEBUG"))
-					fprintf(stderr, "borgh: acknowledging load -more- prompt\n");
+				if (getenv("BORGH_DEBUG")) {
+					fprintf(stderr, "borgh: acknowledging %s -more- prompt\n",
+						load_start ? "load" : "map export");
+				}
 				Term_keypress(ESCAPE, 0);
 				return 0;
 			}
@@ -910,7 +971,7 @@ static errr term_xtra_borgh(int n, int v)
 		}
 
 		/*
-		 * A "-more-" prompt after "^Z z" but before the Borg has
+		 * A "-more-" prompt after "Ctrl-Z z" but before the Borg has
 		 * returned any key: borg_init() shows it for a borg.txt
 		 * warning (e.g. borg_uses_dynamic_calcs), before the keypress
 		 * hook is installed.  Answer it with ESC, the same way for
@@ -998,11 +1059,18 @@ static int capture_level_arg(int argc, char *argv[], int *i)
 	return value;
 }
 
+extern void borgh_check_pborg_settings(void);
+
 errr init_borgh(int argc, char *argv[])
 {
 	int i;
 	const char *env;
 	const char *letters = all_letters_borgh;
+
+	if (argc == 2 && streq(argv[1], "-check-pborg-settings")) {
+		borgh_check_pborg_settings();
+		quit(NULL);
+	}
 
 	gettimeofday(&start_tv, NULL);
 
@@ -1016,6 +1084,10 @@ errr init_borgh(int argc, char *argv[])
 		if (streq(argv[i], "-seed")) {
 			borgh_seed = (uint32_t)arg_long(argc, argv, &i);
 			borgh_seed_set = true;
+		} else if (streq(argv[i], "-cborg")) {
+			opt_cborg = true;
+		} else if (streq(argv[i], "-borg-help")) {
+			opt_borg_help = true;
 		} else if (streq(argv[i], "-race")) {
 			opt_race = (int)arg_long(argc, argv, &i);
 		} else if (streq(argv[i], "-class")) {
@@ -1135,7 +1207,10 @@ errr init_borgh(int argc, char *argv[])
 	if (opt_random_birth && opt_load) quit("borgh: random birth cannot load a save");
 	if (opt_start_depth && (opt_load || opt_random_birth))
 		quit("borgh: -start-depth cannot load a save or use random birth");
-	if (opt_start_build && !opt_start_depth) quit("borgh: -start-build requires -start-depth");
+	if (junk_consumables_town_fixture() && (!opt_start_build || opt_start_depth || opt_load || opt_random_birth))
+		quit("borgh: junk consumables town fixture requires a build and explicit town birth");
+	if (opt_start_build && !opt_start_depth && !junk_consumables_town_fixture())
+		quit("borgh: -start-build requires -start-depth");
 	if (opt_start_monsters && !opt_start_depth && !opt_load)
 		quit("borgh: -start-monsters requires -start-depth or -load");
 	if (!!opt_capture_build != !!opt_capture_build_level || opt_capture_build_level < 0 || opt_capture_build_level > 15)
@@ -1211,8 +1286,39 @@ errr init_borgh(int argc, char *argv[])
 	script_add('y');                          /* accept history */
 	script_add(KC_ENTER);                     /* final confirm */
 	}
-	script_add(SCRIPT_START_BORG);            /* ^Z */
-	script_add('z');                          /* activate borg */
+	script_add(SCRIPT_START_BORG);            /* Ctrl-Z */
+	if (opt_borg_help) {
+		for (int i = 0; i < 2; i++) {
+			script_add('?');          /* open the selected Borg's help */
+			script_add('?');          /* ask for help from that prompt */
+			script_add('B');          /* switch from help */
+			script_add(KTRL('Z'));
+		}
+	}
+	if (opt_cborg) {
+		script_add('B');                      /* switch PBorg to CBorg */
+		script_add(KTRL('Z'));                /* open CBorg's commands */
+	}
+	/* #1303: drive the real P-Borg filename prompt before starting play. */
+	const char *map_export = getenv("BORGH_TEST_MAP_EXPORT");
+	if (map_export) {
+		if (opt_cborg) quit("borgh: the map export test requires P-Borg");
+		test_map_export = true;
+		script_add('l');
+		if (streq(map_export, "cancel")) {
+			script_add('\\');
+			script_add(ESCAPE);
+		} else if (streq(map_export, "open_failure")) {
+			script_add('.'); /* A directory cannot be opened for writing. */
+			script_add(KC_ENTER);
+		} else if (streq(map_export, "success")) {
+			script_add(KC_ENTER); /* Accept the default archive path. */
+		} else {
+			quit("borgh: unknown map export test case");
+		}
+		script_add(KTRL('Z'));
+	}
+	script_add('z');                          /* activate selected Borg */
 
 	borgh_turn_hook = borgh_tick;
 	borgh_key_hook = borgh_key;

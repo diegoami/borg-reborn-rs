@@ -173,10 +173,10 @@ jobs:
           if-no-files-found: ignore
       # P3: exercise the actual profile serializer and run_cell at our zoo pin.
       - run: |
-          zoo_pin=$(python3 -c "import json; print(json.load(open('pins.json'))['pins']['borg-zoo']['commit'])")
-          git init -q vendor/borg-zoo
-          git -C vendor/borg-zoo fetch -q --depth 1 https://github.com/diegoami/borg-zoo "$zoo_pin"
-          git -C vendor/borg-zoo checkout -q --detach "$zoo_pin"
+          zoo_pin=$(cat harness/zoo-adapter-pin.txt)
+          git init -q vendor/borg-zoo-adapter
+          git -C vendor/borg-zoo-adapter fetch -q --depth 1 https://github.com/diegoami/borg-zoo "$zoo_pin"
+          git -C vendor/borg-zoo-adapter checkout -q --detach "$zoo_pin"
           echo "BORG_ZOO_CONTRACT_REQUIRED=1" >> "$GITHUB_ENV"
       # Native preference tests use their own death registry. The original
       # core's observation/replay check below must continue to select one of
@@ -219,13 +219,19 @@ jobs:
       # ... and the same keys, messages and states as the reference (TE.5).
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/reference/smoke-rust
       # The decision trace and the parameter table are in the run outputs (T2.4).
-      # #606: the harness default, the borg-rs core (it reads harness/borg.txt),
+      # #606: the harness default, the borg-rs core (it reads harness/pborg.yaml),
       # plays smoke twice with the same keys, and the same keys, messages and
       # states as its own reference.
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-borg-rs-1
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-borg-rs-2
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-borg-rs-1 harness/out/smoke-borg-rs-2
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-borg-rs-1 harness/reference/smoke-borg-rs
+      # #1357: the same core at its compiled defaults (BORG_CORE_OVERRIDES=off:
+      # borg-core/pborg.yaml, every borg_param_ at its default), the contract
+      # that a default plays like borg-rs at the pin. A change to how the
+      # defaults play re-records smoke-borg-rs-defaults in its PR and says why.
+      - run: BORG_CORE_OVERRIDES=off BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-borg-rs-defaults
+      - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-borg-rs-defaults harness/reference/smoke-borg-rs-defaults
       - id: ranger-phase
         run: python3 harness/check-ranger-phase.py --out "$RUNNER_TEMP/ranger-phase"
       - uses: actions/upload-artifact@v4
@@ -268,8 +274,27 @@ jobs:
       # the game's RNG, nor change what is observed; each think asserts it
       # (feature test-hallucinate). Perception against the engine (T2.5): each
       # think writes its comparison to truth.jsonl (feature test-perception).
-      - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception,test-stair-handoff harness/build.sh
+      - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception,test-stair-handoff,test-combat-heal,test-town-loadout,test-cursed-spares,test-town-review,test-junk-consumables harness/build.sh
+      - run: python3 engine/tests/test_combat_heal.py
+      - run: python3 engine/tests/test_town_loadout.py
+      - run: python3 engine/tests/test_exploration_pack.py
+      - run: python3 engine/tests/test_town_recall_loadout.py
+      - run: python3 engine/tests/test_cursed_spares.py
+      - run: python3 engine/tests/test_junk_consumables.py
+      - run: python3 engine/tests/test_inferior_spares.py TownSpareSaleTest
       - run: python3 engine/tests/test_stair_handoff.py EmergencyStairHandoffTest
+      - run: python3 engine/tests/test_stair_handoff.py TownRecallReadinessTest
+      - run: python3 engine/tests/test_stair_handoff.py HealingRestockTest
+      - run: python3 engine/tests/test_stair_handoff.py LeaveLevelUpstairsTest
+      - run: python3 engine/tests/test_stair_handoff.py DarkVeinLoopTest
+      - run: python3 engine/tests/test_stair_handoff.py RecoveryManaLoopTest
+      - run: python3 engine/tests/test_stair_handoff.py StaleStairMoreTest
+      - run: python3 engine/tests/test_stair_handoff.py MoreRefusedGatesTest
+      - run: python3 engine/tests/test_stair_handoff.py NoteStandingFlagsTest
+      - run: python3 engine/tests/test_stair_handoff.py BreederDoorLoopTest
+      - run: python3 engine/tests/test_stair_handoff.py DiggerSwapLoopTest
+      - run: python3 engine/tests/test_stair_handoff.py StaleKoboldDoorTest
+      - run: python3 engine/tests/test_stair_handoff.py StairScumLootRoutesTest
       # A test build's deaths are not natural deaths of an arm: own registry.
       - run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-hallucinate
       # The full suite on the test build is the engine-full job's (#1400).
@@ -334,7 +359,7 @@ jobs:
       # and skips it. Those files can change the borg-rs core's play, which
       # this suite never measures: the borg-rs steps below do (the default
       # core's smoke against smoke-borg-rs, #606, plays the shipped
-      # harness/borg.txt), and they run on every PR; the zoo measures more.
+      # harness/pborg.yaml), and they run on every PR; the zoo measures more.
       # #1389: so do scripts/ (reference tooling and checks; only
       # scripts/make-world.py is run by harness/run.sh, so it stays a full
       # run), .gitattributes and the pr-base workflow. Any other file
@@ -345,7 +370,7 @@ jobs:
           full=1
           if [ "${{ github.event_name }}" = pull_request ] \
               && ! git diff --name-only HEAD^1 HEAD \
-                | grep -qvE '^(docs/|reference/|borg-core/|harness/borg(_[a-z]+)?\.txt$|harness/scary_monsters[a-z_]*\.txt$|harness/plans/|[^/]+\.md$|scripts/|\.gitattributes$|\.github/workflows/pr-base\.yml$)' \
+                | grep -qvE '^(docs/|reference/|borg-core/|harness/pborg\.yaml$|harness/scary_monsters[a-z_]*\.txt$|[^/]+\.md$|scripts/|\.gitattributes$|\.github/workflows/pr-base\.yml$)' \
               && ! git diff --name-only HEAD^1 HEAD | grep -qx scripts/make-world.py; then
               full=0
           fi

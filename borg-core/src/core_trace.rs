@@ -14,9 +14,9 @@ use std::sync::{Mutex, OnceLock};
 
 #[derive(Debug, Default)]
 struct Selection {
+    healing_potions: Option<i32>,
     name: Option<&'static str>,
     source: Option<&'static str>,
-    errand: Option<(String, Option<i32>)>,
     attacks: Vec<AttackRanking>,
     prepared: Vec<PreparedCheck>,
 }
@@ -205,6 +205,8 @@ struct Line {
     depth: i32,
     hp: i32,
     max_hp: i32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    healing_potions: Option<i32>,
     sp: i32,
     max_sp: i32,
     danger: i32,
@@ -242,22 +244,29 @@ pub(crate) fn begin() -> bool {
     if path.is_none() {
         return false;
     }
-    let errand = crate::shell::trace_errand();
-    FRAMES.with(|frames| {
-        let mut frames = frames.borrow_mut();
-        let errand = match errand {
-            Ok(value) => value,
-            Err(()) => frames.last().and_then(|f| f.errand.clone()),
-        };
-        frames.push(Selection {
-            errand,
-            ..Selection::default()
-        });
-    });
+    FRAMES.with(|frames| frames.borrow_mut().push(Selection::default()));
     true
 }
 
+thread_local! {
+    /// borg-reborn-rs (#1153): the last checks chosen, newest last, kept
+    /// whether or not the trace is written (the loop detector's note).
+    static RECENT: RefCell<std::collections::VecDeque<&'static str>> = const { RefCell::new(std::collections::VecDeque::new()) };
+}
+
+/// #1153: the last (up to 4) checks chosen, oldest first.
+pub(crate) fn recent_choices() -> Vec<&'static str> {
+    RECENT.with(|r| r.borrow().iter().copied().collect())
+}
+
 pub(crate) fn selected(name: &'static str, source: &'static str) {
+    RECENT.with(|r| {
+        let mut r = r.borrow_mut();
+        r.push_back(name);
+        while r.len() > 4 {
+            r.pop_front();
+        }
+    });
     FRAMES.with(|frames| {
         if let Some(frame) = frames.borrow_mut().last_mut() {
             frame.name = Some(name);
@@ -275,6 +284,14 @@ macro_rules! choice {
     }};
 }
 pub(crate) use choice;
+
+pub(crate) fn observe_healing_potions(st: &BorgState) {
+    FRAMES.with(|frames| {
+        if let Some(frame) = frames.borrow_mut().last_mut() {
+            frame.healing_potions = Some(crate::borg_healing_restock::carried_potions(st));
+        }
+    });
+}
 
 pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
     if !active {
@@ -295,13 +312,9 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
         "dungeon"
     };
     let danger = crate::borg_danger::borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
-    let errand = match crate::shell::trace_errand() {
-        Ok(Some(value)) => Some(value),
-        Ok(None) if matches!(check, "errand_handoff" | "errand_steer") => frame.errand,
-        Ok(None) => None,
-        Err(()) => frame.errand,
-    }
-    .map(|(name, target)| Errand { name, target });
+    // borg-reborn-rs (#1339): the errands are retired; the field stays in
+    // the schema (always null) so that readers of core-trace@2 keep working.
+    let errand: Option<Errand> = None;
     let mut line = Line {
         schema: "borg-reborn-rs/core-trace@2".into(),
         think: 0,
@@ -311,6 +324,7 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
         depth,
         hp: st.borg.tr(BI_CURHP),
         max_hp: st.borg.tr(BI_MAXHP),
+        healing_potions: frame.healing_potions,
         sp: st.borg.tr(BI_CURSP),
         max_sp: st.borg.tr(BI_MAXSP),
         danger,
@@ -321,7 +335,7 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
             leaving: st.borg.goal.leaving,
             fleeing: st.borg.goal.fleeing,
             fleeing_to_town: st.borg.goal.fleeing_to_town,
-            rising: st.borg.goal.rising,
+            rising: st.rising_to_town(),
         },
         errand,
         keys: st.io.queued_keys(),
@@ -430,6 +444,7 @@ mod tests {
             depth: 3,
             hp: 12,
             max_hp: 40,
+            healing_potions: Some(1),
             sp: 2,
             max_sp: 9,
             danger: 15,
@@ -456,5 +471,9 @@ mod tests {
         let text = serde_json::to_string(&line).unwrap();
         assert!(!text.contains('\n'));
         assert_eq!(serde_json::from_str::<Line>(&text).unwrap(), line);
+
+        let mut old: serde_json::Value = serde_json::from_str(&text).unwrap();
+        old.as_object_mut().unwrap().remove("healing_potions");
+        assert_eq!(serde_json::from_value::<Line>(old).unwrap().healing_potions, None);
     }
 }

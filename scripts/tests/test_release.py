@@ -58,7 +58,7 @@ class ReleaseWorkflowTest(unittest.TestCase):
         # directly; the engine creates lib/save etc. only on Unix.
         text = (ROOT / 'scripts/release/package.sh').read_text()
         self.assertIn('mkdir -p "$STAGE/lib/save" "$STAGE/lib/scores" "$STAGE/lib/panic" "$STAGE/lib/user/archive"', text)
-        self.assertIn('"$ROOT/harness/prepare-borg-txt.sh" "$STAGE/lib/user"', text)
+        self.assertIn('"$ROOT/harness/prepare-pborg-config.sh" "$STAGE/lib/user"', text)
         self.assertIn("info.external_attr = (0o40755 << 16) | 0x10", text)
 
     def test_macos_only_when_asked_and_no_launcher(self):

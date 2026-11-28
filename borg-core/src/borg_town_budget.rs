@@ -108,8 +108,15 @@ pub struct Budget {
 }
 
 /// The urgent pass: for the urgent needs `need`, the purchase set chosen
-/// by (most urgent needs met, least gold, fewest wares, earliest wares). Returns
-/// the chosen candidate indices and the bit mask of `need` they cover.
+/// by (the urgent Word of Recall met, most urgent needs met, least gold,
+/// fewest wares, earliest wares). Returns the chosen candidate indices and
+/// the bit mask of `need` they cover.
+///
+/// borg-reborn-rs (#956, P7 review): `Need::Trip` is urgent only with
+/// `town_recall_urgent` at the dive gate, where the Recall is "bought first,
+/// before anything is weighed" (harness/pborg.yaml). Counting needs alone, a
+/// purse of 140 with a 125-gold scroll and a 20-gold ration bought the
+/// ration and left the Recall 5 gold short.
 fn urgent_pass(
     cands: &[Candidate],
     need: &[Need],
@@ -122,6 +129,7 @@ fn urgent_pass(
     // `serves` is asked once per candidate: in production it reaches the
     // engine's effect tables, and the subset loop below must not.
     let full = (1u32 << need.len()) - 1;
+    let trip = need.iter().position(|n| *n == Need::Trip).map_or(0u32, |b| 1 << b);
     let mut best: Vec<Option<(usize, u32)>> = vec![None; (full + 1) as usize];
     for (i, c) in cands.iter().enumerate() {
         if c.qty < 1 {
@@ -157,8 +165,8 @@ fn urgent_pass(
         let better = match &choice {
             None => true,
             Some((cov, c, p)) => {
-                let key = (std::cmp::Reverse(covered.count_ones()), cost, picked.len());
-                let old = (std::cmp::Reverse(cov.count_ones()), *c, p.len());
+                let key = (std::cmp::Reverse(covered & trip != 0), std::cmp::Reverse(covered.count_ones()), cost, picked.len());
+                let old = (std::cmp::Reverse(cov & trip != 0), std::cmp::Reverse(cov.count_ones()), *c, p.len());
                 key < old || (key == old && picked < *p)
             }
         };
@@ -183,7 +191,7 @@ impl Budget {
         let cands = &stock.candidates;
         let (picked, covered) = urgent_pass(cands, urgent_needs, facts.gold.max(0), &serves);
 
-        let urgent: Vec<UrgentPurchase> = picked
+        let mut urgent: Vec<UrgentPurchase> = picked
             .iter()
             .map(|&i| {
                 let served = serves(&cands[i]);
@@ -197,6 +205,11 @@ impl Budget {
                 }
             })
             .collect();
+        // borg-reborn-rs (#956, review of #961): the live selector buys the
+        // urgent purchases in this order, so the urgent Recall goes first
+        // and a cheaper urgent ware cannot take the last slot or the weight
+        // it needs (stable: the rest keep the candidate order).
+        urgent.sort_by_key(|f| !f.needs.contains(&Need::Trip));
         let unmet = urgent_needs
             .iter()
             .enumerate()
@@ -256,14 +269,22 @@ impl Budget {
             i64::from(crate::params::value(crate::params::Param::town_gold_reserve_percent)),
         );
         let black_market_reserve = i64::from(st.cfg(crate::borg_headers::borg_h::BORG_SUM_EXCLUDED_FROM_BLACK_MARKET)).max(0);
-        let percentage = i64::from(st.cfg(crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE));
-        let market_gold = black_market_budget(facts.gold, black_market_reserve, percentage, 0);
+        // The purse threshold (#1103) closes the Black Market to ordinary
+        // purchases: the share the solver reads. The urgent needs keep the
+        // configured share (review of #1112, F1): a poisoned Borg whose only cure
+        // is on offer there is not shut out by a purse below the threshold.
+        let configured = i64::from(st.cfg(crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE));
+        let percentage = black_market_percentage(st, facts.gold);
+        let recall_urgent = crate::borg_town_utility::recall_urgent(st);
         let mut budget = Self::build_with_reserve(&facts, stock, &crate::borg_town_utility::urgent_needs(st, trip), reserve, |c| {
-            if (black_market_reserve > 0 || percentage >= 0) && c.is_black_market() && i64::from(c.price) > market_gold {
+            if !urgent_market_allows(c, facts.gold, black_market_reserve, configured) {
                 return Vec::new();
             }
             let ware = &st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)];
-            crate::borg_town_stock::needs_served(st, ware)
+            let mut served = crate::borg_town_stock::needs_served(st, ware);
+            // #859: a Word of Recall serves the urgent Recall need.
+            if recall_urgent && is_recall_scroll(st, ware.tval, ware.sval) { served.push(Need::Trip); }
+            served
         });
         budget.black_market_reserve = black_market_reserve;
         budget.black_market_percentage = percentage;
@@ -274,6 +295,49 @@ impl Budget {
 pub(crate) fn is_recall_scroll(st: &BorgState, tval: u8, sval: u8) -> bool {
     u32::from(tval) == crate::headers::list_tvals_h::TV_SCROLL
         && i32::from(sval) == st.item_val.sv_scroll_word_of_recall
+}
+
+/// Whether a candidate may serve an urgent need under the configured Black
+/// Market cap (the cap and the reserve, not the purse threshold: #1103, review
+/// of #1112 F1): any ware outside the Black Market, and a Black Market ware
+/// within what the cap leaves (all of them when the cap is unconfigured).
+pub(crate) fn urgent_market_allows(c: &Candidate, gold: i64, reserve: i64, configured_percentage: i64) -> bool {
+    !((reserve > 0 || configured_percentage >= 0) && c.is_black_market()
+        && i64::from(c.price) > black_market_budget(gold, reserve, configured_percentage, 0))
+}
+
+/// borg-reborn-rs (#1103, owner: "keep and buy whenever it finds on the black
+/// market up from a certain budget"; "flat 6000 starting with a level negative
+/// delta of 100"): the purse the Black Market opens at for a character level,
+/// `max(0, town_black_market_min_gold - town_black_market_level_delta x level)`.
+/// 0 when `town_black_market_min_gold` is 0 (no threshold).
+pub(crate) fn black_market_threshold(min_gold: i64, delta: i64, level: i64) -> i64 {
+    if min_gold <= 0 { return 0; }
+    (min_gold - delta.max(0) * level.max(0)).max(0)
+}
+
+/// The Black Market's spending share (`borg_black_market_max_percentage`) for
+/// ordinary purchases at this purse: 0 below the threshold, the configured share
+/// above it. The budget (so the plan record) and through it the solver read it
+/// here, so a replay sees what the game saw. The urgent needs do not: they keep
+/// the configured cap (`urgent_market_allows`), and the live checkout reads the
+/// configured share too, the plan it executes having been made at this purse.
+pub(crate) fn black_market_percentage(st: &BorgState, gold: i64) -> i64 {
+    use crate::params::{value, Param};
+    black_market_percentage_with(st, gold, i64::from(value(Param::town_black_market_min_gold)),
+        i64::from(value(Param::town_black_market_level_delta)))
+}
+
+/// [`black_market_percentage`] with the two parameters given (the unit tests
+/// set no parameters).
+pub(crate) fn black_market_percentage_with(st: &BorgState, gold: i64, min_gold: i64, delta: i64) -> i64 {
+    black_market_share(
+        i64::from(st.cfg(crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE)), gold,
+        i64::from(st.borg.tr(crate::borg_headers::borg_trait_h::BI_CLEVEL)), min_gold, delta)
+}
+
+pub(crate) fn black_market_share(percentage: i64, gold: i64, level: i64, min_gold: i64, delta: i64) -> i64 {
+    if gold < black_market_threshold(min_gold, delta, level) { 0 } else { percentage }
 }
 
 pub(crate) fn black_market_budget(gold: i64, reserve: i64, percentage: i64, legacy_share: i64) -> i64 {
@@ -454,6 +518,48 @@ mod tests {
         assert_eq!(b.gold, 0);
     }
 
+    /// #859: an urgent Recall (the dive gate's) is bought first, ahead of
+    /// everything the solver would weigh, with a heavy purse and no other need.
+    #[test]
+    fn an_urgent_recall_is_bought_first() {
+        const RECALL: u32 = 7;
+        let t = town([&[], &[], &[], &[], &[item(CLW, 5, 20), item(RECALL, 3, 125)], &[], &[], &[]]);
+        let s = build(&t, &[]);
+        let serves = |c: &Candidate| if c.kind == RECALL { vec![Need::Trip] } else { serves(c) };
+        let b = Budget::build(&facts(20_000), &s, &[Need::Trip], serves);
+        let bought: Vec<u32> = b.urgent.iter().map(|f| s.candidates[f.candidate].kind).collect();
+        assert_eq!(bought, [RECALL]);
+        assert_eq!(b.urgent[0].needs, [Need::Trip]);
+        assert!(b.unmet.is_empty());
+    }
+
+    /// #956 (P7 review): when the purse cannot pay for every urgent need,
+    /// the urgent Recall comes before a cheaper need. 140 gold, a 125-gold
+    /// Recall and a 20-gold ration: the Recall, not the ration.
+    #[test]
+    fn an_urgent_recall_is_not_starved_by_a_cheaper_urgent_need() {
+        const RECALL: u32 = 7;
+        let t = town([&[item(RATION, 20, 20)], &[], &[], &[], &[item(RECALL, 3, 125)], &[], &[], &[]]);
+        let s = build(&t, &[]);
+        let price = |k: u32| i64::from(s.candidates.iter().find(|c| c.kind == k).unwrap().price);
+        let purse = price(RECALL) + price(RATION) - 5;
+        assert!(purse >= price(RECALL));
+        let serves = |c: &Candidate| if c.kind == RECALL { vec![Need::Trip] } else { serves(c) };
+        let b = Budget::build(&facts(purse), &s, &[Need::Food, Need::Trip], serves);
+        let bought: Vec<u32> = b.urgent.iter().map(|f| s.candidates[f.candidate].kind).collect();
+        assert_eq!(bought, [RECALL]);
+        assert_eq!(b.unmet, [Need::Food]);
+        // Without the Recall among the needs, the count still decides.
+        let b = Budget::build(&facts(purse), &s, &[Need::Food], serves);
+        let bought: Vec<u32> = b.urgent.iter().map(|f| s.candidates[f.candidate].kind).collect();
+        assert_eq!(bought, [RATION]);
+        // When both are paid for, the Recall is first in the purchase order
+        // even though the ration is the earlier candidate (review of #961).
+        let b = Budget::build(&facts(purse + 5), &s, &[Need::Food, Need::Trip], serves);
+        let bought: Vec<u32> = b.urgent.iter().map(|f| s.candidates[f.candidate].kind).collect();
+        assert_eq!(bought, [RECALL, RATION]);
+    }
+
     /// An urgent need no shop serves is unmet whatever the purse.
     #[test]
     fn an_urgent_need_no_shop_serves_is_unmet() {
@@ -462,6 +568,68 @@ mod tests {
         let b = Budget::build(&facts(10_000), &s, &[Need::Light, Need::Healing], serves);
         assert_eq!(b.urgent.len(), 1);
         assert_eq!(b.unmet, [Need::Healing]);
+    }
+
+    /// #1103 (owner: flat 6000, a level negative delta of 100): the purse the
+    /// Black Market opens at.
+    #[test]
+    fn the_black_market_opens_at_a_threshold_that_falls_with_level() {
+        assert_eq!(black_market_threshold(6000, 100, 1), 5900);
+        assert_eq!(black_market_threshold(6000, 100, 30), 3000);
+        assert_eq!(black_market_threshold(6000, 100, 50), 1000);
+        assert_eq!(black_market_threshold(6000, 100, 80), 0, "never below zero");
+        assert_eq!(black_market_threshold(6000, 0, 50), 6000, "delta 0: flat");
+        assert_eq!(black_market_threshold(0, 100, 10), 0, "min_gold 0: no threshold");
+        assert_eq!(black_market_threshold(6000, -5, 10), 6000, "a negative delta is none");
+        // The share: nothing below the purse, the configured one from it.
+        assert_eq!(black_market_share(60, 5999, 1, 6000, 0), 0);
+        assert_eq!(black_market_share(60, 6000, 1, 6000, 0), 60);
+        assert_eq!(black_market_share(60, 2999, 30, 6000, 100), 0, "level 30 opens at 3000");
+        assert_eq!(black_market_share(60, 3000, 30, 6000, 100), 60);
+        assert_eq!(black_market_share(-1, 100, 30, 0, 100), -1, "no threshold: the legacy share, unconfigured");
+        assert_eq!(black_market_share(-1, 100, 30, 6000, 100), 0, "below it even an unconfigured share is closed");
+        assert_eq!(black_market_share(-1, 9000, 30, 6000, 100), -1);
+    }
+
+    /// #1103 through the production reader: the configured share read from the
+    /// settings, the level from the traits, the purse given (review of #1112,
+    /// F5).
+    #[test]
+    fn the_share_reads_the_settings_at_the_purse_and_level() {
+        let mut st = BorgState::default();
+        st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
+        st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+        st.core.cfg[crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE as usize] = 60;
+        let level = crate::borg_headers::borg_trait_h::BI_CLEVEL as usize;
+        st.borg.trait_[level] = 30;
+        assert_eq!(black_market_percentage_with(&st, 2999, 6000, 100), 0);
+        assert_eq!(black_market_percentage_with(&st, 3000, 6000, 100), 60, "level 30 opens at 3000");
+        st.borg.trait_[level] = 12;
+        assert_eq!(black_market_percentage_with(&st, 4799, 6000, 100), 0);
+        assert_eq!(black_market_percentage_with(&st, 4800, 6000, 100), 60);
+        assert_eq!(black_market_percentage(&st, 0), 60, "no threshold by default");
+    }
+
+    /// Review of #1112, F1: a poisoned level-12 Borg with 1000 gold and a
+    /// Neutralize Poison (225) only at the Black Market: the threshold (4800)
+    /// closes the Black Market to ordinary purchases, not to the urgent cure.
+    #[test]
+    fn the_urgent_cure_is_bought_at_the_black_market_below_the_purse_threshold() {
+        let t = town([&[], &[], &[], &[], &[], &[], &[item(CURE_POISON, 1, 225)], &[]]);
+        let s = build(&t, &[]);
+        let poison = |c: &Candidate| if s.candidates.iter().any(|x| std::ptr::eq(x, c)) { vec![Need::Poison] } else { Vec::new() };
+        let b = Budget::build_with_reserve(&facts(1000), &s, &[Need::Poison], 0,
+            |c| if urgent_market_allows(c, 1000, 500, 60) { poison(c) } else { Vec::new() });
+        assert_eq!(b.urgent.len(), 1, "the 300 gold the cap leaves pays for it");
+        assert!(b.unmet.is_empty());
+        // Over what the cap leaves, it is still refused.
+        let b = Budget::build_with_reserve(&facts(700), &s, &[Need::Poison], 0,
+            |c| if urgent_market_allows(c, 700, 500, 60) { poison(c) } else { Vec::new() });
+        assert_eq!(b.unmet, [Need::Poison]);
+        // An unconfigured cap leaves the Black Market open to the urgent needs.
+        let b = Budget::build_with_reserve(&facts(300), &s, &[Need::Poison], 0,
+            |c| if urgent_market_allows(c, 300, 0, -1) { poison(c) } else { Vec::new() });
+        assert_eq!(b.urgent.len(), 1);
     }
 
     /// The urgent needs take the cheapest source, Black Market included - they

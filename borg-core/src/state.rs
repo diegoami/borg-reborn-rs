@@ -45,8 +45,19 @@ use crate::borg_update::UpdateState;
 #[derive(Default)]
 pub struct BorgState {
     pub trip: crate::borg_trip::TripState,
+    pub(crate) ranged: crate::borg_ranged::Trip,
     /// borg-reborn-rs (#840): the basic kit's notes and the purse at the last town think.
     pub kit: crate::borg_kit::KitState,
+    /// borg-reborn-rs (#1153): the movement-loop detector.
+    pub loops: crate::borg_loop::LoopState,
+    /// borg-reborn-rs (#1067): traps set off on this level, the way back they cut.
+    pub trap_way: crate::borg_trap_way::TrapWayState,
+    /// borg-reborn-rs (#1061): the stair_scum mode's doors and walks on this level.
+    pub stair_scum: crate::borg_stair_scum::StairScumState,
+    /// borg-reborn-rs (#1062): the leash's arrival grid, jumps and walk back.
+    pub leash: crate::borg_leash::LeashState,
+    /// borg-reborn-rs (#1140): the poison triage's notes and town actions.
+    pub poison: crate::borg_poison::PoisonState,
     /// The token engine object handles borrow (`engine::Access`): a handle
     /// made from `&st.access` cannot be kept across an engine call that
     /// takes `&mut BorgState` (docs/SELF-REVIEW.md L4).
@@ -146,4 +157,11 @@ pub struct BorgState {
     /// (`borg_on_glyph`, `borg_create_door`, the `borg_*_spell` flags) and
     /// `borg_game_ratio`
     pub traits: TraitState,
+}
+
+impl BorgState {
+    /// The current town objective, including a healing restock with its own lifetime.
+    pub(crate) fn rising_to_town(&self) -> bool {
+        self.borg.goal.rising || crate::borg_healing_restock::returning(self)
+    }
 }

@@ -1,5 +1,14 @@
 # The zoo contract
 
+Combined Borg builds identify themselves with `pborg_config=yaml` in
+`BUILD_ID`. Apply profiles to the legacy settings template as before,
+then pass the configured text to the specimen's
+`python3 harness/pborg-config.py -` and stage its output at
+`user/pborg.yaml` before launch. Pin the converter with the build. Keep
+the legacy configuration hash for existing encounter records and also
+record the hash of the YAML consumed by the game. CBorg uses
+`user/borg.txt`, so a live PBorg cell stages only `user/pborg.yaml`.
+
 *docs/SPEC.md §4, §6; task TE.7 (#77). borg-zoo measures our Borg, and
 every comparison is the zoo's. This is the interface the zoo's adapter
 (`zoo/borgrs.py`, kind `borg-rs`, read at our borg-zoo pin `7b373a70`)
@@ -13,14 +22,16 @@ runs `engine/tests/test_zoo_contract.py`.*
 | What the zoo does | What we guarantee |
 | --- | --- |
 | checks out the specimen's `ref`, a full commit (tag `e` or later; never a branch head) and requires `git rev-parse HEAD` to equal it | every merged commit builds |
-| runs `harness/build.sh` in the checkout, with `BORG_IMPL=<impl>` | `BORG_IMPL=rust` is the only implementation; any other value fails loudly (exit 2) |
+| runs `harness/build.sh` in the checkout, with `BORG_IMPL=<impl>` | `BORG_IMPL=rust` selects the combined build. Measured runs default to PBorg. Other values exit with status 2. |
 | copies `build/<impl>/game/` | `game/angband` and its data `game/lib/`, self-contained (the game finds `./lib/` from its working directory) |
 | reads `build/<impl>/BUILD_ID` (`key=value` lines) | at least `binary_sha256` (equal to the copied binary's SHA-256) and `rustc`; `arg_order` (#855) is `rtl` for a build that plays the references' games (`ltr`: another compiler's order, other games from the same seed; `harness/build.sh` builds one only with `BORG_ALLOW_OTHER_GAMES=1`) |
-| copies `harness/borg.txt` and writes it, with its profile's settings, as the run's `user/borg.txt` | the file exists. It is borg-rs's `borg.txt` (the vendored core reads it) with no stair-scumming and no town scumming, plus three keys this repository's Borg reads (#207, #208; docs/ERRANDS.md): `borg_reborn_core` (`borg-rs`/`1`, the shipped value since #479, or `reborn`/`0`), `borg_reborn_errand` (`none`, or a command line such as `/ladder`) and `borg_reborn_stopscared` (`off`, `flee` or a percentage). A zoo profile selects an arm by setting them. Since #479 (owner, 2026-11-17) the shipped file also sets the borg-zoo#170 speed30 bundle without its plan: `borg_town_plan = 1`, `borg_trip_policy = 1` with `borg_trip_unknown_stacks = 5` (2 since `fba1c6e0`, owner) and `borg_trip_pack_slack = 1`, and 18 `borg_param_*` lines (outmatched healing, speed 30, 16 class attack preferences). Since #485 it sets `attack_arrow_point_blank_divisor = 5` (the general divisor, borg-rs's), `attack_arrow_point_blank_divisor_ranger = 2` and `attack_arrow_point_blank_divisor_rogue = 3` (per-class overrides; 0 = the general divisor); since #491 three more set `town_heal_reserve_hp_percent = 400`, `town_heal_curve_scale_percent = 100` (now 100 and 125, each overridden by a value for every class in the class files, #520) and `town_heal_speed_percent = 66`. Since #493 it also sets `borg_town_w_gold = 0` and `borg_param_town_gold_reserve = 0`, `borg_param_town_gold_reserve_percent = 0` (the explicit gold reserve, off). Since #519 the shipped file has no formula section (Power, Depth, Restock): it was unused with the shipped `borg_uses_dynamic_calcs = FALSE`. A profile that names a key rewrites its line; one that omits it now gets the bundle's value, not borg-core's compiled default. This repository's own core reads nothing else of the file: its parameters come from its profile (`BORG_PROFILE`), with the defaults when none is given |
-| copies `harness/plans/NAME` into the run's `user/` directory, as `user/NAME`, when a profile sets `borg_plan = NAME`, after checking the file against the specimen's pinned hash (`"plans": {NAME: sha256}` in the zoo catalogue; borg-zoo#123, adapter since borg-zoo `26d1044`, PR #125) | the file exists at the specimen's ref. `borg_plan` is a fourth key the shell reads (#305, #352; docs/GAME-PLAN-LANGUAGE.md); a relative name is resolved under the run's user directory. It needs `borg_reborn_core = borg-rs`, no automatic errand and no nonzero `BORG_ERRAND_BUDGET`. With `borg_plan` set the Borg either loads and validates the file or exits 2 before play (missing, unreadable or invalid file, a class without a section, the wrong core): a plan is never silently ignored. Two plans ship: `errands_plan.txt` and `errands_plan_ambitious.txt`. Since 2026-11-16 their phases are `max-depth N` caps (no errand; the core plays as itself under `borg_no_deeper` = N+1); `loop-levels` was removed and fails with exit 2. The zoo records the file's SHA-256 with the cell, and keeps it with the death evidence: a plan death reruns only with the same bytes |
-| generates a **world** (#704) when a profile sets `borg_world = NAME` (borg-zoo PR #486, `dd25ff61`, for borg-zoo#482): it runs the specimen's `scripts/make-world.py` on `harness/worlds/NAME.txt` into the cell, passes `-dgamedata`, `-dpref`, `-dhelp` and `-dscreens` from it, and keeps the key from the Borg, as `harness/run.sh` does. `none` (shipped) = the game's own data. **A loud guard:** a `borg_world` other than `none` that reaches the Borg unconsumed stops the game with exit 2 before play (`errands_plan.rs`, review of #740), so a cell can never play the game's own data under a world's name | the cell records `borg_world`, its config hash and the generated `gamedata/` hash; with `harness/run.sh`, `config.txt` has `borg_world`, `borg_world_sha256` and `borg_world_data_sha256`, and the run's `borg.txt` carries both hashes in a comment, so the world is part of `borg_txt_sha256`. A world's games compare only with games of the same world. Ships: `breeders-x4`, `breeders-x8` |
+| copies `harness/pborg.yaml`, applies its profile's settings directly, and writes the result to the run's `user/pborg.yaml` | the template exists. It derives from borg-rs's settings, turns off stair and town scumming, and adds the PBorg key `borg_reborn_core` (#207: `borg-rs`/`1`, the shipped value since #479, or `reborn`/`0`); a zoo profile selects the core by setting it. The errand keys `borg_reborn_errand` and `borg_reborn_stopscared` were retired with the errands (#1339, 2026-11-27): written off (`none`, `off`) they are ignored with a warning, at any other value the run exits 2 before play. Since #479 (owner, 2026-11-17) the shipped file also sets the borg-zoo#170 speed30 bundle without its plan: `borg_town_plan = 1`, `borg_trip_policy = 1` with `borg_trip_unknown_stacks = 5` (2 since `fba1c6e0`, owner) and `borg_trip_pack_slack = 1` (-1 since #1385, owner, 2026-11-28: the pack never asks to go back), and 18 `borg_param_*` lines (outmatched healing, speed 30, 16 class attack preferences). Since #485 it sets `attack_arrow_point_blank_divisor = 5` (the general divisor, borg-rs's), `attack_arrow_point_blank_divisor_ranger = 2` and `attack_arrow_point_blank_divisor_rogue = 3` (per-class overrides; 0 = the general divisor); since #491 three more set `town_heal_reserve_hp_percent = 400`, `town_heal_curve_scale_percent = 100` (now 100 and 125, each overridden by a value for every class in the class files, #520) and `town_heal_speed_percent = 66`. Since #493 it also sets `borg_town_w_gold = 0` and `borg_param_town_gold_reserve = 0`, `borg_param_town_gold_reserve_percent = 0` (the explicit gold reserve, off). Since #519 the shipped file has no formula section (Power, Depth, Restock): it was unused with the shipped `borg_uses_dynamic_calcs = FALSE`. A profile that names a key rewrites its line; one that omits it now gets the bundle's value, not borg-core's compiled default. This repository's own core reads nothing else of the file: its parameters come from its profile (`BORG_PROFILE`), with the defaults when none is given |
+| (until #1339) copied `harness/plans/NAME` into the run's `user/` directory when a profile set `borg_plan = NAME` | the plans were retired on 2026-11-27 (#1339): the directory is gone, and a `borg_plan` other than `none` (or `BORG_ERRANDS_PLAN`) makes the borg-rs core exit 2 before play, so a plan arm on a later specimen is a `config_error`, never an unplanned game. Earlier specimens keep their plans at their own refs ([archive/GAME-PLAN-LANGUAGE.md](archive/GAME-PLAN-LANGUAGE.md)) |
+| generates a **world** (#704) when a profile sets `borg_world = NAME` (borg-zoo PR #486, `dd25ff61`, for borg-zoo#482): it runs the specimen's `scripts/make-world.py` on `harness/worlds/NAME.txt` into the cell, passes `-dgamedata`, `-dpref`, `-dhelp` and `-dscreens` from it, and keeps the key from the Borg, as `harness/run.sh` does. `none` (shipped) = the game's own data. **A loud guard:** a `borg_world` other than `none` that reaches the Borg unconsumed stops the game with exit 2 before play (`config_file::check_world`, review of #740), so a cell can never play the game's own data under a world's name | the cell records `borg_world`, its config hash and the generated `gamedata/` hash; with `harness/run.sh`, `config.txt` has `borg_world`, `borg_world_sha256` and `borg_world_data_sha256`, and the run's `pborg.yaml` carries both hashes in a comment, so the world is part of `pborg_yaml_sha256`. A world's games compare only with games of the same world. Ships: `breeders-x4`, `breeders-x8` |
 
-## Plan specimens (borg-zoo#123)
+## Plan specimens (borg-zoo#123; retired with the plans, #1339)
+
+For specimens before #1339:
 
 - A specimen pins every plan it ships in the catalogue, `"plans": {NAME:
   sha256}`. The zoo build refuses a `harness/plans/NAME` whose SHA-256
@@ -106,9 +117,9 @@ them. `exact_turns` and `loaded` are in every summary, `true` or `false`
   `4.2.6-reborn-rust-main-<sha>`). The list is the zoo's catalogue
   (`reference/zoo/catalogue/specimens.json`, copied at the zoo pin).
 - `4.2.6-reborn-c-pristine` and `4.2.6-reborn-c-bbc-m7` were built by this
-  repository at `fab71554`. Since milestone E it builds no C Borg (docs/SPEC.md
-  §6), so those specimens keep their old `ref` or are retired: the zoo's
-  call.
+  repository at `fab71554`. Their refs and retirement stay under Zoo
+  control. The combined release includes upstream CBorg as an interactive
+  option and keeps PBorg as the headless default (#1288).
 
 ## Core calibration profiles (track P3, #244)
 
@@ -118,18 +129,17 @@ core. Native callers may use the text aliases `borg-rs` and `reborn`.
 An absent selector defaults to reborn. Every other value (including a
 boolean written as `TRUE`, an empty string, or integer 2) fails with exit
 status 2 and source/value diagnostics. `BORG_CORE` takes precedence over
-the file; clear it for profile-only measurement. The vendored core's `borg_reborn_errand` also fails with exit status 2
-for invalid configured command lines; `none`, an empty string, or absence disables errands.
-Clear `BORG_ERRAND` for file-only profile measurement. The pinned adapter
-only serializes booleans/integers, so arbitrary errand commands require a
-native caller; an integer/boolean is not a valid errand. See ERRANDS.md.
+the file; clear it for profile-only measurement. The errand settings
+(`borg_reborn_errand`, `borg_reborn_stopscared`, `borg_plan` and their
+environment variables) were retired (#1339): off they are ignored, on they
+exit with status 2.
 
-**The scary list (#518).** The shipped `harness/borg.txt` sets
-`borg_scary_list = scary_monsters.txt`: the borg-rs core reads the named
+**The scary list (#518).** The shipped `harness/pborg.yaml` sets
+`borg_scary_list: scary_monsters.txt`: the borg-rs core reads the named
 scary monsters from `user/scary_monsters.txt` (docs/CALIBRATION.md) and stops
 before play with exit 2 when the file is missing or invalid. The adapter
 copies the file named by the arm's profile or, without one, by the written
-`borg.txt`, from the specimen's `harness/`; pins its hash in the specimen
+`pborg.yaml`, from the specimen's `harness/`; pins its hash in the specimen
 (`"scary_lists"`); appends an arm's `borg_scary_list_lines`; and records the
 written file's hash with the cell (borg-zoo#228, #230). An arm returns to the
 compiled C list with `borg_scary_list = none`, which has no ignore lines.
@@ -160,9 +170,9 @@ the zoo's `catalogue/profiles.json` is:
 ```
 
 A matched control uses the same explicit mode settings and omits the
-parameter override (default6). The specimen's pinned harness/borg.txt
-sets `borg_reborn_errand = none`; a native text errand is not an integer
-zoo setting. Clear ambient `BORG_CORE`, `BORG_ERRAND`, `BORG_PARAM_*` and
+parameter override (default6). (Specimens before #1339 also set
+`borg_reborn_errand = none`; the errands are retired since.) Clear ambient
+`BORG_CORE`, `BORG_PARAM_*` and
 other policy overrides in the runner: environment values take precedence
 over the file. Freeze specimen, profile definitions and their hashes for
 each experiment. Parameter ranges are input bounds, not recommendations.
@@ -214,7 +224,7 @@ Any `borg_param_<name>` can have a value for one class:
   `borg_param_<name>@<class> = <value>` (class names of `class.txt`: warrior,
   mage, druid, priest, necromancer, paladin, rogue, ranger, blackguard). The
   `__<class>` form (#696) is in the characters a profile can write, so a zoo
-  arm can name any class value in `BORG_TXT_SET`; the shipped class lines are
+  arm can name any class value in `PBORG_SET`; the shipped class lines are
   folded in that form. No parameter or setting name has `__`;
 - in the environment as `BORG_PARAM_<NAME>__<CLASS>`, upper case as every
   `BORG_PARAM_*` name (shells cannot export a name with `@`);
@@ -229,6 +239,18 @@ Precedence: compiled default < `borg.txt` < a `borg.txt` class line <
 `BORG_PARAM_<NAME>` < `BORG_PARAM_<NAME>__<CLASS>`. The character's class picks
 its values (also after a reincarnation into another class).
 
+**Race values (#1061).** A `borg_param_<name>` can also have a value for one
+race, written the same way: `borg_param_<name>__<race> = <value>` (or
+`@<race>`) in `borg.txt`, `BORG_PARAM_<NAME>__<RACE>` in the environment. The
+race names are `p_race.txt`'s in lower case with `-` as `_`: human, half_elf,
+elf, hobbit, gnome, dwarf, half_orc, half_troll, dunadan, high_elf, kobold. No
+race name is a class name (a unit test checks it). A class value comes first,
+then the race's, then the common one; the race applies at birth and at every
+reincarnation, as the class does. The first parameter read per race is
+`stair_scum_max_hp_race_delta` (`borg_param_stair_scum_max_hp_race_delta__hobbit = 3`).
+`params-core.json` gives them as `race_values`, only where some are set. The
+core's own `borg_*` settings have no race values.
+
 Since #520's second half, the core's own `borg.txt` settings (`borg_*`,
 `BORG_SETTINGS` in `borg-core/src/borg_init.rs`, e.g. the shopping weights
 `borg_town_w_*`) have class values too, as `borg_<name>__<class> = <value>`
@@ -240,16 +262,18 @@ or `borg_respawn_*` setting, or a bad value is refused with a Borg warning. A
 class value goes through the same range checks and configuration checks as
 the common line, on top of the common values (each line, then each class's
 lines together); one they would change or reject is refused and the Borg does
-not start, as with an invalid common line. The keys the shell reads
-(`borg_reborn_*`, `borg_plan`, `borg_scary_list`) have no class value either,
+not start, as with an invalid common line. The keys our configuration
+readers take (`borg_reborn_core`, `borg_scary_list`, and the retired
+`borg_reborn_errand`, `borg_reborn_stopscared` and `borg_plan`) have no
+class value either,
 and there is no environment form for these settings. A zoo profile writes a
-class value with the `__<class>` name (`BORG_TXT_SET` names are
+class value with the `__<class>` name (`PBORG_SET` names are
 `[A-Za-z0-9_.-]`, so not with `@`). Which names can be written depends on the
 writer:
 - the zoo's adapter rewrites a name the shipped file carries and appends one
   it doesn't, so a profile can set any class value;
-- `harness/run.sh`'s `BORG_TXT_SET` refuses a name that isn't a key of the
-  run's `borg.txt`, so it can only rewrite the class lines `harness/borg.txt`
+- `harness/run.sh`'s `PBORG_SET` refuses a name that isn't a key of the
+  run's `pborg.yaml`, so it can only rewrite the class lines `harness/pborg.yaml`
   ships (today the 27 `town_*` ones).
 
 The class name's case follows the form: in a `borg_param_*` name it is exact
@@ -257,12 +281,9 @@ The class name's case follows the form: in a `borg_param_*` name it is exact
 (`__RANGER` works), as with `@`. Rewriting the common line does not change a
 class that has its own line: that class line still wins for its class.
 
-The repository keeps each class's settings in `harness/borg_<class>.txt`;
-`scripts/borg-class-files.py fold` writes them into `harness/borg.txt` as a
-generated "CLASS FILES" block (under the legacy names where one exists, so a
-profile naming that key still rewrites its line). A run, and the adapter, read
-only `borg.txt`, so nothing else needs copying and `borg_txt_sha256` covers
-the class values.
+The common and class-specific settings live together in `harness/pborg.yaml`.
+The Zoo keeps the effective YAML and records its SHA-256 in new death bundles.
+It still reads legacy settings at pins that predate the YAML template.
 
 `params-core.json` keeps one row per parameter (now 2,116) and adds
 `class_values: {"<class>": {"value", "origin"}}` where a class has its own.
@@ -332,7 +353,7 @@ For `borg-zoo#536`, use retained cell evidence in both arms.
 
 The vendored core adds optional fields to `trace-core.jsonl` with
 `core-trace@2`. On a think that checked preparedness from a live dive,
-stair, errand or trip caller, `prepared` holds the checks in call order.
+stair or trip caller, `prepared` holds the checks in call order.
 Each has `current_depth`, `proposed_depth`, `source` (call site), and
 `requirement`. A null requirement means prepared. A failure has a stable
 `name`, integer `actual` and `required`, the pass `relation`, and the
@@ -365,7 +386,7 @@ aliases of the class values, so existing profiles work unchanged. All default to
 1000; bounds are 500..2000. See [ATTACK-PREFERENCES.md](ATTACK-PREFERENCES.md) for family semantics,
 floor rounding, precedence and provenance. For example a profile can set
 `borg_param_attack_preference_mage_spell_permille` to 1600. The registry default is 1000; since #479
-the shipped `harness/borg.txt` sets 16 of them (the borg-zoo#170 speed30 bundle). Core trace output is now core-trace@2, retaining
+the shipped `harness/pborg.yaml` sets 16 of them (the borg-zoo#170 speed30 bundle). Core trace output is now core-trace@2, retaining
 the old fields and adding per-invocation candidate/winner data. Historical @1 data
 and zoo profile/adapter formats remain unchanged. Freeze effective settings and
 hashes and clear ambient BORG_PARAM_* overrides in profile-only comparisons.

@@ -1,7 +1,8 @@
 # Guided Angband debugging
 
 Owner workflow, 2026-11-15 (RULES 26): the agent launches a recorded game;
-the owner plays or gives errands, reports a problem and saves if possible;
+the owner plays (or, until #1339 retired them, gave errands), reports a
+problem and saves if possible;
 the agent collects the evidence and tries to reproduce the problem itself.
 The owner should not have to locate files, reconstruct command lines or
 diagnose the Borg.
@@ -32,28 +33,27 @@ Preserve:
   existing character into private session directories; do not experiment
   on the owner's only save. Continuing that copy later must use the same
   session save directory and character name.
-- Recorder streams, stdout/stderr, `trace-core.jsonl` and errand outcomes.
+- Recorder streams, stdout/stderr and `trace-core.jsonl`.
   Use the core actually being investigated, normally `BORG_CORE=borg-rs`.
-  Record any initial `BORG_ERRAND`, including an explicitly empty value.
 
 The current integration uses the pinned optional recorder described in
 [ANGBAND-RECORDER.md](ANGBAND-RECORDER.md). Build a separate X11 executable
 with `SUPPORT_X11=ON` and `SUPPORT_BORG_RECORDING=ON`, under the shared
 `/tmp/angband-validation.lock`. Set `ANGBAND_RECORD_DIR` to a new recording
-directory, `BORG_RUN_DIR` to the session diagnostics directory, and
-`BORG_ERRAND_OUT` to the session outcome file. Capture stderr as well.
+directory and `BORG_RUN_DIR` to the session diagnostics directory. Capture
+stderr as well.
 Pass `-dsave=...` and the other private directories **before** `-uNAME`:
 Angband resolves the save filename when it parses `-u`.
 
 The regular watch launcher is not a recording launcher: setting a recorder
 environment variable does not enable recording in a binary built without
 the feature. `harness/play.sh` is the older player-in-town workflow, not a
-ready-made guided recorder for errands over the vendored core. Do not
+ready-made guided recorder for the vendored core. Do not
 silently substitute it for this workflow.
 
 Before calling a session replayable, qualify the actual GUI/core route with
 a short recording and replay, including the intended fresh birth or loaded
-save, an errand, stopping the Borg, and saving/quitting. The pinned v0.1.0
+save, stopping the Borg, and saving/quitting. The pinned v0.1.0
 recorder has a verified native headless integration; that alone does not
 qualify every human GUI interaction. Capture from process startup; turning
 recording on in an already running game is not supported by this pin.
@@ -91,7 +91,7 @@ Replays and continued segments of that life are not new independent samples.
 
 The owner tells the agent what happened and what was expected, for example:
 
-> `/ladder` is in a corner and the turn counter stopped. I expected it to
+> The Borg is in a corner and the turn counter stopped. I expected it to
 > keep exploring. I have not closed the window.
 
 If the game responds, stop the Borg with a key and use **Ctrl-S** to save.
@@ -99,8 +99,8 @@ Report whether saving succeeded or displayed an error. **Ctrl-X** saves
 and quits; it is not necessary to quit just to collect a save. The
 recording preserves any input used to stop or save the game.
 
-The agent records an incident marker with the time, errand, observed and
-expected behaviour, and the nearest recorder frame/turn when available.
+The agent records an incident marker with the time, observed and expected
+behaviour, and the nearest recorder frame/turn when available.
 It finds the running session's actual save path and copies a successful
 save into the incident directory before further play can overwrite it.
 Check modification time, file contents/character description and the
@@ -123,9 +123,9 @@ even when the incident itself cannot be saved.
    separate working directory. Use the original executable and settings
    for the first attempt, before changing the code.
 2. Prefer replaying the recorded lead-in. A native save preserves game
-   state, but not necessarily the Borg's map, goals, errand queue or other
-   process memory. Loading a save and reissuing the errand is a useful
-   second experiment, not proof that the original state was reconstructed.
+   state, but not necessarily the Borg's map, goals or other process
+   memory. Loading a save and starting the Borg again is a useful second
+   experiment, not proof that the original state was reconstructed.
    It can also be necessary to replay from before the unexpected action.
 3. Use the recorder CLI's `replay --verify` or stream verification where
    supported. Keep replay outputs separate. Report an exact match,

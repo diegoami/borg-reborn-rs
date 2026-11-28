@@ -116,11 +116,22 @@ fn note_ware(st: &mut BorgState, what: &str, after: &str) {
     note(st, &[what.as_bytes(), b" '", &desc, b"'", after.as_bytes()]);
 }
 
-/// `borg.goal.shop = borg.goal.ware = borg.goal.item = -1`
+/// Clear the legacy shop goal and any action attached to it.
 fn clear_shop_goal(st: &mut BorgState) {
     st.borg.goal.item = -1;
     st.borg.goal.ware = st.borg.goal.item;
     st.borg.goal.shop = st.borg.goal.ware;
+    st.think.town_action = None;
+}
+
+fn choose_shop_sale(st: &mut BorgState) -> bool {
+    if !borg_think_shop_sell_useless(st) {
+        return false;
+    }
+    let desc = goal_item_desc(st);
+    let name = goal_shop_name(st);
+    note(st, &[b"# Selling '", &desc, b"' at '", &name, b"'"]);
+    true
 }
 
 /// Four `ESCAPE`s: clear possible errors and leave the store.
@@ -186,14 +197,14 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
     if null_arm_gate(st) {
         return false;
     }
+    crate::borg_town_live::settle_sale(st);
 
     /* A shop the human asked for in the Borg's command menu ("1" .. "8",
      * "+", "-"): it overrides the strategy's own choice and holds until
      * the Borg has been to that shop. */
     if let Some(shop) = st.borg.shop_override {
+        clear_shop_goal(st);
         st.borg.goal.shop = shop;
-        st.borg.goal.ware = -1;
-        st.borg.goal.item = -1;
         return true;
     }
 
@@ -208,6 +219,17 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
 
     /* Already flowing to a store to sell something */
     if st.borg.goal.shop != -1 && st.borg.goal.ware != -1 {
+        return true;
+    }
+
+    if let Some(a) = crate::borg_healing_restock::purchase(st) {
+        clear_shop_goal(st);
+        // Buying can identify a carried potion before the normal sale.
+        if crate::borg_healing_restock::carries_unknown_potion(st) && choose_shop_sale(st) {
+            return true;
+        }
+        st.borg.goal.shop = a.at[0] as i16;
+        st.borg.goal.ware = a.at[1] as i16;
         return true;
     }
 
@@ -291,6 +313,13 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
         }
     }
 
+    // Give a clearly inferior spare to a buyer before considering Home.
+    if !crate::borg_poison::no_sale_now(st) {
+        if let Some(sale) = crate::borg_town_live::inferior_spare_sale(st) {
+            return crate::borg_town_live::set_action(st, sale);
+        }
+    }
+
     /* Step 1 -- Sell items to the home */
     if borg_think_home_sell_useful(st, &mut best_home_power) {
         /* Message */
@@ -306,13 +335,7 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
     }
 
     /* Step 2 -- Sell items to the shops */
-    if borg_think_shop_sell_useless(st) {
-        /* Message */
-        let desc = goal_item_desc(st);
-        let name = goal_shop_name(st);
-        note(st, &[b"# Selling '", &desc, b"' at '", &name, b"'"]);
-
-        /* Success */
+    if choose_shop_sale(st) {
         return true;
     }
 
@@ -424,8 +447,11 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
         return true;
     }
 
-    /* Wear "optimal" equipment */
-    if borg_best_stuff(st) {
+    // borg-reborn-rs (#1239): leave overweight kits and staged swaps to the departure planner.
+    let overloaded = crate::borg_town_live::active(st)
+        && crate::borg_town_live::shop_overloaded()
+        && st.borg.tr(crate::borg_headers::borg_trait_h::BI_WEIGHT) > st.borg.tr(crate::borg_headers::borg_trait_h::BI_CARRY) / 2;
+    if !overloaded && !crate::borg_town_live::preparing_loadout(st) && borg_best_stuff(st) {
         return true;
     }
 
@@ -434,7 +460,16 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
      * it as a normal weapon
      */
     let wield = &st.items.items[inven_wield() as usize];
-    if i32::from(wield.tval) == TV_DIGGING as i32 && wield.art_idx == 0 && borg_wear_stuff(st) {
+    // borg-reborn-rs (#1239): let an active loadout swap choose the weapon.
+    if i32::from(wield.tval) == TV_DIGGING as i32 && wield.art_idx == 0
+        && !crate::borg_town_live::preparing_loadout(st) && borg_wear_stuff(st) {
+        return true;
+    }
+
+    // borg-reborn-rs (#1140, `deal_with_poison`): a drink is due: outside.
+    if crate::borg_poison::store_leave_to_drink(st) {
+        leave(st);
+        st.borg.in_shop = false;
         return true;
     }
 
@@ -461,8 +496,14 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
             borg_note_bytes(st, s.as_bytes());
         }
 
-        /* Try to sell stuff */
-        if borg_think_shop_sell(st) {
+        /* The inferior-spare chooser preflights a full stack. Use the same
+         * transaction as the live planner and keep legacy quantities for
+         * every other sale. */
+        if st.think.town_action.is_some() {
+            if crate::borg_town_live::execute_store(st) {
+                return true;
+            }
+        } else if borg_think_shop_sell(st) {
             return true;
         }
 

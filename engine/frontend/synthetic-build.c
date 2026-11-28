@@ -162,11 +162,15 @@ void synthetic_build_apply(const char *path, char digest[65])
     numbers(strtok_r(NULL, "\n", &context), "stats", STAT_MAX, stats);
     numbers(strtok_r(NULL, "\n", &context), "hp-rolls", PY_MAX_LEVEL, hp);
     numbers(strtok_r(NULL, "\n", &context), "knowledge", 3, knowledge);
-    if (identity[0] != 0 || identity[1] != 0 || identity[2] < 1 || identity[2] > 15 ||
-        player->race->ridx != 0 || player->class->cidx != 0 || player->body.count > 64 ||
+    /* The record's race and class are the started character's (the harness
+     * starts the race and class the record names; the kit, experience, hit
+     * points and mana are then replaced and checked against the native
+     * calculation). Spell knowledge is not restored. */
+    if (identity[0] != player->race->ridx || identity[1] != player->class->cidx ||
+        identity[2] < 1 || identity[2] > 15 || player->body.count > 64 ||
         vitals[0] < 0 || vitals[0] > 100000000 || vitals[1] < 0 || vitals[1] > 100000000 ||
-        vitals[2] < 1 || vitals[2] > 10000 || vitals[3] != 0 || observed[0] < 0 ||
-        observed[1] < 0 || observed[1] > vitals[2] || observed[2] != 0) fail();
+        vitals[2] < 1 || vitals[2] > 10000 || vitals[3] < 0 || vitals[3] > 10000 || observed[0] < 0 ||
+        observed[1] < 0 || observed[1] > vitals[2] || observed[2] < 0 || observed[2] > vitals[3]) fail();
     if ((identity[2] > 1 && vitals[0] < player_exp[identity[2]-2] * player->expfact / 100L) ||
         vitals[0] >= player_exp[identity[2]-1] * player->expfact / 100L) fail();
     for (i = 0; i < STAT_MAX; ++i) if (stats[i] < 3 || stats[i] > 118) fail();

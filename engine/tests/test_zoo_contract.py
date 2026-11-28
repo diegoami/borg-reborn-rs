@@ -24,7 +24,7 @@ STOP_REASONS = {'turns', 'death', 'clevel', 'depth', 'keys', 'stalled', 'borg_st
 class BuildContractTest(unittest.TestCase):
     def test_the_files_the_zoo_copies_exist(self):
         self.assertTrue((ROOT / 'harness/build.sh').is_file())
-        self.assertTrue((ROOT / 'harness/borg.txt').is_file())
+        self.assertTrue((ROOT / 'harness/pborg.yaml').is_file())
 
     def test_another_implementation_fails_loudly(self):
         r = subprocess.run([str(ROOT / 'harness/build.sh')], env=dict(os.environ, BORG_IMPL='c-pristine'),
@@ -47,13 +47,7 @@ class RunContractTest(unittest.TestCase):
         out = cls.out = Path(cls.tmp.name)
         for d in ('user', 'save', 'archive', 'panic', 'scores'):
             (out / d).mkdir()
-        (out / 'user/borg.txt').write_text((ROOT / 'harness/borg.txt').read_text())
-        # #535: the scary list the shipped borg.txt names travels with it, as
-        # the zoo ships it (borg-zoo#233).
-        for line in (ROOT / 'harness/borg.txt').read_text().splitlines():
-            key, _, value = line.partition('=')
-            if key.strip() == 'borg_scary_list' and value.strip() not in ('', 'none'):
-                (out / 'user' / value.strip()).write_bytes((ROOT / 'harness' / value.strip()).read_bytes())
+        subprocess.run([str(ROOT / 'harness/prepare-pborg-config.sh'), str(out / 'user')], check=True)
         # zoo/borgrs.py command(), with exact_turns and depth_stream on.
         argv = ['./angband', '-mborgh', '-n', '-uBorg'] + [f'-d{d}={out / d}' for d in ('user', 'save', 'archive', 'panic', 'scores')] + \
             ['--', '-seed', '29', '-race', '0', '-class', '0', '-turns', '300', '-keylog', str(out / 'keys.log'),

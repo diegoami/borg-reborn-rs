@@ -1,6 +1,6 @@
 """Our build (docs/SPEC.md §3.6; task TE.4, #74).
 
-The source list is upstream's minus the C Borg, and, when a build exists
+The source list is upstream's including the C Borg, and, when a build exists
 (build/rust/game/angband, made by harness/build.sh), the binary keeps the
 frontend's contract (§3.5): it answers the contract's flags and writes the
 contract's summary.json fields.
@@ -29,10 +29,10 @@ def listed(cmake_text, start):
 
 
 class SourceListTest(unittest.TestCase):
-    def test_ours_is_upstreams_without_the_c_borg(self):
+    def test_ours_is_upstreams_with_the_c_borg(self):
         upstream = listed((ROOT / 'engine/angband/CMakeLists.txt').read_text(), 'add_library(OurCoreLib OBJECT')
         ours = listed((ROOT / 'engine/sources.cmake').read_text(), 'set(ANGBAND_CORE_SOURCES')
-        self.assertEqual(ours, [s for s in upstream if not s.startswith('src/borg/')])
+        self.assertEqual(ours, upstream)
         self.assertTrue(any(s.startswith('src/borg/') for s in upstream), 'upstream lists the C Borg')
 
     def test_the_build_inputs_are_ours(self):

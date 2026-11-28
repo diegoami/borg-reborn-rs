@@ -58,6 +58,7 @@ fi
 if [ -n "$(git -C "$ROOT" status --porcelain 2>/dev/null)" ]; then DIRTY=yes; else DIRTY=no; fi
 {
     echo "impl=$IMPL"
+    echo "pborg_config=yaml"
     echo "git_rev=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)"
     echo "git_dirty=$DIRTY"
     echo "inputs_dirty=$("$ID" inputs-dirty "$IMPL")"

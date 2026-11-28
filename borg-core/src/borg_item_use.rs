@@ -18,7 +18,8 @@
 // borg-reborn-rs (#242): named item_use policy; default operations unchanged.
 use crate::params::{value as param, Param};
 use crate::borg::BorgTime;
-use crate::borg_inventory::borg_slot;
+use crate::borg_inventory::{borg_slot, borg_slot_in_pack};
+use crate::borg_item_val::ItemValState;
 use crate::borg_io::{borg_keypress, borg_note_bytes, ESCAPE};
 use crate::borg_item::inven_wield;
 use crate::borg_item_analyze::borg_obj_has_effect;
@@ -31,7 +32,7 @@ use crate::borg_headers::borg_magic_h::{
 use crate::borg_headers::borg_trait_h::{
     BI_ACCW, BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_DEV, BI_FRACT, BI_ISBLIND, BI_ISCONFUSED, BI_ISFIXCON,
     BI_ISFIXDEX, BI_ISFIXEXP, BI_ISFIXINT, BI_ISFIXSTR, BI_ISFIXWIS, BI_ISFORGET, BI_ISHUNGRY,
-    BI_MAXHP, BI_RBLIND, BI_RCONF,
+    BI_ISIMAGE, BI_MAXHP, BI_RBLIND, BI_RCONF,
 };
 use crate::borg_town_capability::HUNGRY_PERCENT;
 use crate::headers::list_effects_h::{EF_CRUNCH, EF_NOURISH};
@@ -99,6 +100,22 @@ fn device_fail(skill: i32, lev: i32) -> i32 {
     100 * ((skill - lev) - (141 - 1)) / ((lev - skill) - (100 - 10))
 }
 
+/// Failure gates used by known attack devices, without rolling or using a charge.
+pub(crate) fn ranged_device_reliable(st: &BorgState, item: &borg_item) -> bool {
+    let limit = match u32::from(item.tval) {
+        TV_WAND => param(Param::attack_unknown_wand_max_failure),
+        TV_ROD => param(Param::attack_rod_max_failure)
+            .min(param(Param::item_use_rod_equip_max_failure))
+            .min(param(Param::item_use_rod_use_max_failure)),
+        TV_STAFF => param(Param::item_use_staff_equip_max_failure),
+        _ => return false,
+    };
+    let skill = device_skill(st);
+    let level = i32::from(item.level);
+    // Outside the usable domain of the inherited device approximation.
+    level - skill < 90 && device_fail(skill, level) <= limit
+}
+
 /// Quaff a potion of cure critical wounds. This is a special case
 /// for several reasons.
 ///   1) it is usually the only healing potion we have on us
@@ -161,9 +178,16 @@ pub fn borg_quaff_potion(st: &mut BorgState, sval: i32) -> bool {
     true
 }
 
+pub(crate) fn can_read_now(st: &BorgState) -> bool {
+    !engine::no_light()
+        && st.borg.tr(BI_ISBLIND) == 0
+        && st.borg.tr(BI_ISCONFUSED) == 0
+        && st.borg.tr(BI_ISFORGET) == 0
+}
+
 /// Attempt to read the given scroll (by sval).
 pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
-    if !can_read_scroll(st) {
+    if !can_read_now(st) {
         return false;
     }
 
@@ -184,13 +208,6 @@ pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
     true
 }
 
-fn can_read_scroll(st: &BorgState) -> bool {
-    st.borg.tr(BI_ISBLIND) == 0
-        && st.borg.tr(BI_ISCONFUSED) == 0
-        && st.borg.tr(BI_ISFORGET) == 0
-        && !engine::no_light()
-}
-
 fn read_scroll_at(st: &mut BorgState, i: i32) {
     /* Log the message */
     note_desc(st, b"# Reading ", i as usize, b".");
@@ -204,15 +221,33 @@ fn read_scroll_at(st: &mut BorgState, i: i32) {
     borg_keypress(st, key(b'r'));
     borg_keypress(st, letter(i));
 
+    /* borg-reborn-rs (#1062): the cause of the next jump */
+    crate::borg_leash::own_scroll(st, i32::from(st.items.items[i as usize].sval));
+
     /* Clear "shop" goals */
     clear_shop_goals(st);
 }
 
 /// Attempt to eat the given food or mushroom.
 pub fn borg_eat(st: &mut BorgState, tval: i32, sval: i32) -> bool {
-    /* Look for that food */
-    let i = borg_slot(st, tval, sval);
+    eat_in_current_shape(st, tval, sval, engine::player_is_shapechanged())
+}
 
+#[inline]
+fn eat_in_current_shape(st: &mut BorgState, tval: i32, sval: i32, shapechanged: bool) -> bool {
+    // cmd-obj.c:do_cmd_eat_food has no change-back prompt, and
+    // cmd-core.c:cmd_get_item hides the pack while shapechanged. As in
+    // borg_deinscribe, stop before an item key can escape into the command
+    // prompt. The junk callers can then fall through to dropping the item.
+    if shapechanged {
+        return false;
+    }
+
+    let i = borg_slot(st, tval, sval);
+    eat_from_slot(st, i)
+}
+
+fn eat_from_slot(st: &mut BorgState, i: i32) -> bool {
     /* None available */
     if i < 0 {
         return false;
@@ -249,6 +284,7 @@ pub(crate) fn borg_try_planned_hunger_spells(st: &mut BorgState) -> bool {
 fn neutral_food_slot(
     pack: &[borg_item],
     hunger_scroll: Option<i32>,
+    can_eat: bool,
     effects: impl Fn(usize) -> Vec<(u16, i32, i64)>,
 ) -> Option<usize> {
     pack.iter()
@@ -258,7 +294,7 @@ fn neutral_food_slot(
                 return None;
             }
             match u32::from(item.tval) {
-                TV_FOOD => {}
+                TV_FOOD if can_eat => {}
                 TV_SCROLL if hunger_scroll == Some(i32::from(item.sval)) => {}
                 _ => return None,
             }
@@ -290,10 +326,11 @@ pub(crate) fn borg_recover_hunger(st: &mut BorgState) -> bool {
 }
 
 fn consume_neutral_food_stack(st: &mut BorgState, allow_scroll: bool) -> bool {
-    let hunger_scroll = (allow_scroll && can_read_scroll(st))
+    let hunger_scroll = (allow_scroll && can_read_now(st))
         .then_some(st.item_val.sv_scroll_satisfy_hunger);
     let pack_size = usize::from(engine::z_info().pack_size);
-    let slot = neutral_food_slot(&st.items.items[..pack_size], hunger_scroll, |kind| {
+    let can_eat = !engine::player_is_shapechanged();
+    let slot = neutral_food_slot(&st.items.items[..pack_size], hunger_scroll, can_eat, |kind| {
         engine::kind_effect_values(kind, st.borg.tr(BI_CLEVEL))
     });
     let Some(slot) = slot else {
@@ -483,6 +520,24 @@ pub fn borg_zap_rod(st: &mut BorgState, sval: i32) -> bool {
     true
 }
 
+/// borg-reborn-rs (#1140, re-review of #1146): whether `borg_zap_rod` (a rod)
+/// or `borg_use_staff_fail` (a staff) of `sval` would use the device now:
+/// their slot, charge and `*_use_max_failure` tests, without a key. The
+/// `borg_equips_*` probes read the `*_equip_max_failure` limits, which may
+/// differ, so a device could count as a cure and then refuse to fire.
+pub(crate) fn device_would_fire(st: &mut BorgState, tval: u32, sval: i32) -> bool {
+    let staff = tval == TV_STAFF;
+    if staff && crate::borg_escape::teleport_staff_blocked(st, sval) {
+        return false;
+    }
+    let i = borg_slot(st, tval as i32, sval);
+    if i < 0 || st.items.items[i as usize].pval == 0 {
+        return false;
+    }
+    let fail = device_fail(device_skill(st), i32::from(st.items.items[i as usize].level));
+    fail <= param(if staff { Param::item_use_staff_use_max_failure } else { Param::item_use_rod_use_max_failure })
+}
+
 /// Attempt to use the given (charged) staff (by sval).
 pub fn borg_use_staff(st: &mut BorgState, sval: i32) -> bool {
     /* borg-reborn-rs (#829): not a teleport under a teleport curse */
@@ -512,6 +567,9 @@ pub fn borg_use_staff(st: &mut BorgState, sval: i32) -> bool {
     /* Perform the action */
     borg_keypress(st, key(b'u'));
     borg_keypress(st, letter(i));
+
+    /* borg-reborn-rs (#1062): the cause of the next jump */
+    crate::borg_leash::own_staff(st, sval);
 
     /* Success */
     true
@@ -571,6 +629,9 @@ pub fn borg_use_staff_fail(st: &mut BorgState, sval: i32) -> bool {
     /* Perform the action */
     borg_keypress(st, key(b'u'));
     borg_keypress(st, letter(i));
+
+    /* borg-reborn-rs (#1062): the cause of the next jump */
+    crate::borg_leash::own_staff(st, sval);
 
     /* Success */
     true
@@ -908,6 +969,9 @@ pub fn borg_activate_item(st: &mut BorgState, activation: i32) -> bool {
         borg_keypress(st, key(b'A'));
         borg_keypress(st, letter(i - inven_wield()));
 
+        /* borg-reborn-rs (#1062): the cause of the next jump */
+        crate::borg_leash::own_activation(st, activation);
+
         /* Success */
         return true;
     }
@@ -917,7 +981,7 @@ pub fn borg_activate_item(st: &mut BorgState, activation: i32) -> bool {
 }
 
 /// Check and see if borg is wielding an item with this activation.
-pub fn borg_equips_item(st: &mut BorgState, activation: i32, check_charge: bool) -> bool {
+pub fn borg_equips_item(st: &BorgState, activation: i32, check_charge: bool) -> bool {
     /* a quick check of the array */
     if st.borg.activation[activation as usize] == 0 {
         return false;
@@ -986,6 +1050,76 @@ pub fn borg_activate_failure(st: &mut BorgState, tval: i32, sval: i32) -> i32 {
     device_fail(skill, lev)
 }
 
+/// Whether the known stack is the single-purpose RESTORE_EXP potion.
+pub(crate) fn is_restore_life(item: &crate::borg_headers::borg_item_h::borg_item, sval: i32) -> bool {
+    item.iqty > 0 && item.aware && u32::from(item.tval) == TV_POTION && i32::from(item.sval) == sval
+}
+
+/// borg-reborn-rs (#1371): under town_stat_trade_policy, quaff the first
+/// carried gain-one/lose-one potion whose trade the character accepts,
+/// when the danger here is at most a tenth of the current HP (the quiet turn
+/// of `borg_discard_town_consumable`). The potion takes a turn and its loss
+/// is permanent, so it waits for a turn with nothing to fight.
+fn drink_wanted_second_stat_potion(st: &mut BorgState) -> bool {
+    use crate::borg_town_capability::{second_stat_kind, second_stat_potion_wanted, stat_trade_policy};
+    if !stat_trade_policy() || st.borg.tr(BI_ISBLIND) != 0 || st.borg.tr(BI_ISCONFUSED) != 0 {
+        return false;
+    }
+    let pack = usize::from(engine::z_info().pack_size);
+    let Some(sval) = st.items.items.iter().take(pack).find_map(|item| {
+        let sval = i32::from(item.sval);
+        (item.iqty > 0 && item.aware && u32::from(item.tval) == TV_POTION)
+            .then(|| second_stat_kind(st, sval)).flatten()
+            .filter(|&stat| second_stat_potion_wanted(st, stat))
+            .map(|_| sval)
+    }) else {
+        return false;
+    };
+    if !quiet_for_a_drink(st) {
+        return false;
+    }
+    borg_quaff_potion(st, sval)
+}
+
+/// borg-reborn-rs (#1371, #1373): the danger here is at most a tenth of the
+/// current HP (the quiet turn of `borg_discard_town_consumable`). A potion
+/// drunk on purpose takes a turn, and `borg_use_things` also runs in the
+/// hungry path, before the caution checks.
+fn quiet_for_a_drink(st: &mut BorgState) -> bool {
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    crate::borg_danger::borg_danger(st, y, x, 1, true, false) <= st.borg.tr(BI_CURHP) / 10
+}
+
+/// borg-reborn-rs (#1373, #1374): quaff a known Potion of Experience
+/// (`item_use_drink_experience`; `object.txt`: `GAIN_EXP` 200000, no
+/// downside) and a known Potion of *Enlightenment*
+/// (`item_use_star_enlightenment`), on a quiet turn (`quiet_for_a_drink`: the
+/// pure stat gains above take none, but they sit first, and this runs in the
+/// hungry path too).
+///
+/// - Experience is drunk while the engine would grant it: `GAIN_EXP` does
+///   nothing at `PY_MAX_EXP` (`effect_handler_GAIN_EXP`).
+/// - *Enlightenment* restores and gains Intelligence and Wisdom and maps and
+///   detects the level (`object.txt`). It is drunk wherever a stat can gain or
+///   is drained (`star_enlightenment_gains`), and otherwise saved for a
+///   dungeon level, where the mapping is of use: in town it would be wasted.
+fn drink_permanent_gain(st: &mut BorgState) -> bool {
+    use crate::borg_town_capability::{experience_potion_useful, star_enlightenment_gains, star_enlightenment_sval};
+    let exp = param(Param::item_use_drink_experience) != 0
+        && st.items.items.iter().take(usize::from(engine::z_info().pack_size))
+            .any(|item| item.iqty > 0 && item.aware && i32::from(item.sval) == st.item_val.sv_potion_inc_exp
+                && u32::from(item.tval) == TV_POTION)
+        && experience_potion_useful();
+    let sval = star_enlightenment_sval();
+    let star = param(Param::item_use_star_enlightenment) != 0 && sval >= 0
+        && crate::borg_inventory::borg_slot(st, TV_POTION as i32, sval) >= 0
+        && (star_enlightenment_gains() || st.borg.tr(BI_CDEPTH) != 0);
+    if !(exp || star) || !quiet_for_a_drink(st) {
+        return false;
+    }
+    (exp && borg_quaff_potion(st, st.item_val.sv_potion_inc_exp)) || (star && borg_quaff_potion(st, sval))
+}
+
 /// Use things in a useful, but non-essential, manner.
 pub fn borg_use_things(st: &mut BorgState) -> bool {
     /* Quaff experience restoration potion */
@@ -1008,6 +1142,21 @@ pub fn borg_use_things(st: &mut BorgState) -> bool {
         || borg_quaff_potion(st, st.item_val.sv_potion_inc_dex)
         || borg_quaff_potion(st, st.item_val.sv_potion_inc_con)
     {
+        return true;
+    }
+
+    // borg-reborn-rs (#1373, #1374): a Potion of Experience and a Potion of
+    // *Enlightenment* have no harmful effect and their benefit is the drink
+    // (`GAIN_EXP`; `GAIN_STAT` for Intelligence and Wisdom). Carrying one is
+    // the defect #1371 fixed for Nimbleness.
+    if drink_permanent_gain(st) {
+        return true;
+    }
+
+    // borg-reborn-rs (#1371): drink a gain-one/lose-one potion the town's rule
+    // accepts (`second_stat_potion_wanted`), on a quiet turn, instead of
+    // carrying it until a pack cleanup happens to pick it.
+    if drink_wanted_second_stat_potion(st) {
         return true;
     }
 
@@ -1083,7 +1232,7 @@ pub fn borg_use_things(st: &mut BorgState) -> bool {
                 /* XXX XXX XXX Dark */
 
                 /* Check the scroll */
-                if sval == st.item_val.sv_scroll_mapping
+                if (sval == st.item_val.sv_scroll_mapping && !idle_use_enabled())
                     || sval == st.item_val.sv_scroll_acquirement
                     || sval == st.item_val.sv_scroll_star_acquirement
                 {
@@ -1108,7 +1257,6 @@ pub fn borg_use_things(st: &mut BorgState) -> bool {
 /// Satisfy hunger using known supplies without using unrelated items.
 pub(crate) fn borg_eat_when_hungry(st: &mut BorgState) -> bool {
     let food = TV_FOOD as i32;
-    /* Attempt to satisfy hunger */
     borg_spell(st, REMOVE_HUNGER)
         || borg_spell(st, HERBAL_CURING)
         || borg_consume_neutral_food(st)
@@ -1219,9 +1367,170 @@ pub fn borg_recharging(st: &mut BorgState) -> bool {
     false
 }
 
+#[derive(Clone, Copy)]
+struct IdleUse {
+    tval: u32,
+    sval: fn(&ItemValState) -> i32,
+    min_depth: i32,
+}
+
+/// The first eligible dungeon level is set independently for each item (#1250).
+const IDLE_USE: &[IdleUse] = &[
+    IdleUse { tval: TV_SCROLL, sval: |v| v.sv_scroll_holy_chant, min_depth: 1 },
+    IdleUse { tval: TV_POTION, sval: |v| v.sv_potion_heroism, min_depth: 1 },
+    IdleUse { tval: TV_POTION, sval: |v| v.sv_potion_berserk, min_depth: 1 },
+    IdleUse { tval: TV_SCROLL, sval: |v| v.sv_scroll_monster_confusion, min_depth: 1 },
+    IdleUse { tval: TV_POTION, sval: |v| v.sv_potion_boldness, min_depth: 1 },
+    IdleUse { tval: TV_SCROLL, sval: |v| v.sv_scroll_mapping, min_depth: 1 },
+    IdleUse { tval: TV_SCROLL, sval: |v| v.sv_scroll_blessing, min_depth: 1 },
+    IdleUse { tval: TV_POTION, sval: |v| v.sv_potion_slime_mold, min_depth: 1 },
+    IdleUse { tval: TV_SCROLL, sval: |v| v.sv_scroll_treasure_detection, min_depth: 1 },
+];
+
+fn idle_use_slot(
+    policy: &[IdleUse],
+    pack: &[borg_item],
+    values: &ItemValState,
+    depth: i32,
+    can_read: bool,
+) -> Option<usize> {
+    policy.iter()
+        .filter(|entry| depth >= entry.min_depth && (entry.tval != TV_SCROLL || can_read))
+        .filter_map(|entry| {
+            let sval = (entry.sval)(values);
+            if sval <= 0 {
+                return None;
+            }
+            usize::try_from(borg_slot_in_pack(pack, entry.tval as i32, sval)).ok()
+        })
+        .min_by_key(|&slot| pack[slot].iqty)
+}
+
+fn idle_use_enabled() -> bool {
+    param(Param::item_use_idle) != 0
+}
+
+// borg-reborn-rs (#1273): shared by the idle Light scroll policy.
+pub(crate) fn idle_use_safe(st: &BorgState) -> bool {
+    !st.update.monster_in_sight
+        && st.borg.tr(BI_ISIMAGE) == 0
+        && !st.borg.unseen_mode
+        && !st.borg.goal.fleeing
+        && !st.borg.goal.leaving
+        && st.borg.goal.recalling == 0
+}
+
+/// Use one cheap consumable, picking the stack closest to freeing a slot.
+pub(crate) fn borg_use_idle(st: &mut BorgState) -> bool {
+    if !idle_use_enabled() || !idle_use_safe(st) || engine::player_is_shapechanged() {
+        return false;
+    }
+
+    let pack = &st.items.items[..usize::from(engine::z_info().pack_size)];
+    let Some(slot) = idle_use_slot(IDLE_USE, pack, &st.item_val, st.borg.tr(BI_CDEPTH), can_read_now(st)) else {
+        return false;
+    };
+    let item = &pack[slot];
+    let sval = i32::from(item.sval);
+    if u32::from(item.tval) == TV_SCROLL {
+        borg_read_scroll(st, sval)
+    } else {
+        borg_quaff_potion(st, sval)
+    }
+}
+
+// borg-reborn-rs (#451)
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::borg_item::blank_item;
+
+    #[test]
+    fn idle_use_starts_at_depth_one_and_picks_the_smallest_usable_stack() {
+        let values = ItemValState {
+            sv_scroll_holy_chant: 7,
+            sv_scroll_mapping: 9,
+            sv_potion_heroism: 7,
+            ..ItemValState::default()
+        };
+        let item = |tval, sval, iqty, aware| borg_item {
+            tval, sval, iqty, aware, ..blank_item()
+        };
+        let mut pack = [
+            item(TV_POTION as u8, 7, 5, true),
+            item(TV_SCROLL as u8, 7, 2, true),
+            item(TV_SCROLL as u8, 9, 1, true),
+            item(TV_POTION as u8, 7, 1, false),
+        ];
+
+        assert_eq!(idle_use_slot(IDLE_USE, &pack, &values, 0, true), None);
+        assert_eq!(idle_use_slot(IDLE_USE, &pack, &values, 1, true), Some(2));
+        assert_eq!(idle_use_slot(IDLE_USE, &pack, &values, 1, false), Some(0));
+
+        pack[2].iqty = 0;
+        assert_eq!(idle_use_slot(IDLE_USE, &pack, &values, 1, true), Some(1));
+
+        pack[3].aware = true;
+        assert_eq!(idle_use_slot(IDLE_USE, &pack, &values, 1, true), Some(3));
+
+        let later_heroism = [
+            IdleUse { min_depth: 5, ..IDLE_USE[1] },
+            IDLE_USE[0],
+        ];
+        assert_eq!(idle_use_slot(&later_heroism, &pack, &values, 4, true), Some(1));
+        assert_eq!(idle_use_slot(&later_heroism, &pack, &values, 5, true), Some(3));
+    }
+
+    #[test]
+    fn idle_use_skips_visible_monsters_and_urgent_states() {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+        assert!(idle_use_safe(&st));
+        st.update.monster_in_sight = true;
+        assert!(!idle_use_safe(&st));
+        st.update.monster_in_sight = false;
+        st.borg.unseen_mode = true;
+        assert!(!idle_use_safe(&st));
+        st.borg.unseen_mode = false;
+        st.borg.goal.fleeing = true;
+        assert!(!idle_use_safe(&st));
+        st.borg.goal.fleeing = false;
+        st.borg.goal.leaving = true;
+        assert!(!idle_use_safe(&st));
+        st.borg.goal.leaving = false;
+        st.borg.goal.recalling = 1;
+        assert!(!idle_use_safe(&st));
+        st.borg.goal.recalling = 0;
+        st.borg.trait_[BI_ISIMAGE as usize] = 1;
+        assert!(!idle_use_safe(&st));
+    }
+
+    #[test]
+    fn eating_from_a_full_pack_in_fox_form_queues_nothing() {
+        let mut st = BorgState::default();
+        let mut item = blank_item();
+        item.iqty = 1;
+        st.items.items = vec![item; 23];
+
+        let food = &mut st.items.items[2];
+        food.iqty = 6;
+        food.tval = TV_FOOD as u8;
+        food.sval = 1;
+        food.aware = true;
+
+        let juice = &mut st.items.items[22];
+        juice.iqty = 4;
+        juice.tval = TV_POTION as u8;
+        juice.sval = 1;
+        juice.aware = true;
+
+        assert!(!eat_in_current_shape(&mut st, TV_FOOD as i32, 1, true));
+        assert!(st.io.queued_keys().is_empty());
+
+        st.items.items[2].tval = TV_MUSHROOM as u8;
+        assert!(!eat_in_current_shape(&mut st, TV_MUSHROOM as i32, 1, true));
+        assert!(st.io.queued_keys().is_empty());
+    }
 
     #[test]
     fn neutral_food_ranks_stacks_by_total_nutrition() {
@@ -1249,17 +1558,19 @@ mod tests {
             _ => unreachable!(),
         };
 
-        assert_eq!(neutral_food_slot(&pack, Some(7), effects), Some(1));
+        assert_eq!(neutral_food_slot(&pack, Some(7), true, effects), Some(1));
+        assert_eq!(neutral_food_slot(&pack, Some(7), false, effects), Some(2));
+        assert_eq!(neutral_food_slot(&pack, None, false, effects), None);
         pack[1].iqty = 2;
-        assert_eq!(neutral_food_slot(&pack, Some(7), effects), Some(2));
-        assert_eq!(neutral_food_slot(&pack, None, effects), Some(0));
+        assert_eq!(neutral_food_slot(&pack, Some(7), true, effects), Some(2));
+        assert_eq!(neutral_food_slot(&pack, None, true, effects), Some(0));
         pack[2].iqty = 0;
-        assert_eq!(neutral_food_slot(&pack, Some(7), effects), Some(0));
+        assert_eq!(neutral_food_slot(&pack, Some(7), true, effects), Some(0));
         pack[2].iqty = 1;
         pack[0].iqty = 3;
         pack[1].iqty = 1;
-        assert_eq!(neutral_food_slot(&pack, Some(7), effects), Some(1));
+        assert_eq!(neutral_food_slot(&pack, Some(7), true, effects), Some(1));
         pack[4].aware = true;
-        assert_eq!(neutral_food_slot(&pack, Some(7), effects), Some(4));
+        assert_eq!(neutral_food_slot(&pack, Some(7), true, effects), Some(4));
     }
 }

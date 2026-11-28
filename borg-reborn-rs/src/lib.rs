@@ -1,7 +1,7 @@
 //! The Angband Borg reborn.
 //!
 //! An automatic player for Angband 4.2.6, linked into upstream's own Borg
-//! seam (`do_cmd_borg`, `inkey_hack`) by our build (docs/SPEC.md §3,
+//! seam (`do_cmd_pborg`, `inkey_hack`) by our build (docs/SPEC.md §3,
 //! docs/ENGINE.md). The layers this crate holds or will hold are described
 //! in `docs/ARCHITECTURE.md`:
 //!

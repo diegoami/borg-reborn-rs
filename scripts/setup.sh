@@ -115,6 +115,9 @@ primary = Path(common).parent if common else Path('.')
 (primary / 'vendor').mkdir(exist_ok=True)
 ok = sync('borg-cemetery (death-tools-pin.txt)', 'diegoami/borg-cemetery',
           primary / 'vendor/borg-cemetery', death_pin, [], move or not strict) and ok
+zoo_pin = Path('harness/zoo-adapter-pin.txt').read_text().strip()
+ok = sync('borg-zoo adapter (harness/zoo-adapter-pin.txt)', 'diegoami/borg-zoo',
+          Path('vendor/borg-zoo-adapter'), zoo_pin, [], move or not strict) and ok
 sys.exit(0 if ok else 1)
 PY
 fi

@@ -19,7 +19,10 @@ use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid};
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes};
 use crate::borg_headers::borg_trait_h::{BI_CURHP, BI_MAXHP};
 use crate::headers::list_mon_race_flags_h::RF_PASS_WALL;
-use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE, FEAT_NONE, FEAT_PASS_RUBBLE};
+use crate::headers::list_terrain_h::{
+    FEAT_BROKEN, FEAT_FLOOR, FEAT_GRANITE, FEAT_LAVA, FEAT_LESS, FEAT_MORE, FEAT_NONE, FEAT_OPEN,
+    FEAT_PASS_RUBBLE,
+};
 use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 use crate::engine;
@@ -47,6 +50,49 @@ pub fn borg_los(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
         || engine::square_in_bounds_fully(x1, y1),
         |y, x| borg_cave_floor_bold(st, y, x),
     )
+}
+
+/// borg-reborn-rs (#917): `borg_los` for sight, the view's line of sight
+/// under `view_rubble_blocks_sight` = 1: C's walk test (`borg_cave_floor_bold`)
+/// without passable rubble, which has no `LOS` flag
+/// (lib/gamedata/terrain.txt:346-354), so the engine's `los()`
+/// (src/cave-view.c:85-248, `square_isprojectable`) stops at it.
+pub(crate) fn borg_los_sight(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
+    los_with(
+        y1,
+        x1,
+        y2,
+        x2,
+        || engine::square_in_bounds_fully(x1, y1),
+        |y, x| borg_cave_floor_bold(st, y, x) && !feat_is(st.cave.grid(x, y), FEAT_PASS_RUBBLE),
+    )
+}
+
+/// Engine-style LOS on the Borg's known map. Both light and arc footprints
+/// use `los()` (src/cave-view.c:los:93-241, src/project.c:project:856-863).
+/// The terrain test is src/cave-square.c:square_isprojectable:671-674.
+/// Passable rubble lacks
+/// the PROJECT flag (lib/gamedata/terrain.txt), so it blocks intermediate rays.
+/// Unknown terrain is treated conservatively.
+pub(crate) fn borg_los_projectable(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
+    los_with(
+        y1,
+        x1,
+        y2,
+        x2,
+        || engine::square_in_bounds_fully(x1, y1),
+        |y, x| {
+            engine::square_in_bounds_fully(x, y) && {
+                let g = st.cave.grid(x, y);
+                known_projectable(u32::from(g.feat), g.trap, engine::feat_is_shop(i32::from(g.feat)))
+            }
+        },
+    )
+}
+
+/// Whether a known grid allows a projection to pass through it.
+pub(crate) fn known_projectable(feat: u32, trap: bool, shop: bool) -> bool {
+    trap || shop || [FEAT_FLOOR, FEAT_OPEN, FEAT_BROKEN, FEAT_LESS, FEAT_MORE, FEAT_LAVA].contains(&feat)
 }
 
 /// `borg_los` with the origin check (`square_in_bounds_fully`) and the
@@ -384,7 +430,9 @@ pub fn borg_offset_projectable(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i3
 /// Assume that monsters in the way will stop the projection
 /// We refuse to assume that unknown grids are floors
 /// In fact, we assume they are walls.
-/// Adapted from "projectable()" in "spells1.c".
+/// Adapted from "projectable()" in "spells1.c". This forecast uses the
+/// Borg's floor predicate, which allows known passable rubble. The engine
+/// projectile path checks PROJECT terrain instead.
 pub fn borg_projectable_pure(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
     /* Start at the initial location */
     let mut y = y1;
@@ -743,7 +791,12 @@ fn is_floor(st: &BorgState, x: i32, y: i32) -> bool {
 /// the wall we ran into but also might be.
 ///
 /// Warning -- This will only work for locations on the current panel
-pub fn borg_target_unknown_wall(st: &mut BorgState, y: i32, x: i32) -> bool {
+///
+/// borg-reborn-rs (#929): with `skip_player` (`update_miss_wall_guess` =
+/// 1) no grid is written under the Borg: the walk starts at its first step,
+/// and the step back from a reached target is not written when it is the
+/// Borg's grid (an adjacent target). C writes granite there.
+pub fn borg_target_unknown_wall(st: &mut BorgState, y: i32, x: i32, skip_player: bool) -> bool {
     let mut y_hall = false;
     let mut x_hall = false;
 
@@ -751,8 +804,6 @@ pub fn borg_target_unknown_wall(st: &mut BorgState, y: i32, x: i32) -> bool {
 
     /* Determine "path" */
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
-    let mut n_x = cx;
-    let mut n_y = cy;
 
     /* check for 'in a hall' x axis */
     /* This check is for this: */
@@ -793,57 +844,214 @@ pub fn borg_target_unknown_wall(st: &mut BorgState, y: i32, x: i32) -> bool {
         y_hall = true;
     }
 
-    loop {
-        let kill_idx = st.cave.grid(n_x, n_y).kill;
-        let kill = st.kills.kills[usize::from(kill_idx)];
-
-        if engine::race_flag_has(usize::from(kill.r_idx), RF_PASS_WALL) {
+    let (c, t) = (loc { x: cx, y: cy }, loc { x, y });
+    let guess = wall_guess_walk(
+        c,
+        t,
+        (x_hall, y_hall),
+        skip_player,
+        |g| {
+            let kill = st.kills.kills[usize::from(st.cave.grid(g.x, g.y).kill)];
+            engine::race_flag_has(usize::from(kill.r_idx), RF_PASS_WALL)
+        },
+        |g| feat_is(st.cave.grid(g.x, g.y), FEAT_NONE),
+    );
+    match guess {
+        WallGuess::Ghost(g) => {
             borg_note(
                 st,
-                &format!(
-                    "# Guessing wall ({},{}) under ghostly target ({},{})",
-                    n_y, n_x, n_y, n_x
-                ),
+                &format!("# Guessing wall ({},{}) under ghostly target ({},{})", g.y, g.x, g.y, g.x),
             );
-            st.cave.grid_mut(n_x, n_y).feat = FEAT_GRANITE as u8;
-            return true; /* not sure... should we return here? */
+        }
+        /* not sure... should we return here? maybe should mark ALL
+         * unknowns in path... */
+        WallGuess::Unknown(g) | WallGuess::BeforeTarget(g) => {
+            borg_note(st, &format!("# Guessing wall ({},{}) near target ({},{})", g.y, g.x, y, x));
+        }
+        WallGuess::NextToBorg => {
+            borg_note(st, "# No wall to guess: the target is next to the Borg (#929)");
+        }
+    }
+    if let Some(g) = wall_guess_grid(&guess) {
+        st.cave.grid_mut(g.x, g.y).feat = FEAT_GRANITE as u8;
+    }
+    /* borg-reborn-rs (#929): `NextToBorg` returns true as well, so the
+     * caller allows the next shot (successful_target 2), as C does after
+     * every guess; false would leave -11 after a spell, a lockout until
+     * the Borg moves (missed_before clears only -12 or less). */
+    true
+}
+
+/// The grid `borg_target_unknown_wall` writes granite on (#929): none for
+/// `NextToBorg`.
+pub(crate) fn wall_guess_grid(guess: &WallGuess) -> Option<loc> {
+    match *guess {
+        WallGuess::Ghost(g) | WallGuess::Unknown(g) | WallGuess::BeforeTarget(g) => Some(g),
+        WallGuess::NextToBorg => None,
+    }
+}
+
+/// What `borg_target_unknown_wall` guesses (#929).
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum WallGuess {
+    /// A wall-passing monster's grid ("under ghostly target").
+    Ghost(loc),
+    /// The first unknown grid of the path (off the hallway).
+    Unknown(loc),
+    /// No unknown grid: the step back from the target.
+    BeforeTarget(loc),
+    /// `skip_player` only: no unknown grid before the target, and the step
+    /// back from the target is the Borg's grid. Nothing is written.
+    NextToBorg,
+}
+
+/// The walk of `borg_target_unknown_wall` from the Borg's grid `c` to the
+/// target `t`, without the map writes: `ghost` and `unknown` read the
+/// Borg's map, `halls` is (x_hall, y_hall). C's walk starts at `c`, so an
+/// unknown grid under the Borg, or the step back from an adjacent target,
+/// is guessed there. borg-reborn-rs (#929): `skip_player` starts at the
+/// first step, never returns `c`, and never guesses the target's own grid
+/// as unknown (the monster stood there; for an adjacent target in the dark
+/// the first step is the target, and granite there would block the next
+/// shot at it, `borg_projectable`).
+pub(crate) fn wall_guess_walk(
+    c: loc,
+    t: loc,
+    (x_hall, y_hall): (bool, bool),
+    skip_player: bool,
+    ghost: impl Fn(loc) -> bool,
+    unknown: impl Fn(loc) -> bool,
+) -> WallGuess {
+    let (mut n_y, mut n_x) = (c.y, c.x);
+    if skip_player && (n_x != t.x || n_y != t.y) {
+        borg_inc_motion(&mut n_y, &mut n_x, c.y, c.x, t.y, t.x);
+    }
+
+    loop {
+        let n = loc { x: n_x, y: n_y };
+        if ghost(n) {
+            return WallGuess::Ghost(n);
         }
 
-        if feat_is(st.cave.grid(n_x, n_y), FEAT_NONE)
-            && (n_y != st.borg.c.y || !y_hall)
-            && (n_x != st.borg.c.x || !x_hall)
-        {
-            borg_note(
-                st,
-                &format!("# Guessing wall ({},{}) near target ({},{})", n_y, n_x, y, x),
-            );
-            st.cave.grid_mut(n_x, n_y).feat = FEAT_GRANITE as u8;
-            return true; /* not sure... should we return here?
-                          maybe should mark ALL unknowns in path... */
+        let at_target = n_x == t.x && n_y == t.y;
+        if unknown(n) && !(skip_player && at_target) && (n_y != c.y || !y_hall) && (n_x != c.x || !x_hall) {
+            return WallGuess::Unknown(n);
         }
 
         /* Pathway found the target. */
-        if n_x == x && n_y == y {
+        if at_target {
             /* end of the pathway */
-            let (cy, cx) = (st.borg.c.y, st.borg.c.x);
-            borg_inc_motion(&mut n_y, &mut n_x, y, x, cy, cx);
-            borg_note(
-                st,
-                &format!("# Guessing wall ({},{}) near target ({},{})", n_y, n_x, y, x),
-            );
-            st.cave.grid_mut(n_x, n_y).feat = FEAT_GRANITE as u8;
-            return true;
+            borg_inc_motion(&mut n_y, &mut n_x, t.y, t.x, c.y, c.x);
+            if skip_player && n_x == c.x && n_y == c.y {
+                return WallGuess::NextToBorg;
+            }
+            return WallGuess::BeforeTarget(loc { x: n_x, y: n_y });
         }
 
         /* Calculate the new location */
-        let (cy, cx) = (st.borg.c.y, st.borg.c.x);
-        borg_inc_motion(&mut n_y, &mut n_x, cy, cx, y, x);
+        borg_inc_motion(&mut n_y, &mut n_x, c.y, c.x, t.y, t.x);
     }
 }
 
 #[cfg(test)]
 mod tests {
+    /// #884 (re-review of #894): from the player at (0,0) to (2,1), with
+    /// passable rubble at (1,0) and floor everywhere else. The walk test takes
+    /// the knight's shortcut through the rubble; light, as in the engine's
+    /// los(), does not pass it.
+    #[test]
+    fn light_does_not_pass_rubble_the_walk_test_crosses() {
+        use crate::headers::list_terrain_h::{FEAT_CLOSED, FEAT_PASS_RUBBLE, FEAT_RUBBLE};
+        let feat = |y: i32, x: i32| if (y, x) == (1, 0) { FEAT_PASS_RUBBLE } else { FEAT_FLOOR };
+        let walk = |y, x| feat(y, x) == FEAT_FLOOR || feat(y, x) == FEAT_PASS_RUBBLE;
+        let light = |y, x| known_projectable(feat(y, x), false, false);
+        assert!(los_with(0, 0, 2, 1, || true, walk));
+        assert!(!los_with(0, 0, 2, 1, || true, light));
+        // Floor all the way: both see.
+        assert!(los_with(0, 0, 2, 1, || true, |_, _| known_projectable(FEAT_FLOOR, false, false)));
+        assert!(!known_projectable(FEAT_RUBBLE, false, false));
+        assert!(!known_projectable(FEAT_CLOSED, false, false));
+        assert!(!known_projectable(FEAT_NONE, false, false));
+        assert!(known_projectable(FEAT_NONE, true, false));
+        assert!(known_projectable(FEAT_OPEN, false, false) && known_projectable(FEAT_LESS, false, false));
+    }
+
+    #[test]
+    fn acid_spray_rubble_blocks_only_the_dog_behind_it() {
+        let player = (56, 133);
+        let blocked_dog = (56, 126);
+        let clear_dog = (54, 126);
+        // Both targets are within 30 degrees of due west.
+        let projectable = |y, x| {
+            let feat = if (y, x) == (56, 127) { FEAT_PASS_RUBBLE } else { FEAT_FLOOR };
+            known_projectable(feat, false, false)
+        };
+        let reachable = |(y, x)| los_with(player.0, player.1, y, x, || true, projectable);
+        assert_eq!([blocked_dog, clear_dog].into_iter().filter(|&dog| reachable(dog)).count(), 1);
+        assert!(reachable(clear_dog));
+        assert!(!reachable(blocked_dog));
+    }
+
     use super::*;
+
+    /// #929: Fang next to the Borg, as in Paladin 1194051723 (Borg (50,87),
+    /// target (51,88)) and Druid 1024822556 (Borg (39,112), target
+    /// (39,111)). C guesses the Borg's own grid after a miss; with
+    /// `skip_player` nothing is guessed. An unknown grid under the Borg (the
+    /// Necromancer with light 0, 798380952) is skipped as well.
+    #[test]
+    fn wall_guess_never_lands_on_the_borg() {
+        let at = |y, x| loc { x, y };
+        let never = |_: loc| false;
+        for (c, t) in [(at(50, 87), at(51, 88)), (at(39, 112), at(39, 111)), (at(49, 88), at(50, 87))] {
+            assert_eq!(wall_guess_walk(c, t, (false, false), false, never, never), WallGuess::BeforeTarget(c));
+            assert_eq!(wall_guess_walk(c, t, (false, false), true, never, never), WallGuess::NextToBorg);
+            // the Borg's grid unknown: C guesses it, the guard looks past it
+            let dark_borg = move |g: loc| g == c;
+            assert_eq!(wall_guess_walk(c, t, (false, false), false, never, dark_borg), WallGuess::Unknown(c));
+            assert_eq!(wall_guess_walk(c, t, (false, false), true, never, dark_borg), WallGuess::NextToBorg);
+        }
+        // A far target: both find the same first unknown grid on the path,
+        // and with none, the same grid before the target, never the Borg's.
+        let (c, t) = (at(10, 10), at(10, 14));
+        let dark = |g: loc| g == at(10, 12);
+        assert_eq!(wall_guess_walk(c, t, (false, false), false, never, dark), WallGuess::Unknown(at(10, 12)));
+        assert_eq!(wall_guess_walk(c, t, (false, false), true, never, dark), WallGuess::Unknown(at(10, 12)));
+        for skip in [false, true] {
+            assert_eq!(wall_guess_walk(c, t, (false, false), skip, never, never), WallGuess::BeforeTarget(at(10, 13)));
+        }
+        // A wall-passing monster on the target is guessed by both.
+        let ghost = |g: loc| g == t;
+        assert_eq!(wall_guess_walk(c, t, (false, false), true, ghost, never), WallGuess::Ghost(t));
+        // The written grid: never the Borg's with the guard (the caller
+        // writes `wall_guess_grid`).
+        assert_eq!(wall_guess_grid(&WallGuess::NextToBorg), None);
+        assert_eq!(wall_guess_grid(&WallGuess::Unknown(t)), Some(t));
+    }
+
+    /// Review of #1005, finding 1: in the dark (light 0) the Borg's grid
+    /// and the adjacent target's grid are both unknown. C guesses the
+    /// Borg's grid; the guard must not move the guess onto the monster's
+    /// grid. A far target whose own grid is unknown: C guesses the target,
+    /// the guard the step before it.
+    #[test]
+    fn wall_guess_never_lands_on_the_target_with_the_guard() {
+        let at = |y, x| loc { x, y };
+        let never = |_: loc| false;
+        let dark = |_: loc| true;
+        for (c, t) in [(at(50, 87), at(51, 88)), (at(39, 112), at(39, 111))] {
+            assert_eq!(wall_guess_walk(c, t, (false, false), false, never, dark), WallGuess::Unknown(c));
+            let guess = wall_guess_walk(c, t, (false, false), true, never, dark);
+            assert_eq!(guess, WallGuess::NextToBorg);
+            assert_eq!(wall_guess_grid(&guess), None);
+        }
+        let (c, t) = (at(10, 10), at(10, 14));
+        let dark_target = move |g: loc| g == t;
+        assert_eq!(wall_guess_walk(c, t, (false, false), false, never, dark_target), WallGuess::Unknown(t));
+        assert_eq!(wall_guess_walk(c, t, (false, false), true, never, dark_target), WallGuess::BeforeTarget(at(10, 13)));
+        // Every grid unknown: the guard guesses the first step, never c or t.
+        assert_eq!(wall_guess_walk(c, t, (false, false), true, never, dark), WallGuess::Unknown(at(10, 11)));
+    }
 
     /// Follow `borg_inc_motion` from (y1, x1) for `n` steps.
     fn path(y1: i32, x1: i32, y2: i32, x2: i32, n: usize) -> Vec<(i32, i32)> {

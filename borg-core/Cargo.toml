@@ -22,11 +22,16 @@ test-force-nested = []
 test-town-review = []
 # Native fixture for the emergency stair handoff. Inactive in regular builds.
 test-stair-handoff = []
+test-combat-heal = []
+test-town-loadout = []
+# Native regressions for disposing of known cursed spares.
+test-cursed-spares = []
 
 [dependencies]
 libc = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_yaml_ng = "0.10"
 
 # borg-reborn-rs (#207): borg-rs's code is linted by borg-rs's own CI, on its
 # toolchain. Here, newer clippy releases would fail our `-D warnings` on code

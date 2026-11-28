@@ -58,7 +58,7 @@ use crate::borg_headers::borg_magic_h::{
 use crate::borg_headers::borg_trait_h::{
     BI_AESCAPE, BI_AGLYPH, BI_AMASSBAN, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH, BI_CLEVEL,
     BI_CURHP, BI_CURSP, BI_FRACT, BI_ISBLIND, BI_ISCONFUSED, BI_ISFORGET, BI_ISIMAGE, BI_LIGHT,
-    BI_MAXHP, BI_RCONF, BI_WS_EVIL,
+    BI_MAXHP, BI_MAXSP, BI_RCONF, BI_WS_EVIL,
 };
 use crate::headers::list_mon_race_flags_h::{RF_EVIL, RF_UNIQUE};
 use crate::headers::list_player_timed_h::TMD_OPP_ACID;
@@ -200,6 +200,31 @@ fn some_danger(st: &BorgState, p1: i32) -> bool {
     let a = avoid(st);
     p1 > a / param(Param::defend_some_danger_divisor) && p1 < (a * if st.borg.near.unique != 0 { param(Param::defend_some_danger_unique_tenths) } else { param(Param::defend_some_danger_tenths) }) / 10
 }
+
+/// #1211: a pre-fight buff's cast waits when its premise is false: the Borg
+/// is at full HP and its SP is at or below the quarter of the maximum that
+/// arms the recovery walk (`borg_flow_recover`'s caster gate) — the mana is
+/// what the Borg is trying to rebuild, and the recorded Priest
+/// (Borg261124230918, DL19: five remembered orc archers priced the corridor
+/// at danger 20-25, "some danger" by this window) cast every regenerated
+/// point back into Heroism while pacing between recovery grids it was never
+/// allowed to rest on. Bless and Smite Evil are not part of this: their own
+/// windows already require a monster at hand. The potion and activation
+/// fallbacks are untouched (no mana behind them). 0 = C.
+fn mana_starved_prep(on: bool, curhp: i32, maxhp: i32, cursp: i32, maxsp: i32) -> bool {
+    on && curhp >= maxhp && cursp <= maxsp / 4
+}
+
+fn mana_starved_prep_st(st: &BorgState) -> bool {
+    mana_starved_prep(
+        param(Param::defend_prep_mana_starved) != 0,
+        tr(st, BI_CURHP),
+        tr(st, BI_MAXHP),
+        tr(st, BI_CURSP),
+        tr(st, BI_MAXSP),
+    )
+}
+
 
 /// `!(ag->info & BORG_GLOW) && borg.trait[BI_LIGHT] == 0` for the Borg's
 /// grid.
@@ -1317,6 +1342,7 @@ fn borg_defend_aux_tele_away(st: &mut BorgState, p1: i32) -> i32 {
         || borg_aim_wand(st, st.item_val.sv_wand_teleport_away)
         || borg_zap_rod(st, st.item_val.sv_rod_teleport_other)
     {
+        st.fight_attack.pending_unseen.command_queued(true);
         /* Use target */
         borg_keypress(st, key(b'5'));
 
@@ -1357,16 +1383,17 @@ fn borg_defend_aux_hero(st: &mut BorgState, p1: i32) -> i32 {
     /* (not more than 70% when fighting a unique) */
     /* where x is the danger we are avoiding, usually current hp */
     if some_danger(st, p1) {
-        /* Simulation */
-        /* hero is a low priority */
+        // #1211: the cast waits while mana-starved at full HP; the potion
+        // fallback carries (no mana behind it).
+        let hold = mana_starved_prep_st(st);
         if simulating(st) {
-            return 1;
+            return if hold && !potion { 0 } else { 1 };
         }
 
         borg_note(st, "# Attempting to cast Hero");
 
         /* do it! */
-        if (spell && borg_spell(st, HEROISM))
+        if (spell && !hold && borg_spell(st, HEROISM))
             || borg_quaff_potion(st, st.item_val.sv_potion_heroism)
         {
             /* No resting to recoup mana */
@@ -1402,7 +1429,9 @@ fn borg_defend_aux_regen(st: &mut BorgState, p1: i32) -> i32 {
     }
 
     /* if we are in some danger but not much, go for a quick regen */
-    if some_danger(st, p1) {
+    // #1211: the cast is the only arm, so it waits whole while mana-starved
+    // at full HP.
+    if some_danger(st, p1) && !mana_starved_prep_st(st) {
         /* Simulation */
         /* regen is a low priority */
         if simulating(st) {
@@ -1446,14 +1475,19 @@ fn borg_defend_aux_berserk(st: &mut BorgState, p1: i32) -> i32 {
 
     /* if we are in some danger but not much, go for a quick bless */
     if some_danger(st, p1) {
-        /* Simulation */
-        /* berserk is a low priority */
+        // #1211: the cast waits while mana-starved at full HP; the potion
+        // and activation fallbacks carry (no mana behind them).
+        let hold = mana_starved_prep_st(st);
+        let fallback = -1 != borg_slot(st, TV_POTION as i32, st.item_val.sv_potion_berserk)
+            || borg_equips_item(st, st.act.berserker, true)
+            || borg_equips_item(st, st.act.rage_bless_resist, true)
+            || borg_equips_item(st, st.act.shero, true);
         if simulating(st) {
-            return param(Param::defend_hero_value);
+            return if hold && !fallback { 0 } else { param(Param::defend_hero_value) };
         }
 
         /* do it! */
-        if borg_spell(st, BERSERK_STRENGTH)
+        if (!hold && borg_spell(st, BERSERK_STRENGTH))
             || borg_activate_item(st, st.act.berserker)
             || borg_activate_item(st, st.act.rage_bless_resist)
             || borg_activate_item(st, st.act.shero)
@@ -2834,8 +2868,12 @@ pub(crate) fn detect_invisible_now(st: &mut BorgState) -> bool {
     use_detect_invisible(st, fail_allowed)
 }
 
+fn light_beam_trigger_ready(last: BorgTime, age: BorgTime, min_age: BorgTime, guard: bool) -> bool {
+    age >= min_age && (last != 0 || !guard)
+}
+
 /// Light Beam to spot lurkers (`borg_defend_aux_lbeam`). Used only if I am
-/// hit by an unseen guy. Lights up a hallway.
+/// hit by an unseen guy or a rest stamps the clock. Lights up a hallway.
 fn borg_defend_aux_lbeam(st: &mut BorgState, p1: i32) -> i32 {
     let mut hallway = false;
     let x = st.borg.c.x;
@@ -2846,9 +2884,12 @@ fn borg_defend_aux_lbeam(st: &mut BorgState, p1: i32) -> i32 {
         return 0;
     }
 
-    /* Light Beam section to spot non seen guys */
-    /* not recent, don't bother */
-    if borg_timer(st, st.borg.need_see_invis) < param(Param::defend_light_beam_max_invis_age) {
+    // Keep the delay used by C once the clock has been set.
+    let last = st.borg.need_see_invis;
+    if !light_beam_trigger_ready(
+        last, borg_timer(st, last), param(Param::defend_light_beam_max_invis_age),
+        crate::borg_light::hallway_beam_guard_enabled(),
+    ) {
         return 0;
     }
 
@@ -3262,6 +3303,7 @@ fn borg_defend_aux_tele_away_morgoth(st: &mut BorgState) -> i32 {
         || borg_activate_item(st, st.act.tele_other)
         || borg_aim_wand(st, st.item_val.sv_wand_teleport_away)
     {
+        st.fight_attack.pending_unseen.command_queued(true);
         /* Use target */
         borg_keypress(st, key(b'5'));
 
@@ -3628,4 +3670,35 @@ pub fn borg_defend(st: &mut BorgState, p1: i32) -> bool {
 /// confusion, amnesia and no-light refusals too.
 pub(crate) fn unseen_detection_safe(st: &BorgState, danger: i32) -> bool {
     danger <= avoid(st) * param(Param::defend_see_invis_max_danger_multiplier) && !dark_here(st)
+}
+
+#[cfg(test)]
+mod mana_starved_prep_tests {
+    use super::mana_starved_prep;
+
+    /// #1211: the recorded Priest's state — full HP, SP at or below the
+    /// quarter that arms the recovery walk.
+    #[test]
+    fn the_recorded_state_holds_and_half_mana_does_not() {
+        assert!(mana_starved_prep(true, 170, 170, 2, 47), "full HP, SP 2/47");
+        assert!(mana_starved_prep(true, 170, 170, 0, 47), "full HP, SP 0");
+        assert!(mana_starved_prep(true, 170, 170, 11, 47), "the arm's own boundary (47/4 = 11)");
+        assert!(!mana_starved_prep(true, 170, 170, 12, 47), "above the quarter the walk may cast");
+        assert!(!mana_starved_prep(true, 169, 170, 2, 47), "hurt: the mana may be spent");
+        assert!(!mana_starved_prep(false, 170, 170, 0, 47), "0 retains C's casts");
+    }
+}
+
+#[cfg(test)]
+mod light_beam_tests {
+    use super::light_beam_trigger_ready;
+
+    #[test]
+    fn defense_requires_a_set_stamp_at_or_past_the_delay() {
+        assert!(!light_beam_trigger_ready(0, 100, 48, true));
+        assert!(light_beam_trigger_ready(0, 100, 48, false));
+        assert!(light_beam_trigger_ready(100, 49, 48, true));
+        assert!(light_beam_trigger_ready(100, 48, 48, true));
+        assert!(!light_beam_trigger_ready(100, 47, 48, true));
+    }
 }

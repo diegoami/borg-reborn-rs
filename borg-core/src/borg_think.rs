@@ -219,20 +219,73 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
         return choice!("revert_shapechange");
     }
 
+    #[cfg(feature = "test-town-review")]
+    if let Some(case) = std::env::var_os("BORG_TEST_INFERIOR_SPARE_SALE") {
+        thread_local! {
+            static PREPARED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+        }
+        if !PREPARED.replace(true) {
+            engine::equip_test_sandal_spares(st, case.to_str().unwrap_or("1"));
+            crate::borg_item::borg_find_all_items(st);
+        }
+    }
+
     /* Examine the equipment/inventory */
     crate::borg_trait::borg_notice(st, true);
 
     /* Examine the screen */
     crate::borg_update::borg_update(st);
+    crate::core_trace::observe_healing_potions(st);
 
     #[cfg(feature = "test-stair-handoff")]
     if let Ok(case) = std::env::var("BORG_TEST_STAIR_HANDOFF") {
-        crate::borg_flow_stairs::run_handoff_regression(st, &case);
+        match case.as_str() {
+            "healing-restock-dungeon" => crate::borg_healing_restock::fixture::dungeon(st, false),
+            "healing-restock-short" => crate::borg_healing_restock::fixture::dungeon(st, true),
+            "healing-restock-town" | "healing-restock-town-legacy-unknown" => {
+                crate::borg_healing_restock::fixture::town(st, &case);
+            }
+            "digger-swap-loop" | "digger-only" | "digger-dig-gate" => crate::borg_item_wear::digger_fixture::step(st, &case),
+            _ => crate::borg_flow_stairs::run_handoff_regression(st, &case),
+        }
+    }
+
+    #[cfg(feature = "test-combat-heal")]
+    if let Ok(case) = std::env::var("BORG_TEST_COMBAT_HEAL") {
+        crate::borg_combat_heal::fixture::run(st, &case);
+    }
+
+    #[cfg(feature = "test-town-loadout")]
+    if let Ok(case) = std::env::var("BORG_TEST_EXPLORATION_PACK") {
+        if crate::borg_spare_gear::fixture(st, &case) {
+            return choice!("borg_drop_hole");
+        }
+    }
+
+    #[cfg(feature = "test-town-loadout")]
+    if let Ok(case) = std::env::var("BORG_TEST_TOWN_LOADOUT") {
+        crate::borg_town_loadout::fixture(st, &case);
+    }
+
+    #[cfg(feature = "test-town-loadout")]
+    if let Ok(case) = std::env::var("BORG_TEST_TOWN_RECALL_LOADOUT") {
+        crate::borg_town_recall_loadout::fixture(st, &case);
+    }
+
+    #[cfg(feature = "test-cursed-spares")]
+    if let Ok(case) = std::env::var("BORG_TEST_CURSED_SPARES") {
+        if case == "live-lantern" {
+            crate::borg_junk::check_cursed_lantern_in_game(st);
+            return choice!("test_cursed_lantern");
+        }
+        crate::borg_junk::check_cursed_spares(st);
     }
 
     // Remember learning opportunities only while actually in town. The
     // dungeon decision must not inspect freshly restocked hidden shop data.
     crate::borg_trip::observe_town(st);
+    crate::borg_healing_restock::observe_town(st);
+    crate::borg_ranged::observe(st);
 
     /* Evaluate the current world */
     st.borg.power = crate::borg_power::borg_power(st);
@@ -277,12 +330,6 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
     /* Allow user abort */
     if st.borg.status.cancel {
         return choice!("cancel");
-    }
-
-    // borg-reborn-rs (#208): an errand that is done stops the Borg here.
-    if let Some(done) = crate::shell::before_dungeon_think(st) {
-        crate::core_trace::selected("errand_handoff", concat!(file!(), ":", line!()));
-        return done;
     }
 
     /* Do something */

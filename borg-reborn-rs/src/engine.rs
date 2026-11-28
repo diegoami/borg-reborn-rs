@@ -7,7 +7,7 @@
 //! docs/ENGINE-READS.md (the D3 audit, docs/SPEC.md §5).
 //!
 //! The engine is single-threaded and calls the Borg only from its own
-//! thread: through `do_cmd_borg` (the `^Z` command) and through the
+//! thread: through `do_cmd_pborg` (the `^Z` command) and through the
 //! `inkey_hack` hook while the Borg runs. Nothing here is called from
 //! anywhere else.
 #![allow(unsafe_code)]
@@ -162,14 +162,6 @@ pub fn while_hallucinating<T>(f: impl FnOnce() -> T) -> T {
     }
 }
 
-/// Read the `^Z` command key ("Borg command"), or `None` if cancelled.
-pub fn read_command() -> Option<u8> {
-    let mut ch: c_char = 0;
-    // SAFETY: `get_com` writes one char; the prompt is a static C string.
-    let ok = unsafe { b::get_com(c"Borg command: ".as_ptr(), &mut ch) };
-    ok.then_some(ch as u8)
-}
-
 /// A real key the user pressed (or a terminal disconnect), taken from the
 /// terminal's queue without waiting: the C Borg's `user_abort` (spec §2.2
 /// step 8). `None` when nothing is pending, as always under borgh after its
@@ -246,34 +238,36 @@ extern "C" fn inkey_hook(flush_first: c_int) -> b::keypress {
     }
 }
 
-/// The engine's call into the Borg commands (`^Z`, `do_cmd_try_borg` in
+/// Validate file dependencies before the watched game starts.
+#[no_mangle]
+extern "C" fn borgh_check_pborg_settings() {
+    if crate::borg::core_is_borg_rs() {
+        borg_rs::scary_list::check_selected_file();
+    }
+}
+
+/// The engine's call into the PBorg commands (`^Z`, `do_cmd_try_borg` in
 /// `angband/src/cmd-misc.c`).
 #[no_mangle]
-extern "C" fn do_cmd_borg() {
+extern "C" fn do_cmd_pborg(cmd: u8) {
     // The decision core (#207, the option-C pilot): borg-rs's, vendored at
     // its pin in `borg-core/`, when `BORG_CORE=borg-rs`; ours otherwise.
     if crate::borg::core_is_borg_rs() {
-        // An errand or a setting for the core (#208): `BORG_ERRAND` (`/dive
-        // 2`, `/town`, `/ladder`, `trips:...`: borg-core/src/shell.rs), with
-        // an optional budget in game turns (`BORG_ERRAND_BUDGET`), and
-        // `BORG_STOPSCARED`. The environment first, else the run's borg.txt
-        // (`borg_reborn_errand`, `borg_reborn_stopscared`: the zoo). In the
-        // game, `^Z /` types one.
-        if let Some(c) = crate::borg::configured_stopscared() {
-            borg_rs::shell::apply(c, 0);
-        }
-        if let Some(line) = crate::borg::configured_errand() {
-            let budget = crate::borg::configured_errand_budget();
-            // Configuration errors must not silently change the measured arm.
-            if let Err(error) = borg_rs::shell::apply_line(&line, budget) {
-                eprintln!("borg-reborn-rs: invalid configured errand: {error}");
-                std::process::exit(2);
-            }
-        }
-        borg_rs::do_cmd_borg();
+        // borg-reborn-rs (#1339): the errands, `/stopscared` and the plans
+        // are retired; a setting that would select one stops the run.
+        crate::borg::check_retired_errand_settings();
+        borg_rs::do_cmd_borg_key(cmd);
         return;
     }
-    crate::borg::command();
+    if cmd == b'?' {
+        extern "C" {
+            fn do_cmd_reborn_borg_help();
+        }
+        // SAFETY: the help screen runs on the engine thread.
+        unsafe { do_cmd_reborn_borg_help() };
+        return;
+    }
+    crate::borg::command(cmd);
 }
 
 // ---------------------------------------------------------------------------

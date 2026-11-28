@@ -136,13 +136,9 @@ fn lend<R>(st: &mut BorgState, f: impl FnOnce() -> R) -> R {
     r
 }
 
-/// The engine's call into the Borg commands (`do_cmd_borg`, called by
-/// `do_cmd_try_borg` in cmd-misc.c for `^Z`). Private: only the engine
-/// calls it (the `#[no_mangle]` symbol is exported all the same).
-// borg-reborn-rs (#207): the symbol is the shell's; the shell calls this
-// when `BORG_CORE=borg-rs` selects this core.
-pub fn do_cmd_borg() {
-    enter(crate::borg_commands::do_cmd_borg)
+/// Run the selected PBorg command on the engine thread.
+pub fn do_cmd_borg_key(cmd: u8) {
+    enter(|st| crate::borg_commands::do_cmd_borg_key(st, cmd))
 }
 
 // ---------------------------------------------------------------------------
@@ -391,7 +387,8 @@ pub fn text_mbstowcs(dst: &mut [wchar_t], src: &[u8], n: i32) -> usize {
 // ---------------------------------------------------------------------------
 // Messages and events
 
-/// `msg("%s", text)`. May wait for a key (lends the state).
+/// `msg("%s", text)` logs the message and dispatches `EVENT_MESSAGE`.
+/// Lends the state because the display handler can wait at a `-more-` prompt.
 pub fn msg(st: &mut BorgState, text: &[u8]) {
     let c = CString::new(text).expect("no NUL in message");
     // SAFETY: format string and argument are valid C strings.
@@ -1051,6 +1048,20 @@ pub fn randint0(m: u32) -> i32 {
     unsafe { crate::headers::z_rand_h::Rand_div(m) as i32 }
 }
 
+/// borg-reborn-rs (#1061): `player->race->ridx`, or `None` while `player`
+/// or `player->race` is not set (as `class_cidx_if_set`).
+pub fn race_ridx_if_set() -> Option<u32> {
+    // SAFETY: `player` and `player->race` are only read when non-null; the
+    // race list lives for the game.
+    unsafe {
+        let p = crate::headers::player_h::player;
+        if p.is_null() || (*p).race.is_null() {
+            return None;
+        }
+        Some((*(*p).race).ridx)
+    }
+}
+
 /// `player->race->ridx`
 pub fn race_ridx() -> u32 {
     // SAFETY: `player->race` points into the race list loaded at startup
@@ -1127,28 +1138,6 @@ pub fn class_book_dungeon(book: i32) -> bool {
 pub fn spell_chance(spell_index: i32) -> i16 {
     // SAFETY: plain call; the engine checks the index itself.
     unsafe { crate::headers::player_spell_h::spell_chance(spell_index) }
-}
-
-// ---------------------------------------------------------------------------
-// Files
-
-/// An engine file (`ang_file *`) opened by someone else. It has no public
-/// constructor: the only one is made by `ReadFile::getl` for one call,
-/// from an open `ReadFile`.
-#[derive(Clone, Copy)]
-pub struct AngFile(*mut crate::headers::z_file_h::ang_file);
-
-impl AngFile {
-}
-
-/// `file_getl(f, buf, len)`: read a line into `buf` (at most `len - 1`
-/// bytes and a NUL; `\r`, `\n` and `\r\n` end a line, tabs become
-/// spaces). Returns false at the end of the file.
-pub fn file_getl(f: AngFile, buf: &mut [u8], len: usize) -> bool {
-    assert!(len >= 1 && len <= buf.len());
-    // SAFETY: f is open (an AngFile only comes from an open ReadFile, see
-    // the type); file_getl writes at most `len` bytes into buf (len checked).
-    unsafe { crate::headers::z_file_h::file_getl(f.0, buf.as_mut_ptr() as *mut c_char, len) }
 }
 
 // ---------------------------------------------------------------------------
@@ -1293,37 +1282,6 @@ fn path_build_in(dir: *mut c_char, len: usize, leaf: &[u8]) -> Vec<u8> {
     buf
 }
 
-/// An engine file opened for reading by `file_open(path, MODE_READ, -1)`
-/// (`ang_file *`). Not `Copy`: `close()` consumes it. Dropping it without
-/// closing leaks it.
-pub struct ReadFile(*mut crate::headers::z_file_h::ang_file);
-
-/// `file_open(path, MODE_READ, -1)`; `None` where C gets NULL.
-pub fn file_open_read(path: &[u8]) -> Option<ReadFile> {
-    use crate::headers::z_file_h as z;
-    let c = CString::new(path).expect("no NUL in path");
-    // SAFETY: c is a valid C string for the call; the file type is not
-    // used for reading (C passes -1); the result is NULL or a file the
-    // engine allocated.
-    let f = unsafe { z::file_open(c.as_ptr(), z::MODE_READ, u32::MAX) };
-    (!f.is_null()).then_some(ReadFile(f))
-}
-
-impl ReadFile {
-    /// `file_getl(f, buf, len)`, as [`file_getl`].
-    pub fn getl(&mut self, buf: &mut [u8], len: usize) -> bool {
-        // AngFile contract: self.0 is open (only close() ends it, by value)
-        // and the handle does not outlive this call.
-        file_getl(AngFile(self.0), buf, len)
-    }
-
-    /// `file_close(f)`.
-    pub fn close(self) -> bool {
-        // SAFETY: self.0 is open and is not used again (self is consumed).
-        unsafe { crate::headers::z_file_h::file_close(self.0) }
-    }
-}
-
 /// `time(NULL)`.
 #[cfg(not(windows))]
 pub fn time_now() -> i64 {
@@ -1458,6 +1416,20 @@ pub fn player_combat_speed() -> i32 {
     player_ref().state.speed
 }
 
+/// The effective CON index used for poison recovery (game-world.c, decrease_timeouts).
+/// The engine's stat calculation includes equipment, curses and shape changes.
+pub(crate) fn player_con_index() -> i32 {
+    use crate::headers::list_stats_h::STAT_CON;
+    player_ref().state.stat_ind[STAT_CON as usize]
+}
+
+/// borg-reborn-rs (#1028): the player's energy (`player->energy`), spent
+/// `move_energy` an action and refilled by `turn_energy` each game turn
+/// (game-world.c:1092).
+pub fn player_energy() -> i32 {
+    i32::from(player_ref().energy)
+}
+
 /// Read the player's summary fields.
 pub fn player_summary() -> PlayerSummary {
     let p = player_ref();
@@ -1484,6 +1456,12 @@ pub fn player_timed(idx: u32) -> i16 {
     assert!(idx < crate::headers::player_timed_h::TMD_MAX, "timed index out of range");
     // SAFETY: timed is allocated with TMD_MAX entries with the player.
     unsafe { *player_ref().timed.add(idx as usize) }
+}
+
+#[cfg(feature = "test-combat-heal")]
+pub(crate) fn set_test_poison(duration: i16) {
+    // SAFETY: the live test player owns a TMD_MAX-element timer array.
+    unsafe { *player_ref().timed.add(crate::headers::list_player_timed_h::TMD_POISONED as usize) = duration; }
 }
 
 /// `player_of_has(player, flag)`: an object flag on the player.
@@ -1519,6 +1497,15 @@ fn object_desc80(obj: *const crate::headers::object_h::object, mode: u32) -> Vec
     }
     let n = buf.iter().position(|&b| b == 0).unwrap_or(buf.len());
     buf[..n].to_vec()
+}
+
+/// How many pack slots remain after the engine accounts for the quiver.
+pub(crate) fn pack_slots_free() -> i32 {
+    extern "C" {
+        fn pack_slots_used(player: *const crate::headers::player_h::player) -> i32;
+    }
+    // SAFETY: the active player and gear are initialized before the Borg runs.
+    i32::from(z_info().pack_size) - unsafe { pack_slots_used(crate::headers::player_h::player) }
 }
 
 /// `player->body.count`: the number of equipment slots.
@@ -1565,6 +1552,44 @@ pub fn store_stock_descs(store: usize, mode: u32) -> Vec<Vec<u8>> {
 // ---------------------------------------------------------------------------
 // Store stock (borg-store.c)
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum NormalStock {
+    Unlisted,
+    Intermittent,
+    Staple,
+}
+
+/// borg-reborn-rs (#1241): the public shop catalogue, independent of rolled stock.
+/// Engine store.c: parse_always(), parse_normal(), and store_maint().
+pub(crate) fn normal_store_stock(access: &Access, kind: u32) -> NormalStock {
+    use crate::headers::list_terrain_h::{FEAT_HOME, FEAT_STORE_BLACK};
+    use crate::headers::object_h::object_kind;
+    use crate::headers::store_h::stores;
+
+    check_access(access);
+    let mut stock = NormalStock::Unlisted;
+    // SAFETY: store initialization populates store_max entries and each
+    // populated catalogue owns its parsed number of non-null kind pointers.
+    unsafe {
+        for store in core::slice::from_raw_parts(stores, usize::from(z_info().store_max)) {
+            if store.feat == FEAT_HOME as i32 || store.feat == FEAT_STORE_BLACK as i32 {
+                continue;
+            }
+            let has_kind = |table: *const *mut object_kind, count: usize| {
+                count > 0 && core::slice::from_raw_parts(table, count)
+                    .iter().any(|&entry| (*entry).kidx == kind)
+            };
+            if has_kind(store.always_table, store.always_num) {
+                return NormalStock::Staple;
+            }
+            if has_kind(store.normal_table, store.normal_num) {
+                stock = NormalStock::Intermittent;
+            }
+        }
+    }
+    stock
+}
+
 /// An object in a store's stock (an entry of `store_stock_list`). Bound
 /// to the borrow of the state's `access` token (see "Engine object
 /// handles"): the stock only changes while the game runs.
@@ -1602,22 +1627,38 @@ fn with_object_quantity<T>(
     source: *const crate::headers::object_h::object,
     quantity: i32,
     read: impl FnOnce(*const crate::headers::object_h::object) -> T,
-) -> T {
+) -> Option<T> {
     use crate::headers::object_h::object;
     extern "C" {
         fn object_copy_amt(dest: *mut object, src: *const object, amount: i32);
         fn object_wipe(obj: *mut object);
     }
+    // borg-reborn-rs (#1354): a quantity the native stack does not hold
+    // (the Borg's model of the stack can be stale) is no answer, not an
+    // abort: release builds have panic=abort, so the assert ended the game.
+    if !quantity_in_stack(quantity, object_number(source)) {
+        return None;
+    }
     // SAFETY: callers hold a live object handle. The native copy owns its
     // allocated fields, which are released after the read-only query.
     unsafe {
-        assert!(quantity > 0 && quantity <= i32::from((*source).number));
         let mut split = std::mem::MaybeUninit::<object>::zeroed();
         object_copy_amt(split.as_mut_ptr(), source, quantity);
         let result = read(split.as_ptr());
         object_wipe(split.as_mut_ptr());
-        result
+        Some(result)
     }
+}
+
+/// `obj->number` of a live object handle.
+fn object_number(source: *const crate::headers::object_h::object) -> i32 {
+    // SAFETY: callers hold a live object handle; reading number cannot re-enter.
+    unsafe { i32::from((*source).number) }
+}
+
+/// borg-reborn-rs (#1354): `quantity` copies can be split from a stack of `number`.
+fn quantity_in_stack(quantity: i32, number: i32) -> bool {
+    quantity > 0 && quantity <= number
 }
 
 impl StoreObject<'_> {
@@ -1629,6 +1670,8 @@ impl StoreObject<'_> {
             // SAFETY: the temporary split and store are live for this query.
             unsafe { crate::headers::store_h::price_item(crate::headers::store_h::stores.add(shop), split, false, quantity) }
         })
+        // #1354: copies the store does not hold cost more than any purse.
+        .unwrap_or(i32::MAX)
     }
 
     /// The native shop quote for one copy, as displayed to the player.
@@ -1659,8 +1702,11 @@ impl StoreObject<'_> {
     }
 
     pub fn sale_quote(self, shop: usize, quantity: i32) -> i32 {
-        // SAFETY: this handle borrows a live store stock object.
-        assert!(quantity > 0 && quantity <= unsafe { i32::from((*self.0).number) });
+        // borg-reborn-rs (#1354): copies the store does not hold fetch
+        // nothing (callers read > 0 as worth it), instead of an abort.
+        if !quantity_in_stack(quantity, object_number(self.0)) {
+            return 0;
+        }
         native_sale_quote(self.0, shop, quantity)
     }
 
@@ -1856,6 +1902,16 @@ pub fn prt(s: &[u8], row: i32, col: i32) {
 pub struct CarriedObject<'a>(*const crate::headers::object_h::object, PhantomData<&'a Access>);
 
 impl CarriedObject<'_> {
+    /// The individual ignore flag set by "This item only".
+    pub(crate) fn marked_ignored(self) -> bool {
+        use crate::headers::object_h::OBJ_NOTICE_IGNORE;
+        // SAFETY: the carried object is live. Its known copy may be absent.
+        unsafe {
+            let known = (*self.0).known;
+            !known.is_null() && (*known).notice & OBJ_NOTICE_IGNORE as u8 != 0
+        }
+    }
+
     /// Check the store's capacity for the same quantity the command would split.
     pub fn store_accepts_quantity(self, shop: usize, quantity: i32) -> bool {
         use crate::headers::{object_h::object, store_h::{store, stores}};
@@ -1867,11 +1923,16 @@ impl CarriedObject<'_> {
             // SAFETY: the temporary split and store are live for this query.
             unsafe { store_check_num(stores.add(shop), split) }
         })
+        // #1354: copies the Borg does not carry are not accepted.
+        .unwrap_or(false)
     }
 
     pub fn sale_quote(self, shop: usize, quantity: i32) -> i32 {
-        // SAFETY: handle is a live carried object; reading number cannot re-enter.
-        assert!(quantity > 0 && quantity <= unsafe { i32::from((*self.0).number) });
+        // borg-reborn-rs (#1354): copies the Borg does not carry fetch nothing
+        // (every caller reads > 0 as a sale worth making), instead of an abort.
+        if !quantity_in_stack(quantity, object_number(self.0)) {
+            return 0;
+        }
         native_sale_quote(self.0, shop, quantity)
     }
 
@@ -1897,6 +1958,611 @@ pub fn inven_object(access: &Access, i: usize) -> Option<CarriedObject<'_>> {
     // SAFETY: inven is allocated with pack_size + 1 entries with the
     // player's upkeep (index checked).
     CarriedObject::with_kind(access, unsafe { *(*player_ref().upkeep).inven.add(i) })
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn carry_test_potion(st: &mut BorgState, sval: i32) {
+    use crate::headers::list_tvals_h::TV_POTION;
+    use crate::headers::object_h::{object, object_kind};
+    use crate::headers::player_h::player;
+    use crate::headers::z_rand_h::{aspect, MINIMISE};
+
+    extern "C" {
+        fn lookup_kind(tval: i32, sval: i32) -> *mut object_kind;
+        fn object_new() -> *mut object;
+        fn object_prep(obj: *mut object, kind: *mut object_kind, level: i32, roll: aspect);
+        fn object_set_base_known(p: *mut player, obj: *mut object);
+        fn inven_carry(p: *mut player, obj: *mut object, absorb: bool, message: bool);
+    }
+
+    // SAFETY: the native fixture runs on the engine thread in town after
+    // birth. The kind comes from the live table and the engine owns both
+    // allocations after inven_carry. Lend state for any inventory events.
+    lend(st, || unsafe {
+        let kind = lookup_kind(TV_POTION as i32, sval);
+        assert!(!kind.is_null() && !(*kind).aware, "fixture potion must be unknown");
+        let obj = object_new();
+        object_prep(obj, kind, 0, MINIMISE);
+        (*obj).known = object_new();
+        object_set_base_known(player, obj);
+        inven_carry(player, obj, false, false);
+    });
+}
+
+/// borg-reborn-rs (#1361): the recorded level 27 Dwarf Priest's weapons on
+/// a dungeon level, in a constructed kit (the recorded save is not public).
+/// The gear is replaced by a Wooden Torch, Soft Leather Armour of fire
+/// resistance, a Sling and Iron Shots, rations, a prayer book loaded to
+/// slow the STR 10 Priest, and a Shovel of Earthquakes (1d2) (+18,+11)
+/// <+4 STR, +1 TUNNEL> in the pack; with `weapon`, 'Narthanc' is wielded,
+/// as on the recorded save. The shovel's STR lifts the slowness, so the
+/// full power trial prefers it, while the ranked plan's equipment power
+/// prefers the dagger. All runes are known, as for a character of that
+/// level.
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn setup_test_digger_kit(st: &mut BorgState, weapon: bool) {
+    use crate::headers::list_tvals_h::{TV_BOW, TV_DIGGING, TV_FOOD, TV_LIGHT, TV_PRAYER_BOOK, TV_SHOT, TV_SOFT_ARMOR};
+    use crate::headers::object_h::{artifact, ego_item, object, object_kind, OBJ_NOTICE_ASSESSED};
+    use crate::headers::player_h::player;
+    use crate::headers::z_rand_h::{aspect, MINIMISE};
+    use crate::headers::list_object_modifiers_h::OBJ_MOD_TUNNEL;
+    use crate::headers::list_stats_h::OBJ_MOD_STR;
+
+    extern "C" {
+        static player_exp: [i32; 50];
+        fn lookup_kind(tval: i32, sval: i32) -> *mut object_kind;
+        fn lookup_artifact_name(name: *const c_char) -> *const artifact;
+        fn lookup_ego_item(name: *const c_char, tval: i32, sval: i32) -> *mut ego_item;
+        fn make_fake_artifact(obj: *mut object, art: *const artifact) -> bool;
+        fn ego_apply_magic(obj: *mut object, level: i32);
+        fn object_new() -> *mut object;
+        fn object_prep(obj: *mut object, kind: *mut object_kind, level: i32, roll: aspect);
+        fn object_copy(dest: *mut object, src: *const object);
+        fn object_free(obj: *mut object);
+        fn object_flavor_aware(p: *mut player, obj: *mut object);
+        fn gear_object_for_use(p: *mut player, obj: *mut object, qty: i32, message: bool, none_left: *mut bool) -> *mut object;
+        fn inven_carry(p: *mut player, obj: *mut object, absorb: bool, message: bool);
+        fn inven_wield(obj: *mut object, slot: i32);
+        fn wield_slot(obj: *const object) -> i32;
+        fn player_learn_all_runes(p: *mut player);
+        fn update_stuff(p: *mut player);
+        fn weight_remaining(p: *mut player) -> i32;
+    }
+
+    // SAFETY: test-only setup on the engine thread, on the first dungeon
+    // think. The kinds, the artifact and the ego come from the live tables;
+    // the engine owns the objects once they enter the gear.
+    lend(st, || unsafe {
+        while !(*player).gear.is_null() {
+            let first = (*player).gear;
+            let detached = gear_object_for_use(player, first, i32::from((*first).number), false, &mut false);
+            object_free((*detached).known);
+            object_free(detached);
+        }
+        (*player).lev = 27;
+        (*player).max_lev = 27;
+        (*player).exp = player_exp[25] * i32::from((*player).expfact) / 100;
+        (*player).max_exp = (*player).exp;
+        // Inside weapon_value's max depth 25-40 tunnelling band (#1320).
+        (*player).max_depth = 27;
+        (*player).stat_cur = [10, 10, 18, 14, 17];
+        (*player).stat_max = (*player).stat_cur;
+        player_learn_all_runes(player);
+
+        let know = |obj: *mut object| {
+            let known = object_new();
+            object_copy(known, obj);
+            (*obj).known = known;
+            (*known).notice |= OBJ_NOTICE_ASSESSED as u8;
+            (*obj).notice |= OBJ_NOTICE_ASSESSED as u8;
+            object_flavor_aware(player, obj);
+            obj
+        };
+        let plain = |tval: u32, name: &CStr, qty: u8| {
+            let kind = lookup_kind(tval as i32, lookup_sval(tval as i32, name.to_str().unwrap()));
+            assert!(!kind.is_null(), "unknown fixture item {name:?}");
+            let obj = object_new();
+            object_prep(obj, kind, 0, MINIMISE);
+            (*obj).number = qty;
+            if tval == TV_LIGHT { (*obj).timeout = 4500; }
+            know(obj)
+        };
+        let wear = |obj: *mut object| {
+            inven_carry(player, obj, false, false);
+            inven_wield(obj, wield_slot(obj));
+        };
+        wear(plain(TV_LIGHT, c"Wooden Torch", 1));
+        let armour = plain(TV_SOFT_ARMOR, c"Soft Leather Armour", 1);
+        // Fire resistance from the armour, so Narthanc's is not needed.
+        let fire = crate::headers::list_elements_h::ELEM_FIRE as usize;
+        (*armour).el_info[fire].res_level = 1;
+        (*(*armour).known).el_info[fire].res_level = 1;
+        wear(armour);
+        inven_carry(player, plain(TV_FOOD, c"Ration of Food", 5), false, false);
+        // A launcher, so Narthanc's Fire Bolt is not the only ranged attack
+        // (borg_ranged::wear_coverage would veto the shovel).
+        wear(plain(TV_BOW, c"Sling", 1));
+        inven_carry(player, plain(TV_SHOT, c"Iron Shot", 30), false, false);
+
+        // ego_item.txt: of Earthquakes is IMPACT, STR[d4], TUNNEL[d6] and
+        // ACID_3; the recorded one is (+18,+11) <+4, +1>.
+        let sval = lookup_sval(TV_DIGGING as i32, "Shovel");
+        let shovel = object_new();
+        object_prep(shovel, lookup_kind(TV_DIGGING as i32, sval), 27, MINIMISE);
+        (*shovel).ego = lookup_ego_item(c"of Earthquakes".as_ptr(), TV_DIGGING as i32, sval);
+        assert!(!(*shovel).ego.is_null());
+        ego_apply_magic(shovel, 27);
+        (*shovel).to_h = 18;
+        (*shovel).to_d = 11;
+        (*shovel).modifiers[OBJ_MOD_STR as usize] = 4;
+        (*shovel).modifiers[OBJ_MOD_TUNNEL as usize] = 1;
+        inven_carry(player, know(shovel), false, false);
+
+        if weapon {
+            let art = lookup_artifact_name(c"Narthanc".as_ptr());
+            assert!(!art.is_null());
+            let dagger = object_new();
+            assert!(make_fake_artifact(dagger, art));
+            wear(know(dagger));
+        }
+        update_stuff(player);
+        // player-calcs.c:2224-2226 slows a player carrying more than half
+        // the limit, 100 * adj_str_wgt[STR], by one per tenth of it;
+        // weight_remaining is 60 * adj_str_wgt less the load less one.
+        // The carried prayer book brings the load to 75% of the limit.
+        let total = (*(*player).upkeep).total_weight;
+        let adj = (weight_remaining(player) + total + 1) / 60;
+        let book = plain(TV_PRAYER_BOOK, c"[Novice's Handbook]", 1);
+        (*book).weight = (75 * adj - total) as i16;
+        (*(*book).known).weight = (*book).weight;
+        inven_carry(player, book, false, false);
+        (*(*player).upkeep).update |= 1; // PU_BONUS (player-calcs.h:36).
+        update_stuff(player);
+    });
+}
+
+/// borg-reborn-rs (#1361): a known plain Dagger (1d4) (+0,+0) put in the
+/// pack, a combat weapon far below the fixture's Shovel of Earthquakes in
+/// power.
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn carry_test_dagger(st: &mut BorgState) {
+    use crate::headers::list_tvals_h::TV_SWORD;
+    use crate::headers::object_h::{object, object_kind, OBJ_NOTICE_ASSESSED};
+    use crate::headers::player_h::player;
+    use crate::headers::z_rand_h::{aspect, MINIMISE};
+
+    extern "C" {
+        fn lookup_kind(tval: i32, sval: i32) -> *mut object_kind;
+        fn object_new() -> *mut object;
+        fn object_prep(obj: *mut object, kind: *mut object_kind, level: i32, roll: aspect);
+        fn object_copy(dest: *mut object, src: *const object);
+        fn object_flavor_aware(p: *mut player, obj: *mut object);
+        fn inven_carry(p: *mut player, obj: *mut object, absorb: bool, message: bool);
+        fn update_stuff(p: *mut player);
+    }
+
+    // SAFETY: test-only setup on the engine thread during a dungeon think;
+    // the engine owns the object once it enters the pack.
+    lend(st, || unsafe {
+        let kind = lookup_kind(TV_SWORD as i32, lookup_sval(TV_SWORD as i32, "Dagger"));
+        assert!(!kind.is_null());
+        let obj = object_new();
+        object_prep(obj, kind, 0, MINIMISE);
+        let known = object_new();
+        object_copy(known, obj);
+        (*obj).known = known;
+        (*known).notice |= OBJ_NOTICE_ASSESSED as u8;
+        (*obj).notice |= OBJ_NOTICE_ASSESSED as u8;
+        object_flavor_aware(player, obj);
+        inven_carry(player, obj, false, false);
+        update_stuff(player);
+    });
+}
+
+#[cfg(feature = "test-town-loadout")]
+pub(crate) fn setup_test_town_loadout(
+    st: &mut BorgState,
+    excess: i32,
+    has_whip: bool,
+    pack_whip: bool,
+    gold: i32,
+    reserve_overlap: bool,
+    recall_at_home: bool,
+    swap_ring: bool,
+    dungeon_books: bool,
+    swap_spare: bool,
+    digger: bool,
+) {
+    use crate::headers::list_tvals_h::*;
+    use crate::headers::object_h::{object, object_kind, OBJ_NOTICE_ASSESSED};
+    use crate::headers::player_h::player;
+    use crate::headers::store_h::stores;
+    use crate::headers::z_rand_h::{aspect, MINIMISE};
+
+    extern "C" {
+        static player_exp: [i32; 50];
+        fn lookup_kind(tval: i32, sval: i32) -> *mut object_kind;
+        fn object_new() -> *mut object;
+        fn object_prep(obj: *mut object, kind: *mut object_kind, level: i32, roll: aspect);
+        fn object_copy(dest: *mut object, src: *const object);
+        fn object_free(obj: *mut object);
+        fn gear_object_for_use(p: *mut player, obj: *mut object, qty: i32, message: bool, none_left: *mut bool) -> *mut object;
+        fn inven_carry(p: *mut player, obj: *mut object, absorb: bool, message: bool);
+        fn wield_slot(obj: *const object) -> i32;
+        fn home_carry(obj: *mut object);
+        fn object_flavor_aware(p: *mut player, obj: *mut object);
+        fn update_stuff(p: *mut player);
+        fn weight_remaining(p: *mut player) -> i32;
+        fn delete_monster_idx(c: *mut crate::headers::cave_h::chunk, idx: i32);
+        fn player_learn_all_runes(p: *mut player);
+    }
+
+    let pack_size = i32::from(z_info().pack_size);
+    // SAFETY: test-only setup on the engine thread after birth. The engine
+    // owns the constructed objects once they enter gear or Home. Lend state
+    // while the native inventory commands can emit events.
+    lend(st, || unsafe {
+        while !(*player).gear.is_null() {
+            let first = (*player).gear;
+            let detached = gear_object_for_use(player, first, i32::from((*first).number), false, &mut false);
+            object_free((*detached).known);
+            object_free(detached);
+        }
+        (*player).lev = 20;
+        (*player).max_lev = 20;
+        (*player).exp = player_exp[18] * i32::from((*player).expfact) / 100;
+        (*player).max_exp = (*player).exp;
+        (*player).max_depth = 10;
+        (*player).recall_depth = 10;
+        (*player).au = gold;
+        (*player).stat_cur = [14, 12, 17, 14, 13];
+        (*player).stat_max = (*player).stat_cur;
+
+        let make = |tval: u32, name: &CStr, qty, weight: Option<i16>, to_h: Option<i16>| {
+            let sval = crate::headers::obj_util_h::lookup_sval(tval as i32, name.as_ptr());
+            let kind = lookup_kind(tval as i32, sval);
+            assert!(!kind.is_null(), "unknown fixture item {name:?}");
+            let obj = object_new();
+            object_prep(obj, kind, 0, MINIMISE);
+            (*obj).number = qty;
+            if let Some(weight) = weight { (*obj).weight = weight; }
+            if let Some(to_h) = to_h { (*obj).to_h = to_h; }
+            if tval == TV_LIGHT { (*obj).timeout = 4500; }
+            let known = object_new();
+            object_copy(known, obj);
+            (*obj).known = known;
+            (*known).notice |= OBJ_NOTICE_ASSESSED as u8;
+            (*obj).notice |= OBJ_NOTICE_ASSESSED as u8;
+            obj
+        };
+        for (tval, name, weight) in [
+            (TV_HAFTED, c"Lead-Filled Mace", None),
+            (TV_SOFT_ARMOR, c"Leather Scale Mail", None),
+            (TV_SHIELD, c"Leather Shield", Some(100)),
+            (TV_BOW, c"Sling", None),
+            (TV_LIGHT, c"Wooden Torch", None),
+        ] {
+            let obj = make(tval, name, 1, weight, None);
+            inven_carry(player, obj, false, false);
+            let slot = wield_slot(obj) as usize;
+            (*(*player).body.slots.add(slot)).obj = obj;
+            (*(*player).upkeep).equip_cnt += 1;
+        }
+        for (tval, name, qty) in [
+            (TV_SHOT, c"Rounded Pebble", 37),
+            (TV_SHOT, c"Iron Shot", 20),
+            (TV_FOOD, c"Ration of Food", 4),
+        ] {
+            let obj = make(tval, name, qty, None, None);
+            object_flavor_aware(player, obj);
+            inven_carry(player, obj, false, false);
+        }
+        let home = stores.add(crate::borg_store::BORG_HOME);
+        assert_eq!((*home).stock_num, 0);
+        if has_whip {
+            let whip = make(TV_HAFTED, c"Whip", 1, None, None);
+            // A modest known damage bonus makes this a usable Priest weapon.
+            (*whip).to_d = 3;
+            (*(*whip).known).to_d = 3;
+            if pack_whip { inven_carry(player, whip, false, false); } else { home_carry(whip); }
+        }
+        if recall_at_home {
+            let recall = make(TV_SCROLL, c"Word of Recall", 1, None, None);
+            object_flavor_aware(player, recall);
+            home_carry(recall);
+        } else {
+            let recall = make(TV_SCROLL, c"Word of Recall", 1, None, None);
+            object_flavor_aware(player, recall);
+            object_free((*recall).known);
+            object_free(recall);
+        }
+        if reserve_overlap {
+            for (tval, name) in [(TV_MUSHROOM, c"Second Sight"), (TV_POTION, c"Speed")] {
+                let item = make(tval, name, 1, None, None);
+                object_flavor_aware(player, item);
+                home_carry(item);
+            }
+        }
+        if swap_ring {
+            // #1317: a resist swap the worn kit lacks. object.txt: Resist
+            // Poison is an EASY_KNOW ring granting RES_POIS[1].
+            let ring = make(TV_RING, c"Resist Poison", 1, None, None);
+            object_flavor_aware(player, ring);
+            home_carry(ring);
+        }
+        if dungeon_books {
+            // #1318: class.txt marks [Healing and Sanctuary] a Priest dungeon
+            // book and [Arcane Control] a Mage one. The pack carries a second
+            // copy of the Priest book.
+            home_carry(make(TV_PRAYER_BOOK, c"[Healing and Sanctuary]", 1, None, None));
+            home_carry(make(TV_MAGIC_BOOK, c"[Arcane Control]", 1, None, None));
+            inven_carry(player, make(TV_PRAYER_BOOK, c"[Healing and Sanctuary]", 1, None, None), false, false);
+        }
+        if swap_spare {
+            // #1315: a carried runner-up shield the ranked plan would store,
+            // and one free Home stack for it.
+            // Review of #1324: the worn piece's kind, with a known -1 armour
+            // bonus, so the copy limit counts both and the stacks differ.
+            let shield = make(TV_SHIELD, c"Leather Shield", 1, None, None);
+            (*shield).to_a = -1;
+            (*(*shield).known).to_a = -1;
+            inven_carry(player, shield, false, false);
+        }
+        // Distinct known bonuses keep the inert Home filler in separate stacks.
+        if digger {
+            // #1320: a plain Shovel (object.txt: DIG_1, pval 0) at max depth
+            // 30, inside weapon_value's 25-40 tunnelling band.
+            inven_carry(player, make(TV_DIGGING, c"Shovel", 1, None, None), false, false);
+            (*player).max_depth = 30;
+        }
+        let home_space = (*home).stock_size - i16::from(pack_whip) - i16::from(swap_spare);
+        while i16::from((*home).stock_num) < home_space {
+            let count = i16::from((*home).stock_num);
+            home_carry(make(TV_ARROW, c"Arrow", 1, None, Some(1 + count)));
+            assert_eq!(i16::from((*home).stock_num), count + 1);
+        }
+        if pack_whip {
+            let slots = pack_size - 2; // Two native quiver slots, 37 and 20 shots.
+            for bonus in 0..(slots - 3) {
+                let item = make(TV_GLOVES, c"Set of Leather Gloves", 1, Some(1), Some(1 + bonus as i16));
+                inven_carry(player, item, false, false);
+            }
+        }
+        update_stuff(player);
+        let carried = (*(*player).upkeep).total_weight;
+        // player-calcs.c:weight_remaining():1756-1764 returns room under
+        // 60% of the limit less one. The planner starts charging at 50%.
+        let allowance = (weight_remaining(player) + carried + 1) * 5 / 6;
+        let ballast = allowance + excess - carried;
+        assert!(ballast > 0);
+        // The carried prayer book supplies the rest of the recorded burden.
+        let book = make(TV_PRAYER_BOOK, c"[Novice's Handbook]", 1, Some(ballast as i16), None);
+        inven_carry(player, book, false, false);
+        // PU_HP | PU_MANA, engine/angband/src/player-calcs.h:38-39.
+        (*(*player).upkeep).update |= 0b1100;
+        update_stuff(player);
+        (*player).chp = (*player).mhp;
+        (*player).csp = (*player).msp;
+        player_learn_all_runes(player);
+        // Isolate the native town commands from unrelated town-monster flight.
+        let cave = crate::headers::cave_h::cave;
+        for idx in 1..i32::from((*cave).mon_max) {
+            let monster = crate::headers::cave_h::cave_monster(cave, idx);
+            if !(*monster).race.is_null() {
+                delete_monster_idx(cave, idx);
+            }
+        }
+    });
+}
+
+#[cfg(feature = "test-town-loadout")]
+pub(crate) fn strengthen_test_town_loadout(st: &mut BorgState) {
+    use crate::headers::player_h::player;
+    extern "C" { fn update_stuff(p: *mut player); }
+    // SAFETY: test-only adjustment on the engine thread with a live player.
+    lend(st, || unsafe {
+        (*player).stat_cur[0] = 18;
+        (*player).stat_max[0] = 18;
+        (*(*player).upkeep).update |= 1; // PU_BONUS (player-calcs.h:36).
+        update_stuff(player);
+    });
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn set_test_terrain(st: &mut BorgState, at: loc, feat: u32) {
+    use crate::headers::cave_h::{cave, chunk};
+    extern "C" {
+        fn square_set_feat(c: *mut chunk, grid: loc, feat: i32);
+        fn square_memorize(c: *mut chunk, grid: loc);
+    }
+    assert!(square_in_bounds_fully(at.x, at.y));
+    assert!(matches!(feat, headers::list_terrain_h::FEAT_CLOSED | headers::list_terrain_h::FEAT_OPEN));
+    // SAFETY: the initialized native fixture owns the engine thread. The
+    // grid and feature are valid, and redraw events may re-enter the Borg.
+    lend(st, || unsafe {
+        square_set_feat(cave, at, feat as i32);
+        square_memorize(cave, at);
+    });
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn place_test_monster(st: &mut BorgState, at: loc, race: usize) {
+    use crate::headers::cave_h::{cave, chunk};
+    use crate::headers::monster_h::{monster_group_info, monster_race, r_info, MON_GROUP_LEADER};
+    extern "C" {
+        fn place_new_monster(c: *mut chunk, grid: loc, race: *mut monster_race,
+            sleep: bool, group_ok: bool, group: monster_group_info, origin: u8) -> bool;
+    }
+    assert!(square_in_bounds_fully(at.x, at.y));
+    assert!((1..usize::from(r_max()) - 1).contains(&race));
+    // SAFETY: the initialized native fixture has a live level and race
+    // table. Both indices are in bounds and UI events may re-enter.
+    lend(st, || unsafe {
+        assert!(place_new_monster(cave, at, r_info.add(race), false, false,
+            monster_group_info { index: 0, role: MON_GROUP_LEADER }, 0));
+    });
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn alter_test_grid(st: &mut BorgState, direction: i32) {
+    use crate::headers::cmd_core_h::{command, CMD_ALTER, CTX_GAME};
+    extern "C" {
+        fn cmd_set_arg_direction(cmd: *mut command, name: *const c_char, direction: i32);
+        fn do_cmd_alter(cmd: *mut command);
+    }
+    assert!((1..=9).contains(&direction) && direction != 5);
+    // SAFETY: the initialized fixture owns the engine thread. A zeroed
+    // command has empty argument slots. The engine may re-enter on UI events.
+    lend(st, || unsafe {
+        let mut cmd: command = std::mem::zeroed();
+        cmd.context = CTX_GAME;
+        cmd.code = CMD_ALTER;
+        cmd_set_arg_direction(&mut cmd, c"direction".as_ptr(), direction);
+        do_cmd_alter(&mut cmd);
+    });
+}
+
+#[cfg(feature = "test-cursed-spares")]
+pub(crate) fn carry_test_lanterns(st: &mut BorgState) {
+    use crate::headers::list_object_modifiers_h::OBJ_MOD_STEALTH;
+    use crate::headers::list_tvals_h::TV_LIGHT;
+    use crate::headers::obj_curse_h::curses;
+    use crate::headers::object_h::{curse, object, object_kind, OBJ_NOTICE_ASSESSED};
+    use crate::headers::player_h::player;
+    use crate::headers::z_rand_h::{aspect, MINIMISE};
+
+    extern "C" {
+        fn lookup_kind(tval: i32, sval: i32) -> *mut object_kind;
+        fn lookup_curse(name: *const c_char) -> i32;
+        fn object_new() -> *mut object;
+        fn object_prep(obj: *mut object, kind: *mut object_kind, level: i32, roll: aspect);
+        fn object_set_base_known(p: *mut player, obj: *mut object);
+        fn append_object_curse(obj: *mut object, pick: i32, power: i32) -> bool;
+        fn player_learn_curse(p: *mut player, curse: *mut curse);
+        fn inven_carry(p: *mut player, obj: *mut object, absorb: bool, message: bool);
+    }
+
+    let (torch, lantern) = (st.item_val.sv_light_torch, st.item_val.sv_light_lantern);
+    // SAFETY: the fixture runs on the engine thread after birth. Native
+    // gear and kind/curse tables are live, and the pack owns the new objects
+    // and their known copies after inven_carry. Lend state for engine events.
+    lend(st, || unsafe {
+        // Leave the birth torches in place but remove them as usable spares.
+        let mut obj = (*player).gear;
+        while !obj.is_null() {
+            if u32::from((*obj).tval) == TV_LIGHT && i32::from((*obj).sval) == torch {
+                (*obj).timeout = 3;
+            }
+            obj = (*obj).next;
+        }
+
+        let kind = lookup_kind(TV_LIGHT as i32, lantern);
+        let paralysis = lookup_curse(c"paralysis".as_ptr());
+        assert!(!kind.is_null() && paralysis > 0);
+        for (fuel, cursed) in [(1200, false), (7500, true)] {
+            let obj = object_new();
+            object_prep(obj, kind, 0, MINIMISE);
+            (*obj).timeout = fuel;
+            if cursed {
+                // Leave one unidentified rune alongside the known curse.
+                (*obj).modifiers[OBJ_MOD_STEALTH as usize] = 1;
+                assert!(append_object_curse(obj, paralysis, 20));
+            }
+            (*obj).known = object_new();
+            object_set_base_known(player, obj);
+            (*(*obj).known).notice |= OBJ_NOTICE_ASSESSED as u8;
+            inven_carry(player, obj, false, false);
+        }
+        player_learn_curse(player, curses.add(paralysis as usize));
+    });
+}
+
+#[cfg(feature = "test-town-review")]
+pub(crate) fn equip_test_sandal_spares(st: &mut BorgState, case: &str) {
+    use crate::headers::list_tvals_h::{TV_ARROW, TV_BOOTS, TV_RING};
+    use crate::headers::object_h::{object, object_kind, OBJ_NOTICE_ASSESSED};
+    use crate::headers::player_h::player;
+    use crate::headers::z_rand_h::{aspect, MINIMISE};
+
+    extern "C" {
+        static player_exp: [i32; 50];
+        fn lookup_kind(tval: i32, sval: i32) -> *mut object_kind;
+        fn object_new() -> *mut object;
+        fn object_prep(obj: *mut object, kind: *mut object_kind, level: i32, roll: aspect);
+        fn object_set_base_known(p: *mut player, obj: *mut object);
+        fn object_flavor_aware(p: *mut player, obj: *mut object);
+        fn player_know_object(p: *mut player, obj: *mut object);
+        fn inven_carry(p: *mut player, obj: *mut object, absorb: bool, message: bool);
+        fn inven_wield(obj: *mut object, slot: i32);
+        fn home_carry(obj: *mut object);
+        fn slot_by_name(p: *mut player, name: *const c_char) -> i32;
+    }
+
+    let rings = case == "gear-rings";
+    let tval = if rings { TV_RING } else { TV_BOOTS } as i32;
+    let sval = lookup_sval(tval, if rings { "Protection" } else { "Pair of Leather Sandals" });
+    let arrows = lookup_sval(TV_ARROW as i32, "Arrow");
+    // SAFETY: the fixture runs on the engine thread in town after birth.
+    // The kind and body slot belong to the live player tables, and the
+    // engine owns the objects and their known copies after inven_carry.
+    lend(st, || unsafe {
+        assert_eq!((*player).depth, 0);
+        let kind = lookup_kind(tval, sval);
+        let first = slot_by_name(player, if rings { c"right hand" } else { c"feet" }.as_ptr());
+        assert!(!kind.is_null() && (0..i32::from((*player).body.count)).contains(&first));
+        if case != "1" {
+            // A level-six character can finish its visit even if its first
+            // supplies consume the starting gold.
+            (*player).au = 500;
+            (*player).lev = 6;
+            (*player).max_lev = 6;
+            (*player).exp = player_exp[4] * i32::from((*player).expfact) / 100;
+            (*player).max_exp = (*player).exp;
+        }
+        let specs: &[(u8, i16, i16, i32)] = match case {
+            "gear-full-home" => &[(1, 7, 20, first), (1, 11, 20, -2), (1, 8, 20, -1),
+                (1, 4, 20, -2), (1, 2, 5, -1), (1, 1, 20, -2)],
+            "gear-rings" => &[(1, 4, 2, first), (1, 7, 2, first + 1), (2, 12, 2, -1),
+                (1, 3, 2, -2), (1, 1, 2, -2)],
+            "ranked-home" => &[(1, 7, 0, first), (1, 4, 0, -1), (3, 0, 0, -2)],
+            _ => &[(1, 7, 0, first), (3, 0, 0, -1)],
+        };
+        for &(quantity, to_a, weight, target) in specs {
+            let obj = object_new();
+            object_prep(obj, kind, 0, MINIMISE);
+            (*obj).number = quantity;
+            (*obj).to_a = to_a;
+            if weight > 0 { (*obj).weight = weight; }
+            (*obj).known = object_new();
+            object_set_base_known(player, obj);
+            (*(*obj).known).notice |= OBJ_NOTICE_ASSESSED as u8;
+            if rings { object_flavor_aware(player, obj); }
+            player_know_object(player, obj);
+            if target == -2 {
+                home_carry(obj);
+                continue;
+            }
+            inven_carry(player, obj, false, false);
+            if target >= 0 {
+                inven_wield(obj, target);
+            }
+        }
+        if case == "gear-full-home" {
+            let home = crate::headers::store_h::stores.add(crate::borg_store::BORG_HOME);
+            let arrow_kind = lookup_kind(TV_ARROW as i32, arrows);
+            assert!(!arrow_kind.is_null());
+            for bonus in i16::from((*home).stock_num)..(*home).stock_size {
+                let obj = object_new();
+                object_prep(obj, arrow_kind, 0, MINIMISE);
+                (*obj).to_h = bonus;
+                (*obj).known = object_new();
+                object_set_base_known(player, obj);
+                player_know_object(player, obj);
+                home_carry(obj);
+            }
+            assert_eq!(i16::from((*home).stock_num), (*home).stock_size);
+        }
+    });
 }
 
 /// `player->body.slots[i].obj` (i < body.count), if it is an object with a
@@ -2496,9 +3162,21 @@ pub fn kind_effect_values(kind: usize, level: i32) -> Vec<(u16, i32, i64)> {
     effect_values(self::kind(kind).effect, level)
 }
 
-#[allow(dead_code)] // borg-reborn-rs (#400): its only caller, the learned-spell suppression, is gone.
 pub fn spell_effect_values(index: i32, level: i32) -> Vec<(u16, i32, i64)> {
     effect_values(spell_by_index_ref(index).effect, level)
+}
+
+pub(crate) fn activation_effect_values(index: i32, kind: usize, level: i32) -> Vec<(u16, i32, i64)> {
+    // SAFETY: the loaded activation array is a linked catalogue. The index
+    // being looked up is from known equipment, and each effect is read only.
+    unsafe {
+        let mut act = crate::headers::object_h::activations.add(1);
+        while !act.is_null() {
+            if (*act).index == index { return effect_values((*act).effect, level); }
+            act = (*act).next;
+        }
+    }
+    kind_effect_values(kind, level)
 }
 
 fn effect_values(mut e: *const crate::headers::object_h::effect, level: i32) -> Vec<(u16, i32, i64)> {
@@ -2750,22 +3428,41 @@ pub fn player_depth() -> i32 {
     i32::from(player_ref().depth)
 }
 
-/// A key for the character, from what its birth fixed: the hit points
-/// rolled for each level, height, weight, age and name (FNV-1a).
-/// borg-reborn-rs (#208, re-review #227): an errand belongs to one
-/// character.
-pub fn player_birth_key() -> u64 {
-    let p = player_ref();
-    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
-    let mut eat = |b: u8| {
-        h ^= u64::from(b);
-        h = h.wrapping_mul(0x0100_0000_01b3);
-    };
-    for v in p.player_hp.iter().chain([&p.ht_birth, &p.wt_birth, &p.age]) {
-        v.to_le_bytes().into_iter().for_each(&mut eat);
+/// Destination of an automatic Recall from town.
+pub(crate) fn town_recall_destination() -> Option<i32> {
+    use crate::headers::list_options_h::{OPT_birth_force_descend, OPT_birth_levels_persist};
+    use crate::headers::player_h::player;
+
+    let live = player_ref();
+    // player_get_recall_depth() prompts only after visiting the dungeon
+    // and when descent is optional. The Borg has no handler for that prompt.
+    if live.max_depth > 0
+        && player_opt(OPT_birth_levels_persist)
+        && !player_opt(OPT_birth_force_descend)
+    {
+        return None;
     }
-    c_array_bytes(&p.full_name).into_iter().for_each(&mut eat);
-    h
+
+    extern "C" {
+        fn player_set_recall_depth(p: *mut player);
+    }
+
+    // game-world.c:process_world() calls this before a Recall from town.
+    // SAFETY: player-util.c:player_set_recall_depth():79-93 writes only
+    // recall_depth. Its quest checks only read the original quest data.
+    let mut snapshot = *live;
+    unsafe { player_set_recall_depth(&mut snapshot) };
+    Some(i32::from(snapshot.recall_depth))
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn set_test_recall_depths(max_depth: i16, recall_depth: i16) {
+    // SAFETY: test-only setup on the engine thread after birth.
+    unsafe {
+        let player = crate::headers::player_h::player;
+        (*player).max_depth = max_depth;
+        (*player).recall_depth = recall_depth;
+    }
 }
 
 /// `player->opts.lazymove_delay`
@@ -2805,6 +3502,15 @@ pub fn term_load() {
     unsafe {
         crate::headers::ui_term_h::Term_load();
     }
+}
+
+/// Switch the Borg selected by the shared Ctrl-Z prompt.
+pub fn switch_borg() {
+    extern "C" {
+        fn borg_switch_selection();
+    }
+    // SAFETY: a call on the engine thread with no arguments.
+    unsafe { borg_switch_selection() }
 }
 
 /// `Term_flush()`: discard pending keypresses.
@@ -3679,5 +4385,23 @@ pub fn synthetic_start() -> bool {
     #[cfg(not(feature = "borgh"))]
     {
         false
+    }
+}
+
+// borg-reborn-rs (#1354): store queries for more copies than the stack holds
+// answer "no" instead of aborting the game.
+#[cfg(test)]
+mod quantity_in_stack_tests {
+    use super::quantity_in_stack;
+
+    #[test]
+    fn only_copies_the_stack_holds() {
+        assert!(quantity_in_stack(1, 1));
+        assert!(quantity_in_stack(3, 5));
+        assert!(quantity_in_stack(5, 5));
+        assert!(!quantity_in_stack(6, 5), "a stale model asks for more than the stack");
+        assert!(!quantity_in_stack(0, 5));
+        assert!(!quantity_in_stack(-1, 5));
+        assert!(!quantity_in_stack(1, 0));
     }
 }

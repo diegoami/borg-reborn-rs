@@ -29,6 +29,8 @@ pub(crate) mod borg;
 pub(crate) mod borg_buy_strategy;
 pub(crate) mod borg_cave;
 pub(crate) mod borg_caution;
+mod borg_combat_heal;
+mod borg_healing_restock;
 pub(crate) mod borg_cave_light;
 pub(crate) mod borg_cave_view;
 pub(crate) mod borg_cave_util;
@@ -62,6 +64,7 @@ pub(crate) mod borg_item_use;
 pub(crate) mod borg_item_val;
 pub(crate) mod borg_item_wear;
 pub(crate) mod borg_kit;
+pub(crate) mod borg_ranged;
 pub(crate) mod borg_junk;
 pub(crate) mod borg_light;
 mod borg_cursed;
@@ -84,6 +87,7 @@ pub(crate) mod borg_think;
 pub(crate) mod borg_think_dungeon;
 pub(crate) mod borg_think_dungeon_util;
 pub(crate) mod borg_think_store;
+mod borg_town_home; // borg-reborn-rs (#1241): Home reserve policy
 pub(crate) mod borg_town_capability;
 pub(crate) mod borg_town_packing;
 pub(crate) mod borg_town_budget;
@@ -97,6 +101,9 @@ pub(crate) mod borg_town_stock;
 pub(crate) mod borg_town_usefulness;
 pub(crate) mod borg_town_utility;
 pub(crate) mod borg_town_live;
+mod borg_town_loadout;
+mod borg_spare_gear;
+mod borg_town_recall_loadout;
 pub(crate) mod borg_trip;
 pub(crate) mod borg_trait;
 pub(crate) mod borg_trait_swap;
@@ -106,8 +113,9 @@ pub(crate) mod borg_util;
 pub(crate) mod engine;
 pub(crate) mod state;
 pub mod regress;
-// borg-reborn-rs (#208): the errands' API.
-pub mod shell;
+// borg-reborn-rs (#1339): the run's configuration file (the errands of
+// #208, whose module held it, are retired).
+pub mod config_file;
 // borg-reborn-rs (#219): calibration registry.
 pub(crate) mod params;
 // borg-reborn-rs (#222): observational decision tracing.
@@ -115,14 +123,19 @@ pub(crate) mod core_trace;
 // borg-reborn-rs (#403): pure class/family attack ranking.
 pub(crate) mod attack_preference;
 
-/// The `^Z` command of this core (borg-reborn-rs #207): the shell's
-/// `do_cmd_borg` calls it when `BORG_CORE=borg-rs` selects this core.
-pub fn do_cmd_borg() {
-    engine::do_cmd_borg()
+/// Run a key from the shared Borg command prompt.
+pub fn do_cmd_borg_key(cmd: u8) {
+    engine::do_cmd_borg_key(cmd)
 }
 
-// Owner-requested class/level errand-plan POC (#305).
-pub mod errands_plan;
 pub mod scary_list;
 mod borg_fast_fragile;
+mod borg_unseen_belief;
+mod borg_trap_way;
+mod borg_lone_target;
+mod borg_leash; // borg-reborn-rs (#1062)
+mod borg_poison; // borg-reborn-rs (#1140)
 mod borg_town_hunt;
+// borg-reborn-rs (#1061): the stair_scum exploration mode.
+mod borg_stair_scum;
+mod borg_loop; // borg-reborn-rs (#1153)

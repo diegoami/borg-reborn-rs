@@ -1,0 +1,45 @@
+"""Run the native cursed spare disposal regression from #1231."""
+
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import tempfile
+import unittest
+
+
+from pborg_fixture import write_pborg_config
+
+ROOT = Path(__file__).resolve().parents[2]
+GAME = ROOT / "build/rust-test/game/angband"
+
+
+@unittest.skipUnless(GAME.is_file(), "test-cursed-spares build required")
+class CursedSparesTest(unittest.TestCase):
+    def test_dispose_cursed_spares(self):
+        self.run_fixture("1", "#1231 cursed spare actions passed")
+
+    def test_refuel_and_drop_in_angband(self):
+        self.run_fixture("live-lantern", "#1231 cursed lantern refuel and drop passed")
+
+    def run_fixture(self, case, expected):
+        with tempfile.TemporaryDirectory(prefix="cursed-spares-") as directory:
+            paths = {name: Path(directory) / name for name in ("user", "save", "archive", "panic", "scores")}
+            for path in paths.values():
+                path.mkdir()
+            write_pborg_config(paths["user"])
+            shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
+            env = {key: value for key, value in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
+            env.update(BORG_CORE="borg-rs", BORG_TEST_CURSED_SPARES=case,
+                       BORG_PARAM_JUNK_EXPLORATION_FIRST="1")
+            run = subprocess.run(
+                [str(GAME), "-mborgh", "-n", *(f"-d{key}={value}" for key, value in paths.items()),
+                 "--", "-seed", "101", "-race", "1", "-class", "1", "-menu-letters", "-start-depth", "5", "-keys", "250"],
+                cwd=GAME.parent, env=env, capture_output=True, text=True, timeout=30,
+            )
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertIn(expected, run.stdout)
+
+
+if __name__ == "__main__":
+    unittest.main()

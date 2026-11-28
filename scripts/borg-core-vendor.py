@@ -14,12 +14,13 @@ docs/SPEC.md §2 amendment). This tool keeps that copy honest and refreshable
       PIN written; conflicts are left marked in the file and listed (exit 1)
 
 borg-rs's layout maps onto borg-core/ as MAP says. A refresh goes in its own
-PR, with the parity check of docs/HANDOVER.md (BORG_CORE=borg-rs, no errand,
+PR, with the parity check of docs/HANDOVER.md (BORG_CORE=borg-rs,
 against a fresh build of borg-rs at REV).
 """
 
 import argparse
 import difflib
+import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -31,17 +32,20 @@ CORE = ROOT / 'borg-core'
 # borg-rs path (a directory ends in '/') -> path under borg-core/.
 MAP = [
     ('borg-rs/', ''),
-    ('harness/borg.txt', 'borg.txt'),
+    ('harness/borg.txt', 'pborg.yaml'),
     ('angband/src/borg/borg-init.c', 'c-reference/borg-init.c'),
     ('angband/src/borg/borg.txt', 'c-reference/borg.txt'),
 ]
 # Files of ours only: never in borg-rs.
-OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/attack_preference.rs', 'src/errands_plan.rs', 'src/scary_list.rs', 'src/borg_lightless.rs', 'src/borg_town_hunt.rs', 'src/borg_cursed.rs', 'src/borg_fast_fragile.rs', 'src/borg_kit.rs'}
+OURS = {'PIN', 'src/config_file.rs', 'src/params.rs', 'src/core_trace.rs', 'src/attack_preference.rs', 'src/scary_list.rs', 'src/borg_lightless.rs', 'src/borg_town_hunt.rs', 'src/borg_cursed.rs', 'src/borg_fast_fragile.rs', 'src/borg_kit.rs', 'src/borg_lone_target.rs', 'src/borg_unseen_belief.rs', 'src/borg_stair_scum.rs', 'src/borg_trap_way.rs', 'src/borg_leash.rs', 'src/borg_poison.rs', 'src/borg_loop.rs', 'src/borg_ranged.rs', 'src/borg_combat_heal.rs', 'src/borg_healing_restock.rs', 'src/borg_town_home.rs', 'src/borg_town_loadout.rs', 'src/borg_town_recall_loadout.rs'}
+OURS.add('src/borg_spare_gear.rs')
 # borg-rs files that carry our changes (marked `borg-reborn-rs (#2xx)`, or
 # the package rename and lints table in Cargo.toml).
 HOOKED = {
+    'src/borg_trait_swap.rs',  # #1315: swap_carry_min_depth; #1320: swap_digger_tunnel
+    'src/borg_inventory.rs', 'src/borg_item_val.rs',  # #1109: known Hard Biscuit fallback when Hungry
     'src/borg_item_enchant.rs', 'src/borg_item_decurse.rs',  # #680 neutral policy extraction
-    'src/borg_item_wear.rs', 'src/borg_store_buy.rs',
+    'src/borg_item_wear.rs', 'src/borg_store_buy.rs',  # #1235: torch wear ties use remaining fuel; #1361: wear_digger_keeps_weapon
     'src/borg_item_decurse.rs', 'src/borg_item_analyze.rs',  # #830: can_decurse and borg_object_value_known are shared with the cursed-equipment module; the swap decurse reads a scroll only for an item worth its price
     'src/borg_think_store.rs', 'src/borg_home_power.rs',  # #433 inventory parameters
     'src/borg_reincarnate.rs',  # #447: refresh plan cap after reincarnation
@@ -51,6 +55,7 @@ HOOKED = {
     'src/borg_town_usefulness.rs',  # #400/#443: accepted receiving planner item values
     'src/borg_town_capability.rs',  # #380: retain physical Phase Door value
     'src/borg_town_shadow.rs',  # #460: no knowledge-only purchases (effective_params)
+    'src/borg_town_dispose.rs',  # #1048: physical Home stock policy facts
     'src/borg_town_utility.rs',  # #451: Remove Hunger disposition test
     'src/borg_town_dump.rs',  # #797: Phase Door stock and first-contact receipts
     'src/borg_town_record.rs',  # #651: plan schema 12 (what a visit bought is not stored)
@@ -59,24 +64,30 @@ HOOKED = {
     'src/borg_magic.rs', 'src/borg_magic_play.rs',  # #694: Fox Form's study rating (magic_fox_form_study_rating)
     'src/borg_trait.rs',  # #451: Remove Hunger scrolls counted beside the rations under the town plan
     'src/borg_town_budget.rs',  # #493: explicit gold reserve in Budget::of
-    'src/borg_junk.rs',  # #470: discard Deep Descent on sight
+    'src/borg_junk.rs',  # #470: discard Deep Descent on sight; #1361: the remove trial keeps a wielded digger
     'src/borg_item.rs',  # #775: defer uninscribing carried items until normal form
     'src/borg_flow_kill.rs',  # #503: no breeder scary level without an easy escape; melee classes hunt breeders; named scary monsters behind a flag
     'src/borg_flow_stairs.rs',  # #557: no flight down a staircase while rising
     'src/borg_flow_misc.rs',  # #597: the twitch refuses lava
-    'src/borg_update.rs',  # #503: door-opened scare behind caution_scary_named_monsters
+    'src/borg_update.rs',  # #503: door-opened scare behind caution_scary_named_monsters; #929: a miss in view is not a wall
     'src/borg_store_sell.rs',  # #470: historical chooser sells one of each unaware kind
     'src/borg_town_live.rs',  # #507: a planned purchase asks for its copies
-    'src/borg.rs',  # #530: the scary goals and scary stand flags
+    'src/borg.rs',  # #530: scary goals and stand flags. #1213: removed potion-testing state. #1235: remember planned torch radius.
     'src/borg_store_buy.rs',  # #507: types the purchase quantity, logs the copies bought
     'src/borg_object_log.rs',  # #507: a purchase of several copies is one log line
     'src/borg_cave_light.rs',  # #796: level-local dark-entry attempt tracking
-    'src/borg_light.rs',  # #685: no detection spell by panel below a level
+    'src/borg_cave.rs',  # #1119: allocate the map in standalone lighting tests
+    'src/borg_light.rs',  # #685: no detection spell by panel below a level; #884: radius branches, dark frontier and Light Beam read the own light radius; #1235: shortest-burning replacement torch at equal radius
+    'src/borg_cave_view.rs',  # #917: passable rubble stops sight behind view_rubble_blocks_sight
+    'src/borg_flow_dark.rs',  # #884: flow_dark_2 looks just outside the own light radius
+    'src/borg_projection.rs',  # #884: borg_los_light, line of sight through projectable grids only; #929: no wall guess on the Borg's grid
     'src/borg_flow.rs',  # #551: a Druid's flight step casts Fox Form first
     'build.rs',  # #328: receiving recorder integrity checker path
     'src/headers/option_h.rs',  # #328: receiving upstream player_options ABI
 
     'Cargo.toml', 'src/borg_power.rs', 'src/borg_item_use.rs', 'src/borg_fight_defend.rs', 'src/borg_fight_attack.rs', 'src/borg_caution.rs', 'src/borg_danger.rs', 'src/borg_escape.rs', 'src/borg_recover.rs', 'src/borg_io.rs', 'src/borg_commands.rs', 'src/borg_init.rs', 'src/borg_messages.rs', 'src/borg_think.rs',
+    'src/borg_messages_react.rs',  # #1213: remove the unknown-item Recall prompt exception
+    'src/borg_log.rs',  # #1303: return cleanly when a map export cannot open a file
     'src/borg_think_dungeon.rs', 'src/borg_think_dungeon_util.rs', 'src/engine.rs', 'src/lib.rs',
 }
 
@@ -104,6 +115,18 @@ def blob(repo, oid):
     return git(repo, 'cat-file', 'blob', oid, binary=True).stdout
 
 
+def donor_file(repo, oid, path):
+    data = blob(repo, oid)
+    if path == 'pborg.yaml':
+        script = ROOT / 'harness/pborg-config.py'
+        spec = importlib.util.spec_from_file_location('legacy_pborg_config', script)
+        converter = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(converter)
+        yaml = converter.convert(data.decode('utf-8'))
+        return ('\n'.join(line.rstrip() for line in yaml.splitlines()).rstrip() + '\n').encode('utf-8')
+    return data
+
+
 def ours():
     """{borg-core path: bytes} of the working tree's borg-core/."""
     return {str(p.relative_to(CORE)): p.read_bytes() for p in sorted(CORE.rglob('*')) if p.is_file()}
@@ -117,7 +140,7 @@ def delta(repo):
     base, mine = donor(repo, pin()), ours()
     out = []
     for rel in sorted(set(base) | set(mine)):
-        old = blob(repo, base[rel]) if rel in base else None
+        old = donor_file(repo, base[rel], rel) if rel in base else None
         new = mine.get(rel)
         if old == new:
             continue
@@ -140,7 +163,7 @@ def check(repo):
             problems.append(f'{rel}: in borg-rs at the pin, missing here')
         elif rel not in base:
             problems.append(f'{rel}: not in borg-rs at the pin, and not declared ours')
-        elif blob(repo, base[rel]) != mine[rel] and rel not in HOOKED:
+        elif donor_file(repo, base[rel], rel) != mine[rel] and rel not in HOOKED:
             problems.append(f'{rel}: differs from borg-rs at the pin, and not declared hooked')
     return problems
 
@@ -153,8 +176,8 @@ def refresh(repo, rev):
         if rel in OURS:
             continue
         path = CORE / rel
-        b = blob(repo, base[rel]) if rel in base else None
-        t = blob(repo, theirs[rel]) if rel in theirs else None
+        b = donor_file(repo, base[rel], rel) if rel in base else None
+        t = donor_file(repo, theirs[rel], rel) if rel in theirs else None
         o = mine.get(rel)
         if t == b:
             continue  # borg-rs did not change it: ours stands

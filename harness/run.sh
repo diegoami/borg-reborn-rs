@@ -24,28 +24,24 @@
 #   selflunal, NAME=VALUE rewrites of borg.txt) and the dropped frontend
 #   options (frames, rune-pattern) are gone: only the Rust Borg is built here
 #   (docs/SPEC.md §6). Its default core (borg-rs's, #606) reads the run's
-#   user/borg.txt (borg_* settings, borg_param_*, borg_reborn_*); the reborn
+#   user/pborg.yaml (borg_* settings, borg_param_*, borg_reborn_*); the reborn
 #   core (BORG_CORE=reborn) reads BORG_PROFILE instead.
 #   Env: BORG_IMPL=rust (the default; build/rust), ANGBAND_BIN (override binary)
 #     CHECKPOINT_EVERY=N fixed game-turn capture cadence (0 = off).
 #     RUN_TIMEOUT_SECONDS=N optional wall timeout per child (0 = off).
 #     SAVE_ROOT=DIR fixture root for save=NAME (default harness/saves).
-#     BORG_ERRANDS_PLAN=FILE an errands plan (docs/GAME-PLAN-LANGUAGE.md;
-#            needs the borg-rs core, the default). It is copied to OUTDIR/user and
-#            selected in the run's borg.txt with a line naming its SHA-256,
-#            so the plan's bytes are part of borg_txt_sha256 (#352).
 #     BORG_SCARY_LIST=FILE the named scary monsters as data (#518; read by
 #            the borg-rs core with caution_scary_named_monsters = 1). It wins
-#            over the list the borg.txt names (harness/NAME, shipped:
+#            over the list pborg.yaml names (harness/NAME, shipped:
 #            scary_monsters.txt) and over borg_scary_list = none, under its
 #            own file name. Either is copied to OUTDIR/user and selected in
-#            the run's borg.txt with a line naming its SHA-256 (part of
-#            borg_txt_sha256); config.txt records borg_scary_list and
+#            the run's pborg.yaml with a line naming its SHA-256 (part of
+#            pborg_yaml_sha256); config.txt records borg_scary_list and
 #            borg_scary_list_sha256. borg_scary_list = none without
 #            BORG_SCARY_LIST keeps the compiled C list: no file, no hash.
-#     BORG_TXT_SET="name=value;..." rewrites existing keys of the run's
-#            borg.txt (part of borg_txt_sha256): harness/borg.txt's copy, or
-#            borg-core/borg.txt's with BORG_CORE_OVERRIDES=off, which has no
+#     PBORG_SET="name=value;..." rewrites existing keys of the run's
+#            pborg.yaml (part of pborg_yaml_sha256): harness/pborg.yaml's copy, or
+#            borg-core/pborg.yaml's with BORG_CORE_OVERRIDES=off, which has no
 #            borg_param_* or borg_reborn_* keys. Names and values are limited
 #            to [A-Za-z0-9_.-]; anything else fails the run.
 #     BORG_PROFILE=FILE the reborn Borg's profile (rust arm only; default
@@ -57,7 +53,7 @@
 # Produces OUTDIR/keys.log (the oracle), OUTDIR/messages.log (every message
 # added to the message log, Borg notes included), OUTDIR/state.log (one
 # engine-state line per key), OUTDIR/summary.json, OUTDIR/stderr.log,
-# OUTDIR/config.txt (flags and sha256 of the run's user/borg.txt; not part of
+# OUTDIR/config.txt (flags and sha256 of the run's pborg.yaml; not part of
 # the oracle, harness/diff does not read it)
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -67,26 +63,22 @@ CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-0}"
 [[ "$CHECKPOINT_EVERY" =~ ^(0|[1-9][0-9]{0,8}|1000000000)$ ]] || {
     echo "run.sh: CHECKPOINT_EVERY must be 0..1000000000" >&2; exit 2; }
 BIN="${ANGBAND_BIN:-$ROOT/build/$IMPL/game/angband}"
-# The game reads BORG_LADDERS from its own directory: a relative path is
-# made absolute here, so the file hashed below is the file it reads
-# (re-review #227, 7). A missing file is refused rather than silently
-# replaced by the built-in ladders.
-if [ -n "${BORG_LADDERS:-}" ]; then
-    [ -f "$BORG_LADDERS" ] || { echo "run.sh: BORG_LADDERS=$BORG_LADDERS: no such file" >&2; exit 2; }
-    BORG_LADDERS="$(realpath "$BORG_LADDERS")"; export BORG_LADDERS
+# The errands, their ladders and the plans were retired (#1339): a plan
+# would change the arm, so asking for one stops the run. Off values (empty,
+# `none`) pass, as the game itself accepts them (review of #1340).
+retired_inert() {  # retired_inert NAME VALUE: 0 when VALUE is NAME's off value
+    local v; v="$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')"
+    case "$1:$v" in
+        borg_reborn_errand:|borg_reborn_errand:none|borg_plan:|borg_plan:none) return 0 ;;
+        borg_reborn_stopscared:|borg_reborn_stopscared:none|borg_reborn_stopscared:off) return 0 ;;
+        borg_reborn_stopscared:false|borg_reborn_stopscared:no) return 0 ;;
+    esac
+    return 1
+}
+if ! retired_inert borg_plan "${BORG_ERRANDS_PLAN:-}"; then
+    echo "run.sh: BORG_ERRANDS_PLAN=$BORG_ERRANDS_PLAN: the plans were retired (#1339)" >&2; exit 2
 fi
-# An errands plan (#305, #352), resolved here like BORG_LADDERS. The game
-# reads the run's own copy through borg.txt, never this path.
-PLAN=""
-if [ -n "${BORG_ERRANDS_PLAN+set}" ]; then
-    [ -n "$BORG_ERRANDS_PLAN" ] && [ -f "$BORG_ERRANDS_PLAN" ] || {
-        echo "run.sh: BORG_ERRANDS_PLAN=$BORG_ERRANDS_PLAN: no such file" >&2; exit 2; }
-    [ "${BORG_CORE:-borg-rs}" = borg-rs ] || {
-        echo "run.sh: BORG_ERRANDS_PLAN needs the borg-rs core" >&2; exit 2; }
-    PLAN="$(realpath "$BORG_ERRANDS_PLAN")"
-    unset BORG_ERRANDS_PLAN
-fi
-# The named scary monsters as data (#518), pinned like the plan.
+# The named scary monsters as data (#518), pinned by its SHA-256.
 SCARY=""
 if [ -n "${BORG_SCARY_LIST+set}" ]; then
     [ -n "$BORG_SCARY_LIST" ] && [ -f "$BORG_SCARY_LIST" ] || {
@@ -227,57 +219,58 @@ if [ "$CHECKPOINT_EVERY" != 0 ]; then
     mkdir -p "$OUT/checkpoints"
     BORGH_FLAGS+=(-checkpoint-every "$CHECKPOINT_EVERY" -checkpoint-dir "$OUT/checkpoints")
 fi
-# harness/borg.txt is borg-rs's borg.txt (its core reads it) with our
-# settings: no stair-scumming and no town scumming (owner, 2026-11-14), and
-# the keys borg_reborn_core / borg_reborn_errand (#207, #208).
-# BORG_CORE_OVERRIDES=off gives borg-rs's core its pristine copy instead
-# (borg-core/borg.txt): the parity check against borg-rs's build at the pin.
-BORG_TXT="$ROOT/harness/borg.txt"
-# borg-core/borg.txt names no core, so with BORG_CORE unset the game would
-# fall back to the reborn core: the parity check selects borg-rs explicitly
-# (review of #607).
+# The parity run uses the donor's YAML defaults.
+PBORG_TEMPLATE="$ROOT/harness/pborg.yaml"
 if [ "${BORG_CORE_OVERRIDES:-on}" = off ] && [ -z "${BORG_CORE+set}" ]; then
     export BORG_CORE=borg-rs
 fi
-[ "${BORG_CORE:-borg-rs}" = borg-rs ] && [ "${BORG_CORE_OVERRIDES:-on}" = off ] && BORG_TXT="$ROOT/borg-core/borg.txt"
-# The run's user/borg.txt: the default borg-rs core reads it (the reborn
-# core does not), the zoo's adapter copies harness/borg.txt
-# (docs/ZOO-INTERFACE.md) and its hash is part of a death's encounter family.
-sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
-    -e "s/^borg_respawn_class = .*/borg_respawn_class = $CLASS/" \
-    -e "s/^borg_cheat_death = .*/borg_cheat_death = FALSE/" \
-    "$BORG_TXT" > "$OUT/user/borg.txt"
-# #606 (owner): a run with no BORG_CORE plays the core harness/borg.txt
-# names (borg_reborn_core = borg-rs), the one the zoo runs and the one that
-# reads this file. BORG_CORE=reborn selects the reborn core (it reads the
-# profile above, not this file); its run's borg.txt says so, so the file and
-# its hash describe the core that played (review of #607).
-[ "${BORG_CORE:-}" = reborn ] && sed -i 's/^borg_reborn_core = .*/borg_reborn_core = reborn/' "$OUT/user/borg.txt"
-# BORG_TXT_SET="name=value;name=value": rewrite existing keys of the run's
-# borg.txt (a test pinning a setting whose shipped default moved, #479).
-if [ -n "${BORG_TXT_SET:-}" ]; then
-    IFS=';' read -ra SETS <<< "$BORG_TXT_SET"
-    for kv in "${SETS[@]}"; do
-        name="${kv%%=*}"; value="${kv#*=}"
-        [[ "$kv" == *=* && "$name" =~ ^[A-Za-z0-9_]+$ && "$value" =~ ^[A-Za-z0-9_.-]+$ ]] || {
-            echo "run.sh: BORG_TXT_SET: invalid entry '$kv' (name=value, [A-Za-z0-9_.-])" >&2; exit 2; }
-        grep -q "^$name = " "$OUT/user/borg.txt" || { echo "run.sh: BORG_TXT_SET: no key $name in borg.txt" >&2; exit 2; }
-        sed -i "s/^$name = .*/$name = $value/" "$OUT/user/borg.txt"
-    done
+if [ "${BORG_CORE:-borg-rs}" = borg-rs ] && [ "${BORG_CORE_OVERRIDES:-on}" = off ]; then
+    PBORG_TEMPLATE="$ROOT/borg-core/pborg.yaml"
 fi
-# A plan selected in the borg.txt itself would escape the identity below.
-if grep -Eq '^[[:space:]]*borg_plan[[:space:]]*=' "$OUT/user/borg.txt"; then
-    echo "run.sh: $BORG_TXT selects a plan; harness runs select plans with BORG_ERRANDS_PLAN" >&2
+SETTINGS="$OUT/user/pborg.yaml"
+edit_settings() { python3 "$ROOT/harness/pborg-settings.py" "$@"; }
+get_setting() { edit_settings "$SETTINGS" get "$1"; }
+update_settings() {
+    edit_settings "$SETTINGS" edit "$@" > "$OUT/.pborg.yaml" && mv "$OUT/.pborg.yaml" "$SETTINGS"
+}
+BIRTH_SETTINGS=(--set "borg_respawn_race=$RACE" --set "borg_respawn_class=$CLASS"
+                --set borg_cheat_death=FALSE)
+if [ "${BORG_CORE:-}" = reborn ]; then
+    BIRTH_SETTINGS+=(--set borg_reborn_core=reborn)
+fi
+edit_settings "$PBORG_TEMPLATE" edit "${BIRTH_SETTINGS[@]}" > "$SETTINGS"
+
+# BORG_TXT_SET is the historical name for the same override interface.
+OVERRIDES="${PBORG_SET-${BORG_TXT_SET:-}}"
+if [ -n "$OVERRIDES" ]; then
+    IFS=';' read -ra SETS <<< "$OVERRIDES"
+    CHANGES=()
+    for kv in "${SETS[@]}"; do
+        [[ "$kv" =~ ^[A-Za-z0-9_@]+=[A-Za-z0-9_.-]+$ ]] || {
+            echo "run.sh: PBORG_SET: invalid entry '$kv'" >&2; exit 2; }
+        # #1339 (review of #1340): a retired key is no longer in the template;
+        # at its off value it is dropped with a warning, at any other value
+        # it stops the run, as the game would.
+        case "${kv%%=*}" in
+            borg_reborn_errand|borg_reborn_stopscared|borg_plan)
+                if retired_inert "${kv%%=*}" "${kv#*=}"; then
+                    echo "run.sh: PBORG_SET: ${kv%%=*} is retired and ignored (#1339)" >&2
+                    continue
+                fi
+                echo "run.sh: PBORG_SET: $kv: the errands, stopscared and plans were retired (#1339)" >&2; exit 2 ;;
+        esac
+        CHANGES+=(--set "$kv")
+    done
+    if [ ${#CHANGES[@]} -gt 0 ]; then update_settings --existing "${CHANGES[@]}"; fi
+fi
+SELECTED_PLAN="$(get_setting borg_plan)"
+if ! retired_inert borg_plan "$SELECTED_PLAN"; then
+    echo "run.sh: $PBORG_TEMPLATE selects a plan; the plans were retired (#1339)" >&2
     exit 2
 fi
-# The scary list (#518, review of #535). Precedence:
-#  1. BORG_SCARY_LIST=FILE: that file, under its own file name;
-#  2. otherwise the list the borg.txt names, copied from harness/NAME;
-#  3. borg_scary_list = none (or no key): the compiled C list, no file, no hash.
-# A copied list goes next to the run's borg.txt; its one selecting line is
-# rewritten with the list's SHA-256, so its bytes are part of
-# borg_txt_sha256, and config.txt records its name and hash.
-SCARY_NAME="$(sed -n 's/^[[:space:]]*borg_scary_list[[:space:]]*=[[:space:]]*//p' "$OUT/user/borg.txt" | tail -1 | tr -d '[:space:]')"
+# The selected scary list travels with the run. Its SHA-256 is in the YAML
+# receipt and config.txt so changing the list changes the encounter identity.
+SCARY_NAME="$(get_setting borg_scary_list)"
 SCARY_SRC=""; SCARY_SHA=""
 if [ -n "$SCARY" ]; then
     SCARY_SRC="$SCARY"; SCARY_NAME="$(basename "$SCARY")"
@@ -285,26 +278,19 @@ elif [ -n "$SCARY_NAME" ] && [ "$SCARY_NAME" != none ]; then
     SCARY_SRC="$ROOT/harness/$SCARY_NAME"
 fi
 if [ -n "$SCARY_SRC" ]; then
-    [[ "$SCARY_NAME" =~ ^[A-Za-z0-9_.-]+$ && "$SCARY_NAME" != none ]] || {
+    [[ "$SCARY_NAME" =~ ^[A-Za-z0-9_.-]+$ && "$SCARY_NAME" != none &&
+       "$SCARY_NAME" != pborg.yaml && "$SCARY_NAME" != borg.txt &&
+       "$SCARY_NAME" != errands_plan.txt ]] || {
         echo "run.sh: scary list name '$SCARY_NAME': a plain file name is expected" >&2; exit 2; }
     [ -f "$SCARY_SRC" ] || { echo "run.sh: scary list $SCARY_SRC: no such file" >&2; exit 2; }
     cp "$SCARY_SRC" "$OUT/user/$SCARY_NAME"
     SCARY_SHA="$(sha256sum < "$SCARY_SRC" | cut -d' ' -f1)"
-    sed -i '/^[[:space:]]*borg_scary_list[[:space:]]*=/d' "$OUT/user/borg.txt"
-    printf '\n# harness/run.sh (#518): scary list sha256 %s\nborg_scary_list = %s\n' \
-        "$SCARY_SHA" "$SCARY_NAME" >> "$OUT/user/borg.txt"
+    update_settings --set "borg_scary_list=$SCARY_NAME"
+    printf '\n# harness/run.sh (#518): scary list sha256 %s\n' "$SCARY_SHA" >> "$SETTINGS"
 fi
-# A world (#704): game data with some monsters more common, generated by
-# scripts/make-world.py from the game's own lib/ (the engine is upstream byte
-# for byte; only the data it loads changes). Precedence, as the scary list:
-#  1. BORG_WORLD=FILE: that config, named after its file;
-#  2. otherwise `borg_world = NAME` in the borg.txt: harness/worlds/NAME.txt
-#     (a zoo profile can write it);
-#  3. `borg_world = none` or no key: upstream's data, the run unchanged.
-# The key line is always replaced by a comment with the config's and the
-# data's SHA-256, so the core never reads it and the world is part of
-# borg_txt_sha256; config.txt records the name and both hashes.
-WORLD_NAME="$(sed -n 's/^[[:space:]]*borg_world[[:space:]]*=[[:space:]]*//p' "$OUT/user/borg.txt" | tail -1 | tr -d '[:space:]')"
+# World variants are consumed by the runner. Their names and data hashes
+# are recorded without passing the adapter-only key to the Borg.
+WORLD_NAME="$(get_setting borg_world)"
 WORLD_SRC=""; WORLD_SHA=""; WORLD_DATA_SHA=""
 if [ -n "${BORG_WORLD:-}" ]; then
     WORLD_SRC="$BORG_WORLD"; WORLD_NAME="$(basename "$BORG_WORLD" .txt)"
@@ -315,7 +301,7 @@ elif [ -n "$WORLD_NAME" ] && [ "$WORLD_NAME" != none ]; then
         echo "run.sh: world name '$WORLD_NAME': a plain name is expected" >&2; exit 2; }
     WORLD_SRC="$ROOT/harness/worlds/$WORLD_NAME.txt"
 fi
-sed -i '/^[[:space:]]*borg_world[[:space:]]*=/d' "$OUT/user/borg.txt"
+update_settings --remove borg_world
 if [ -n "$WORLD_SRC" ]; then
     [ -f "$WORLD_SRC" ] || { echo "run.sh: world $WORLD_SRC: no such file" >&2; exit 2; }
     [ -z "${BORGH_DATA_ROOT:-}" ] || { echo "run.sh: a world and BORGH_DATA_ROOT together" >&2; exit 2; }
@@ -324,17 +310,7 @@ if [ -n "$WORLD_SRC" ]; then
         echo "run.sh: world $WORLD_NAME: $(tail -1 "$OUT/world.log")" >&2; exit 2; }
     BORGH_DATA_ROOT="$OUT/world"
     printf '\n# harness/run.sh (#704): world %s, config sha256 %s, data sha256 %s\n' \
-        "$WORLD_NAME" "$WORLD_SHA" "$WORLD_DATA_SHA" >> "$OUT/user/borg.txt"
-fi
-if [ -n "$PLAN" ]; then
-    # The SHA-256 line puts the plan's bytes into borg_txt_sha256, which the
-    # cemetery's encounter family already hashes. It names no path, so the
-    # same plan under another name is the same starting game.
-    cp "$PLAN" "$OUT/user/errands_plan.txt"
-    PLAN_SHA="$(sha256sum < "$PLAN" | cut -d' ' -f1)"
-    PLAN_NAME="${PLAN#"$ROOT"/}"
-    printf '\n# harness/run.sh (#352): errands plan sha256 %s\nborg_plan = errands_plan.txt\n' \
-        "$PLAN_SHA" >> "$OUT/user/borg.txt"
+        "$WORLD_NAME" "$WORLD_SHA" "$WORLD_DATA_SHA" >> "$SETTINGS"
 fi
 {
     echo "flags=$FLAGS"
@@ -349,7 +325,8 @@ fi
         echo 'dungeon_mode=one_way'
         echo 'synthetic_contract=borg-reborn-rs/synthetic-start@2'
     fi
-    echo "borg_txt_sha256=$(sha256sum < "$OUT/user/borg.txt" | cut -d' ' -f1)"
+    echo "pborg_yaml_sha256=$(sha256sum < "$SETTINGS" | cut -d' ' -f1)"
+    [ -z "$OVERRIDES" ] || echo "pborg_set=$OVERRIDES"
     if [ -n "$SAVE_NAME" ] || [ -n "$EXTRA_LOAD" ]; then
         # The loaded save's hash is part of a death's encounter family.
         echo "save_sha256=$(sha256sum < "$OUT/save/input.save" | cut -d' ' -f1)"
@@ -360,28 +337,16 @@ fi
         echo "profile_sha256=$(sha256sum < "$PROFILE" | cut -d' ' -f1)"
     fi
     if [ "$CHECKPOINT_EVERY" != 0 ]; then echo "checkpoint_every=$CHECKPOINT_EVERY"; fi
-    # The settings the environment gives the Borg (docs/ERRANDS.md): they
-    # change play, so the record says them, and tools/rerun-death.py sets
-    # them again (review #227, finding 8). Only those set, empty ones too
-    # (an empty BORG_ERRAND turns off the borg.txt fallback; re-review 6):
-    # a run without any keeps the record it always had.
-    for v in BORG_CORE BORG_CORE_OVERRIDES BORG_ERRAND BORG_STOPSCARED BORG_ERRAND_BUDGET BORG_LADDERS; do
+    # The core the environment selects: it changes play, so the record says
+    # it, and tools/rerun-death.py sets it again (review #227, finding 8).
+    # Only those set; a run without any keeps the record it always had. (The
+    # errand variables went with the errands, #1339.)
+    for v in BORG_CORE BORG_CORE_OVERRIDES; do
         if [ -n "${!v+set}" ]; then echo "$(echo "$v" | tr '[:upper:]' '[:lower:]')=${!v}"; fi
     done
-    # #606 (review of #607): with no BORG_CORE the record still says which
-    # core played (the run's borg.txt names it), so a death record and its
-    # rerun know the core.
-    # Never empty: a borg.txt naming no core plays the game's compiled
-    # fallback, the reborn core (review of #607).
     if [ -z "${BORG_CORE+set}" ]; then
-        core="$(sed -n 's/^borg_reborn_core = //p' "$OUT/user/borg.txt" | head -1)"
+        core="$(get_setting borg_reborn_core)"
         echo "borg_core=${core:-reborn}"
-    fi
-    if [ -n "${BORG_LADDERS:-}" ]; then echo "borg_ladders_sha256=$(sha256sum < "$BORG_LADDERS" | cut -d' ' -f1)"; fi
-    # The plan named relative to the checkout (no machine paths in dossiers).
-    if [ -n "$PLAN" ]; then
-        echo "borg_errands_plan=$PLAN_NAME"
-        echo "borg_errands_plan_sha256=$PLAN_SHA"
     fi
     # The scary list (#518): its name, and hash when one was copied.
     echo "borg_scary_list=${SCARY_NAME:-none}"
@@ -440,10 +405,6 @@ elif summary.get('synthetic') or summary.get('start_depth'):
 PYSYNTHETIC
 if [ -n "$START_BUILD_SHA" ]; then
     [ "$(sha256sum < "$OUT/start.build" | cut -d' ' -f1)" = "$START_BUILD_SHA" ] || { echo 'run.sh: start-build changed during execution' >&2; exit 1; }
-fi
-# The game preserves the plan it parsed as BORG_RUN_DIR/errands_plan.txt.
-if [ -n "$PLAN" ] && ! cmp -s "$OUT/user/errands_plan.txt" "$OUT/errands_plan.txt"; then
-    echo "run.sh: the game did not load the plan: $OUT" >&2; exit 1
 fi
 # Review of #741: a start-monsters run that placed fewer monsters than it
 # asked for is measuring another colony than its label says; say so.

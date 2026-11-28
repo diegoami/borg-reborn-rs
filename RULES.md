@@ -5,6 +5,12 @@ whatever the model.
 
 ## Owner and scope
 
+**Early alpha** (owner, 2026-11-25). Move fast and accept breaking changes
+when they simplify the project or help us learn faster. We have no user
+base to maintain yet. Skip compatibility work whose only purpose is to
+support hypothetical existing users. Keep recorded evidence reproducible
+and use the owner review gate for integration.
+
 1. **Track P integrates on `track-p`, never directly on `main`** (owner,
    2026-11-15; branch spelling confirmed as `track-p`). A session creates P
    task branches from `track-p`, targets task PRs at `track-p`, and merges
@@ -34,6 +40,25 @@ whatever the model.
    an earlier "set it in a PR" are not that. When CI is green, the session
    says so and asks; it does not merge. A PR the owner said is under review
    is never merged by a session.
+1b. **Keep `track-p` current with `main`.** After merging a PR into
+   `main`, the session that merged it checks whether its new tip is already
+   in `track-p` and owns the sync PR if needed. Check again before merging P
+   work, pinning a P promotion review, or pinning a Track P Zoo release
+   candidate:
+
+   ```sh
+   git fetch origin main track-p
+   git merge-base --is-ancestor origin/main origin/track-p
+   ```
+
+   If the ancestry check fails, merge `main` into a branch based on
+   `track-p` and open a dedicated PR targeting `track-p`. Preserve both
+   branches' changes, wait for CI and the owner's approval under rule 1a,
+   and merge with a merge commit so that `main` stays in the ancestry.
+   Finish the sync before merging more P work or pinning a new candidate.
+   If a milestone review is already pinned, keep its reviewed commit fixed
+   and tell the owner about the drift before promotion. Retain rule 1's
+   promotion gate.
 2. Scope comes from [docs/GOALS.md](docs/GOALS.md), [PLAN.md](PLAN.md) and
    the task issues of the current GitHub milestone.
    **Work only inside the current milestone.** Work outside them waits
@@ -163,8 +188,8 @@ not undo other-track work already authorized before the gate.
    the declared patch series of `engine/patches/` (docs/ENGINE.md): harness
    hooks under `#ifdef BORG_HARNESS` or `USE_BORGH`, applied to a copy at
    build time, each shown not to change the game with the guards off. Birth
-   options are the game's defaults. No C Borg is built here (docs/SPEC.md
-   §6).
+   options are the game's defaults. The owner approved shipping the native
+   C Borg alongside PBorg in #1288 (docs/SPEC.md §6).
 10. **Determinism.** Seed, build and profile reproduce a game's key stream.
     The Borg thinks with its own RNG and never moves the game's. Wall time
     never affects play. Decisions never iterate over unordered containers.
@@ -199,6 +224,13 @@ not undo other-track work already authorized before the gate.
     of one life never inflate independent counts. Test-feature/fabricated
     scenarios are explicitly labelled and kept apart from natural measured
     deaths. Original published hashes and historical records are preserved.
+12a. **Post requested death diagnostics on the ticket at hand** (owner,
+    2026-11-24, #1186). When asked to diagnose a death with an identified
+    ticket, post the findings as a comment on that ticket before reporting
+    back in chat. State what the evidence establishes, what the replay
+    verified, and the results of any tested alternatives. Include suggestions
+    supported by the evidence and link the canonical Cemetery case when
+    available (rule 12).
 13. **Every run counts.** Stalls, timeouts, crashes and harness failures are
     reported, never dropped and never relabelled as deaths. Never weaken a
     seed list, a cap, a timeout or an assertion to get a green result.
@@ -305,8 +337,8 @@ No strategy, default frontend flags or measured baseline changes are implied.
 26. **Debug reported play from preserved runtime evidence.** For an
     owner-requested guided session, the agent prepares and starts a
     recorder-enabled game with a named character, private session files,
-    the exact executable/settings/starting save preserved, a core decision
-    trace and errand outcomes. Follow
+    the exact executable/settings/starting save preserved and a core
+    decision trace. Follow
     [docs/GUIDED-DEBUGGING.md](docs/GUIDED-DEBUGGING.md). The owner reports
     the unexpected behaviour and saves if the game responds; the agent
     finds and verifies the save, preserves the incident, and attempts
@@ -343,3 +375,17 @@ No strategy, default frontend flags or measured baseline changes are implied.
     Door, food, and other replenishable supplies. When investigating an
     inventory problem, check offers, purchases, and departure stock at
     both low and ample budgets before proposing a new reserve.
+
+## Shipping
+
+28. **A fix ships on, in the PR that makes it** (owner, 2026-11-28: "we do
+    not have time to wait for zoo ... we have no customers or rollouts").
+    A change that fixes an observed defect sets its switch on in
+    `harness/pborg.yaml` in the same PR. A session does not ship it off
+    until a zoo comparison, and does not open a follow-up to turn it on
+    later. This overrides the "shipped off" gate for such fixes in PLAN.md
+    (P8, P9). Rule 14 still governs what the PR *claims*: it says the
+    effect is not measured, and claims no improvement. The switch keeps
+    its 0 as the earlier play, so a comparison can run when the owner
+    asks for one (rule 20). A new behaviour that fixes no observed defect
+    still waits for the owner's word.

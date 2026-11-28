@@ -25,7 +25,7 @@
 //! buffer with `strnfmt` the same truncation is applied (`strnfmt_s`).
 
 use crate::borg::BorgTemp;
-use crate::borg_io::{borg_flush, borg_keypress, borg_note, borg_note_bytes, borg_what_text, ESCAPE};
+use crate::borg_io::{borg_flush, borg_flush_keys, borg_keypress, borg_note, borg_note_bytes, borg_what_text, ESCAPE};
 use crate::borg_messages_react::{borg_react, borg_react_prompted};
 use crate::borg_util::borg_trim;
 use crate::borg_headers::borg_h::BORG_VERBOSE;
@@ -389,6 +389,8 @@ pub fn borg_get_messages(st: &mut BorgState, key: &mut keypress, cursor: loc) ->
         let answer = crate::borg_escape::change_back_answer(st);
         if answer == b'y' {
             borg_note(st, "# Fox Form: reverting for an item or a spell");
+        } else {
+            st.fight_attack.pending_unseen.clear();
         }
         key.code = u32::from(answer);
         return true;
@@ -398,6 +400,9 @@ pub fn borg_get_messages(st: &mut BorgState, key: &mut keypress, cursor: loc) ->
     if borg_prompt && !engine::inkey_flag() && !cstr(&buffer[off..]).is_empty() {
         let text = cstr(&buffer[off..]).to_vec();
         if let Some(code) = borg_react_prompted(st, &text, cursor) {
+            if code == ESCAPE || code == u32::from(b'n') {
+                st.fight_attack.pending_unseen.clear();
+            }
             key.code = code;
             return true;
         }
@@ -622,13 +627,26 @@ fn inven_wield() -> usize {
 /// We notice a few "terrain feature" messages here so we can acquire
 /// knowledge about wall types and door types.
 fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
+    st.light.room_lighting.confirm_message(msg);
+    crate::borg_unseen_belief::reject_attack(st, msg);
+    // borg-reborn-rs (#889): "It dies." after a shot at a believed monster.
+    crate::borg_unseen_belief::death_message(st, msg);
     // borg-reborn-rs (#781): associate melee feedback only with a queued step.
     crate::borg_caution::unseen_bump_message(st, msg);
     // borg-reborn-rs (#829): "Teleportation forbidden!" and friends.
     crate::borg_escape::teleport_block_message(st, msg);
+    // borg-reborn-rs (#1067): a trap was set off (`trap_recover` and friends).
+    crate::borg_trap_way::note_message(st, msg);
     // borg-reborn-rs (#831): the answer to a blind attack on an unseen attacker.
     if let Some(note) = crate::borg_recover::unseen_mode_message(st, msg) {
         borg_note(st, note);
+    }
+    // borg-reborn-rs (#981): "You are hit by something sharp!" is the
+    // engine's message for a bolt from a monster the Borg cannot see
+    // (`project-player.c:840-842, 887`); with `recover_unseen_shot` it is an
+    // unseen attack, read in `borg_update` where the Borg's grid is known.
+    if crate::borg_recover::unseen_shot_message(msg) {
+        borg_react(st, msg, b"SHOT_BY:Something");
     }
     // `ag` (`&borg_grids[borg.goal.g.y][borg.goal.g.x]`), read at each use
     let g = st.borg.goal.g;
@@ -671,14 +689,22 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
 
     // Notice "failure"
     if prefix(msg, b"You failed ") {
+        // #1229: a melee Alter can fail while picking the door's lock.
+        if prefix(msg, b"You failed to pick the lock.") {
+            crate::borg_update::note_alter_lock_failure(st);
+        }
         // Store the keypress
         borg_note(st, "# Normal failure.");
+
+        // borg-reborn-rs (#1062): the failed action moved nothing
+        crate::borg_leash::action_failed(st);
 
         // Set the failure flag
         st.update.failure = true;
 
-        // Flush our key-buffer
-        borg_flush(st);
+        // Flush our key-buffer. reject_attack above already handled any
+        // message that rejected the pending unseen shot.
+        borg_flush_keys(st);
 
         // If we were casting a targetted spell and failed
         // it does not mean we can't target that location
@@ -706,6 +732,8 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
 
     // Ignore teleport trap
     if prefix(msg, b"You hit a teleport") {
+        // borg-reborn-rs (#1062): the cause of the next jump
+        crate::borg_leash::teleport_trap(st);
         return;
     }
 
@@ -1137,8 +1165,27 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
         return;
     }
 
+    // A confused Borg's tunnel goes in another direction (#1353)
+    if prefix(msg, b"You are confused.")
+        && crate::params::value(crate::params::Param::messages_dark_rubble_upstream) != 0
+    {
+        dug_rubble_message(st, msg);
+    }
+
     // Removed rubble.  Important when out of lite
     if prefix(msg, b"You have removed the ") {
+        // borg-reborn-rs (#1353): borg-rs v15R (5e6cd07) clears the remembered
+        // rubble around the Borg in the dark. One dig removes one grid
+        // (cmd-cave.c:590-595), so only the grid the Borg dug becomes broken
+        // door; the other remembered rubble stays blocked (review of #1355).
+        if crate::params::value(crate::params::Param::messages_dark_rubble_upstream) != 0 {
+            if st.borg.tr(BI_LIGHT) == 0 {
+                dug_rubble_message(st, msg);
+            } else {
+                st.flow_misc.dug_rubble = None;
+            }
+            return;
+        }
         // remove rubbles from array: the loop runs over 2x2 grids but
         // only ever looks at the goal grid
         let c = st.borg.c;
@@ -1188,6 +1235,8 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
             st.borg.mon.scary = true;
             st.borg.mon.scary_door = true; // borg-reborn-rs (#530)
         }
+        // borg-reborn-rs (#1061): stair_scum goes back onto the stairs.
+        crate::borg_stair_scum::heard_door(st);
     }
 
     // Some spells move the borg from his grid
@@ -1219,6 +1268,71 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
     }
 }
 
+/// borg-reborn-rs (#941): a message about the player's own state.
+fn player_feels(msg: &[u8]) -> bool {
+    prefix(msg, b"You feel ")
+}
+
+/// borg-reborn-rs (#1032): a message whose subject is the player, other than
+/// the "You feel ..." ones `trait_timed_sync` governs (#941), so that the two
+/// switches stay separate.
+fn player_subject(msg: &[u8]) -> bool {
+    prefix(msg, b"You ") && !player_feels(msg)
+}
+
+/// The dark clean-up of "You have removed the rubble" (#1353): the dug grid,
+/// when it is next to the Borg and still remembered as rubble, becomes a
+/// broken door (ignored). Other remembered rubble is left alone; with no
+/// recorded dig nothing is cleared.
+fn clear_dug_rubble(st: &mut BorgState, dug: Option<loc>) {
+    let Some(d) = dug else { return };
+    let c = st.borg.c;
+    if (d.x - c.x).abs() > 1 || (d.y - c.y).abs() > 1 {
+        return;
+    }
+    let grid = st.cave.grid_mut(d.x, d.y);
+    if grid.feat == FEAT_RUBBLE as u8 {
+        grid.feat = FEAT_BROKEN as u8;
+    }
+}
+
+/// The two messages that decide a dug grid (#1353, review of #1355). A
+/// confused tunnel goes in another direction and says "You are confused."
+/// first (`player_confuse_dir`, player-util.c:1369-1372; `do_cmd_tunnel`,
+/// cmd-cave.c:673-676), so the recorded target is not the grid dug: it is
+/// dropped, and the "You have removed the rubble" that follows clears
+/// nothing. Called with the flag on, for these two messages only.
+fn dug_rubble_message(st: &mut BorgState, msg: &[u8]) {
+    if prefix(msg, b"You are confused.") {
+        st.flow_misc.dug_rubble = None;
+    } else if prefix(msg, b"You have removed the ") {
+        let dug = st.flow_misc.dug_rubble.take();
+        clear_dug_rubble(st, dug);
+    }
+}
+
+#[cfg(test)]
+mod player_feels_tests {
+    #[test]
+    fn the_end_of_haste_is_the_players_own() {
+        assert!(super::player_feels(b"You feel yourself slow down."));
+        assert!(super::player_feels(b"You feel yourself speed up."));
+        assert!(!super::player_feels(b"The cave spider slows down."));
+        assert!(!super::player_feels(b"3 cave spiders start moving faster."));
+    }
+
+    #[test]
+    fn the_end_of_confusion_stun_and_paralysis_is_the_players_own() {
+        assert!(super::player_subject(b"You are no longer confused."));
+        assert!(super::player_subject(b"You are no longer stunned."));
+        assert!(super::player_subject(b"You can move again."));
+        assert!(!super::player_subject(b"You feel yourself slow down."), "#941's");
+        assert!(!super::player_subject(b"The kobold is no longer confused."));
+        assert!(!super::player_subject(b"Your mystic shield crumbles away."));
+        assert!(!super::player_subject(b"Young blue dragons are no longer stunned."));
+    }
+}
+
 /// The monster messages of `borg_parse_aux` (pain, kills, deaths, blinks,
 /// misses, hits, spells, states), for messages that do not start with
 /// "Your ". Returns true where C returns.
@@ -1230,8 +1344,16 @@ fn parse_monster_message(st: &mut BorgState, msg: &[u8], len: i32) -> bool {
     let who_after = |tmp: usize| who_text(size_of_int(1 + len - (tmp as i32 + 1)), &msg[tmp..]);
 
     // "It screams in pain." (etc)
+    // borg-reborn-rs (#941): the player's own "You feel yourself slow down." /
+    // "... speed up." (player_timed.txt:197, 203) are not monster pain.
+    let own = player_feels(msg)
+        && crate::borg_trait::timed_sync(crate::params::value(crate::params::Param::trait_timed_sync));
+    // borg-reborn-rs (#1032): no monster message has "You" as its subject; the
+    // player's "You are no longer confused.", "... stunned." and "You can move
+    // again." (player_timed.txt:227, 283, 219) are not monster pain either.
+    let own = own || (player_subject(msg) && crate::params::value(crate::params::Param::messages_player_not_pain) != 0);
     let pain = st.messages.suffix_pain.as_ref().expect("pain messages not initialised");
-    if let Some(p) = pain.iter().find(|p| suffix(msg, p)) {
+    if let Some(p) = pain.iter().find(|p| !own && suffix(msg, p)) {
         let who = who_before(p.len());
         borg_react(st, msg, &tagged(b"PAIN:", &who));
         return true;
@@ -1738,6 +1860,49 @@ mod tests {
             assert!(row.contains(k), "{row}");
         }
         assert_eq!(MON_MSG_MAX as usize, MON_MSG_REPOSITORY.len() - 1);
+    }
+
+    /// #1353 (review of #1355): one dig in the dark clears one rubble grid.
+    #[test]
+    fn a_dark_dig_clears_only_the_dug_rubble() {
+        use crate::borg_headers::borg_trait_h::BI_MAX;
+        let mut st = BorgState::default();
+        st.cave = crate::borg_cave::CaveState::empty_for_test();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        st.borg.c = loc { x: 40, y: 20 };
+        st.cave.grid_mut(41, 20).feat = FEAT_RUBBLE as u8; // east, dug
+        st.cave.grid_mut(40, 19).feat = FEAT_RUBBLE as u8; // north, still there
+        st.flow_misc.dug_rubble = Some(loc { x: 41, y: 20 });
+
+        dug_rubble_message(&mut st, b"You have removed the rubble.");
+        assert_eq!(st.cave.grid(41, 20).feat, FEAT_BROKEN as u8);
+        assert_eq!(st.cave.grid(40, 19).feat, FEAT_RUBBLE as u8, "not dug");
+        assert!(st.flow_misc.dug_rubble.is_none(), "the dig is used up");
+
+        // no recorded dig, or one that is not next to the Borg: nothing moves
+        dug_rubble_message(&mut st, b"You have removed the rubble.");
+        clear_dug_rubble(&mut st, Some(loc { x: 40, y: 18 }));
+        assert_eq!(st.cave.grid(40, 19).feat, FEAT_RUBBLE as u8);
+    }
+
+    /// #1353 (second review of #1355): a confused tunnel aimed east and sent
+    /// north says "You are confused." and then removes the north rubble. The
+    /// east grid, which the Borg aimed at, stays rubble.
+    #[test]
+    fn a_redirected_dark_dig_clears_no_remembered_rubble() {
+        use crate::borg_headers::borg_trait_h::BI_MAX;
+        let mut st = BorgState::default();
+        st.cave = crate::borg_cave::CaveState::empty_for_test();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        st.borg.c = loc { x: 40, y: 20 };
+        st.cave.grid_mut(41, 20).feat = FEAT_RUBBLE as u8; // east, aimed at
+        st.cave.grid_mut(40, 19).feat = FEAT_RUBBLE as u8; // north, really dug
+        st.flow_misc.dug_rubble = Some(loc { x: 41, y: 20 });
+
+        dug_rubble_message(&mut st, b"You are confused.");
+        dug_rubble_message(&mut st, b"You have removed the rubble.");
+        assert_eq!(st.cave.grid(41, 20).feat, FEAT_RUBBLE as u8, "aimed at, not dug");
+        assert_eq!(st.cave.grid(40, 19).feat, FEAT_RUBBLE as u8, "left to the map scan");
     }
 
     #[test]

@@ -43,12 +43,13 @@ use crate::headers::list_mon_race_flags_h::RF_UNIQUE;
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_terrain_h::{
     FEAT_CLOSED, FEAT_GRANITE, FEAT_LAVA, FEAT_LESS, FEAT_MORE, FEAT_NONE, FEAT_OPEN, FEAT_PASS_RUBBLE,
-    FEAT_PERM, FEAT_QUARTZ, FEAT_QUARTZ_K, FEAT_RUBBLE, FEAT_SECRET,
+    FEAT_MAGMA, FEAT_MAGMA_K, FEAT_PERM, FEAT_QUARTZ, FEAT_QUARTZ_K, FEAT_RUBBLE, FEAT_SECRET,
 };
 use crate::headers::list_tvals_h::{TV_DIGGING, TV_SHOT, TV_STAFF};
 use crate::headers::ui_event_h::keycode_t;
 use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
+use crate::borg::BorgTime;
 use crate::{borg_flow_glyph, borg_flow_kill, borg_flow_misc, borg_flow_stairs, borg_flow_take, engine};
 
 /// Size of the circular flow queue (`AUTO_FLOW_MAX`).
@@ -70,6 +71,15 @@ const GOAL_FLEE: i32 = 7;
 
 /// Size of the step/door tracks (`borg_init_flow()`).
 const TRACK_SIZE: i16 = 100;
+
+/// borg-reborn-rs (#1206): how long a door the flight itself opened stays
+/// exempt from the breeder containment's close. The recorded open/close
+/// cycle ran ten turns per toggle; thirty covers several cycles of the
+/// walk-through and stays far short of any deliberate later containment.
+pub(crate) const OPENED_DOOR_UNDO_TURNS: i32 = 30;
+
+/// borg-reborn-rs (#1206): how many recently opened doors are remembered.
+const OPENED_DOOR_KEEP: usize = 8;
 
 /// One `borg_data` grid map: `AUTO_MAX_Y` rows of `AUTO_MAX_X` bytes,
 /// indexed `[y][x]`. Empty = not allocated (C `NULL`).
@@ -114,6 +124,12 @@ pub struct FlowState {
     pub data_know: BorgData,
     /// `borg_data_icky`: current "icky" flags
     pub data_icky: BorgData,
+    /// borg-reborn-rs (#1130, review of #1152): counts the flows committed
+    /// (`flow_commit`): a brave walk is continued only while its own flow is
+    /// the current one.
+    pub commit_seq: u32,
+    /// The current flow was spread with stair-scum loot step constraints.
+    pub stair_scum_loot: bool,
     /// borg-reborn-rs (#556): the spread running is a kill flow's
     /// (`borg_flow_spread_hunting`), which crosses remembered breeders.
     pub hunting: bool,
@@ -121,6 +137,9 @@ pub struct FlowState {
     /// with `caution_stairs_flight_ignore_danger`: no grid is refused for its
     /// danger (as the desperate walk); a monster on the path is the test.
     pub flight_no_danger: bool,
+    /// borg-reborn-rs (#1067): the spread running is `borg_trap_way`'s,
+    /// which crosses known traps (to reopen a way back they cut).
+    pub through_traps: bool,
     /// borg-reborn-rs (#713): the spread running is a stair flow's
     /// (`borg_flow_spread_stairs`), which may pass through the reach of an
     /// immobile creature kept at range (never onto its grid).
@@ -129,6 +148,10 @@ pub struct FlowState {
     weighted_flight: WeightedFlight,
     /// This committed flight explicitly chose an up staircase.
     up_stair_flight: bool,
+    /// Recent tactical retreats made during a dungeon departure.
+    retreats: Vec<FlightRetreat>,
+    /// Squares excluded by the currently spreading stair route.
+    retreat_avoid: Option<Vec<loc>>,
     /// `borg_temp_n`: entries in use in the temporary grid list
     pub temp_n: i16,
     /// `borg_temp_x` (`AUTO_TEMP_MAX` entries)
@@ -141,6 +164,22 @@ pub struct FlowState {
     pub track_door: StairTrack,
     /// `track_closed`: doors that started closed
     pub track_closed: StairTrack,
+    /// borg-reborn-rs (#1206): doors the Borg's escape opened recently, as
+    /// `(x, y, turn)` — the breeder containment must not close them again
+    /// while that escape is still walking through. An entry survives only
+    /// inside the continuous armed run that opened it (see
+    /// `escape_last_disarm`); an ordinary open records nothing (at most
+    /// `OPENED_DOOR_UNDO_TURNS` turns old, at most 8 kept, cleared on a
+    /// new level).
+    pub opened_doors: Vec<(i32, i32, i32)>,
+    /// borg-reborn-rs (#1206, review 3): the `time.now` when the escape
+    /// context was last observed disarmed on this level — at a think with
+    /// neither `fleeing` nor `leaving` set, or at a mid-think scare
+    /// withdrawal. `0` = none observed. An opened-door entry is exempt
+    /// only while no disarm has been observed since its open, so the
+    /// exemption dies with the escape that opened it even when the
+    /// containment never gets a turn in between.
+    pub escape_last_disarm: i32,
 }
 
 impl Default for FlowState {
@@ -157,22 +196,158 @@ impl Default for FlowState {
             data_hard: Vec::new(),
             data_know: Vec::new(),
             data_icky: Vec::new(),
+            commit_seq: 0,
+            stair_scum_loot: false,
             hunting: false,
             flight_no_danger: false,
+            through_traps: false,
             to_stairs: false,
             weighted_flight: WeightedFlight::None,
             up_stair_flight: false,
+            retreats: Vec::new(),
+            retreat_avoid: None,
             temp_n: 0,
             temp_x: vec![0; AUTO_TEMP_MAX],
             temp_y: vec![0; AUTO_TEMP_MAX],
             track_step: StairTrack::default(),
             track_door: StairTrack::default(),
             track_closed: StairTrack::default(),
+            opened_doors: Vec::new(),
+            escape_last_disarm: 0,
         }
     }
 }
 
+#[derive(Clone, Copy)]
+struct FlightRetreat {
+    from: loc,
+    landing: loc,
+    depth: i32,
+    level_started: i32,
+    turn: i32,
+    state: RetreatLanding,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RetreatLanding {
+    Pending,
+    Confirmed,
+    Reported,
+}
+
+impl FlightRetreat {
+    fn still_applies(self, here: loc, depth: i32, level_started: i32, now: i32, window: i32) -> bool {
+        self.depth == depth
+            && self.level_started == level_started
+            && (1..=window).contains(&now.wrapping_sub(self.turn))
+            && here != self.from
+            && (self.state != RetreatLanding::Pending || here == self.landing)
+    }
+}
+
+/// The retreat is provisional until the next observation sees its landing.
+pub(crate) fn remember_flight_retreat(st: &mut BorgState) {
+    let depth = st.borg.tr(BI_CDEPTH);
+    let window = crate::borg_caution::flight_retreat_ticks();
+    if window == 0 || depth <= 0 || !(st.borg.goal.fleeing || st.borg.goal.leaving)
+        || st.borg.c == st.borg.goal.g
+    {
+        return;
+    }
+    let level_started = st.borg.time.level;
+    let turn = st.borg.time.now;
+    let from = st.borg.c;
+    st.flow.retreats.retain(|r| r.from != from && r.still_applies(from, depth, level_started, turn, window));
+    st.flow.retreats.push(FlightRetreat {
+        from,
+        landing: st.borg.goal.g,
+        depth,
+        level_started,
+        turn,
+        state: RetreatLanding::Pending,
+    });
+}
+
+/// Confirm the observed landing before caution can choose another retreat.
+pub(crate) fn observe_flight_retreats(st: &mut BorgState) {
+    if st.flow.retreats.is_empty() {
+        return;
+    }
+    st.flow.observe_retreats(
+        st.borg.c,
+        st.borg.tr(BI_CDEPTH),
+        st.borg.time.level,
+        st.borg.time.now,
+        crate::borg_caution::flight_retreat_ticks(),
+    );
+}
+
+/// Exclude recent dangerous retreat squares from every candidate stair
+/// route. Keep them out of the shared icky-grid cache.
+fn active_retreat_grids(st: &mut BorgState, why: i32) -> Vec<loc> {
+    let departing = st.borg.goal.fleeing || st.borg.goal.leaving;
+    if st.flow.retreats.is_empty() || !departing || !crate::borg_caution::flight_goal(why, departing) {
+        return Vec::new();
+    }
+    let depth = st.borg.tr(BI_CDEPTH);
+    let window = crate::borg_caution::flight_retreat_ticks();
+    let threshold = crate::borg_caution::retreat_danger_threshold(st);
+    let mut retreats = std::mem::take(&mut st.flow.retreats);
+    retreats.retain_mut(|retreat| {
+        if retreat.state == RetreatLanding::Pending
+            || !retreat.still_applies(st.borg.c, depth, st.borg.time.level, st.borg.time.now, window)
+            || crate::borg_caution::retreat_hold_danger(st, retreat.from.y, retreat.from.x) <= threshold
+        {
+            return false;
+        }
+        if retreat.state == RetreatLanding::Confirmed {
+            retreat.state = RetreatLanding::Reported;
+            let note = format!("# Stair flight avoiding retreat grid ({},{})", retreat.from.x, retreat.from.y);
+            borg_note_bytes(st, note.as_bytes());
+        }
+        true
+    });
+    let blocked = retreats.iter().map(|r| r.from).collect();
+    st.flow.retreats = retreats;
+    blocked
+}
+
+pub(crate) fn with_retreat_avoidance<R>(st: &mut BorgState, why: i32, plan: impl FnOnce(&mut BorgState) -> R) -> R {
+    // Probes and the route they validate must use the same exclusions.
+    if st.flow.retreat_avoid.is_some() {
+        return plan(st);
+    }
+    st.flow.retreat_avoid = Some(active_retreat_grids(st, why));
+    let result = plan(st);
+    st.flow.retreat_avoid = None;
+    result
+}
+
 impl FlowState {
+    pub(crate) fn at_destination(&self, grid: loc) -> bool {
+        self.data_flow[grid.y as usize][grid.x as usize] == 0
+    }
+
+    fn observe_retreats(&mut self, here: loc, depth: i32, level_started: i32, now: i32, window: i32) {
+        self.retreats.retain_mut(|retreat| {
+            if !retreat.still_applies(here, depth, level_started, now, window) {
+                return false;
+            }
+            if retreat.state == RetreatLanding::Pending {
+                retreat.state = RetreatLanding::Confirmed;
+            }
+            true
+        });
+    }
+
+    pub(crate) fn has_retreat_exclusions(&self) -> bool {
+        self.retreat_avoid.as_ref().is_some_and(|grids| !grids.is_empty())
+    }
+
+    fn retreat_blocks(&self, grid: loc) -> bool {
+        self.retreat_avoid.as_ref().is_some_and(|grids| grids.contains(&grid))
+    }
+
     /// `borg_data_cost->data[y][x]`.
     pub fn cost_at(&self, y: i32, x: i32) -> u8 {
         self.data_cost[y as usize][x as usize]
@@ -292,6 +467,18 @@ pub fn borg_can_dig(st: &mut BorgState, check_fail: bool, feat: u8) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#1361 review, `wear_digger_keeps_weapon`): the combat
+    // weapon stays wielded, and the engine digs with the carried digger.
+    // Judge the dig by the skill with that digger in the weapon slot.
+    // Re-review: no usable carried digger is no answer, not a skill of 0,
+    // which the twitch allowance can bring a threshold down to. Second
+    // re-review: the twitch allowance can also bring a threshold below
+    // what the engine digs at all, so the carried skill must also give
+    // the terrain a chance.
+    if carried_digger_skill(st).is_some_and(|skill| skill >= dig_check && engine_dig_chance(skill, feat) > 0) {
+        return true;
+    }
+
     if (feat == FEAT_RUBBLE || feat == FEAT_PASS_RUBBLE) && st.borg.tr(BI_ISWEAK) == 0 {
         return true;
     }
@@ -313,6 +500,84 @@ pub fn borg_can_dig(st: &mut BorgState, check_fail: bool, feat: u8) -> bool {
     }
 
     false
+}
+
+/// borg-reborn-rs (#1361 re-review): the engine's chance, out of 1600 per
+/// turn, that digging skill `skill` opens terrain `feat`
+/// (player-calcs.c:1651-1665: calc_digging_chances, indexed by the
+/// terrain's `digging` class in terrain.txt: rubble 1, magma 2, quartz 3,
+/// granite 4, closed and secret doors 5; cmd-cave.c:579-580). 0 for
+/// terrain that is not dug.
+pub(crate) fn engine_dig_chance(skill: i32, feat: u32) -> i32 {
+    let chance = if feat == FEAT_RUBBLE || feat == FEAT_PASS_RUBBLE {
+        skill * 8
+    } else if feat == FEAT_MAGMA || feat == FEAT_MAGMA_K {
+        (skill - 10) * 4
+    } else if feat == FEAT_QUARTZ || feat == FEAT_QUARTZ_K {
+        (skill - 20) * 2
+    } else if feat == FEAT_GRANITE {
+        skill - 40
+    } else if feat == FEAT_CLOSED || feat == FEAT_SECRET {
+        (skill * 4 - 119) / 3
+    } else {
+        0
+    };
+    chance.max(0)
+}
+
+/// borg-reborn-rs (#1361 review): the digging skill with the best carried
+/// digger in the weapon slot, the one the engine wields for the turn of a
+/// tunnel command (cmd-cave.c:546-568, player-util.c:744-789: the best
+/// digging skill over the melee weapons, recalculated with each wielded).
+/// None with `wear_digger_keeps_weapon` at 0, with no carried digger, or
+/// with a sticky worn weapon, which the engine does not swap out. The kit
+/// is observed again with each digger wielded, so the result is kept for
+/// the rest of the Borg's turn.
+pub(crate) fn carried_digger_skill(st: &mut BorgState) -> Option<i32> {
+    use crate::borg_item::inven_wield;
+    use crate::headers::list_object_flags_h::OF_STICKY;
+    use std::cell::Cell;
+    thread_local! {
+        static CACHE: Cell<Option<(i32, Option<i32>)>> = const { Cell::new(None) };
+    }
+    if crate::params::value(crate::params::Param::wear_digger_keeps_weapon) == 0 {
+        return None;
+    }
+    let now = st.borg.time.now;
+    if let Some((time, skill)) = CACHE.get() {
+        if time == now {
+            return skill;
+        }
+    }
+    let wield = inven_wield() as usize;
+    let worn = st.items.items[wield];
+    let diggers: Vec<usize> = (0..wield)
+        .filter(|&i| {
+            let item = &st.items.items[i];
+            item.iqty > 0 && item.aware && u32::from(item.tval) == TV_DIGGING
+        })
+        .collect();
+    let mut best = None;
+    if !diggers.is_empty() && !engine::flag_has(&worn.flags, OF_STICKY as i32) {
+        let items = st.items.items.clone();
+        let borg = st.borg.clone();
+        let traits = st.traits.clone();
+        let home = st.home.clone();
+        let do_spell = std::mem::replace(&mut st.think.do_spell, false);
+        for i in diggers {
+            st.items.items[wield] = crate::borg_headers::borg_item_h::borg_item { iqty: 1, ..items[i] };
+            crate::borg_trait::borg_notice(st, false);
+            best = best.max(Some(st.borg.tr(BI_DIG)));
+            st.items.items = items.clone();
+        }
+        st.items.items = items;
+        st.borg = borg;
+        st.traits = traits;
+        st.home = home;
+        st.think.do_spell = do_spell;
+    }
+    CACHE.set(Some((now, best)));
+    best
 }
 
 /// Clear the "flow" information.
@@ -406,6 +671,14 @@ fn monster_adjacent(st: &BorgState, x: i32, y: i32) -> bool {
 
 /// The grid tests of `borg_flow_spread()` before the icky/know/danger
 /// checks: `true` if the flow may not enter `ag` at (x, y).
+/// borg-reborn-rs (#1153, review of #1158): could a flow at the normal
+/// avoidance enter (x, y)? The same test as every spread (`spread_blocked`):
+/// a closed door is open to it, lava only with fire immunity, an unknown grid
+/// not.
+pub(crate) fn flow_open(st: &BorgState, x: i32, y: i32) -> bool {
+    !spread_blocked(st, st.cave.grid(x, y), x, y, true, false, false)
+}
+
 fn spread_blocked(
     st: &BorgState,
     ag: &BorgGrid,
@@ -417,6 +690,10 @@ fn spread_blocked(
 ) -> bool {
     let b = &st.borg;
     let feat = u32::from(ag.feat);
+
+    if st.flow.retreat_blocks(loc { x, y }) {
+        return true;
+    }
 
     // borg-reborn-rs (#781): observed unseen occupancy blocks every spread.
     if crate::borg_caution::unseen_bump_blocked(st, x, y) {
@@ -459,6 +736,22 @@ fn spread_blocked(
     if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_reach_of_stepped_from(st, x, y) {
         return true;
     }
+    // borg-reborn-rs (#1125, `caution_paralyser_no_reach`): without Free
+    // Action, never onto a known paralyser's grid or next to it, stair
+    // flights included. Not the Borg's own grid, so a flow can lead out.
+    if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_paralyser_reach(st, x, y) {
+        return true;
+    }
+    // borg-reborn-rs (#1153, review of #1158): a loop's grids closed by the
+    // loop breaker are closed to every spread, so a flow routes around them.
+    if (x, y) != (b.c.x, b.c.y) && crate::borg_loop::step_banned(st, y, x) {
+        return true;
+    }
+    // borg-reborn-rs (#1147, `caution_walk_away_immobile`): never into a
+    // known walk-away monster's reach, stair flights included.
+    if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_walk_away_reach(st, x, y) {
+        return true;
+    }
     if ag.kill != 0 && crate::borg_caution::kept_at_range(st, usize::from(st.kills.kills[usize::from(ag.kill)].r_idx)) {
         return true;
     }
@@ -491,7 +784,8 @@ fn spread_blocked(
     }
 
     /* Avoid Traps if low level-- unless brave */
-    if ag.trap && !ag.glyph && !twitchy {
+    // borg-reborn-rs (#1067): not for `trap_way_back`'s own spread.
+    if ag.trap && !ag.glyph && !twitchy && !st.flow.through_traps && !crate::borg_trap_way::trap_underfoot_open(st, x, y) {
         /* Do not disarm when you could end up dead */
         if b.tr(BI_CURHP) < 60 {
             return true;
@@ -607,6 +901,7 @@ pub(crate) fn weighted_stair_path(
     let was = std::mem::replace(&mut st.flow.to_stairs, true);
     let twitchy = i32::from(st.borg.avoidance) > st.borg.tr(BI_CURHP);
     let hp = st.borg.tr(BI_CURHP);
+    let unknown_rule = crate::borg_caution::stair_flight_unknown_rule();
     let path = least_cost_stair_path(st.borg.c, stairs, depth.min(249), |grid| {
         let loc { x, y } = grid;
         if !engine::square_in_bounds_fully(x, y) {
@@ -621,10 +916,24 @@ pub(crate) fn weighted_stair_path(
         {
             return None;
         }
-        Some(stair_entry_cost(borg_danger(st, y, x, 1, true, false), hp, weight))
+        // borg-reborn-rs (#881): an unknown grid is priced or refused.
+        let unknown = flight_unknown_extra(u32::from(ag.feat) == FEAT_NONE, unknown_rule)?;
+        Some(stair_entry_cost(borg_danger(st, y, x, 1, true, false), hp, weight) + unknown)
     });
     st.flow.to_stairs = was;
     path
+}
+
+/// borg-reborn-rs (#881): the extra cost, in hundredths of a step, of
+/// entering a grid on a weighted stair flight; None refuses it. Unseen rock
+/// behind the pillars of a lattice room looked like a shortcut to the
+/// corridor (Priest 399497898: 58 of 68 flight paths crossed it).
+fn flight_unknown_extra(unknown: bool, (mode, steps): (i32, i32)) -> Option<u64> {
+    match (unknown, mode) {
+        (false, _) | (true, 0) => Some(0),
+        (true, 1) => Some(100 * steps.max(0) as u64),
+        _ => None,
+    }
 }
 
 pub(crate) struct StairPath {
@@ -762,11 +1071,33 @@ pub fn borg_flow_spread_hunting(
 pub fn borg_flow_spread(
     st: &mut BorgState,
     depth: i32,
+    optimize: bool,
+    avoid: bool,
+    tunneling: bool,
+    stair_idx: i32,
+    sneak: bool,
+) {
+    spread(st, depth, optimize, avoid, tunneling, stair_idx, sneak, None);
+}
+
+pub(crate) fn spread_stair_scum_loot(
+    st: &mut BorgState,
+    depth: i32,
+    avoid: bool,
+    map: &crate::borg_stair_scum::Map,
+) {
+    spread(st, depth, true, avoid, false, -1, true, Some(map));
+}
+
+fn spread(
+    st: &mut BorgState,
+    depth: i32,
     mut optimize: bool,
     avoid: bool,
     tunneling: bool,
     stair_idx: i32,
     sneak: bool,
+    stair_scum: Option<&crate::borg_stair_scum::Map>,
 ) {
     let mut o = 0;
 
@@ -832,6 +1163,14 @@ pub fn borg_flow_spread(
 
             /* Skip "reached" grids */
             if i32::from(st.flow.data_cost[y as usize][x as usize]) <= n {
+                continue;
+            }
+
+            // The spread runs backwards from the target. Test the forward
+            // step from the candidate predecessor to the queued grid.
+            if stair_scum.is_some_and(|map| {
+                !map.allows_step(st, loc { x, y }, loc { x: x1, y: y1 })
+            }) {
                 continue;
             }
 
@@ -907,6 +1246,25 @@ fn borg_flow_ignores_danger(st: &BorgState) -> bool {
 
 /// Enqueue a fresh (legal) starting grid, if it is safe.
 pub fn borg_flow_enqueue_grid(st: &mut BorgState, y: i32, x: i32) {
+    if st.flow.retreat_blocks(loc { x, y }) {
+        return;
+    }
+    // borg-reborn-rs (#1153, review of #1158): no destination on a grid the
+    // loop breaker closed.
+    if crate::borg_loop::step_banned(st, y, x) {
+        return;
+    }
+    // borg-reborn-rs (#1125, review of #1129, finding 1): a destination in a
+    // known paralyser's reach is not seeded either (`spread_blocked` only
+    // sees the grids the flow spreads to; a staircase next to a floating eye
+    // was still a goal). Not the Borg's own grid.
+    if (x, y) != (st.borg.c.x, st.borg.c.y) && crate::borg_caution::in_paralyser_reach(st, x, y) {
+        return;
+    }
+    // borg-reborn-rs (#1147): nor in a walk-away monster's reach.
+    if (x, y) != (st.borg.c.x, st.borg.c.y) && crate::borg_caution::in_walk_away_reach(st, x, y) {
+        return;
+    }
     // borg-reborn-rs (#781): a blocked staircase must not seed a flow.
     if crate::borg_caution::unseen_bump_blocked(st, x, y) {
         return;
@@ -979,10 +1337,12 @@ pub fn flow_commit(st: &mut BorgState, who: Option<&[u8]>, why: i32) -> bool {
     let f = &mut st.flow;
     copy_data(&mut f.data_flow, &f.data_cost);
     f.weighted_flight = WeightedFlight::None;
+    f.stair_scum_loot = false;
     f.up_stair_flight = why == GOAL_FLEE && who == Some(b"up-stairs");
 
     /* Save the goal type */
     st.borg.goal.type_0 = why as i16;
+    st.flow.commit_seq = st.flow.commit_seq.wrapping_add(1); // borg-reborn-rs (#1130)
     // borg-reborn-rs (#614, review of #616): only a stair flow sets it again.
     st.borg.flight_to_stairs = false;
 
@@ -1027,6 +1387,21 @@ fn note_at(st: &mut BorgState, prefix: &str, name: &[u8], y: i32, x: i32) {
     borg_note_bytes(st, &msg);
 }
 
+/// borg-reborn-rs (#1206, review 3): the escape context's own record of
+/// itself. `borg_think_dungeon` observes it at the start of every dungeon
+/// think, before the goals are re-planned; the scare-goal withdrawal
+/// observes it too (through `borg_caution`'s
+/// `withdraw_scare_and_observe`), because a scare can be withdrawn and
+/// re-armed within one think and the flags never read off across a think
+/// boundary. The remembered door openings die with the escape that
+/// opened them: a disarm ends that escape even when the breeder
+/// containment never gets a turn in between.
+pub(crate) fn escape_context_tick(st: &mut BorgState) {
+    if !(st.borg.goal.fleeing || st.borg.goal.leaving) {
+        st.flow.escape_last_disarm = st.borg.time.now;
+    }
+}
+
 /// Breeder levels: close an open door next to the Borg (not the goal
 /// grid). `true` if a door was found (and a close queued).
 fn close_breeder_door(st: &mut BorgState, y2: i32, x2: i32) -> bool {
@@ -1058,6 +1433,31 @@ fn close_breeder_door(st: &mut BorgState, y2: i32, x2: i32) -> bool {
 
             /* skip our original goal */
             if oy + cy == y2 && ox + cx == x2 {
+                continue;
+            }
+
+            // borg-reborn-rs (#1206): skip a door the active escape flight
+            // opened recently — the flow replans after each terrain change
+            // and its new next grid loses the goal-side skip above, which
+            // closed the just-opened door and re-opened it every ten turns
+            // (Borg261124194229: 35 open/close pairs from one square). The
+            // exemption lives only inside the continuous armed run that
+            // opened the door: the armed flags must be set now, no disarm
+            // may have been observed since the open (the escape never
+            // ended — `escape_last_disarm`), and the undo window must not
+            // have expired.
+            if (st.borg.goal.fleeing || st.borg.goal.leaving)
+                && st
+                    .flow
+                    .opened_doors
+                    .iter()
+                    .any(|(x, y, t)| {
+                        *x == ox + cx
+                            && *y == oy + cy
+                            && st.borg.time.now - *t <= OPENED_DOOR_UNDO_TURNS
+                            && st.flow.escape_last_disarm <= *t
+                    })
+            {
                 continue;
             }
 
@@ -1299,6 +1699,8 @@ fn step_closed_door(st: &mut BorgState, dir: i32) -> bool {
         borg_keypress(st, keycode_t::from(b'o'));
     }
     borg_queue_direction(st, i2d(dir));
+    // borg-reborn-rs (#1061): stair_scum peeks before walking through.
+    crate::borg_stair_scum::opened_door(st, dir);
 
     /* Remove this closed door from the list.
      * Its faster to clear all doors from the list
@@ -1308,11 +1710,32 @@ fn step_closed_door(st: &mut BorgState, dir: i32) -> bool {
         st.flow.track_closed.num = 0;
     }
 
+    // borg-reborn-rs (#1206): remember the door this flight just opened so
+    // the breeder containment does not close it again while the flight
+    // walks through it. Only the escape context records: a door opened by
+    // ordinary play (exploration, an unrelated flow) must stay closable by
+    // a later deliberate containment.
+    if st.borg.goal.fleeing || st.borg.goal.leaving {
+        let opened = (
+            st.borg.c.x + i32::from(engine::ddx(dir as usize)),
+            st.borg.c.y + i32::from(engine::ddy(dir as usize)),
+            st.borg.time.now,
+        );
+        st.flow.opened_doors.retain(|&(x, y, _)| !(x == opened.0 && y == opened.1));
+        st.flow.opened_doors.push(opened);
+        if st.flow.opened_doors.len() > OPENED_DOOR_KEEP {
+            let excess = st.flow.opened_doors.len() - OPENED_DOOR_KEEP;
+            st.flow.opened_doors.drain(0..excess);
+        }
+    }
+
     true
 }
 
 /// Take one "step" towards the given location, return true if possible.
-fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
+// borg-reborn-rs (#1206): `pub(crate)` so the decision fixture can drive
+// the step directly (the breeder-door loop is a per-step behavior).
+pub(crate) fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
     /* Breeder levels, close all doors */
     if st.borg.near.breeder && close_breeder_door(st, y2, x2) {
         return true;
@@ -1407,6 +1830,7 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
             borg_keypress(st, keycode_t::from(b';'));
             st.borg.status.no_alter = false;
         } else {
+            crate::borg_update::note_alter_door_attack(st, loc { x, y }, ag.kill);
             borg_keypress(st, keycode_t::from(b'+'));
         }
         borg_keypress(st, i2d(dir));
@@ -1466,6 +1890,7 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
 
         /* Disarm */
         borg_note(st, "# Disarming a trap");
+        crate::borg_trap_way::note_disarm(st, x, y); // borg-reborn-rs (#1067)
         borg_keypress(st, keycode_t::from(b'D'));
         borg_queue_direction(st, i2d(dir));
 
@@ -1496,6 +1921,11 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
     if (FEAT_SECRET..=FEAT_GRANITE).contains(&feat) {
         /* Don't dig walls and seams when exploring (do dig rubble) */
         if feat != FEAT_RUBBLE && i32::from(st.borg.goal.type_0) == GOAL_DARK {
+            // borg-reborn-rs (#1189): say why the committed flow produces no
+            // step: the goal grid is a wall or seam, and exploring does not
+            // dig. Without the note, a loop like #1189's shows commits
+            // ("dark-bfs (ring 10) at cost 1") with no reason behind them.
+            borg_note(st, &format!("# Exploring: the goal at ({y},{x}) needs a dig; no step"));
             return false;
         }
 
@@ -1522,6 +1952,12 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
         }
 
         /* Switch to a digger if we have one is automatic */
+
+        // borg-reborn-rs (#1353): remember the rubble grid being dug; the
+        // engine's "You have removed the rubble" names no direction. A
+        // confused tunnel goes in another direction, so none is recorded.
+        st.flow_misc.dug_rubble =
+            (feat == FEAT_RUBBLE && st.borg.tr(BI_ISCONFUSED) == 0).then_some(loc { x, y });
 
         /* Dig */
         borg_note(st, "# Digging through wall/etc");
@@ -1591,16 +2027,215 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
 /// choice of locations based on some useful computations.
 ///
 /// If it works, return true, otherwise, cancel the goal and return false.
+/// borg-reborn-rs (#1130): a committed brave stair walk (`Borg::brave_walk`).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct BraveWalk {
+    /// The level it was started on (`time.level`).
+    pub level: BorgTime,
+    /// The avoidance the walk was spread with.
+    pub avoidance: i16,
+    /// The think of its last step (`time.now`).
+    pub last: BorgTime,
+    /// The steps it may still take.
+    pub steps_left: i32,
+    /// The flow it committed (`FlowState::commit_seq`): another flow taking
+    /// over ends the walk (review of #1152).
+    pub seq: u32,
+    /// The stair search that started it, used again to rebuild its route
+    /// (review of #1152).
+    pub kind: BraveStairs,
+    /// Started by the loop breaker (#1153): continued under `loop_breaker`,
+    /// at whatever avoidance it was spread with.
+    pub from_loop: bool,
+}
+
+/// #1130 (review of #1152): which stair search a brave walk started with.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum BraveStairs {
+    /// `borg_flow_stair_less`.
+    Up,
+    /// `borg_flow_stair_both` (the return leash's any staircase, #1062).
+    Any,
+    /// `borg_flow_stair_more` (brave).
+    Down,
+}
+
+/// #1130: how many thinks after its last step a brave walk is still
+/// continued (a think spent on something else, an attack or a rest, does not
+/// drop it).
+const BRAVE_WALK_GAP: BorgTime = 3;
+
+/// #1130: steps a brave walk may take beyond the route's cost when it starts
+/// (a route through unknown grids changes as they are seen).
+const BRAVE_WALK_SLACK: i32 = 10;
+
+/// #1130 (Blackguard 312081895: 60,000 turns between two grids): a stair
+/// walk under boosted bravery took one step; the next think, at the normal
+/// avoidance, its step was refused (the goal cancelled) and exploration took
+/// the step back; the stuck think then boosted again. With
+/// `flow_brave_walk_commit`, the walk is committed: `borg_flow_old`
+/// continues it with the avoidance it was spread with, while it is recent, has
+/// steps left, is on its own level, and the Borg is in no danger above half
+/// its HP here (a monster that shows up is caution's).
+pub(crate) fn brave_walk_avoidance(st: &BorgState, danger_here: i32) -> Option<i16> {
+    use crate::params::{value, Param};
+    let w = st.borg.brave_walk?;
+    if !own_flow(w, st.flow.commit_seq) {
+        return None;
+    }
+    let on = if w.from_loop { value(Param::loop_breaker) != 0 } else { value(Param::flow_brave_walk_commit) != 0 };
+    brave_walk_live(
+        on,
+        w,
+        st.borg.time.level,
+        st.borg.time.now,
+        danger_here,
+        st.borg.tr(BI_CURHP),
+    )
+    .then_some(w.avoidance)
+}
+
+/// #1130 (review of #1152): is the walk's own flow the current one? Another
+/// flow committed since (a breeder exit, a kill flow...) ends it.
+fn own_flow(w: BraveWalk, commit_seq: u32) -> bool {
+    w.seq == commit_seq
+}
+
+/// #1130 (review of #1152): the walk after one continued step, at think
+/// `now`, its flow now `commit_seq` (a rebuild commits a new one): one step
+/// is charged, whether the old route or a rebuilt one took it.
+fn advance(w: BraveWalk, now: BorgTime, commit_seq: u32) -> BraveWalk {
+    BraveWalk { last: now, steps_left: w.steps_left - 1, seq: commit_seq, ..w }
+}
+
+/// #1130: the conditions of `brave_walk_avoidance`, without the engine.
+fn brave_walk_live(on: bool, w: BraveWalk, level: BorgTime, now: BorgTime, danger_here: i32, curhp: i32) -> bool {
+    on && w.level == level && now.wrapping_sub(w.last) <= BRAVE_WALK_GAP && w.steps_left > 0 && danger_here <= curhp / 2
+}
+
+/// #1130 (review of #1152): record the brave walk the brave think's stair
+/// search `kind` just committed, only while the avoidance is boosted (above
+/// the HP): its budget is the route's cost here plus `BRAVE_WALK_SLACK`.
+pub(crate) fn commit_brave_walk(st: &mut BorgState, kind: BraveStairs) {
+    use crate::params::{value, Param};
+    if value(Param::flow_brave_walk_commit) == 0
+        || i32::from(st.borg.goal.type_0) != GOAL_FLEE
+        || i32::from(st.borg.avoidance) <= st.borg.tr(BI_CURHP)
+    {
+        return;
+    }
+    let cost = i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize]);
+    st.borg.brave_walk = Some(BraveWalk {
+        level: st.borg.time.level,
+        avoidance: st.borg.avoidance,
+        last: st.borg.time.now,
+        steps_left: cost.saturating_add(BRAVE_WALK_SLACK),
+        seq: st.flow.commit_seq,
+        kind,
+        from_loop: false,
+    });
+}
+
+/// #1153: commit the stair walk the loop breaker just started (at the normal
+/// avoidance, or boosted), so the next thinks continue it as a brave walk is
+/// continued (#1130): a walk taken for one step and then dropped would let
+/// the loop start again.
+pub(crate) fn commit_loop_walk(st: &mut BorgState, kind: BraveStairs) {
+    use crate::params::{value, Param};
+    if value(Param::loop_breaker) == 0 || i32::from(st.borg.goal.type_0) != GOAL_FLEE {
+        return;
+    }
+    let cost = i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize]);
+    st.borg.brave_walk = Some(BraveWalk {
+        level: st.borg.time.level,
+        avoidance: st.borg.avoidance,
+        last: st.borg.time.now,
+        steps_left: cost.saturating_add(BRAVE_WALK_SLACK),
+        seq: st.flow.commit_seq,
+        kind,
+        from_loop: true,
+    });
+}
+
 pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
+    // borg-reborn-rs (#1130): a committed brave stair walk continues with the
+    // avoidance it was spread with.
+    if why == GOAL_FLEE && i32::from(st.borg.goal.type_0) == GOAL_FLEE {
+        // The rebuild's own first step (its stair search calls back here):
+        // only the step; the outer call does the accounting (review of #1152).
+        if BRAVE_WALK_RESPREAD.with(std::cell::Cell::get) {
+            return borg_flow_old_step(st, why);
+        }
+        let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+        if let (Some(to), Some(walk)) = (brave_walk_avoidance(st, here), st.borg.brave_walk) {
+            let saved = st.borg.avoidance;
+            st.borg.avoidance = to;
+            st.danger.wipe = true;
+            // The flow buffer is shared: other spreads earlier in this think
+            // may have replaced the walk's, so the route is rebuilt with the
+            // walk's own stair search when the old step does not go.
+            let mut stepped = borg_flow_old_step(st, why);
+            if !stepped {
+                BRAVE_WALK_RESPREAD.with(|busy| busy.set(true));
+                stepped = brave_walk_respread(st, walk.kind);
+                BRAVE_WALK_RESPREAD.with(|busy| busy.set(false));
+            }
+            st.borg.avoidance = saved;
+            st.danger.wipe = true;
+            st.borg.brave_walk = stepped.then(|| advance(walk, st.borg.time.now, st.flow.commit_seq));
+            if stepped {
+                borg_note(st, "# Continuing the brave stair walk (#1130)");
+            }
+            return stepped;
+        }
+    }
+    borg_flow_old_step(st, why)
+}
+
+thread_local! {
+    /// #1130: set while a brave walk's route is spread again, whose own
+    /// `borg_flow_old` must not spread it again in turn.
+    static BRAVE_WALK_RESPREAD: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// #1130 (review of #1152): rebuild a brave walk's route with the stair
+/// search that started it.
+fn brave_walk_respread(st: &mut BorgState, kind: BraveStairs) -> bool {
+    match kind {
+        BraveStairs::Up => borg_flow_stairs::borg_flow_stair_less(st, GOAL_FLEE, false),
+        BraveStairs::Any => borg_flow_stairs::borg_flow_stair_both(st, GOAL_FLEE, false),
+        BraveStairs::Down => borg_flow_stairs::borg_flow_stair_more(st, GOAL_FLEE, false, true),
+    }
+}
+
+fn borg_flow_old_step(st: &mut BorgState, why: i32) -> bool {
     /* Continue */
     if i32::from(st.borg.goal.type_0) != why {
         /* Nothing to do */
         return false;
     }
 
+    // A cached stair flow can outlive a change in danger or the return policy.
+    // Replan if a down staircase that seeded this flow is now held (#1159).
+    if st.borg.flight_to_stairs && crate::borg_caution::rising_checks_stair_targets(st)
+        && (0..st.stairs.more.num.max(0) as usize).any(|i| {
+            let (y, x) = st.stairs.more.at(i);
+            st.flow.data_flow[y as usize][x as usize] == 0
+                && crate::borg_caution::rising_holds_stair_target(st, y, x)
+        })
+    {
+        st.borg.goal.type_0 = 0;
+        return false;
+    }
+
+    let stair_scum = if st.flow.stair_scum_loot {
+        crate::borg_stair_scum::Map::of(st)
+    } else {
+        None
+    };
     let next = match st.flow.weighted_flight {
         WeightedFlight::None => {
-            let i = select_step(st);
+            let i = select_step(st, stair_scum.as_ref());
             (i >= 0).then(|| loc {
                 x: st.borg.c.x + i32::from(engine::ddx_ddd(i as usize)),
                 y: st.borg.c.y + i32::from(engine::ddy_ddd(i as usize)),
@@ -1616,6 +2251,15 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
             return false;
         }
     };
+
+    // A continued stair flow may have been spread before the retreat.
+    if st.borg.flight_to_stairs && next.is_some_and(|grid| {
+        st.flow.retreats.iter().any(|retreat| retreat.from == grid)
+            && with_retreat_avoidance(st, why, |st| st.flow.retreat_blocks(grid))
+    }) {
+        st.borg.goal.type_0 = 0;
+        return false;
+    }
 
     // borg-reborn-rs (#551): a Druid's flight step: Fox Form first.
     if next.is_some() && why == GOAL_FLEE {
@@ -1633,6 +2277,15 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
     // borg-reborn-rs (#620): a low-level Druid's walk in town: Fox Form first.
     if next.is_some() && crate::borg_escape::fox_form_before_town_step(st, why, i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize])) {
         return true;
+    }
+
+    // borg-reborn-rs (#1061, review P1): stair_scum checks every voluntary
+    // step, a resumed flow's too, against its safe area.
+    if !st.flow.stair_scum_loot
+        && next.is_some_and(|n| !crate::borg_stair_scum::step_allowed(st, why, n.y, n.x))
+    {
+        st.borg.goal.type_0 = 0;
+        return false;
     }
 
     /* Try it */
@@ -1664,8 +2317,12 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
         } else {
             None
         };
-        /* Attempt motion */
         if borg_play_step(st, y, x) {
+            match why {
+                GOAL_DARK => borg_flow_misc::notice_interrupted_spastic_search(st, loc { x, y }),
+                borg_flow_misc::GOAL_XTRA => borg_flow_misc::record_spastic_approach(st, loc { x, y }),
+                _ => {}
+            }
             st.stairs.up_search_departure = departure;
             if st.borg.tr(BI_CDEPTH) > 0 {
                 let emergency_down = why == GOAL_FLEE && st.borg.flight_to_stairs
@@ -1695,7 +2352,7 @@ pub(crate) fn up_stair_search_can_continue(st: &BorgState, stair: loc) -> bool {
     if i32::from(st.borg.goal.type_0) != GOAL_DARK {
         return false;
     }
-    let step = select_step(st);
+    let step = select_step(st, None);
     if step < 0 {
         return false;
     }
@@ -1706,7 +2363,7 @@ pub(crate) fn up_stair_search_can_continue(st: &BorgState, stair: loc) -> bool {
 
 /// The "Look around" part of `borg_flow_old()`: the direction index
 /// (`ddx_ddd`) of the best next grid along the committed flow, or -1.
-fn select_step(st: &BorgState) -> i32 {
+pub(crate) fn select_step(st: &BorgState, stair_scum: Option<&crate::borg_stair_scum::Map>) -> i32 {
     let mut b_n = 0;
     let mut b_i: i32 = -1;
 
@@ -1730,8 +2387,20 @@ fn select_step(st: &BorgState) -> i32 {
             continue;
         }
 
+        // borg-reborn-rs (#1153, review of #1158): a cached route never steps
+        // onto a grid the loop breaker closed.
+        if crate::borg_loop::step_banned(st, y, x) {
+            continue;
+        }
+
         /* avoid screen edges */
         if !(1..AUTO_MAX_X).contains(&x) || !(1..AUTO_MAX_Y).contains(&y) {
+            continue;
+        }
+
+        // A lower-cost neighbour can have been reached from another
+        // predecessor even when the edge from here is forbidden.
+        if stair_scum.is_some_and(|map| !map.allows_step(st, st.borg.c, loc { x, y })) {
             continue;
         }
 
@@ -1819,6 +2488,25 @@ pub fn borg_free_flow(st: &mut BorgState) {
 
 #[cfg(test)]
 mod tests {
+    /// #1361 re-review: the engine's digging chances by terrain
+    /// (player-calcs.c:1655-1664). Granite needs skill above 40; the
+    /// re-review's plain shovel at 31 has none.
+    #[test]
+    fn engine_dig_chance_follows_calc_digging_chances() {
+        use super::engine_dig_chance as chance;
+        use crate::headers::list_terrain_h::*;
+        assert_eq!(chance(31, FEAT_GRANITE), 0);
+        assert_eq!(chance(40, FEAT_GRANITE), 0);
+        assert_eq!(chance(41, FEAT_GRANITE), 1);
+        assert_eq!(chance(5, FEAT_MAGMA), 0);
+        assert_eq!(chance(11, FEAT_MAGMA_K), 4);
+        assert_eq!(chance(25, FEAT_QUARTZ), 10);
+        assert_eq!(chance(2, FEAT_RUBBLE), 16);
+        assert_eq!(chance(30, FEAT_CLOSED), 0);
+        assert_eq!(chance(31, FEAT_SECRET), 1);
+        assert_eq!(chance(100, FEAT_PERM), 0);
+    }
+
     use super::*;
 
     #[test]
@@ -1926,6 +2614,32 @@ mod breeder_block_tests {
         assert_eq!(stair_entry_cost(1, 20, 1), 105);
     }
 
+    /// #881: priced, an unknown shortcut loses to a longer known route;
+    /// refused, it is never entered; mode 0 keeps one step.
+    #[test]
+    fn weighted_stairs_price_or_refuse_unknown_grids() {
+        assert_eq!(flight_unknown_extra(true, (0, 5)), Some(0));
+        assert_eq!(flight_unknown_extra(false, (2, 5)), Some(0));
+        assert_eq!(flight_unknown_extra(true, (1, 5)), Some(500));
+        assert_eq!(flight_unknown_extra(true, (2, 5)), None);
+        // Straight east through three unknown grids (row 3), or round by
+        // known floor on row 5 (six moves).
+        let start = loc { x: 2, y: 3 };
+        let stair = loc { x: 6, y: 3 };
+        let route = |rule| {
+            let enter = |loc { x, y }| match (x, y) {
+                (3..=5, 3) => flight_unknown_extra(true, rule).map(|extra| 100 + extra),
+                (2 | 6, 4) | (3..=5, 5) | (6, 3) => Some(100),
+                _ => None,
+            };
+            least_cost_stair_path(start, &[stair], 10, enter).map(|path| path.grids[1])
+        };
+        assert_eq!(route((0, 5)), Some(loc { x: 3, y: 3 }));
+        assert_eq!(route((1, 5)), Some(loc { x: 2, y: 4 }));
+        assert_eq!(route((1, 0)), Some(loc { x: 3, y: 3 }));
+        assert_eq!(route((2, 5)), Some(loc { x: 2, y: 4 }));
+    }
+
     #[test]
     fn weighted_stairs_route_around_blocked_grids_or_refuse_the_only_corridor() {
         let start = loc { x: 2, y: 3 };
@@ -1988,6 +2702,31 @@ pub(crate) fn c_leash() -> CLeash {
     }
 }
 
+/// borg-reborn-rs (#1062): the switches for the holes of C's leash
+/// (`borg_leash.rs`), read here as the registry's `flow_` file wants.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct LeashHoles {
+    pub any_stair: bool,
+    pub unknown_stair_steps: i32,
+    pub teleported_recall: bool,
+    pub recall_max_level: i32,
+    pub recall_steps: i32,
+    pub recall_min_jump: i32,
+}
+
+/// The `LeashHoles` parameters, on each use (not cached).
+pub(crate) fn leash_holes() -> LeashHoles {
+    use crate::params::{value, Param};
+    LeashHoles {
+        any_stair: value(Param::flow_leash_any_stair) != 0,
+        unknown_stair_steps: value(Param::flow_leash_unknown_stair_steps),
+        teleported_recall: value(Param::flow_leash_teleported_recall) != 0,
+        recall_max_level: value(Param::flow_leash_recall_max_level),
+        recall_steps: value(Param::flow_leash_recall_steps),
+        recall_min_jump: value(Param::flow_leash_recall_min_jump),
+    }
+}
+
 #[cfg(test)]
 mod stair_loop_tests {
     use super::*;
@@ -2023,3 +2762,144 @@ mod stair_loop_tests {
         assert_ne!(next.grids[1], beside);
     }
 }
+
+#[cfg(test)]
+mod retreat_flight_tests {
+    use super::*;
+
+    fn grid(x: i32, y: i32) -> loc {
+        loc { x, y }
+    }
+
+    #[test]
+    fn the_abandoned_grid_needs_a_confirmed_landing_on_this_level() {
+        let retreat = FlightRetreat {
+            from: grid(27, 22),
+            landing: grid(26, 21),
+            depth: 2,
+            level_started: 100,
+            turn: 105,
+            state: RetreatLanding::Pending,
+        };
+        assert!(retreat.still_applies(retreat.landing, 2, 100, 106, 8));
+        assert!(!retreat.still_applies(retreat.from, 2, 100, 106, 8));
+        assert!(!retreat.still_applies(grid(28, 21), 2, 100, 106, 8));
+        assert!(!retreat.still_applies(retreat.landing, 1, 100, 106, 8));
+        assert!(!retreat.still_applies(retreat.landing, 2, 106, 107, 8));
+        assert!(!retreat.still_applies(retreat.landing, 2, 100, 114, 8));
+        assert!(!retreat.still_applies(retreat.landing, 2, 100, 106, 0));
+
+        let confirmed = FlightRetreat { state: RetreatLanding::Confirmed, ..retreat };
+        assert!(confirmed.still_applies(grid(25, 22), 2, 100, 107, 8));
+        assert!(!confirmed.still_applies(retreat.from, 2, 100, 107, 8));
+        assert!(confirmed.still_applies(grid(24, 22), 2, 100, 108, 8));
+    }
+
+    #[test]
+    fn two_landings_are_confirmed_before_any_stair_plan() {
+        let a = grid(95, 13);
+        let b = grid(94, 13);
+        let c = grid(93, 12);
+        let mut flow = FlowState::default();
+        let first = FlightRetreat {
+            from: a,
+            landing: b,
+            depth: 2,
+            level_started: 100,
+            turn: 105,
+            state: RetreatLanding::Pending,
+        };
+        flow.retreats.push(first);
+        flow.observe_retreats(b, 2, 100, 106, 128);
+        flow.retreats.push(FlightRetreat { from: b, landing: c, turn: 106, ..first });
+        flow.observe_retreats(c, 2, 100, 107, 128);
+        assert_eq!(flow.retreats.iter().map(|r| r.from).collect::<Vec<_>>(), vec![a, b]);
+        assert!(flow.retreats.iter().all(|r| r.state == RetreatLanding::Confirmed));
+    }
+
+    #[test]
+    fn a_second_retreat_does_not_open_the_first_square_again() {
+        let start = grid(94, 14);
+        let stair = grid(96, 12);
+        let previous = grid(95, 13);
+        let latest = grid(95, 14);
+        let alternatives = [grid(94, 13), grid(95, 12)];
+        let mut flow = FlowState::default();
+        flow.retreat_avoid = Some(vec![previous, latest]);
+        let path = least_cost_stair_path(start, &[stair], 3, |at| {
+            (!flow.retreat_blocks(at) && (at == stair || alternatives.contains(&at))).then_some(100)
+        }).unwrap();
+        assert_eq!(path.grids, vec![start, alternatives[0], alternatives[1], stair]);
+    }
+
+    #[test]
+    fn both_retreat_wings_take_a_detour_instead_of_reentering_the_middle() {
+        // Mage: the stair flow returns to the middle from either retreat
+        // landing. Ranger: the same graph with only the left landing.
+        let middle = grid(27, 22);
+        let stair = grid(27, 24);
+        let corridor = [middle, grid(27, 23), stair];
+        let left = grid(26, 21);
+        let right = grid(28, 21);
+        let detours = [grid(25, 22), grid(25, 23), grid(26, 24), grid(29, 22), grid(29, 23), grid(28, 24)];
+        let mut flow = FlowState::default();
+
+        for landing in [left, right] {
+            let enter = |flow: &FlowState, at| {
+                (!flow.retreat_blocks(at) && (corridor.contains(&at) || detours.contains(&at)))
+                    .then_some(if at == middle { 101 } else { 100 })
+            };
+            flow.retreat_avoid = None;
+            let original = least_cost_stair_path(landing, &[stair], 4, |at| enter(&flow, at)).unwrap();
+            assert_eq!(original.grids[1], middle);
+
+            flow.retreat_avoid = Some(vec![middle]);
+            let detour = least_cost_stair_path(landing, &[stair], 4, |at| enter(&flow, at)).unwrap();
+            assert_eq!(detour.grids.last(), Some(&stair));
+            assert!(!detour.grids.contains(&middle));
+            assert!(least_cost_stair_path(landing, &[stair], 4, |at| {
+                (!flow.retreat_blocks(at) && corridor.contains(&at)).then_some(100)
+            }).is_none());
+        }
+    }
+}
+
+#[cfg(test)]
+mod brave_walk_tests {
+    use super::*;
+
+    fn walk() -> BraveWalk {
+        BraveWalk { level: 1000, avoidance: 92, last: 1100, steps_left: 5, seq: 7, kind: BraveStairs::Up, from_loop: false }
+    }
+
+    #[test]
+    fn a_committed_brave_walk_continues_on_its_level_while_recent() {
+        // #1130: Blackguard 312081895, 46 HP, a walk spread at avoidance 92.
+        assert!(brave_walk_live(true, walk(), 1000, 1101, 0, 46), "the next think");
+        assert!(brave_walk_live(true, walk(), 1000, 1103, 0, 46), "a pause of a few thinks");
+        assert!(!brave_walk_live(true, walk(), 1000, 1104, 0, 46), "too old");
+        assert!(!brave_walk_live(true, walk(), 1200, 1101, 0, 46), "another level");
+        assert!(!brave_walk_live(true, BraveWalk { steps_left: 0, ..walk() }, 1000, 1101, 0, 46), "no steps left");
+        assert!(!brave_walk_live(true, walk(), 1000, 1101, 24, 46), "danger above half the HP: caution's");
+        assert!(brave_walk_live(true, walk(), 1000, 1101, 23, 46));
+        assert!(!brave_walk_live(false, walk(), 1000, 1101, 0, 46), "the switch off: C");
+    }
+
+    #[test]
+    fn one_step_is_charged_per_continuation_and_another_flow_ends_the_walk() {
+        // Review of #1152, findings 1 and 2.
+        let w = walk();
+        let next = advance(w, 1101, 9);
+        assert_eq!(next.steps_left, 4, "one step, even when the route was rebuilt (a new flow)");
+        assert_eq!(next.seq, 9, "the rebuilt flow is the walk's own");
+        assert_eq!(next.kind, BraveStairs::Up, "the stair search is kept for the next rebuild");
+        assert!(own_flow(next, 9));
+        assert!(!own_flow(next, 10), "a breeder exit or any other flow committed since");
+    }
+
+    #[test]
+    fn the_switch_ships_off_in_the_code() {
+        assert_eq!(crate::params::value(crate::params::Param::flow_brave_walk_commit), 0);
+    }
+}
+

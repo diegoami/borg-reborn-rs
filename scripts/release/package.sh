@@ -9,10 +9,7 @@
 # Writes OUTDIR/borg-reborn-rs-VERSION-PLATFORM-ARCH.tar.gz (.zip on Windows)
 # and prints its path. Runs where the build ran: bash with GNU coreutils
 # (macOS: Homebrew's) and Python 3.
-# The package plays what a harness run plays: harness/borg.txt (class files
-# folded in) and its scary list, prepared as harness/run.sh prepares a run's
-# user/borg.txt, written into the package's lib/user/, which a game started
-# directly reads (no launcher is shipped).
+# Ship the canonical harness/pborg.yaml and its scary list in lib/user/.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 [ $# -ge 5 ] || { sed -n '2,15p' "$0" >&2; exit 2; }
@@ -52,7 +49,7 @@ done
 ARCH=$(uname -m); [ "$ARCH" != aarch64 ] || ARCH=arm64
 NAME="borg-reborn-rs-$VERSION-$PLATFORM-$ARCH"
 STAGE="$OUT/$NAME"
-rm -rf "$STAGE"; mkdir -p "$STAGE"/borg/plans "$STAGE"/borg/class "$STAGE"/docs "$STAGE"/LICENSES
+rm -rf "$STAGE"; mkdir -p "$STAGE"/borg "$STAGE"/docs "$STAGE"/LICENSES
 
 # The game: each build as its own executable, sharing the game data.
 FIRST=""
@@ -70,14 +67,10 @@ for b in "${BUILDS[@]}"; do
     fi
 done
 
-# The Borg's settings, as harness/run.sh writes a run's user/borg.txt
-# before it substitutes the run's race and class (harness/prepare-borg-txt.sh,
-# shared with watch-borg.sh and harness/play.sh).
-BT="$STAGE/borg/borg.txt"
-"$ROOT/harness/prepare-borg-txt.sh" "$STAGE/borg"
-# The class files are already folded into borg.txt; shipped for reading.
-cp "$ROOT"/harness/borg_*.txt "$STAGE/borg/class/"
-cp "$ROOT"/harness/plans/* "$STAGE/borg/plans/"
+# A reference copy of the settings in the package (the plans beside it were
+# retired, #1339).
+BT="$STAGE/borg/pborg.yaml"
+"$ROOT/harness/prepare-pborg-config.sh" "$STAGE/borg"
 
 # A game started directly (no -d options: double-clicking angband.exe, or
 # ./angband) uses lib/user, lib/save, lib/scores, lib/panic and
@@ -88,7 +81,8 @@ cp "$ROOT"/harness/plans/* "$STAGE/borg/plans/"
 # that game plays the borg-rs core as the launchers' do (#826).
 rm -rf "$STAGE/lib/save" "$STAGE/lib/scores" "$STAGE/lib/panic" "$STAGE/lib/user"
 mkdir -p "$STAGE/lib/save" "$STAGE/lib/scores" "$STAGE/lib/panic" "$STAGE/lib/user/archive"
-"$ROOT/harness/prepare-borg-txt.sh" "$STAGE/lib/user"
+"$ROOT/harness/prepare-pborg-config.sh" "$STAGE/lib/user"
+cp "$ROOT/engine/angband/src/borg/borg.txt" "$STAGE/lib/user/borg.txt"
 
 # The short guide. The game is started directly (angband, angband.exe): the
 # owner, for v0.1.0-alpha.1, ships no launcher and no headless runner (lib/
@@ -139,8 +133,7 @@ ENGINE=$(sed -n 's/^commit=//p' "$ROOT/engine/UPSTREAM")
     echo "angband:         upstream $ENGINE, unchanged (engine/angband/), with the"
     echo "                 harness hooks of engine/patches/ and the borgh frontend"
     echo "borg core:       borg-rs, vendored as borg-core/ ($(head -1 "$ROOT/borg-core/PIN"))"
-    echo "settings:        borg/borg.txt sha256 $(sha "$BT")"
-    echo "                 (from harness/borg.txt sha256 $(sha "$ROOT/harness/borg.txt"))"
+    echo "settings:        borg/pborg.yaml sha256 $(sha "$BT")"
     echo "source_sha256:   $SRC"
     echo "executables:     $(for b in "${BUILDS[@]}"; do printf '%s%s ' "${b%%=*}" "$EXE"; done)"
     echo

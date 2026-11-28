@@ -287,13 +287,14 @@ pub const GAME_OPTIONS: &[(&core::ffi::CStr, bool)] = &[(c"auto_more", true)];
 
 /// Whether the decision core is borg-rs's (#207), read once at the first
 /// `^Z`: `BORG_CORE` in the environment, else `borg_reborn_core` in the
-/// run's borg.txt. The zoo's integer profiles use 1 for borg-rs, 0 for reborn.
+/// run's pborg.yaml. The zoo's integer profiles use 1 for borg-rs, 0 for reborn.
 pub fn core_is_borg_rs() -> bool {
     static CORE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *CORE.get_or_init(|| {
         let environment = std::env::var_os("BORG_CORE");
         let file = if environment.is_none() {
-            borg_rs::shell::borg_txt_setting("borg_reborn_core")
+            borg_rs::config_file::warn_missing_pborg_config();
+            borg_rs::config_file::borg_txt_setting("borg_reborn_core")
         } else {
             None
         };
@@ -303,21 +304,14 @@ pub fn core_is_borg_rs() -> bool {
                 .ok_or_else(|| format!("BORG_CORE: invalid non-UTF-8 core selector {value:?}"))
                 .and_then(|value| parse_core_selector(Some(value), "BORG_CORE"))
         } else {
-            parse_core_selector(file.as_deref(), "borg.txt borg_reborn_core")
+            parse_core_selector(file.as_deref(), "pborg.yaml borg_reborn_core")
         };
         let selected = selected.unwrap_or_else(|error| {
             eprintln!("borg-reborn-rs: {error}");
             std::process::exit(2);
         });
-        // An explicit core environment override keeps file access lazy. A
-        // file-selected original core still rejects a requested file plan.
-        let plan_requested = std::env::var_os("BORG_ERRANDS_PLAN").is_some()
-            || (!selected
-                && environment.is_none()
-                && borg_rs::shell::borg_txt_setting("borg_plan").is_some());
-        if !selected && plan_requested {
-            eprintln!("borg-reborn-rs: errands plans require BORG_CORE=borg-rs");
-            std::process::exit(2);
+        if !selected {
+            check_reborn_plan_environment();
         }
         selected
     })
@@ -335,111 +329,100 @@ fn parse_core_selector(value: Option<&str>, source: &str) -> Result<bool, String
     }
 }
 
-/// Validate the configured shell command before a measured run starts.
-/// Original-core runs do not consult the vendored core's errand setting.
-pub fn configured_errand() -> Option<String> {
-    let environment = std::env::var_os("BORG_ERRAND");
-    let file = if environment.is_none() {
-        borg_rs::shell::borg_txt_setting("borg_reborn_errand")
-    } else {
-        None
-    };
-    let selected = if let Some(value) = environment.as_ref() {
-        value
-            .to_str()
-            .ok_or_else(|| format!("BORG_ERRAND: invalid non-UTF-8 errand selector {value:?}"))
-            .and_then(|value| parse_errand_setting(Some(value), "BORG_ERRAND"))
-    } else {
-        parse_errand_setting(file.as_deref(), "borg.txt borg_reborn_errand")
-    };
-    selected.unwrap_or_else(|error| {
-        eprintln!("borg-reborn-rs: {error}");
-        std::process::exit(2);
-    })
+/// borg-reborn-rs (#1339): the errands (#208), `/stopscared` and the plans
+/// (#305, `max-depth`) are retired. A setting that names one is accepted with
+/// a warning (from the run's pborg.yaml) or silently (an empty or `none`
+/// environment value, as the harness passes) when it is off; at any other
+/// value start-up fails, so a measured arm never believes the feature still
+/// runs.
+const RETIRED_ERRAND_SETTINGS: &[(&str, &str, &[&str])] = &[
+    ("BORG_ERRAND", "borg_reborn_errand", &["", "none"]),
+    (
+        "BORG_STOPSCARED",
+        "borg_reborn_stopscared",
+        &["", "none", "off", "false", "no"],
+    ),
+    ("BORG_ERRANDS_PLAN", "borg_plan", &["", "none"]),
+];
+
+/// What a retired setting's value means: `Ok(None)` absent or off,
+/// `Ok(Some(warning))` off but written in the configuration file, `Err` on.
+fn retired_errand_setting(
+    source: &str,
+    value: Option<&str>,
+    inert: &[&str],
+    file: bool,
+) -> Result<Option<String>, String> {
+    let Some(value) = value else { return Ok(None) };
+    if inert.iter().any(|v| v.eq_ignore_ascii_case(value)) {
+        return Ok(
+            file.then(|| format!("{source} is retired and ignored (#1339): delete the line"))
+        );
+    }
+    Err(format!(
+        "{source}: {value:?} would select an errand, a stop-when-scared threshold or a plan, which were retired (#1339); remove it"
+    ))
 }
 
-fn parse_errand_setting(value: Option<&str>, source: &str) -> Result<Option<String>, String> {
-    match value {
-        None | Some("" | "none") => Ok(None),
-        Some(value) => {
-            let invalid =
-                |reason: &str| format!("{source}: invalid errand selector {value:?}: {reason}");
-            let commands = borg_rs::shell::parse_line(value).map_err(|error| invalid(&error))?;
-            if commands.is_empty() {
-                return Err(invalid("empty command line; use none to disable errands"));
-            }
-            Ok(Some(value.to_owned()))
+/// Check the retired errand settings before a borg-rs run starts. The
+/// original core never read them, so only the borg-rs core checks.
+pub fn check_retired_errand_settings() {
+    static CHECKED: std::sync::Once = std::sync::Once::new();
+    CHECKED.call_once(check_retired_errand_settings_now);
+}
+
+fn check_retired_errand_settings_now() {
+    // Review of #1340: the environment and the file are both checked, so an
+    // inert variable (an empty or `none` BORG_ERRANDS_PLAN) cannot mask an
+    // active line in pborg.yaml, as the old "environment wins" order would.
+    for (variable, setting, inert) in RETIRED_ERRAND_SETTINGS {
+        report_retired(retired_environment(variable, inert));
+        let value = borg_rs::config_file::borg_txt_setting(setting);
+        report_retired(retired_errand_setting(
+            &format!("pborg.yaml {setting}"),
+            value.as_deref(),
+            inert,
+            true,
+        ));
+    }
+}
+
+/// A retired setting's environment variable, judged as `retired_errand_setting`.
+fn retired_environment(variable: &str, inert: &[&str]) -> Result<Option<String>, String> {
+    match std::env::var_os(variable) {
+        None => Ok(None),
+        Some(value) => match value.to_str() {
+            Some(value) => retired_errand_setting(variable, Some(value), inert, false),
+            None => Err(format!(
+                "{variable}: invalid non-UTF-8 value {value:?}; the setting was retired (#1339)"
+            )),
+        },
+    }
+}
+
+fn report_retired(verdict: Result<Option<String>, String>) {
+    match verdict {
+        Ok(Some(warning)) => eprintln!("borg-reborn-rs: {warning}"),
+        Ok(None) => {}
+        Err(error) => {
+            eprintln!("borg-reborn-rs: {error}");
+            std::process::exit(2);
         }
     }
 }
 
-/// A configured fear threshold is either valid or a configuration error;
-/// an invalid value must not silently become the core's default threshold.
-pub fn configured_stopscared() -> Option<borg_rs::shell::Command> {
-    let environment = std::env::var_os("BORG_STOPSCARED");
-    let file = if environment.is_none() {
-        borg_rs::shell::borg_txt_setting("borg_reborn_stopscared")
-    } else {
-        None
-    };
-    let selected = if let Some(value) = environment.as_ref() {
-        value
-            .to_str()
-            .ok_or_else(|| format!("BORG_STOPSCARED: invalid non-UTF-8 stopscared value {value:?}"))
-            .and_then(|value| parse_stopscared_setting(Some(value), "BORG_STOPSCARED"))
-    } else {
-        parse_stopscared_setting(file.as_deref(), "borg.txt borg_reborn_stopscared")
-    };
-    selected.unwrap_or_else(|error| {
-        eprintln!("borg-reborn-rs: {error}");
-        std::process::exit(2);
-    })
+/// Review of #1340: an explicit plan in the environment stops a reborn-core
+/// run too (the old core selection refused it). The reborn core never read
+/// the file's settings, so only the variable is checked, and the file stays
+/// unread (the reborn override keeps its lazy access).
+fn check_reborn_plan_environment() {
+    let (variable, _, inert) = RETIRED_ERRAND_SETTINGS[2];
+    report_retired(retired_environment(variable, inert));
 }
 
-fn parse_stopscared_setting(
-    value: Option<&str>,
-    source: &str,
-) -> Result<Option<borg_rs::shell::Command>, String> {
-    match value {
-        None | Some("" | "none") => Ok(None),
-        Some(value) => borg_rs::shell::Command::parse(&format!("stopscared {value}"))
-            .map(Some)
-            .ok_or_else(|| format!(
-                "{source}: invalid stopscared value {value:?}; expected off, flee, or 1..=1000 (boolean aliases also accepted)"
-            )),
-    }
-}
-
-/// A configured errand budget is a nonnegative number of game turns.
-/// This is consulted only for a configured vendored-core command line.
-pub fn configured_errand_budget() -> i64 {
-    let value = std::env::var_os("BORG_ERRAND_BUDGET");
-    let selected = match value.as_ref() {
-        None => Ok(0),
-        Some(value) => value
-            .to_str()
-            .ok_or_else(|| format!("BORG_ERRAND_BUDGET: invalid non-UTF-8 budget {value:?}"))
-            .and_then(|value| parse_errand_budget(Some(value))),
-    };
-    selected.unwrap_or_else(|error| {
-        eprintln!("borg-reborn-rs: {error}");
-        std::process::exit(2);
-    })
-}
-
-fn parse_errand_budget(value: Option<&str>) -> Result<i64, String> {
-    match value {
-        None | Some("none") => Ok(0),
-        Some(value) => value.parse::<i64>().ok().filter(|n| *n >= 0).ok_or_else(|| {
-            format!("BORG_ERRAND_BUDGET: invalid budget {value:?}; expected 0..={} game turns or none (0 means unbounded)", i64::MAX)
-        }),
-    }
-}
-
-/// `^Z`: read the command key; `z` starts the Borg (as the C Borg's command
-/// menu does, so borgh's start script and the GUI work unchanged).
-pub fn command() {
-    if engine::read_command() != Some(b'z') {
+/// Run a key from the shared Borg command prompt. The reborn core supports start.
+pub fn command(cmd: u8) {
+    if cmd != b'z' {
         return;
     }
     // The game options the Borg relies on (spec §1.2; docs/ENGINE.md): no
@@ -773,7 +756,7 @@ mod tests {
         ] {
             assert_eq!(parse_core_selector(value, "BORG_CORE"), Ok(expected));
         }
-        for source in ["BORG_CORE", "borg.txt borg_reborn_core"] {
+        for source in ["BORG_CORE", "pborg.yaml borg_reborn_core"] {
             for value in ["", "true", "2", "7", "borg_rs", "BORG-RS", " 1"] {
                 let error = parse_core_selector(Some(value), source).unwrap_err();
                 assert!(error.contains(source));
@@ -783,101 +766,48 @@ mod tests {
     }
 
     #[test]
-    fn configured_errands_preserve_valid_commands_and_reject_silent_fallback() {
-        for value in [None, Some(""), Some("none")] {
-            assert_eq!(parse_errand_setting(value, "BORG_ERRAND"), Ok(None));
-        }
-        for value in [
-            "/town",
-            "/level-up 10",
-            "/shopping",
-            "dive:2",
-            "trips:1*/1,2,1*@3",
-            "/town; /shopping",
-            "/stopscared off; /dive 2",
-            "/none",
-        ] {
-            assert_eq!(
-                parse_errand_setting(Some(value), "BORG_ERRAND"),
-                Ok(Some(value.into()))
-            );
-        }
-        for source in ["BORG_ERRAND", "borg.txt borg_reborn_errand"] {
-            for value in [" ", "; ;", "true", "2", "dvie 2", "/dive 0", "/town; typo"] {
-                let error = parse_errand_setting(Some(value), source).unwrap_err();
-                assert!(error.contains(source));
-                assert!(error.contains(&format!("{value:?}")));
-            }
-            let error = parse_errand_setting(Some("/level-up 51"), source).unwrap_err();
-            assert!(error.contains(source));
-            assert!(error.contains("requires a character level from 1 to 50"));
-        }
-    }
-
-    #[test]
-    fn configured_fear_preserves_aliases_and_rejects_invalid_thresholds() {
-        for value in [None, Some(""), Some("none")] {
-            assert!(parse_stopscared_setting(value, "BORG_STOPSCARED")
-                .unwrap()
-                .is_none());
-        }
-        for (value, expected) in [
-            ("off", None),
-            ("FALSE", None),
-            ("no", None),
-            ("flee", Some(100)),
-            ("true", Some(100)),
-            ("on", Some(100)),
-            ("YES", Some(100)),
-            ("1", Some(1)),
-            ("1000", Some(1000)),
-        ] {
-            let command = parse_stopscared_setting(Some(value), "BORG_STOPSCARED").unwrap();
-            assert!(
-                matches!(command, Some(borg_rs::shell::Command::StopScared(n)) if n == expected)
-            );
-        }
-        for source in ["BORG_STOPSCARED", "borg.txt borg_reborn_stopscared"] {
-            for value in [
-                "bogus",
-                "0",
-                "-1",
-                "1001",
-                "2147483648",
-                " ",
-                "off; /dive 2",
-            ] {
-                let error = parse_stopscared_setting(Some(value), source).unwrap_err();
-                assert!(error.contains(source) && error.contains(&format!("{value:?}")));
+    fn retired_errand_settings_are_ignored_off_and_refused_on() {
+        // borg-reborn-rs (#1339)
+        for (_, setting, inert) in RETIRED_ERRAND_SETTINGS {
+            let source = format!("pborg.yaml {setting}");
+            assert_eq!(retired_errand_setting(&source, None, inert, true), Ok(None));
+            for value in inert.iter() {
+                assert_eq!(
+                    retired_errand_setting("BORG_X", Some(value), inert, false),
+                    Ok(None)
+                );
+                let warning = retired_errand_setting(&source, Some(value), inert, true)
+                    .unwrap()
+                    .unwrap();
+                assert!(warning.contains(&source) && warning.contains("retired"));
             }
         }
-    }
-
-    #[test]
-    fn configured_budget_cannot_silently_remove_its_bound() {
-        for (value, expected) in [
-            (None, 0),
-            (Some("none"), 0),
-            (Some("0"), 0),
-            (Some("1"), 1),
-            (Some("+12"), 12),
-            (Some("9223372036854775807"), i64::MAX),
-        ] {
-            assert_eq!(parse_errand_budget(value), Ok(expected));
+        let errand = RETIRED_ERRAND_SETTINGS[0].2;
+        assert_eq!(
+            retired_errand_setting("BORG_ERRAND", Some("NONE"), errand, false),
+            Ok(None)
+        );
+        for value in ["/town", "/level-up 10", "ladder", "trips:1*/1,2", "dvie 2"] {
+            let error =
+                retired_errand_setting("BORG_ERRAND", Some(value), errand, false).unwrap_err();
+            assert!(error.contains("BORG_ERRAND") && error.contains(&format!("{value:?}")));
         }
-        for value in [
-            "bogus",
-            "",
-            " ",
-            "-1",
-            "-9223372036854775808",
-            "9223372036854775808",
-            "1.5",
-            " 12 ",
-        ] {
-            let error = parse_errand_budget(Some(value)).unwrap_err();
-            assert!(error.contains("BORG_ERRAND_BUDGET") && error.contains(&format!("{value:?}")));
+        let scared = RETIRED_ERRAND_SETTINGS[1].2;
+        assert_eq!(
+            retired_errand_setting("x", Some("FALSE"), scared, true).map(|w| w.is_some()),
+            Ok(true)
+        );
+        for value in ["flee", "true", "50"] {
+            assert!(retired_errand_setting("BORG_STOPSCARED", Some(value), scared, false).is_err());
         }
+        let plan = RETIRED_ERRAND_SETTINGS[2].2;
+        assert!(retired_errand_setting(
+            "pborg.yaml borg_plan",
+            Some("errands_plan.txt"),
+            plan,
+            true
+        )
+        .is_err());
     }
 
     /// An empty observation, for the key sequences of the actions the

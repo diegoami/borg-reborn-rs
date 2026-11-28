@@ -26,7 +26,7 @@ use crate::borg::BorgTime;
 use crate::borg_cave::{BorgGrid, DUNGEON_HGT, DUNGEON_WID};
 use crate::borg_cave_util::{borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid};
 use crate::borg_danger::{borg_danger, borg_danger_one_kill};
-use crate::borg_flow_kill::borg_race_name;
+use crate::borg_flow_kill::{borg_race_name, BorgKill};
 use crate::borg_flow_misc::borg_extract_dir;
 use crate::borg_inventory::{borg_slot, borg_wield_slot};
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, borg_queue_direction};
@@ -42,9 +42,10 @@ use crate::borg_magic::{
     borg_spell_okay, borg_spell_okay_fail, borg_spell_fail_rate,
 };
 use crate::borg_projection::{
-    borg_distance, borg_inc_motion, borg_los, borg_offset_projectable, borg_projectable_pure,
+    borg_distance, borg_inc_motion, borg_los, borg_los_projectable, borg_offset_projectable, borg_projectable_pure,
     borg_target,
 };
+use crate::borg_unseen_belief::BelievedTarget;
 use crate::borg_update::Detect;
 use crate::engine;
 use crate::borg_headers::borg_danger_h::*;
@@ -60,7 +61,7 @@ use crate::headers::list_terrain_h::{
     FEAT_BROKEN, FEAT_FLOOR, FEAT_MAGMA, FEAT_NONE, FEAT_OPEN, FEAT_PASS_RUBBLE, FEAT_PERM,
 };
 use crate::headers::list_tvals_h::{
-    TV_BOOTS, TV_FLASK, TV_POTION, TV_RING, TV_ROD, TV_WAND,
+    TV_BOOTS, TV_FLASK, TV_HAFTED, TV_POLEARM, TV_POTION, TV_RING, TV_ROD, TV_SWORD, TV_WAND,
 };
 use crate::headers::list_object_flags_h::{OF_EXPLODE, OF_THROWING};
 use crate::headers::ui_event_h::keycode_t;
@@ -73,6 +74,28 @@ pub struct FightAttackState {
     /// #760/#759: a focused damage planner; None retains the native planner.
     pub focused_target: Option<usize>,
     pub focused_kind: i32,
+    /// #879: shots at a believed (unseen) monster since it was last seen, by
+    /// kill index, with the record's `when` at the time (a new sighting or a
+    /// reused index starts again).
+    pub unseen_shots: std::collections::BTreeMap<usize, (BorgTime, i32)>,
+    pub(crate) pending_unseen: crate::borg_unseen_belief::PendingAttack,
+    /// borg-reborn-rs (#889): while a blast scores a grid, how many grids
+    /// its reach exceeds that grid's distance from the blast's centre (0
+    /// elsewhere): a believed monster that moved fewer grids is still hit
+    /// (`unseen_spread`).
+    pub(crate) unseen_blast_slack: i32,
+    /// borg-reborn-rs (#889, Codex re-review of #1128): grids of records a
+    /// ball could still reach but nothing else may aim at (`blast_only`).
+    /// Filled by `borg_attack` apart from its aim list (`st.flow.temp_*`),
+    /// read only by ball-shaped scoring (`choose_bolt`, `ball_shape`).
+    pub(crate) blast_aims: Vec<(i32, i32)>,
+    /// borg-reborn-rs (#889): whether the attack rated now projects a ball
+    /// (not a dragon's breath cone), so a ball's slack and `blast_aims` apply.
+    pub(crate) ball_shape: bool,
+    /// borg-reborn-rs (#889, review of #1128 F3): Light Room cast at a
+    /// believed record, by kill index, with the record's `when` at the time
+    /// (once per sighting).
+    pub(crate) unseen_reveals: std::collections::BTreeMap<usize, BorgTime>,
     /// `successful_target`: zero is "haven't shot", positive is "good to
     /// shoot current target", negative is "shot and missed", -12 and lower
     /// is "do not shoot".
@@ -110,6 +133,14 @@ pub struct FightAttackState {
     /// melee's danger term (`borg_launch_damage_one`,
     /// `borg_launch_bolt_aux_hack`).
     pub throwing: bool,
+    /// borg-reborn-rs (#867): the attack being rated is aimed by a confused
+    /// Borg under `attack_confused_by_direction`: only an adjacent monster,
+    /// no offset aim, and its damage weighted by the aim chance
+    /// (`CONFUSED_AIM`). Cleared by `borg_calculate_attack_effectiveness`.
+    pub confused_aim: bool,
+    /// borg-reborn-rs (#867): the direction (1-9) a confused aimed attack is
+    /// sent with instead of the target key; 0 = none.
+    pub confused_dir: i32,
     /// `borg_tp_other_x`
     pub tp_other_x: [u8; 255],
     /// `borg_tp_other_y`
@@ -139,6 +170,12 @@ impl Default for FightAttackState {
         FightAttackState {
             focused_target: None,
             focused_kind: 0,
+            unseen_shots: std::collections::BTreeMap::new(),
+            pending_unseen: crate::borg_unseen_belief::PendingAttack::default(),
+            unseen_blast_slack: 0,
+            blast_aims: Vec::new(),
+            ball_shape: false,
+            unseen_reveals: std::collections::BTreeMap::new(),
             successful_target: 0,
             target_closest: 0,
             tp_other_n: 0,
@@ -152,6 +189,8 @@ impl Default for FightAttackState {
             est_kills: 0.0,
             town_wand: false,
             throwing: false,
+            confused_aim: false,
+            confused_dir: 0,
             tp_other_x: [0; 255],
             tp_other_y: [0; 255],
             tp_other_index: [0; 255],
@@ -251,6 +290,97 @@ fn desc(item: &borg_item) -> Vec<u8> {
 /// "No firing while blind, confused, or hallucinating"
 fn cant_aim(st: &BorgState) -> bool {
     tr(st, BI_ISBLIND) != 0 || tr(st, BI_ISCONFUSED) != 0 || tr(st, BI_ISIMAGE) != 0
+}
+
+/// borg-reborn-rs (#867, owner: "it should choose the best attack available,
+/// and in case of mage without spells, that would be the flask"): with
+/// `attack_confused_by_direction`, a Borg that is confused, but neither blind
+/// nor hallucinating, may still throw, shoot and use a wand, rod or staff at
+/// an adjacent monster. The engine allows them: it refuses only spells
+/// (`player_can_cast`, player-util.c:1102) and scrolls (:1182) to a confused
+/// player. 0 = C (no item attack while confused).
+fn confused_by_direction(st: &BorgState) -> bool {
+    by_direction(
+        param(Param::attack_confused_by_direction) != 0,
+        tr(st, BI_ISBLIND) != 0,
+        tr(st, BI_ISCONFUSED) != 0,
+        tr(st, BI_ISIMAGE) != 0,
+    )
+}
+
+/// `confused_by_direction` on the switch and the three states.
+fn by_direction(on: bool, blind: bool, confused: bool, image: bool) -> bool {
+    on && confused && !blind && !image
+}
+
+/// `cant_aim`, but for the item attacks (missiles, throws, wands, rods,
+/// staffs), which `attack_confused_by_direction` allows while confused.
+fn cant_use_item_attack(st: &BorgState) -> bool {
+    cant_aim(st) && !confused_by_direction(st)
+}
+
+/// borg-reborn-rs (#867): the chance a confused player's direction is kept,
+/// as a fraction: `player_confuse_dir` (player-util.c:1353-1377) keeps a
+/// direction key 25% of the time and otherwise draws one of the 8 directions
+/// (`ddd[randint0(8)]`), so 1/4 + 3/4 * 1/8 = 11/32. Melee (walking into the
+/// monster, cmd-cave.c:1301), missiles (player-attack.c:1350), throws (:1393)
+/// and aimed devices (cmd-obj.c:440) all pass through it. A target
+/// (direction 5) is always redrawn, so a confused aimed attack is sent by
+/// direction key. A game constant.
+const CONFUSED_AIM: (i32, i32) = (11, 32);
+
+/// borg-reborn-rs (#867): mark the attack being rated as aimed by a confused
+/// Borg, when `attack_confused_by_direction` applies (`confused_aim`).
+fn mark_confused_aim(st: &mut BorgState) {
+    if confused_by_direction(st) {
+        st.fight_attack.confused_aim = true;
+    }
+}
+
+/// borg-reborn-rs (#867, review of #868): once an attack is sent, its
+/// confused aim is over; nothing after it may read the flag.
+fn clear_confused_aim(st: &mut BorgState) {
+    st.fight_attack.confused_aim = false;
+    st.fight_attack.confused_dir = 0;
+}
+
+/// borg-reborn-rs (#867): a confused aimed attack's value weighted by
+/// `CONFUSED_AIM`, and its damage and kills too when `damage_too`; anything
+/// else unchanged. `borg_attack` weights a blow's value only (review of
+/// #868): its damage is what the fight-or-flee tests read
+/// (`borg_attack_estimate`), and C rated a confused blow at full damage, so
+/// a confused fight that melee wins is judged as in C. The focused ranking
+/// ranks on the damage, so it weights it for every aimed attack.
+fn confused_weight(st: &mut BorgState, raw: i32, damage_too: bool) -> i32 {
+    if !st.fight_attack.confused_aim {
+        return raw;
+    }
+    let (num, den) = CONFUSED_AIM;
+    if damage_too {
+        st.fight_attack.dmg_best = st.fight_attack.dmg_best * num / den;
+        st.fight_attack.kill_best *= f64::from(num) / f64::from(den);
+    }
+    raw * num / den
+}
+
+/// The key that answers an aimed command's direction prompt: the target
+/// (`5`), or, for a confused aimed attack (#867), the direction toward the
+/// adjacent monster, which the engine keeps more often (`CONFUSED_AIM`).
+/// Returns the `successful_target` to set: `shot` after a target, 0 after a
+/// direction (no target to track, as `throw_at_unseen_bump`).
+fn aim_key(st: &mut BorgState, shot: i32) -> i32 {
+    let dir = std::mem::take(&mut st.fight_attack.confused_dir);
+    if dir != 0 {
+        borg_note(st, &format!("# Confused: aiming by direction {dir}, not at a target (#867)"));
+    }
+    let (k, flag) = aim_answer(dir, shot);
+    borg_keypress(st, k);
+    flag
+}
+
+/// `aim_key`'s key and `successful_target` for a direction (0: none).
+fn aim_answer(dir: i32, shot: i32) -> (keycode_t, i32) {
+    if dir == 0 { (key(b'5'), shot) } else { (i2d(dir), 0) }
 }
 
 /// "Paranoia": `borg_simulate && randint0(100) < pct` (the RNG is drawn
@@ -476,6 +606,11 @@ fn thrust_damage_with(st: &BorgState, i: i32, spell_blows: i32, focused_kind: Op
 
     /* Monster record */
     let kill = &st.kills.kills[i as usize];
+
+    // borg-reborn-rs (#879): no blow at a monster the Borg only believes in.
+    if crate::borg_unseen_belief::believed_weight(st, i as usize).is_some() {
+        return 0;
+    }
 
     /* Monster race */
     let r = kill.r_idx;
@@ -745,6 +880,10 @@ fn borg_attack_aux_thrust(st: &mut BorgState) -> i32 {
         return 0;
     }
 
+    // borg-reborn-rs (#867): a confused blow goes astray as often as a
+    // confused throw; weighted alike, so the best attack wins on damage.
+    mark_confused_aim(st);
+
     /* Examine possible destinations */
     let mut i = 0;
     while i < i32::from(st.flow.temp_n) {
@@ -987,6 +1126,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
      * Bonuses */
     let bow = st.items.items[(inven_wield() + 1) as usize];
     let ammo = st.items.items[ammo_location as usize];
+    let junk_potion = is_potion_throw(st, typ, ammo_location);
     let bonus = tr(st, BI_TOHIT) + i32::from(bow.to_h) + i32::from(ammo.to_h);
     let chance = tr(st, BI_THB) + (bonus * BTH_PLUS_ADJ);
     let armor = r_ptr.ac + cur_dis;
@@ -1015,13 +1155,14 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             if mult > 1 {
                 dam *= 1 + mult;
             }
-            /* don't point blank non-uniques */
-            if cur_dis == 1 && !rf(r, RF_UNIQUE) {
-                dam /= point_blank_divisor(tr(st, BI_CLASS));
-            }
             let throwing = engine::flag_has(&ammo.flags, OF_THROWING as i32);
             let bonus = i32::from(ammo.to_h) + if throwing { tr(st, BI_TOHIT) } else { 0 };
-            dam = dam * throw_hit_percent(tr(st, BI_THT), bonus, throwing, cur_dis, r_ptr.ac) / 100;
+            let divisor = if junk_potion { 1 } else {
+                throw_point_blank_divisor(param(Param::attack_throw_point_blank_divisor),
+                    point_blank_divisor(tr(st, BI_CLASS)))
+            };
+            dam = rated_throw_damage(dam, cur_dis, rf(r, RF_UNIQUE), divisor,
+                throw_hit_percent(tr(st, BI_THT), bonus, throwing, cur_dis, r_ptr.ac));
         }
 
         BORG_ATTACK_ARROW => {
@@ -1576,7 +1717,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
 
     /*  Try to conserve missiles.
      */
-    if typ as u32 == BORG_ATTACK_ARROW && !borg_use_missile {
+    if typ as u32 == BORG_ATTACK_ARROW && !borg_use_missile && !junk_potion {
         /* set damage to zero, force borg to melee attack */
         dam = 0;
     }
@@ -1599,9 +1740,52 @@ fn blow_effect_name(r_idx: usize, k: usize) -> Option<&'static [u8]> {
     engine::race_blow_effect_name(r_idx, k)
 }
 
+/// One aim and the believed records in its projected path or area.
+#[derive(Default)]
+struct ProjectedAttack {
+    score: i32,
+    aim: Option<loc>,
+    confused_aim: bool,
+    unseen: Vec<BelievedTarget>,
+}
+
+impl ProjectedAttack {
+    fn target(self, st: &mut BorgState, require_monster: bool) {
+        st.fight_attack.pending_unseen.clear();
+        let Some(aim) = self.aim else { return };
+        st.borg.goal.g = aim;
+        // #867: a confused attack sends an adjacent direction.
+        if self.confused_aim {
+            st.fight_attack.confused_dir = borg_extract_dir(st.borg.c.y, st.borg.c.x, aim.y, aim.x);
+            return;
+        }
+        if borg_target(st, aim, require_monster) {
+            st.fight_attack.pending_unseen.stage(self.unseen);
+        }
+    }
+}
+
+fn expected_score(score: i32, belief: Option<i32>) -> i32 {
+    match belief {
+        Some(weight) => (i64::from(score) * i64::from(weight) / 100) as i32,
+        None => score,
+    }
+}
+
+fn collect_believed_target(
+    unseen: &mut Vec<BelievedTarget>, index: usize, kill: &BorgKill, belief: Option<i32>, age: BorgTime,
+) {
+    if let Some(weight) = belief {
+        unseen.push(BelievedTarget { index, race: kill.r_idx, pos: kill.pos, weight, age });
+    }
+}
+
 /// Simulate / Invoke the launching of a bolt at a monster
 /// (`borg_launch_bolt_aux_hack`).
-fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, ammo_location: i32) -> i32 {
+fn borg_launch_bolt_aux_hack(
+    st: &mut BorgState, i: i32, dam: i32, typ: i32, ammo_location: i32,
+    unseen: &mut Vec<BelievedTarget>,
+) -> i32 {
     let mut walls = 0;
     let mut unknown = 0;
 
@@ -1620,7 +1804,14 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
     }
 
     /* Require current knowledge */
-    if borg_timer(st, kill.when) > param(Param::attack_bolt_max_target_age) {
+    // borg-reborn-rs (#879): or a monster believed at its last grid; #889:
+    // with the blast's slack, when a blast scores the grid.
+    let belief = crate::borg_unseen_belief::believed_weight_with(st, i as usize, st.fight_attack.unseen_blast_slack);
+    let age = borg_timer(st, kill.when);
+    if belief.is_none()
+        && (age > param(Param::attack_bolt_max_target_age)
+            || (param(Param::unseen_belief) != 0 && !kill.seen && age > param(Param::attack_max_target_age)))
+    {
         return 0;
     }
 
@@ -1666,23 +1857,45 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
         }
     }
 
+    if typ as u32 == BORG_ATTACK_CURSE && belief.is_some() {
+        return 0;
+    }
+    let junk_potion = is_potion_throw(st, typ, ammo_location);
+    if junk_potion {
+        // New records have no seen bit yet. An estimate can run during
+        // the scan, while ordinary attacks run one Borg turn after it.
+        const MAX_CURRENT_SCAN_AGE: BorgTime = 1;
+        let current = kill.seen || (0..=MAX_CURRENT_SCAN_AGE).contains(&age);
+        let visible = current && ag.info & BORG_VIEW != 0 && belief.is_none();
+        if !kill.awake || !visible || ignored(st, usize::from(r)) {
+            return 0;
+        }
+    }
+    // A projected hit can wake a sleeper even when it reduces the score.
+    collect_believed_target(unseen, i as usize, &kill, belief, age);
+
     /* Calculate damage */
     let mut d = borg_launch_damage_one(st, i, dam, typ, ammo_location);
 
-    /* Return Damage, on Teleport Other, true damage is
-     * calculated elsewhere */
-    if typ as u32 == BORG_ATTACK_AWAY_ALL || typ as u32 == BORG_ATTACK_AWAY_ALL_MORGOTH {
+    /* Teleport Other's danger reduction is calculated by the caller.
+     * A bolt stops at the first record on the path. */
+    if typ as u32 == BORG_ATTACK_AWAY_ALL {
         return d;
     }
 
-    /* Return Damage as pure danger of the monster */
-    if typ as u32 == BORG_ATTACK_AWAY_EVIL {
-        return d;
+    /* These attacks already score the monster's danger. */
+    if typ as u32 == BORG_ATTACK_AWAY_ALL_MORGOTH || typ as u32 == BORG_ATTACK_AWAY_EVIL {
+        return expected_score(d, belief);
     }
 
     /* Return 0 if the true damage (w/o the danger bonus) is 0 */
     if d <= 0 {
-        return d;
+        // Some junk potions have no damage dice. A reachable target still
+        // lets us spend one, after attacks that can do useful damage.
+        if d == 0 && junk_potion {
+            return 1;
+        }
+        return expected_score(d, belief);
     }
 
     /* Calculate danger (at the monster's grid: `x`, `y` are still the
@@ -1692,7 +1905,7 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
 
     /* Avoid waking most "hard" sleeping monsters */
     if !kill.awake && p2 > avoid(st) / param(Param::attack_bolt_sleep_danger_divisor) && d < i32::from(kill.power) {
-        return -999;
+        return expected_score(-999, belief);
     }
 
     /* Ignore sleeping town monsters */
@@ -1717,17 +1930,19 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
     let p1 = town_danger_bonus(st, usize::from(r), p1);
 
     // borg-reborn-rs (#584): the true damage, at most the monster's HP.
-    st.fight_attack.dmg_acc += if st.fight_attack.focused_target.is_some() { d.max(0) }
+    let damage = if st.fight_attack.focused_target.is_some() { d.max(0) }
         else { d.clamp(0, i32::from(kill.power).max(0)) };
-    st.fight_attack.kill_acc += kill_fraction(d, i32::from(kill.power));
+    st.fight_attack.dmg_acc += expected_score(damage, belief);
+    st.fight_attack.kill_acc += kill_fraction(d, i32::from(kill.power))
+        * (f64::from(belief.unwrap_or(100)) / 100.0);
 
     /* Extra "bonus" if attack kills */
     if d >= i32::from(kill.power) {
         d *= param(Param::attack_bolt_kill_multiplier);
     }
 
-    /* Add in dangers */
-    d + p1
+    /* Score damage and danger conditional on the monster being there. */
+    expected_score(d + p1, belief)
 }
 
 /// Determine the penalty for destroying stuff by launching a spell at it
@@ -1842,6 +2057,7 @@ fn borg_launch_bolt_at_location(
     typ: i32,
     max: i32,
     ammo_location: i32,
+    unseen: &mut Vec<BelievedTarget>,
 ) -> i32 {
     /* Extract panel */
     let q_x = st.core.w_x / borg_panel_wid();
@@ -1878,7 +2094,10 @@ fn borg_launch_bolt_at_location(
 
     /* Simulate the spell/missile path */
     let mut dist = 1;
-    while dist < max {
+    // A native throw can hit a monster on its final grid. Apply that
+    // boundary to the new potion policy and preserve existing throw play.
+    let end = max + i32::from(is_potion_throw(st, typ, ammo_location));
+    while dist < end {
         /* Calculate the new location */
         borg_inc_motion(&mut y, &mut x, y1, x1, y2, x2);
 
@@ -1899,7 +2118,7 @@ fn borg_launch_bolt_at_location(
 
         /* Collect damage (bolts/beams) */
         if rad <= 0 {
-            n += borg_launch_bolt_aux_hack(st, i32::from(ag.kill), dam, typ, ammo_location);
+            n += borg_launch_bolt_aux_hack(st, i32::from(ag.kill), dam, typ, ammo_location, unseen);
         }
 
         /* Check for arrival at "final target" */
@@ -2024,6 +2243,17 @@ fn borg_launch_bolt_at_location(
                 continue;
             }
 
+            // borg-reborn-rs (#889): the monster steps the ball still covers
+            // from this grid (read by the belief only under unseen_spread).
+            // Only a ball's: a dispel or other line-of-sight effect (rad 10)
+            // and Starlight's lines (rad 7) reach what the player sees, not a
+            // radius around the aim (re-review of #1128, F1).
+            let slack = if st.fight_attack.ball_shape {
+                crate::borg_unseen_belief::blast_slack(rad, ry - y2, rx - x2)
+            } else {
+                0
+            };
+
             /*  dispel spells should hurt the same no matter the rad: make r= y
              * and x */
             if rad == 10 {
@@ -2031,7 +2261,9 @@ fn borg_launch_bolt_at_location(
             }
 
             /* Collect damage, lowered by distance */
-            n += borg_launch_bolt_aux_hack(st, i32::from(ag.kill), dam / (r + 1), typ, ammo_location);
+            st.fight_attack.unseen_blast_slack = slack;
+            n += borg_launch_bolt_aux_hack(st, i32::from(ag.kill), dam / (r + 1), typ, ammo_location, unseen);
+            st.fight_attack.unseen_blast_slack = 0;
 
             /* probable damage int was just changed by b_l_b_a_h*/
 
@@ -2054,11 +2286,40 @@ fn borg_launch_bolt_at_location(
 /// and "balls" have a "rad" of "2" or "3", depending on "blast radius".
 ///  dispel spells have a rad  of 10
 pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i32, ammo_location: i32) -> i32 {
+    let attack = choose_bolt(st, rad, dam, typ, max, ammo_location);
+    let score = attack.score;
+    if !simulating(st) {
+        attack.target(st, typ as u32 == BORG_ATTACK_CURSE);
+    }
+    score
+}
+
+fn choose_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i32, ammo_location: i32) -> ProjectedAttack {
+    let mut unseen = Vec::new();
+    let mut best_unseen = Vec::new();
     let mut b_i: i32 = -1;
     let mut b_n: i32 = -1;
     let mut b_o_y = 0;
     let mut b_o_x = 0;
     let mut b_d = max_range();
+    // borg-reborn-rs (#867, review of #868): a confused aim applies only to
+    // the attack being rated, and only while the Borg is confused: a flag
+    // left by an earlier think never restricts another caller (Teleport
+    // Other, `borg_fight_defend.rs`).
+    let confused_aim = st.fight_attack.confused_aim && confused_by_direction(st);
+
+    // borg-reborn-rs (#889, Codex re-review of #1128): a ball (not a breath,
+    // not a focused attack) also considers the blast-only aims, appended to
+    // the aim list for this call only.
+    let base_n = st.flow.temp_n;
+    if st.fight_attack.ball_shape
+        && st.fight_attack.focused_target.is_none()
+        && (1..=crate::borg_unseen_belief::MAX_BALL_RADIUS).contains(&rad)
+    {
+        for (y, x) in st.fight_attack.blast_aims.clone() {
+            st.flow.temp_push(y, x);
+        }
+    }
 
     /* Examine possible destinations */
 
@@ -2085,9 +2346,16 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
                 let x = tx + o_x;
                 let y = ty + o_y;
 
+                // borg-reborn-rs (#867): confused, only a direction: the
+                // adjacent monster itself, no offset aim.
+                if confused_aim && (o_x != 0 || o_y != 0 || dist_to(st, tx, ty) != 1) {
+                    continue;
+                }
+
                 /* Reset Teleport Other variables */
                 st.fight_attack.tp_other_n = 0;
                 let mut n = 0;
+                unseen.clear();
                 st.fight_attack.dmg_acc = 0;
                 st.fight_attack.kill_acc = 0.0;
 
@@ -2111,7 +2379,7 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
 
                 /* Consider it if its a ball spell or right on top of it */
                 if (rad >= 2 && u32::from(grid(st, x, y).feat) != FEAT_NONE) || (y == ty && x == tx) {
-                    n = borg_launch_bolt_at_location(st, y, x, rad, dam, typ, max, ammo_location);
+                    n = borg_launch_bolt_at_location(st, y, x, rad, dam, typ, max, ammo_location, &mut unseen);
                 }
 
                 /* Teleport Other is now considered */
@@ -2125,7 +2393,7 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
                     /* since this is the danger after monster removal */
                     /* and dam for tel away is the previous danger */
                     /* we want the biggest reduction in danger */
-                    n = dam - n;
+                    n = expected_score(dam - n, unseen.first().map(|target| target.weight));
                 }
 
                 /* Reset Teleport Other variables */
@@ -2157,6 +2425,7 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
                 b_o_y = o_y;
                 b_o_x = o_x;
                 b_d = d;
+                std::mem::swap(&mut best_unseen, &mut unseen);
                 st.fight_attack.dmg_best = st.fight_attack.dmg_acc;
                 st.fight_attack.kill_best = st.fight_attack.kill_acc;
             }
@@ -2164,31 +2433,19 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
         i += 1;
     }
     if b_i == -1 {
-        return 0;
+        st.flow.temp_n = base_n;
+        return ProjectedAttack::default();
     }
 
-    /* Reset Teleport Other variables */
     st.fight_attack.tp_other_n = 0;
-
-    /* Simulation */
-    if simulating(st) {
-        return b_n;
-    }
-
-    /* Save the location */
     let (ty, tx) = st.flow.temp_at(b_i as usize);
-    st.borg.goal.g.x = tx + b_o_x;
-    st.borg.goal.g.y = ty + b_o_y;
-
-    /* will need to add SINGLE COMBAT and COMMAND if those end up coded */
-    let require_monster = typ as u32 == BORG_ATTACK_CURSE;
-
-    /* Target the location */
-    let g = st.borg.goal.g;
-    let _ = borg_target(st, g, require_monster);
-
-    /* Result */
-    b_n
+    st.flow.temp_n = base_n;
+    ProjectedAttack {
+        score: b_n,
+        aim: Some(loc { x: tx + b_o_x, y: ty + b_o_y }),
+        confused_aim,
+        unseen: best_unseen,
+    }
 }
 
 /// Determine the "reward" of launching an arc/spray/cone at a location
@@ -2196,7 +2453,11 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
 ///
 /// This code is copied from borg_launch_bolt_at_location
 /// both need to be optimized for shared code !FIX
-fn borg_launch_arc_at_location(st: &mut BorgState, y: i32, x: i32, degrees: i32, dam: i32, typ: i32, max: i32) -> i32 {
+#[allow(clippy::too_many_arguments)]
+fn borg_launch_arc_at_location(
+    st: &mut BorgState, y: i32, x: i32, degrees: i32, dam: i32, typ: i32, max: i32,
+    unseen: &mut Vec<BelievedTarget>,
+) -> i32 {
     let mut path_grids = [loc { x: 0, y: 0 }; 256];
 
     /* Extract panel */
@@ -2324,8 +2585,9 @@ fn borg_launch_arc_at_location(st: &mut BorgState, y: i32, x: i32, degrees: i32,
                 continue;
             }
 
-            /* Never pass through walls*/
-            if !borg_los(st, y1, x1, ry, rx) {
+            /* project.c:856-863 uses LOS through PROJECT terrain for
+             * the arc footprint. Walkable rubble still blocks that ray. */
+            if !borg_los_projectable(st, y1, x1, ry, rx) {
                 continue;
             }
 
@@ -2349,7 +2611,7 @@ fn borg_launch_arc_at_location(st: &mut BorgState, y: i32, x: i32, degrees: i32,
 
             if ag.kill != 0 {
                 /* Collect damage, lowered by distance */
-                n += borg_launch_bolt_aux_hack(st, i32::from(ag.kill), dam / (r + 1), typ, 0);
+                n += borg_launch_bolt_aux_hack(st, i32::from(ag.kill), dam / (r + 1), typ, 0, unseen);
             }
 
             let ag = grid(st, rx, ry);
@@ -2369,9 +2631,8 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
     let mut b_i: i32 = -1;
     let mut b_n: i32 = -1;
 
-    /* (the offsets are never changed: arcs aim at the monster) */
-    let b_o_y = 0;
-    let b_o_x = 0;
+    let mut unseen = Vec::new();
+    let mut best_unseen = Vec::new();
     let mut b_d = max_range();
 
     if max > 20 {
@@ -2395,7 +2656,8 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
         /* Consider it if its a ball spell or right on top of it */
         st.fight_attack.dmg_acc = 0;
         st.fight_attack.kill_acc = 0.0;
-        let n = borg_launch_arc_at_location(st, y, x, degrees, dam, typ, max);
+        unseen.clear();
+        let n = borg_launch_arc_at_location(st, y, x, degrees, dam, typ, max, &mut unseen);
 
         /* Skip useless attacks */
         if n <= 0 {
@@ -2416,6 +2678,7 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
         b_i = i - 1;
         b_n = n;
         b_d = d;
+        std::mem::swap(&mut best_unseen, &mut unseen);
         st.fight_attack.dmg_best = st.fight_attack.dmg_acc;
         st.fight_attack.kill_best = st.fight_attack.kill_acc;
     }
@@ -2428,14 +2691,8 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
         return b_n;
     }
 
-    /* Save the location */
-    let (ty, tx) = st.flow.temp_at(b_i as usize);
-    st.borg.goal.g.x = tx + b_o_x;
-    st.borg.goal.g.y = ty + b_o_y;
-
-    /* Target the location */
-    let g = st.borg.goal.g;
-    let _ = borg_target(st, g, false);
+    let (y, x) = st.flow.temp_at(b_i as usize);
+    ProjectedAttack { score: b_n, aim: Some(loc { x, y }), confused_aim: false, unseen: best_unseen }.target(st, false);
 
     /* Result */
     b_n
@@ -2515,9 +2772,16 @@ pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
     }
 
     /* No firing while blind, confused, or hallucinating */
-    if cant_aim(st) {
+    // borg-reborn-rs (#867): confused, by direction at an adjacent monster.
+    if cant_use_item_attack(st) {
         return 0;
     }
+    mark_confused_aim(st);
+
+    // With belief enabled, only the winning quiver stack may aim and
+    // charge a shot. Preserve the original missile path at switch 0.
+    let choose_before_aiming = param(Param::unseen_belief) != 0 && !simulating(st);
+    let mut best_attack = None;
 
     /* Scan the quiver */
     for k in quiver_start()..quiver_end() {
@@ -2535,7 +2799,11 @@ pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
 
         /* Choose optimal target of bolt */
         let power = 6 + 2 * tr(st, BI_AMMO_POWER);
-        let n = borg_launch_bolt(st, 0, d, BORG_ATTACK_ARROW as i32, power, k);
+        let attack = choose_before_aiming.then(|| choose_bolt(st, 0, d, BORG_ATTACK_ARROW as i32, power, k));
+        let n = match &attack {
+            Some(attack) => attack.score,
+            None => borg_launch_bolt(st, 0, d, BORG_ATTACK_ARROW as i32, power, k),
+        };
 
         /* if two attacks are equal, pick the cheaper ammo */
         if n == b_n && v >= b_v {
@@ -2546,6 +2814,7 @@ pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
             b_n = n;
             b_v = v;
             b_k = k;
+            best_attack = attack;
         }
     }
 
@@ -2561,6 +2830,9 @@ pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
     }
 
     /* Do it */
+    if let Some(attack) = best_attack {
+        attack.target(st, false);
+    }
     let mut m = b"# Firing missile '".to_vec();
     m.extend_from_slice(&desc(&st.items.items[b_k as usize]));
     m.push(b'\'');
@@ -2573,10 +2845,9 @@ pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
     borg_keypress(st, ((b_k - quiver_start()) + i32::from(b'0')) as keycode_t);
 
     /* Use target */
-    borg_keypress(st, key(b'5'));
-
     /* Set our shooting flag */
-    st.fight_attack.successful_target = -2;
+    st.fight_attack.successful_target = aim_key(st, -2);
+    st.fight_attack.pending_unseen.command_queued(true);
 
     /* Value */
     b_n
@@ -2663,8 +2934,9 @@ fn borg_attack_aux_rest(st: &mut BorgState) -> i32 {
                 break 'check false;
             }
 
-            /* Cant have an obstacle between us */
-            if !borg_los(st, st.borg.c.y, st.borg.c.x, kill.pos.y, kill.pos.x) {
+            /* Do not wait for an approach across an obstructed sight line.
+             * Passable rubble can leave the monster waiting on its side. */
+            if !borg_los_projectable(st, st.borg.c.y, st.borg.c.x, kill.pos.y, kill.pos.x) {
                 break 'check false;
             }
 
@@ -2714,30 +2986,160 @@ fn borg_attack_aux_rest(st: &mut BorgState) -> i32 {
 /// munchkin attacks, removed with the mode in borg-rs#60).
 /// Rust returns `b_n`, as the c2rust translation did.
 fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
-    let (b_k, b_d) = best_throw(st);
-
-    /* Nothing to use */
-    if b_k < 0 {
+    if cant_use_item_attack(st) {
         return 0;
     }
-
-    /* No firing while blind, confused, or hallucinating */
-    if cant_aim(st) {
+    let surplus = param(Param::attack_throw_surplus) != 0;
+    let junk_potions = param(Param::attack_throw_junk_potions) != 0
+        && tr(st, BI_CDEPTH) > 0
+        && !st.borg.goal.fleeing && !st.borg.goal.fleeing_to_town
+        && tr(st, BI_ISPOISONED) == 0 && tr(st, BI_ISCUT) == 0
+        && st.items.items[..usize::from(engine::z_info().pack_size)]
+            .iter().any(|item| crate::borg_junk::junk_potion_to_throw(st, item))
+        && low_risk_potion_throw(tr(st, BI_CURHP), danger_here(st, 1, true));
+    if surplus || junk_potions {
+        mark_confused_aim(st);
+        return attack_throw_candidates(st, surplus, junk_potions);
+    }
+    let (slot, damage) = best_throw(st);
+    if slot < 0 {
         return 0;
     }
+    mark_confused_aim(st);
+    borg_attack_aux_object_fire(st, slot, damage)
+}
 
-    borg_attack_aux_object_fire(st, b_k, b_d)
+// A miss consumes a full turn. Start with the same small danger budget
+// as safe junk disposal, measured against current rather than maximum HP.
+fn low_risk_potion_throw(hp: i32, danger: i32) -> bool {
+    hp > 0 && danger <= hp / 10
+}
+
+fn is_potion_throw(st: &BorgState, typ: i32, slot: i32) -> bool {
+    st.fight_attack.throwing && typ as u32 == BORG_ATTACK_ARROW
+        && u32::from(st.items.items[slot as usize].tval) == TV_POTION
+}
+
+/// #1200: Only a fully known plain weapon dominated by the equipped weapon
+/// can be spent. Preserve combat bonuses, blows, protection and swap roles.
+fn surplus_weapon(st: &BorgState, slot: i32, item: &borg_item, worn: &borg_item) -> bool {
+    let tval = u32::from(item.tval);
+    let same_divine_role = tval != TV_HAFTED || u32::from(worn.tval) == TV_HAFTED;
+    matches!(tval, TV_SWORD | TV_POLEARM | TV_HAFTED)
+        && item.iqty > 0 && item.ident && !item.needs_ident && !item.cursed
+        && item.art_idx == 0 && item.ego_idx == 0 && item.activ_idx == 0 && crate::borg_item::item_note(st, item).is_empty()
+        && (0..=param(Param::attack_throw_surplus_max_value)).contains(&item.value)
+        && engine::flag_has(&item.flags, OF_THROWING as i32)
+        && item.flags.iter().map(|byte| byte.count_ones()).sum::<u32>() == 1
+        && item.modifiers.iter().all(|&value| value == 0)
+        && item.el_info.iter().all(|element| element.res_level == 0)
+        && !item.brands.iter().any(|&brand| brand)
+        && !item.slays.iter().any(|&slay| slay != 0)
+        && st.trait_swap.weapon_swap != slot + 1
+        && worn.iqty > 0 && worn.ident && !worn.cursed && same_divine_role
+        && i32::from(worn.weight) / 10 <= engine::adj_str_hold(tr(st, BI_STR_INDEX) as usize)
+        && item.dd <= worn.dd && item.ds <= worn.ds
+        && item.to_h <= worn.to_h && item.to_d <= worn.to_d && item.to_a <= worn.to_a
+        && crate::borg_trait::borg_calc_blows(st, item) <= tr(st, BI_BLOWS)
+}
+
+/// Engine player-attack.c:do_cmd_throw at 574b618c, in tenths of a pound.
+fn native_throw_range(strength: i32, weight: i32) -> i32 {
+    ((strength + 20) * 10 / weight.max(10)).min(10)
+}
+
+fn attack_throw_candidates(st: &mut BorgState, surplus: bool, junk_potions: bool) -> i32 {
+    let native_rating = surplus || native_throw_rating(st);
+    let (legacy_slot, legacy_damage) = best_throw_of(st, false, native_rating);
+    let strength = engine::adj_str_blow(tr(st, BI_STR_INDEX) as usize);
+    let mut slot = legacy_slot;
+    let mut range = 0;
+    let mut best = ProjectedAttack::default();
+    if legacy_slot >= 0 {
+        let weight = st.items.items[legacy_slot as usize].weight;
+        range = if surplus { native_throw_range(strength, i32::from(weight)) }
+            else { 6 + 2 * tr(st, BI_AMMO_POWER) };
+        st.fight_attack.throwing = native_rating;
+        best = choose_bolt(st, 0, legacy_damage, BORG_ATTACK_ARROW as i32, range, legacy_slot);
+    }
+    let mut damage = st.fight_attack.dmg_best;
+    let mut kills = st.fight_attack.kill_best;
+    let worn = st.items.items[inven_wield() as usize];
+    st.fight_attack.throwing = true;
+    for k in 0..i32::from(engine::z_info().pack_size) {
+        let item = st.items.items[k as usize];
+        let potion = junk_potions && crate::borg_junk::junk_potion_to_throw(st, &item);
+        if !potion && !(surplus && surplus_weapon(st, k, &item, &worn)) {
+            continue;
+        }
+        let max = native_throw_range(strength, i32::from(item.weight));
+        let per_hit = thrown_damage(i32::from(item.dd), i32::from(item.ds),
+            i32::from(item.to_d), i32::from(item.weight), !potion, false);
+        if per_hit <= 0 && !potion {
+            continue;
+        }
+        let mut candidate = choose_bolt(st, 0, per_hit, BORG_ATTACK_ARROW as i32, max, k);
+        if potion && st.fight_attack.dmg_best > 0 && candidate.score > 0 {
+            candidate.score += 2;
+        }
+        let smaller_potion_stack = potion && slot >= 0 && slot != legacy_slot
+            && u32::from(st.items.items[slot as usize].tval) == TV_POTION
+            && item.iqty < st.items.items[slot as usize].iqty;
+        if candidate.score > best.score
+            || (candidate.score > 0 && candidate.score == best.score && smaller_potion_stack)
+        {
+            best = candidate;
+            slot = k;
+            range = max;
+            damage = st.fight_attack.dmg_best;
+            kills = st.fight_attack.kill_best;
+        }
+    }
+    st.fight_attack.throwing = false;
+    st.fight_attack.dmg_best = damage;
+    st.fight_attack.kill_best = kills;
+    if best.score <= 0 {
+        return best.score;
+    }
+    let item = st.items.items[slot as usize];
+    st.fight_attack.cost = Some(AttackCost { fail_pct: 0, uses: Some(i32::from(item.iqty)), spell: false });
+    let score = best.score;
+    if !simulating(st) {
+        if u32::from(item.tval) == TV_POTION {
+            borg_note(st, &format!("# Junk potion throw: pack slot {slot}, score {score}."));
+        } else if slot != legacy_slot {
+            if let Some(aim) = best.aim {
+                let distance = dist_to(st, aim.x, aim.y);
+                let target = grid(st, aim.x, aim.y).kill;
+                let hit = if target == 0 { 0 } else {
+                    let ac = engine::race(usize::from(st.kills.kills[usize::from(target)].r_idx)).ac;
+                    throw_hit_percent(tr(st, BI_THT), tr(st, BI_TOHIT) + i32::from(item.to_h), true, distance, ac)
+                };
+                borg_note(st, &format!("# Surplus throw: pack slot {slot}, distance {distance}/{range}, hit {hit}%, score {score}."));
+            }
+        }
+        if surplus || slot != legacy_slot {
+            crate::borg_object_log::log_use(st, "throw", &item);
+        }
+        best.target(st, false);
+        queue_object_throw(st, slot);
+    }
+    score
 }
 
 /// borg-reborn-rs (#539): the pack scan of `borg_attack_aux_object`, the
 /// object it would throw and its average damage, as `(slot, damage)`
 /// (`(-1, -1)`: nothing). `ranged_means` asks it too.
 fn best_throw(st: &BorgState) -> (i32, i32) {
-    best_throw_of(st, false)
+    best_throw_of(st, false, native_throw_rating(st))
+}
+
+fn native_throw_rating(st: &BorgState) -> bool {
+    st.fight_attack.focused_target.is_some() || param(Param::attack_throw_as_melee) != 0
 }
 
 // borg-reborn-rs (#781): same fuel reserves, restricted to oil for a bump.
-fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
+fn best_throw_of(st: &BorgState, flasks_only: bool, native_rating: bool) -> (i32, i32) {
     // The shopping supply estimate is needed only for a throwable flask
     // while a fuel-burning lantern is worn. It is independent of the return
     // policy and reused within this evaluation.
@@ -2795,7 +3197,9 @@ fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
             let reserve = if policy && lantern {
                 let journey = supply_journey.get_or_insert_with(||
                     crate::borg_town_utility::Journey::of(st));
-                let goal = journey.fuel_goal(i64::from(param(Param::town_light_reserve_turns)));
+                // borg-reborn-rs (#1110): the planner's goal, scaled while
+                // breadth-first exploration applies.
+                let goal = crate::borg_light::fuel_goal(st, *journey);
                 let shortage = (goal - i64::from(light.timeout)).max(0) as u64;
                 shortage.div_ceil(i64::from(item.pval).max(1) as u64) as i32
             } else { 0 };
@@ -2810,7 +3214,7 @@ fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
         // borg-reborn-rs (#568): with `attack_throw_as_melee`, the engine's
         // damage of the throw ranks the objects and is the attack's damage
         // (the gates above keep the dice average).
-        let d = if st.fight_attack.focused_target.is_some() || param(Param::attack_throw_as_melee) != 0 {
+        let d = if native_rating {
             thrown_damage(
                 i32::from(item.dd),
                 i32::from(item.ds),
@@ -2843,7 +3247,7 @@ fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
 /// direction can hit an unseen monster; a monster target cannot be set.
 /// Uses the normal chooser's fuel reservation; never throws an unknown item.
 pub(crate) fn throw_at_unseen_bump(st: &mut BorgState, grid: loc) -> bool {
-    let (slot, _) = best_throw_of(st, true);
+    let (slot, _) = best_throw_of(st, true, native_throw_rating(st));
     if slot < 0 || !st.items.items[slot as usize].aware { return false; }
     let dir = crate::borg_flow_misc::borg_goto_dir(st, st.borg.c.y, st.borg.c.x, grid.y, grid.x);
     borg_note(st, &format!("# Throwing oil at unseen bump ({},{})", grid.y, grid.x));
@@ -2860,7 +3264,7 @@ pub(crate) fn throw_at_unseen_bump(st: &mut BorgState, grid: loc) -> bool {
 fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
     /* Choose optimal location */
     let power = 6 + 2 * tr(st, BI_AMMO_POWER);
-    st.fight_attack.throwing = st.fight_attack.focused_target.is_some() || param(Param::attack_throw_as_melee) != 0;
+    st.fight_attack.throwing = native_throw_rating(st);
     let b_n = borg_launch_bolt(st, 0, b_d, BORG_ATTACK_ARROW as i32, power, b_k);
     st.fight_attack.throwing = false;
 
@@ -2869,7 +3273,11 @@ fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
         return b_n;
     }
 
-    /* Do it */
+    queue_object_throw(st, b_k);
+    b_n
+}
+
+fn queue_object_throw(st: &mut BorgState, b_k: i32) {
     let mut m = b"# Throwing painful object '".to_vec();
     m.extend_from_slice(&desc(&st.items.items[b_k as usize]));
     m.push(b'\'');
@@ -2878,17 +3286,16 @@ fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
     /* Fire */
     borg_keypress(st, key(b'v'));
 
+    // borg_messages_react switches the native compact throw list to the
+    // pack before the queued slot letter is read.
     /* Use the object */
     borg_keypress(st, keycode_t::from(engine::all_letters_nohjkl(b_k)));
 
     /* Use target */
-    borg_keypress(st, key(b'5'));
-
     /* Set our shooting flag */
-    st.fight_attack.successful_target = -2;
+    st.fight_attack.successful_target = aim_key(st, -2);
+    st.fight_attack.pending_unseen.command_queued(true);
 
-    /* Value */
-    b_n
 }
 
 /// borg-reborn-rs (#568): the engine's average damage of an object thrown
@@ -2897,7 +3304,7 @@ fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
 /// average plus to-dam, times `2 + weight / 12` for a THROWING object
 /// (weight in tenths of a pound), and three times that for EXPLODE. A flask
 /// of oil (1d4, weight 20, `EXPLODE | THROWING`) does 22.
-fn thrown_damage(dd: i32, ds: i32, to_d: i32, weight: i32, throwing: bool, explode: bool) -> i32 {
+pub(crate) fn thrown_damage(dd: i32, ds: i32, to_d: i32, weight: i32, throwing: bool, explode: bool) -> i32 {
     let mut dam10 = dd * (ds + 1) * 5 + to_d * 10;
     if throwing {
         dam10 *= 2 + weight.max(0) / 12;
@@ -2906,6 +3313,20 @@ fn thrown_damage(dd: i32, ds: i32, to_d: i32, weight: i32, throwing: bool, explo
         dam10 *= 3;
     }
     dam10 / 10
+}
+
+/// #870: zero inherits the resolved arrow policy, including class overrides.
+fn throw_point_blank_divisor(configured: i32, arrow_divisor: i32) -> i32 {
+    if configured == 0 { arrow_divisor } else { configured }
+}
+
+/// #870: the native throw rating keeps integer division before hit chance.
+/// This is a conservation policy, not engine damage: player-attack.c:156-165
+/// at 574b618c applies distance to hit chance, without an adjacent divisor.
+/// The focused planner bypasses this policy and continues to rate real damage.
+fn rated_throw_damage(mut damage: i32, distance: i32, unique: bool, divisor: i32, hit_percent: i32) -> i32 {
+    if distance == 1 && !unique { damage /= divisor; }
+    damage * hit_percent / 100
 }
 
 /// borg-reborn-rs (#568): the engine's chance, in percent, that an object
@@ -3043,7 +3464,8 @@ pub fn borg_attack_aux_spell_bolt(
     }
 
     /* Cast the spell */
-    let _ = borg_spell(st, spell);
+    let queued = borg_spell(st, spell);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Use target */
     borg_keypress(st, key(b'5'));
@@ -3053,6 +3475,95 @@ pub fn borg_attack_aux_spell_bolt(
 
     /* Value */
     b_n
+}
+
+/// borg-reborn-rs (#878): the mean paralysis of a cast `oops` mana short:
+/// `randint1(5 * oops + 1)` (player-spell.c:541-553, player-util.c:835-842 at
+/// 574b618c), whose mean is `(5 * oops + 2) / 2`. The counter falls in
+/// `decrease_timeouts`, from `process_world`, once every 10 game turns
+/// (game-world.c:651, :1080): world ticks, not the Borg's turns.
+pub(crate) fn reserve_faint_turns(oops: i32) -> f64 {
+    f64::from(5 * oops.max(0) + 2) / 2.0
+}
+
+/// borg-reborn-rs (#878, review of #891, F2): world ticks of paralysis as
+/// Borg turns. A tick is 10 game turns; the Borg gains `extract_energy` of
+/// its speed each game turn and needs 100 for a turn, so a tick is
+/// `energy / 10` of its turns (1 at normal speed, 2 at +10, game-world.c:68-90).
+/// The monsters' damage a Borg turn (`fight_incoming`) times this is their
+/// damage over the faint.
+pub(crate) fn faint_borg_turns(ticks: f64, player_energy: f64) -> f64 {
+    ticks * player_energy / 10.0
+}
+
+/// borg-reborn-rs (#878): the expected damage taken while fainted for
+/// `turns` Borg turns, from monsters `(HP a Borg turn, distance, moves a Borg
+/// turn, weight)`: each from the turn it can reach the Borg (`distance - 1`
+/// steps at its speed), weighted (the target only by the chance the cast
+/// fails).
+pub(crate) fn faint_contact_damage(monsters: &[(f64, i32, f64, f64)], turns: f64) -> f64 {
+    monsters.iter().map(|&(hp, d, moves, weight)| {
+        let reach = if d <= 1 { 0.0 } else if moves > 0.0 { f64::from(d - 1) / moves } else { f64::INFINITY };
+        hp.max(0.0) * weight * (turns - reach).max(0.0)
+    }).sum()
+}
+
+/// borg-reborn-rs (#878, review of #891): whether a monster `d` grids away is
+/// not excluded outright from the faint's damage: adjacent, or able to move;
+/// whether a mobile one arrives in time is the caller's `reach`.
+pub(crate) fn faint_reaches(d: i32, never_move: bool) -> bool {
+    d <= 1 || !never_move
+}
+
+/// borg-reborn-rs (#878): `attack_reserve_faint_percent`. The reserve spell
+/// is refused when what the awake monsters deal during the mean faint
+/// (`reserve_faint_turns`, in Borg turns by `faint_borg_turns`) reaches that
+/// percent of the current HP. The target (`target`: the one monster the
+/// reserve spell's own loop found within `attack_reserve_spell_near_distance`)
+/// counts only if the cast fails; its kill is what the cast gains. Distances
+/// are the reserve loop's (the larger of the two axes: the steps a monster
+/// needs). Expected blow damage (`fight_incoming`), not danger: no fear
+/// prices. Poison taken over time is not counted.
+fn reserve_faint_refused(st: &mut BorgState, spell: borg_spells, mana: i32, target: Option<usize>) -> bool {
+    let percent = param(Param::attack_reserve_faint_percent);
+    if percent <= 0 {
+        return false;
+    }
+    let oops = borg_get_spell_power(st, spell) - mana;
+    if oops <= 0 {
+        return false;
+    }
+    let fail = f64::from(crate::borg_magic::borg_spell_fail_rate(st, spell).clamp(0, 100)) / 100.0;
+    let energy = |s: i32| f64::from(engine::extract_energy(s.clamp(0, 199) as usize)).max(1.0);
+    let player = energy(engine::player_combat_speed());
+    let turns = faint_borg_turns(reserve_faint_turns(oops), player);
+    let mut monsters = Vec::new();
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || !kill.awake {
+            continue;
+        }
+        let d = (kill.pos.x - st.borg.c.x).abs().max((kill.pos.y - st.borg.c.y).abs());
+        if !faint_reaches(d, engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE)) {
+            continue;
+        }
+        let hp = crate::borg_caution::fight_incoming(st, i).hp_per_turn;
+        let moves = energy(crate::borg_caution::forecast_monster_speed(&kill)) / player;
+        let weight = if target == Some(i) { fail } else { 1.0 };
+        monsters.push((hp, d, moves, weight));
+    }
+    let damage = faint_contact_damage(&monsters, turns);
+    let hp = tr(st, BI_CURHP);
+    if damage * 100.0 < f64::from(percent) * f64::from(hp) {
+        return false;
+    }
+    // Once a think: the attack is simulated several times.
+    thread_local! { static NOTED: std::cell::Cell<i32> = const { std::cell::Cell::new(i32::MIN) }; }
+    let now = st.borg.time.now;
+    if NOTED.with(|n| n.replace(now)) != now {
+        borg_note(st, &format!("# No reserve spell: {damage:.1} damage expected over a {turns:.1}-turn faint, HP {hp} (#878)"));
+    }
+    true
 }
 
 /// The same as `borg_attack_aux_spell_bolt` only in an emergency case:
@@ -3067,6 +3578,8 @@ fn borg_attack_aux_spell_bolt_reserve(
     max_range: i32,
 ) -> i32 {
     let mut near_monsters = 0;
+    // borg-reborn-rs (#878): the one near monster, the cast's target.
+    let mut near_target = None;
 
     /* Fake our Mana */
     let sv_mana = tr(st, BI_CURSP);
@@ -3091,8 +3604,27 @@ fn borg_attack_aux_spell_bolt_reserve(
         return 0;
     }
 
+    // borg-reborn-rs (#980): this is the C Borg's deliberate cast beyond the
+    // current mana. The engine always faints the caster for it
+    // (player-spell.c:540-553: player_over_exert(PY_EXERT_FAINT, 100,
+    // 5 * oops + 1), paralysis that bypasses free action) and adds 5% fail
+    // per missing point (player-spell.c:404-406), which the faked mana below
+    // hides. With attack_reserve_spell_overexert = 0 the Borg never casts
+    // beyond its current SP.
+    if !reserve_cast_allowed(param(Param::attack_reserve_spell_overexert), sv_mana, borg_get_spell_power(st, spell).max(1)) {
+        return 0;
+    }
+
     /* Must be dangerous */
-    if danger_here(st, param(Param::attack_reserve_spell_danger_horizon), true) < avoid(st) * param(Param::attack_reserve_spell_danger_multiplier) {
+    // borg-reborn-rs (#878): with `attack_reserve_spell_damage_only`, the
+    // danger without its fear prices.
+    let danger = if param(Param::attack_reserve_spell_damage_only) != 0 {
+        let (y, x) = (st.borg.c.y, st.borg.c.x);
+        crate::borg_danger::borg_danger_damage_only(st, y, x, param(Param::attack_reserve_spell_danger_horizon), true, false)
+    } else {
+        danger_here(st, param(Param::attack_reserve_spell_danger_horizon), true)
+    };
+    if danger < avoid(st) * param(Param::attack_reserve_spell_danger_multiplier) {
         return 0;
     }
 
@@ -3122,6 +3654,7 @@ fn borg_attack_aux_spell_bolt_reserve(
          */
         if d < param(Param::attack_reserve_spell_near_distance) {
             near_monsters += 1;
+            near_target = Some(i as usize);
 
             /* If it has too many hp to be taken out with this */
             /* spell, don't bother trying */
@@ -3140,6 +3673,11 @@ fn borg_attack_aux_spell_bolt_reserve(
 
     /* Should only be 1 near monster */
     if near_monsters > 1 {
+        return 0;
+    }
+
+    // borg-reborn-rs (#878): no fainting next to what bites.
+    if reserve_faint_refused(st, spell, sv_mana, near_target) {
         return 0;
     }
 
@@ -3169,7 +3707,9 @@ fn borg_attack_aux_spell_bolt_reserve(
 
     /* Cast the spell with fake mana */
     st.borg.trait_[BI_CURSP as usize] = tr(st, BI_MAXSP);
-    if borg_spell_fail(st, spell, param(Param::attack_reserve_spell_fail)) {
+    let queued = borg_spell_fail(st, spell, param(Param::attack_reserve_spell_fail));
+    st.fight_attack.pending_unseen.command_queued(queued);
+    if queued {
         /* Note the use of the emergency spell */
         borg_note(st, "# Emergency use of an Attack Spell.");
 
@@ -3188,6 +3728,33 @@ fn borg_attack_aux_spell_bolt_reserve(
 
     /* Value */
     b_n
+}
+
+/// borg-reborn-rs (#980): whether the emergency attack spell may be cast
+/// with `cursp` mana for a spell of `cost` mana: always when `overexert` is
+/// on (the C Borg's play), else only within the current mana.
+fn reserve_cast_allowed(overexert: i32, cursp: i32, cost: i32) -> bool {
+    overexert != 0 || cursp >= cost
+}
+
+#[cfg(test)]
+mod reserve_tests {
+    use super::reserve_cast_allowed;
+
+    #[test]
+    fn emergency_spell_never_casts_beyond_current_mana_when_overexertion_is_off() {
+        // 592754909: Magic Missile (1 SP) with 0 SP faints and paralyses.
+        assert!(!reserve_cast_allowed(0, 0, 1));
+        assert!(!reserve_cast_allowed(0, 2, 3));
+        assert!(reserve_cast_allowed(0, 1, 1), "within the current mana it is an ordinary cast");
+        assert!(reserve_cast_allowed(1, 0, 1), "default: the C Borg's overexertion cast, today's play");
+    }
+
+    #[test]
+    fn overexertion_default_retains_todays_play() {
+        use crate::params::{Param, SPECS};
+        assert_eq!(SPECS[Param::attack_reserve_spell_overexert as usize].default, 1);
+    }
 }
 
 /// Simulate/Apply the optimal result of using a "dispel" attack spell
@@ -3239,6 +3806,7 @@ fn borg_attack_aux_spell_dispel(st: &mut BorgState, spell: borg_spells, dam: i32
 
     /* never tap if we previously missed a tap */
     if st.fight_attack.target_closest < 0 && BORG_ATTACK_TAP_UNLIFE as i32 == typ && b_n > 0 {
+        st.fight_attack.pending_unseen.clear();
         st.fight_attack.target_closest = 0;
         return 0;
     }
@@ -3249,7 +3817,8 @@ fn borg_attack_aux_spell_dispel(st: &mut BorgState, spell: borg_spells, dam: i32
     }
 
     /* Cast the prayer */
-    let _ = borg_spell(st, spell);
+    let queued = borg_spell(st, spell);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Value */
     b_n
@@ -3260,7 +3829,9 @@ fn borg_attack_aux_spell_dispel(st: &mut BorgState, spell: borg_spells, dam: i32
 /// Genocide handled later.
 fn borg_attack_aux_staff_dispel(st: &mut BorgState, sval: i32, rad: i32, dam: i32, typ: i32) -> i32 {
     /* No firing while blind, confused, or hallucinating */
-    if cant_aim(st) {
+    // borg-reborn-rs (#867): a staff needs no aim (no `obj_needs_aim`, so no
+    // `player_confuse_dir`, cmd-obj.c:431-441): full value while confused.
+    if cant_use_item_attack(st) {
         return 0;
     }
 
@@ -3286,7 +3857,8 @@ fn borg_attack_aux_staff_dispel(st: &mut BorgState, sval: i32, rad: i32, dam: i3
     }
 
     /* Cast the prayer */
-    let _ = borg_use_staff(st, sval);
+    let queued = borg_use_staff(st, sval);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Value */
     b_n
@@ -3296,7 +3868,8 @@ fn borg_attack_aux_staff_dispel(st: &mut BorgState, sval: i32, rad: i32, dam: i3
 /// (`borg_attack_aux_rod_bolt`).
 fn borg_attack_aux_rod_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, typ: i32) -> i32 {
     /* No firing while blind, confused, or hallucinating */
-    if cant_aim(st) {
+    // borg-reborn-rs (#867): confused, by direction at an adjacent monster.
+    if cant_use_item_attack(st) {
         return 0;
     }
 
@@ -3319,6 +3892,7 @@ fn borg_attack_aux_rod_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, t
     }
 
     /* Choose optimal location */
+    mark_confused_aim(st);
     let b_n = borg_launch_bolt(st, rad, dam, typ, max_range(), 0);
 
     /* Simulation */
@@ -3327,13 +3901,12 @@ fn borg_attack_aux_rod_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, t
     }
 
     /* Zap the rod */
-    let _ = borg_zap_rod(st, sval);
+    let queued = borg_zap_rod(st, sval);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Use target */
-    borg_keypress(st, key(b'5'));
-
     /* Set our shooting flag */
-    st.fight_attack.successful_target = -1;
+    st.fight_attack.successful_target = aim_key(st, -1);
 
     /* Value */
     b_n
@@ -3351,7 +3924,8 @@ fn select_effect(st: &mut BorgState, selection: i32) {
 /// (`borg_attack_aux_wand_bolt`).
 fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, typ: i32, selection: i32) -> i32 {
     /* No firing while blind, confused, or hallucinating */
-    if cant_aim(st) {
+    // borg-reborn-rs (#867): confused, by direction at an adjacent monster.
+    if cant_use_item_attack(st) {
         return 0;
     }
 
@@ -3397,6 +3971,7 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
 
     /* Choose optimal location */
     st.fight_attack.town_wand = town;
+    mark_confused_aim(st);
     let mut b_n = borg_launch_bolt(st, rad, dam, typ, max_range(), 0);
     st.fight_attack.town_wand = false;
 
@@ -3430,13 +4005,12 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
     }
 
     /* Aim the wand */
-    let _ = borg_aim_wand(st, sval);
+    let queued = borg_aim_wand(st, sval);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Use target */
-    borg_keypress(st, key(b'5'));
-
     /* Set our shooting flag */
-    st.fight_attack.successful_target = -1;
+    st.fight_attack.successful_target = aim_key(st, -1);
 
     /*  select the correct effect */
     select_effect(st, selection);
@@ -3489,7 +4063,8 @@ fn borg_attack_aux_activation(
     }
 
     /* Activate the artifact */
-    let _ = borg_activate_item(st, activation);
+    let queued = borg_activate_item(st, activation);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Use target */
     if aim {
@@ -3533,7 +4108,8 @@ fn borg_attack_aux_ring(st: &mut BorgState, ring_name: i32, rad: i32, dam: i32, 
     }
 
     /* Activate the artifact */
-    let _ = borg_activate_ring(st, ring_name);
+    let queued = borg_activate_ring(st, ring_name);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Use target */
     borg_keypress(st, key(b'5'));
@@ -3577,7 +4153,8 @@ fn borg_attack_aux_dragon(st: &mut BorgState, sval: i32, rad: i32, dam: i32, typ
     }
 
     /* Activate the scale mail */
-    let _ = borg_activate_dragon(st, sval);
+    let queued = borg_activate_dragon(st, sval);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Use target */
     borg_keypress(st, key(b'5'));
@@ -4203,6 +4780,18 @@ fn best_of(st: &mut BorgState, types: &[u32], mut f: impl FnMut(&mut BorgState, 
 /// Simulate/Apply the optimal result of using the given "type" of attack
 /// (`borg_calculate_attack_effectiveness`).
 pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32) -> i32 {
+    // borg-reborn-rs (#889, Codex re-review of #1128 F2): only a ball gets a
+    // ball's slack and blast-only aims; a dragon's breath is a cone.
+    st.fight_attack.ball_shape = crate::borg_unseen_belief::ball_shaped(attack_type);
+    let value = calculate_attack_effectiveness(st, attack_type);
+    st.fight_attack.ball_shape = false;
+    value
+}
+
+fn calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32) -> i32 {
+    // borg-reborn-rs (#867): set by the attack rated now, if it is aimed by
+    // a confused Borg.
+    clear_confused_aim(st);
     let cl = tr(st, BI_CLEVEL);
     let mr = max_range();
     let iv = st.item_val;
@@ -4807,6 +5396,15 @@ pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32)
     }
 }
 
+/// borg-reborn-rs (#879, reviews of #890 F1/R4): `borg_attack`'s
+/// adjacent-monster test, "next to me, or close and fast". A record only
+/// believed at its last grid never counts, so it cannot turn a scary level's
+/// flight into a fight. With `unseen_belief` = 0 nothing is believed and this
+/// is C's test.
+fn counts_as_adjacent(believed: bool, faster: bool, distance: i32, fast_distance: i32) -> bool {
+    !believed && ((faster && distance <= fast_distance) || distance <= 1)
+}
+
 /// Attack nearby monsters, in the best possible way, if any
 /// (`borg_attack`).
 ///
@@ -4843,6 +5441,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
     /* Reset list */
     st.flow.temp_n = 0;
+    st.fight_attack.blast_aims.clear();
 
     /* Find "nearby" monsters */
     let mut i = 1;
@@ -4870,7 +5469,11 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         }
 
         /* Require current knowledge */
-        if borg_timer(st, kill.when) > param(Param::attack_max_target_age) {
+        // borg-reborn-rs (#879): or a monster believed at its last grid;
+        // #889 (review of #1128 F4): or one a blast could still reach.
+        if borg_timer(st, kill.when) > param(Param::attack_max_target_age)
+            && crate::borg_unseen_belief::believed_for_aim(st, k as usize).is_none()
+        {
             continue;
         }
 
@@ -4892,9 +5495,15 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
         /* Check if there is a monster adjacent to me or he's close and
          * fast. */
-        if (i32::from(kill.speed) > tr(st, BI_SPEED) && engine::distance(st.borg.c, kill.pos) <= param(Param::attack_fast_monster_distance))
-            || engine::distance(st.borg.c, kill.pos) <= 1
-        {
+        // borg-reborn-rs (#879, review of #890 F1): a monster only believed
+        // at its last grid is not "next to me": it never turns a scary
+        // level's flight into a fight.
+        if counts_as_adjacent(
+            crate::borg_unseen_belief::believed_for_aim(st, k as usize).is_some(),
+            i32::from(kill.speed) > tr(st, BI_SPEED),
+            engine::distance(st.borg.c, kill.pos),
+            param(Param::attack_fast_monster_distance),
+        ) {
             adjacent_monster = true;
         }
 
@@ -4958,6 +5567,13 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         }
 
         /* Save the location (careful) */
+        // borg-reborn-rs (#889, Codex re-review of #1128 F1): a record only
+        // a ball could reach goes to the ball's own list, never to the aim
+        // list every other attack (Vampire Strike, melee, bolts) walks.
+        if crate::borg_unseen_belief::blast_only(st, k as usize) {
+            st.fight_attack.blast_aims.push((kill.pos.y, kill.pos.x));
+            continue;
+        }
         st.flow.temp_push(kill.pos.y, kill.pos.x);
     }
 
@@ -4998,7 +5614,8 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     }
 
     /* No destinations */
-    if st.flow.temp_n == 0 {
+    // borg-reborn-rs (#889): a ball may still have a blast-only aim.
+    if st.flow.temp_n == 0 && st.fight_attack.blast_aims.is_empty() {
         st.traits.attacking = false;
         return false;
     }
@@ -5028,6 +5645,9 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         st.fight_attack.cost = None;
         st.fight_attack.kill_best = 0.0;
         let raw = borg_calculate_attack_effectiveness(st, g);
+        // borg-reborn-rs (#867): a confused aimed attack at its aim chance.
+        // Not a blow's damage (`confused_weight`): fight-or-flee as in C.
+        let raw = confused_weight(st, raw, g != BF_THRUST as i32);
         // borg-reborn-rs (#625): the candidates that need no mana, for the
         // fight test's fallback once the chosen attack's uses run out.
         if raw > 0 && !st.fight_attack.cost.is_some_and(|c| c.spell) {
@@ -5106,6 +5726,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
     /* Instantiate */
     let _ = borg_calculate_attack_effectiveness(st, b_g);
+    clear_confused_aim(st);
 
     st.traits.attacking = false;
 
@@ -5280,6 +5901,14 @@ pub(crate) fn town_melee_damage(st: &BorgState, target: usize) -> i32 {
     thrust_damage_with(st, target as i32, 1, Some(BF_THRUST as i32))
 }
 
+/// borg-reborn-rs (#933, review of #967): the expected melee damage a turn
+/// at `target`, in millihitpoints, without the targeting preferences of
+/// `borg_thrust_damage_one` (the unique bonus and the rest): the real hit
+/// chance and blows (`thrust_damage_with`'s focused branch).
+pub(crate) fn melee_milli_per_turn(st: &BorgState, target: usize) -> i32 {
+    thrust_damage_with(st, target as i32, 1, Some(BF_THRUST as i32))
+}
+
 pub(crate) fn focused_attack_is_ranged(attack: FocusedAttack) -> bool {
     focused_priority(attack.kind) > 1 && !matches!(attack.kind as u32,
         BF_SPELL_WHIRLWIND_ATTACK | BF_SPELL_LEAP_INTO_BATTLE | BF_SPELL_MAIM_FOE)
@@ -5360,7 +5989,53 @@ mod focused_tests {
 /// Restore RNG, simulation flags, targets and goals after the dry run.
 /// Native eligibility and aim checks remain in force; no attack is issued.
 pub(crate) fn focused_attack(st: &mut BorgState, target: usize) -> Option<FocusedAttack> {
-    focused_attack_ranked(st, target, |attack| Some(focused_score(attack)))
+    // borg-reborn-rs (#869): only the attack kinds the monster's attack entry
+    // allows (all without one); the best of them by the usual score.
+    let kinds = listed_attack_kinds(st, usize::from(st.kills.kills[target].r_idx));
+    focused_attack_ranked(st, target, |attack| kind_allowed(kinds, attack.kind).then(|| focused_score(attack)))
+}
+
+/// borg-reborn-rs (#878): the best ranged attack at `target` (missiles,
+/// throws, spells, devices, activations: `focused_attack_is_ranged`), among
+/// the kinds its scary-list entry allows, by the usual score.
+pub(crate) fn focused_ranged_attack(st: &mut BorgState, target: usize) -> Option<FocusedAttack> {
+    let kinds = listed_attack_kinds(st, usize::from(st.kills.kills[target].r_idx));
+    focused_attack_ranked(st, target, |attack| {
+        (kind_allowed(kinds, attack.kind) && focused_attack_is_ranged(attack)).then(|| focused_score(attack))
+    })
+}
+
+/// #869: the attack kinds race `r` may be attacked with, from the scary
+/// list's attack entry for the character (`scary_list::attack_kinds_for`);
+/// every kind without one.
+fn listed_attack_kinds(st: &BorgState, r: usize) -> u8 {
+    if r == 0 || r >= engine::r_max().saturating_sub(1) {
+        return crate::scary_list::ALL_ATTACK_KINDS;
+    }
+    crate::scary_list::selected().map_or(crate::scary_list::ALL_ATTACK_KINDS, |list| {
+        crate::scary_list::attack_kinds_for(list, r, engine::race_base_name(r), crate::scary_list::Situation {
+            clevel: tr(st, BI_CLEVEL), class: tr(st, BI_CLASS),
+            breeder_count: i32::from(st.borg.mon.breeders),
+            breeder_stand: !st.borg.breeders_lost && crate::borg_caution::breeder_stand(st),
+            levels_less: 0,
+        })
+    })
+}
+
+/// #869: whether attack `kind` is among `kinds` (`scary_list::ATTACK_KINDS`
+/// bits, by `attack_preference::Family`). A wait is never a focused attack.
+fn kind_allowed(kinds: u8, kind: i32) -> bool {
+    use crate::attack_preference::Family;
+    let bit = match crate::attack_preference::classify(kind).map(|k| k.family) {
+        Some(Family::Melee) => 0,
+        Some(Family::Projectile) => 1,
+        Some(Family::Thrown) => 2,
+        Some(Family::Spell) => 3,
+        Some(Family::Device) => 4,
+        Some(Family::Activation) => 5,
+        Some(Family::Wait) | None => return false,
+    };
+    kinds & (1 << bit) != 0
 }
 
 fn focused_attack_ranked(
@@ -5394,9 +6069,11 @@ fn focused_attack_ranked(
         st.fight_attack.dmg_best = 0;
         st.fight_attack.cost = None;
         let utility = borg_calculate_attack_effectiveness(st, kind);
+        // borg-reborn-rs (#867): a confused aimed attack at its aim chance.
+        let utility = confused_weight(st, utility, true);
         let damage = st.fight_attack.dmg_best;
         let mut cost = st.fight_attack.cost;
-        if kind == BF_OBJECT as i32 {
+        if kind == BF_OBJECT as i32 && cost.is_none() && param(Param::attack_throw_surplus) == 0 {
             let (slot, _) = best_throw(st);
             cost = Some(AttackCost { fail_pct: 0, uses: Some(if slot < 0 { 0 } else { i32::from(st.items.items[slot as usize].iqty) }), spell: false });
         } else if kind == BF_LAUNCH as i32 {
@@ -5447,10 +6124,211 @@ pub(crate) fn perform_focused_attack(st: &mut BorgState, target: usize, attack: 
     st.traits.simulate = false;
     st.traits.attacking = true;
     let result = borg_calculate_attack_effectiveness(st, attack.kind);
+    clear_confused_aim(st);
     st.cave.grid_mut(kill.pos.x, kill.pos.y).kill = prior_kill;
     st.fight_attack.focused_target = None;
     st.traits.attacking = false;
     result > 0
+}
+
+/// borg-reborn-rs (#869): the scary-list reason of an attack entry that is
+/// attacked on sight whatever its own damage (`attack_on_sight`): for pests
+/// like the grey mushroom patch, which confuse again before a cure is worth
+/// anything and die to one hit, so the attack comes before the cures and
+/// Phase Door, confused or not.
+pub(crate) const KILL_ON_SIGHT: &str = "kill-on-sight";
+
+/// borg-reborn-rs (#969): whether the HP is below the floor under which a
+/// `kill-on-sight` entry is left to the ordinary attack and caution, with a
+/// cure potion in the pack or an escape at hand (`borg_fast_fragile`'s
+/// `has_cure` and `escape_available`).
+fn kill_on_sight_hp_low(st: &mut BorgState) -> bool {
+    below_kill_on_sight_floor(param(Param::attack_kill_on_sight_min_hp_percent), tr(st, BI_CURHP), tr(st, BI_MAXHP))
+        && (crate::borg_fast_fragile::has_cure(st) || crate::borg_fast_fragile::escape_available(st))
+}
+
+/// The HP half of `kill_on_sight_hp_low`: below `floor` percent of the
+/// maximum (0 is no floor).
+fn below_kill_on_sight_floor(floor: i32, hp: i32, max_hp: i32) -> bool {
+    floor > 0 && hp * 100 < max_hp * floor
+}
+
+/// borg-reborn-rs (#1064): whether #969's floor declines the attack on sight
+/// of the monster at kill index `i` in this think (a `kill-on-sight` entry,
+/// the HP below the floor, a cure or an escape at hand), with
+/// `attack_kill_on_sight_floor_cure`: then #867's "attacking first" hold on
+/// the confusion cure does not apply either (`borg_caution`'s
+/// `cure_held_for_attack`), or the Borg neither attacks nor cures.
+pub(crate) fn kill_on_sight_floor_declines(st: &mut BorgState, i: usize) -> bool {
+    param(Param::attack_kill_on_sight_floor_cure) != 0
+        && attack_on_sight_reason(st, usize::from(st.kills.kills[i].r_idx)) == Some(KILL_ON_SIGHT)
+        && kill_on_sight_hp_low(st)
+}
+
+/// borg-reborn-rs (#1064): which of the cure potions #969's floor counted
+/// (`borg_fast_fragile::has_cure`: Cure Light, Serious, Critical Wounds) is
+/// drunk once the floor has declined the attack, `carried` telling which are
+/// in the pack. Confused, Cure Serious and then Critical first, which cure
+/// the confusion (`CURE:CONFUSED`, `object.txt`), then Cure Light, which heals
+/// 20 and shortens it by 20 turns (`TIMED_DEC:CONFUSED`); not confused, the
+/// cheapest heal first.
+fn floor_cure_choice(confused: bool, [clw, csw, ccw]: [i32; 3], mut carried: impl FnMut(i32) -> bool) -> Option<i32> {
+    let order = if confused { [csw, ccw, clw] } else { [clw, csw, ccw] };
+    order.into_iter().find(|&sval| carried(sval))
+}
+
+/// borg-reborn-rs (#1064, `attack_kill_on_sight_floor_cure`): drink the cure
+/// #969's floor counted when it declined the attack on sight. Without it the
+/// caution's own heal gates could decline it too, and #867's hold the
+/// confusion cure: Druid 781905420 died two steps from the stairs, 8 CLW in
+/// the pack, neither attacking nor drinking. False when no cure potion is
+/// carried (the floor counted an escape): the caution decides, its cures
+/// included.
+fn kill_on_sight_floor_cure(st: &mut BorgState) -> bool {
+    if param(Param::attack_kill_on_sight_floor_cure) == 0 {
+        return false;
+    }
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let plan = floor_cure_plan(
+        st,
+        |st, sval| borg_slot(st, TV_POTION as i32, sval) >= 0,
+        // #878: hit points alone, as `borg_escape`'s own outlive test; the
+        // full danger prices a spore's confusion at 408 against 12 HP.
+        |st| crate::borg_danger::borg_danger_damage_only(st, y, x, 1, true, false),
+        crate::borg_fast_fragile::escape_available,
+    );
+    let (hp, max_hp) = (tr(st, BI_CURHP), tr(st, BI_MAXHP));
+    let confused = tr(st, BI_ISCONFUSED) != 0;
+    floor_cure_act(
+        st,
+        plan,
+        |st, plan| match plan {
+            FloorCure::Nothing => {}
+            FloorCure::Escape { danger, heal, .. } => borg_note(st, &format!(
+                "# Kill-on-sight floor prefers the escape to its cure: damage {danger} against HP {hp} + {heal} (#1064)")),
+            FloorCure::Drink { danger, .. } => borg_note(st, &format!(
+                "# Taking the cure the kill-on-sight floor counted: HP {hp}/{max_hp}{}, damage {danger} (#1064)",
+                if confused { ", confused" } else { "" })),
+        },
+        // Review of #1082 (third review, P3): the drink after a failed escape
+        // has its own marker, so a count of the floor's drinks includes it.
+        |st| borg_note(st, &format!(
+            "# Kill-on-sight floor: no escape usable, taking the cure after all: HP {hp}/{max_hp}{} (#1064)",
+            if confused { ", confused" } else { "" })),
+        floor_escape,
+        |st, sval| if sval == st.item_val.sv_potion_cure_critical {
+            crate::borg_item_use::borg_quaff_crit(st, true)
+        } else {
+            crate::borg_item_use::borg_quaff_potion(st, sval)
+        },
+    )
+}
+
+/// Review of #1082 (re-review, P2): the escape `FloorCure::Escape` chose,
+/// taken in the same think, so no later rule (the caution's confusion cure)
+/// drinks the potion the floor rejected: the staircase underfoot, else Phase
+/// Door through the one Phase Door decision (`phase_door`, its own gates:
+/// the owner's adjacent-enemy rule, the anti-summon delay; no landing test,
+/// as the fast-fragile site ships). False when neither can be used now.
+fn floor_escape(st: &mut BorgState) -> bool {
+    if let Some(key) = crate::borg_fast_fragile::stair_key_here(st) {
+        borg_note(st, &format!("# Kill-on-sight floor: stairs underfoot ('{}') before the cure (#1064)", key as char));
+        borg_keypress(st, keycode_t::from(key));
+        return true;
+    }
+    if crate::borg_escape::phase_door(st, crate::borg_escape::PhaseSite::KillOnSightFloor, crate::borg_escape::PhaseCheck::None, None, |st| {
+        st.borg.time.now.wrapping_sub(st.borg.time.antisummon) > param(Param::escape_phase_antisummon_delay)
+            && crate::borg_escape::borg_allow_teleport(st)
+            && (crate::borg_item_use::borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+                || crate::borg_magic::borg_spell_fail(
+                    st, crate::borg_headers::borg_magic_h::PHASE_DOOR, param(Param::escape_last_ditch_phase_fail)))
+    }) {
+        crate::borg_escape::reset_antisummon(st);
+        borg_note(st, "# Kill-on-sight floor: Phase Door before the cure (#1064)");
+        return true;
+    }
+    false
+}
+
+/// What `kill_on_sight_floor_cure` does with its plan (review of #1082,
+/// re-review P2: the decision is carried to the action): `Escape` takes the
+/// escape, and when it cannot be used drinks after all (the potion is then
+/// the best move left); `Drink` quaffs. The think is spent when an action
+/// was made (true). `note` names the plan first; `fallback_note` marks the
+/// drink after an escape that could not be used. The decision tests call it
+/// with the engine's parts given.
+fn floor_cure_act(
+    st: &mut BorgState,
+    plan: FloorCure,
+    note: impl FnOnce(&mut BorgState, &FloorCure),
+    fallback_note: impl FnOnce(&mut BorgState),
+    escape: impl FnOnce(&mut BorgState) -> bool,
+    quaff: impl FnOnce(&mut BorgState, i32) -> bool,
+) -> bool {
+    note(st, &plan);
+    match plan {
+        FloorCure::Nothing => false,
+        FloorCure::Escape { sval, .. } => escape(st) || {
+            fallback_note(st);
+            quaff(st, sval)
+        },
+        FloorCure::Drink { sval, .. } => quaff(st, sval),
+    }
+}
+
+/// What a cure potion heals (`HEAL_HP`, `object.txt`: 20, 40 and 60, no
+/// percentage), capped at the HP missing (`effect-handler-attack.c`
+/// `effect_handler_HEAL_HP`: `player->chp` stops at `player->mhp`).
+fn floor_cure_heal(sval: i32, [clw, csw, ccw]: [i32; 3], hp: i32, max_hp: i32) -> i32 {
+    let heal = if sval == clw { 20 } else if sval == csw { 40 } else if sval == ccw { 60 } else { 0 };
+    heal.min((max_hp - hp).max(0))
+}
+
+/// Review of #1082 (P2): the potion is drunk when the Borg outlives the next
+/// turn with it (the damage-only danger at its grid below the HP it will have), or when
+/// no escape is at hand (the potion is then the best move left). Otherwise
+/// the escape outranks it: `floor_escape` takes the stairs underfoot or reads
+/// Phase Door, which a heal that the next turn undoes would only delay.
+fn floor_cure_wanted(danger: i32, hp: i32, heal: i32, escape: impl FnOnce() -> bool) -> bool {
+    danger < hp + heal || !escape()
+}
+
+/// What `kill_on_sight_floor_cure` does once the floor has declined.
+#[derive(Debug, PartialEq, Eq)]
+enum FloorCure {
+    /// No cure potion carried (the floor counted an escape): the caution
+    /// decides, its own cures included.
+    Nothing,
+    /// The potion does not outlive the next turn and an escape is at hand:
+    /// `floor_escape` takes it, else the potion `sval` is drunk after all.
+    Escape { sval: i32, danger: i32, heal: i32 },
+    /// Quaff `sval`; the think is spent.
+    Drink { sval: i32, danger: i32 },
+}
+
+/// `kill_on_sight_floor_cure`'s decision, with the engine's parts given (the
+/// pack, the danger at the Borg's grid, the escape test: `borg_slot` reads
+/// the engine's tables). The danger is asked only when a potion is carried,
+/// the escape only when the potion does not outlive the next turn. The
+/// decision tests (review of #1082, P3) call it directly.
+fn floor_cure_plan(
+    st: &mut BorgState,
+    mut carried: impl FnMut(&mut BorgState, i32) -> bool,
+    danger: impl FnOnce(&mut BorgState) -> i32,
+    escape: impl FnOnce(&mut BorgState) -> bool,
+) -> FloorCure {
+    let confused = tr(st, BI_ISCONFUSED) != 0;
+    let svals = [st.item_val.sv_potion_cure_light, st.item_val.sv_potion_cure_serious, st.item_val.sv_potion_cure_critical];
+    let Some(sval) = floor_cure_choice(confused, svals, |sval| carried(st, sval)) else {
+        return FloorCure::Nothing;
+    };
+    let heal = floor_cure_heal(sval, svals, tr(st, BI_CURHP), tr(st, BI_MAXHP));
+    let danger = danger(st);
+    if floor_cure_wanted(danger, tr(st, BI_CURHP), heal, || escape(st)) {
+        FloorCure::Drink { sval, danger }
+    } else {
+        FloorCure::Escape { sval, danger, heal }
+    }
 }
 
 /// #760: the category target comes before flight and remains the target on
@@ -5466,12 +6344,19 @@ pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
         if crate::borg_fast_fragile::policy() {
             if let Some((source, facts, attack)) = crate::borg_fast_fragile::classify(st, i) {
                 if !crate::borg_caution::category_attack_safe_with(st, i, false) { continue; }
+                // #914: a group in contact skips this attack, on a marked target in
+                // contact or not; later entries, then caution, decide (no hand-off).
+                if let Some(n) = crate::borg_fast_fragile::crowded(st) {
+                    borg_note(st, &format!("# Fast-fragile: {n} marked attackers in contact, caution decides (#914)"));
+                    continue;
+                }
                 let note = crate::borg_fast_fragile::describe(st, i, source, &facts);
                 borg_note(st, &note);
                 if crate::borg_fast_fragile::escape_instead(st, i, &facts) { return true; }
-                // The exception to the heal ban: cornered, a cure comes first.
-                if crate::borg_fast_fragile::yield_to_cure(st, i, &facts) {
-                    borg_note(st, "# Cornered by a fast-fragile attacker: no escape, the kill is more than one turn off; the cure decides (#842)");
+                // The exceptions to the heal ban: cornered (#842) or at the
+                // heal floor (#926), a cure comes first; the note names which.
+                if let Some(why) = crate::borg_fast_fragile::yield_to_cure(st, i, &facts) {
+                    borg_note(st, why);
                     continue;
                 }
                 borg_note(st, &format!("# Attack on sight: {} (fast-fragile), {} HP, attack {} (#842)",
@@ -5482,7 +6367,35 @@ pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
         }
         let Some(reason) = attack_on_sight_reason(st, usize::from(kill.r_idx)) else { continue };
         let Some(attack) = focused_attack(st, i) else { continue };
-        if !crate::borg_caution::category_attack_safe(st, i) { continue; }
+        // borg-reborn-rs (#869, owner: "Always attack, confused or not.
+        // Unless there is something more dangerous"): a `kill-on-sight`
+        // entry drops the target's own damage test, as #842 does for
+        // fast-fragile monsters; the other monsters' danger still decides.
+        // No heal ban and no fast-fragile escape: the target does not chase.
+        let safe = if reason == KILL_ON_SIGHT {
+            crate::borg_caution::category_attack_safe_with(st, i, false)
+        } else {
+            crate::borg_caution::category_attack_safe(st, i)
+        };
+        if !safe { continue; }
+        // borg-reborn-rs (#969): below `attack_kill_on_sight_min_hp_percent`
+        // of max HP a `kill-on-sight` entry is not attacked on sight: the
+        // ordinary attack and caution (the heals, Phase Door, flight)
+        // decide, as for any monster, when a cure potion is in the pack or
+        // an escape is at hand (stairs underfoot, a Phase Door that can be
+        // read). Confused next to a grey mushroom patch a swing reaches it
+        // 11/32 of the time (player_confuse_dir) and every spore costs 1d4,
+        // so the attack first had no end. With neither the attack goes on:
+        // confused, no scroll can be read and a step goes astray 75% of
+        // the time, so the swing is the best chance left.
+        if reason == KILL_ON_SIGHT && kill_on_sight_hp_low(st) {
+            borg_note(st, &format!("# Not attacking on sight: {} (kill-on-sight), HP {}/{} below {}%, a cure or an escape at hand (#969)",
+                String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))),
+                tr(st, BI_CURHP), tr(st, BI_MAXHP), param(Param::attack_kill_on_sight_min_hp_percent)));
+            // borg-reborn-rs (#1064): the cure the floor counted is taken.
+            if kill_on_sight_floor_cure(st) { return true; }
+            continue;
+        }
         borg_note(st, &format!("# Attack on sight: {} ({reason}), {} HP, attack {} (#760)",
             String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))), kill.power, attack.kind));
         if perform_focused_attack(st, i, attack) { return true; }
@@ -5552,6 +6465,246 @@ fn borg_fight_speed(st: &mut BorgState) -> bool {
 }
 
 #[cfg(test)]
+mod reserve_faint_tests {
+    use super::*;
+
+    /// #878: `randint1(5 * oops + 1)`: Magic Missile (1 mana) at 0 SP faints
+    /// 1 to 6 world ticks, 3.5 on average.
+    #[test]
+    fn the_faint_lasts_its_mean() {
+        assert_eq!(reserve_faint_turns(1), 3.5);
+        assert_eq!(reserve_faint_turns(2), 6.0);
+        assert_eq!(reserve_faint_turns(0), 1.0);
+    }
+
+    /// #878 review F2: a tick of paralysis is more Borg turns for a fast
+    /// Borg (extract_energy 10 at normal speed, 20 at +10, 30 at +20).
+    #[test]
+    fn a_fast_borg_takes_more_blows_while_fainted() {
+        assert_eq!(faint_borg_turns(3.5, 10.0), 3.5);
+        assert_eq!(faint_borg_turns(3.5, 20.0), 7.0);
+        let adjacent = |e| faint_contact_damage(&[(0.9, 1, 0.5, 1.0)], faint_borg_turns(3.5, e));
+        assert!((adjacent(30.0) - 3.0 * adjacent(10.0)).abs() < 1e-9);
+    }
+
+    #[test]
+    fn walkers_join_the_faint_late_and_the_target_only_if_the_cast_fails() {
+        // Two worms (0.9 a turn, half speed): adjacent, and three grids away.
+        let adjacent = faint_contact_damage(&[(0.9, 1, 0.5, 1.0)], 3.5);
+        assert!((adjacent - 3.15).abs() < 1e-9);
+        let far = faint_contact_damage(&[(0.9, 3, 0.5, 1.0)], 3.5);
+        assert_eq!(far, 0.0, "two steps at half speed take 4 turns");
+        let near = faint_contact_damage(&[(0.9, 2, 0.5, 1.0)], 3.5);
+        assert!((near - 0.9 * 1.5).abs() < 1e-9);
+        // The target at a 5% fail rate.
+        let target = faint_contact_damage(&[(0.9, 1, 0.5, 0.05)], 3.5);
+        assert!((target - 0.1575).abs() < 1e-9);
+        // Defensive only: `reserve_faint_refused` clamps the energy, so a
+        // monster's moves are never 0 there; it skips immobile ones instead.
+        assert_eq!(faint_contact_damage(&[(5.0, 4, 0.0, 1.0)], 3.5), 0.0, "no moves, never arrives");
+        // The skip that runs: a mold strikes only when adjacent.
+        assert!(faint_reaches(1, true), "an adjacent mold");
+        assert!(!faint_reaches(2, true), "a mold two grids away");
+        assert!(faint_reaches(4, false), "a worm walks in");
+    }
+}
+
+#[cfg(test)]
+mod floor_cure_tests {
+    use super::floor_cure_choice;
+
+    const CLW: i32 = 1;
+    const CSW: i32 = 2;
+    const CCW: i32 = 3;
+
+    /// #1064: Druid 781905420, confused next to a grey mushroom patch at HP
+    /// 5/12 with 8 CLW and nothing else: the floor declined the attack, and
+    /// the potion it counted is the action.
+    #[test]
+    fn confused_with_only_cure_light_drinks_it() {
+        assert_eq!(floor_cure_choice(true, [CLW, CSW, CCW], |s| s == CLW), Some(CLW));
+    }
+
+    #[test]
+    fn confused_prefers_the_potions_that_cure_confusion() {
+        assert_eq!(floor_cure_choice(true, [CLW, CSW, CCW], |_| true), Some(CSW));
+        assert_eq!(floor_cure_choice(true, [CLW, CSW, CCW], |s| s != CSW), Some(CCW));
+    }
+
+    #[test]
+    fn not_confused_drinks_the_cheapest_heal() {
+        assert_eq!(floor_cure_choice(false, [CLW, CSW, CCW], |_| true), Some(CLW));
+        assert_eq!(floor_cure_choice(false, [CLW, CSW, CCW], |s| s == CCW), Some(CCW));
+    }
+
+    /// The floor counted an escape only: no potion, nothing drunk.
+    #[test]
+    fn no_cure_carried_drinks_nothing() {
+        assert_eq!(floor_cure_choice(true, [CLW, CSW, CCW], |_| false), None);
+        assert_eq!(floor_cure_choice(false, [CLW, CSW, CCW], |_| false), None);
+    }
+
+    /// The flag is off when compiled, shipped on in `harness/pborg.yaml`.
+    #[test]
+    fn the_floor_cure_is_compiled_off_and_shipped_on() {
+        let spec = crate::params::SPECS.iter().find(|s| s.name == "attack_kill_on_sight_floor_cure").unwrap();
+        assert_eq!((spec.default, spec.min, spec.max), (0, 0, 1));
+        let shipped = include_str!("../../harness/pborg.yaml");
+        assert!(shipped.lines().any(|l| l.trim() == "borg_param_attack_kill_on_sight_floor_cure: 1"));
+    }
+
+    /// #1064: the floor's decline drinks before it moves on (the wiring;
+    /// the decision itself is `floor_cure_act`'s tests).
+    #[test]
+    fn the_decline_drinks_before_it_moves_on() {
+        let src = include_str!("borg_fight_attack.rs");
+        let decline = &src[src.find(concat!("a cure or an escape at hand (", "#969)")).unwrap()..];
+        let decline = &decline[..decline.find("continue;").unwrap()];
+        assert!(decline.contains(concat!("if kill_on_sight_floor_", "cure(st) { return true; }")), "the decline drinks first");
+    }
+
+    use super::{below_kill_on_sight_floor, floor_cure_act, floor_cure_heal, floor_cure_plan, floor_cure_wanted, FloorCure};
+    use crate::borg_headers::borg_trait_h::{BI_CURHP, BI_ISCONFUSED, BI_MAX, BI_MAXHP};
+    use crate::state::BorgState;
+
+    /// Druid 781905420's think at turn 13,311: CL1, HP 5/12, confused, next
+    /// to a grey mushroom patch (a spore: at most 4, `SPORE:CONFUSE:1d4`),
+    /// 8 CLW and nothing else.
+    fn druid(confused: bool) -> BorgState {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        st.borg.trait_[BI_CURHP as usize] = 5;
+        st.borg.trait_[BI_MAXHP as usize] = 12;
+        st.borg.trait_[BI_ISCONFUSED as usize] = i32::from(confused);
+        st.item_val.sv_potion_cure_light = CLW;
+        st.item_val.sv_potion_cure_serious = CSW;
+        st.item_val.sv_potion_cure_critical = CCW;
+        st
+    }
+
+    /// Review of #1082 (P3): the 5/12 case drinks the CLW; the escape is not
+    /// asked, since the potion outlives the turn.
+    #[test]
+    fn the_druid_drinks_its_clw() {
+        let mut st = druid(true);
+        let plan = floor_cure_plan(&mut st, |_, s| s == CLW, |_| 4, |_| panic!("no escape test"));
+        assert_eq!(plan, FloorCure::Drink { sval: CLW, danger: 4 });
+    }
+
+    /// Review of #1082 (P2): a second foe that kills through the heal, with
+    /// the stairs underfoot: no potion, the caution takes the escape. With no
+    /// escape the potion is the best move left.
+    #[test]
+    fn an_escape_outranks_a_heal_the_next_turn_undoes() {
+        // 30/80 with a CLW: 50 after it, against 55.
+        let mut st = druid(false);
+        st.borg.trait_[BI_CURHP as usize] = 30;
+        st.borg.trait_[BI_MAXHP as usize] = 80;
+        assert_eq!(floor_cure_plan(&mut st, |_, s| s == CLW, |_| 55, |_| true), FloorCure::Escape { sval: CLW, danger: 55, heal: 20 });
+        assert_eq!(floor_cure_plan(&mut st, |_, s| s == CLW, |_| 55, |_| false), FloorCure::Drink { sval: CLW, danger: 55 });
+        // A CSW (40) outlives it: drink, the escape not asked.
+        let plan = floor_cure_plan(&mut st, |_, s| s == CSW, |_| 55, |_| panic!("no escape test"));
+        assert_eq!(plan, FloorCure::Drink { sval: CSW, danger: 55 });
+    }
+
+    /// No cure potion (the floor counted an escape): nothing is asked or
+    /// drunk, and the caution decides.
+    #[test]
+    fn no_potion_asks_nothing() {
+        let mut st = druid(true);
+        assert_eq!(floor_cure_plan(&mut st, |_, _| false, |_| panic!("no danger"), |_| panic!("no escape")), FloorCure::Nothing);
+    }
+
+    /// Re-review of #1082 (P2): the escape the plan chose is the think's
+    /// action: the stair key is queued and the rejected potion is not drunk.
+    #[test]
+    fn the_escape_is_taken_ahead_of_the_rejected_potion() {
+        // The reviewer's case: confused on an up staircase at 45/120, only a
+        // CSW (40), 88 damage incoming. (`borg_keypress` links the engine's
+        // message log, so the escape records its key here.)
+        let mut st = druid(true);
+        let mut keys = Vec::new();
+        let plan = FloorCure::Escape { sval: CSW, danger: 88, heal: 40 };
+        let spent = floor_cure_act(&mut st, plan, |_, _| {}, |_| panic!("no fallback"), |_| { keys.push(b'<'); true }, |_, _| panic!("the rejected potion"));
+        assert!(spent, "the think is spent");
+        assert_eq!(keys, vec![b'<']);
+    }
+
+    /// No escape can be used after all (the Phase Door gates refuse it):
+    /// the potion is drunk, the best move left.
+    #[test]
+    fn an_escape_that_cannot_be_used_drinks_after_all() {
+        let mut st = druid(true);
+        let (mut quaffed, mut marked) = (None, false);
+        let plan = FloorCure::Escape { sval: CSW, danger: 88, heal: 40 };
+        assert!(floor_cure_act(&mut st, plan, |_, _| {}, |_| marked = true, |_| false, |_, s| { quaffed = Some(s); true }));
+        assert_eq!(quaffed, Some(CSW));
+        assert!(marked, "the fallback drink has its own marker (third review, P3)");
+    }
+
+    /// `Drink` quaffs and spends the think; `Nothing` asks nothing.
+    #[test]
+    fn drink_quaffs_and_nothing_acts_on_nothing() {
+        let mut st = druid(true);
+        let mut quaffed = None;
+        assert!(floor_cure_act(&mut st, FloorCure::Drink { sval: CLW, danger: 8 }, |_, _| {}, |_| panic!("no fallback"), |_| panic!("no escape"), |_, s| { quaffed = Some(s); true }));
+        assert_eq!(quaffed, Some(CLW));
+        assert!(!floor_cure_act(&mut st, FloorCure::Nothing, |_, _| {}, |_| panic!("no fallback"), |_| panic!("no escape"), |_, _| panic!("no quaff")));
+    }
+
+    /// The stair key `floor_escape` presses, as `escape_available` counts the
+    /// staircase underfoot.
+    #[test]
+    fn the_stair_key_follows_the_staircase() {
+        use crate::borg_fast_fragile::stair_key;
+        use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_LESS, FEAT_MORE};
+        assert_eq!(stair_key(FEAT_LESS, false), Some(b'<'));
+        assert_eq!(stair_key(FEAT_LESS, true), None, "birth_force_descend: no way up");
+        assert_eq!(stair_key(FEAT_MORE, true), Some(b'>'));
+        assert_eq!(stair_key(FEAT_FLOOR, false), None);
+    }
+
+    #[test]
+    fn the_heal_and_the_survival_test_follow_the_engine() {
+        let svals = [CLW, CSW, CCW];
+        assert_eq!(floor_cure_heal(CLW, svals, 5, 12), 7, "capped at the HP missing");
+        assert_eq!(floor_cure_heal(CLW, svals, 30, 80), 20);
+        assert_eq!(floor_cure_heal(CSW, svals, 30, 80), 40);
+        assert_eq!(floor_cure_heal(CCW, svals, 10, 200), 60);
+        assert!(floor_cure_wanted(11, 5, 7, || panic!()), "12 HP after it, against 11");
+        assert!(!floor_cure_wanted(12, 5, 7, || true));
+        assert!(floor_cure_wanted(12, 5, 7, || false));
+        // #969's floor at the shipped 50: 5/12 is below it, 6/12 is not.
+        assert!(below_kill_on_sight_floor(50, 5, 12) && !below_kill_on_sight_floor(50, 6, 12));
+        assert!(!below_kill_on_sight_floor(0, 1, 12), "0 is no floor");
+    }
+}
+
+#[cfg(test)]
+mod attack_kind_tests {
+    use super::*;
+
+    /// #869: the scary list's attack kinds, by attack family.
+    #[test]
+    fn attack_kinds_follow_the_families() {
+        let only = |name: &str| 1u8 << crate::scary_list::ATTACK_KINDS.iter().position(|k| *k == name).unwrap();
+        let all = crate::scary_list::ALL_ATTACK_KINDS;
+        for kind in [BF_THRUST, BF_LAUNCH, BF_OBJECT, BF_SPELL_MAGIC_MISSILE, BF_WAND_HOLD_MONSTER, BF_ACT_ARROW] {
+            assert!(kind_allowed(all, kind as i32), "{kind}: all kinds");
+        }
+        assert!(kind_allowed(only("melee"), BF_THRUST as i32));
+        assert!(!kind_allowed(only("melee"), BF_OBJECT as i32));
+        assert!(kind_allowed(only("missiles"), BF_LAUNCH as i32));
+        assert!(kind_allowed(only("throws"), BF_OBJECT as i32));
+        assert!(kind_allowed(only("spells"), BF_SPELL_MAGIC_MISSILE as i32));
+        assert!(kind_allowed(only("devices"), BF_WAND_HOLD_MONSTER as i32));
+        assert!(!kind_allowed(only("devices"), BF_SPELL_MAGIC_MISSILE as i32));
+        assert!(kind_allowed(only("activations"), BF_ACT_ARROW as i32));
+        assert!(!kind_allowed(all, BF_REST as i32), "a wait is never a focused attack");
+    }
+}
+
+#[cfg(test)]
 mod town_kill_tests {
     use super::*;
 
@@ -5617,6 +6770,40 @@ mod point_blank_tests {
 mod fallback_tests {
     use super::*;
 
+    #[test]
+    fn a_launched_ball_counts_and_wakes_a_penalized_sleeper_once() {
+        let mut st = BorgState::default();
+        st.kills.kills = vec![crate::borg_flow_kill::BorgKill::BLANK; 3];
+        st.kills.kills[1].r_idx = 1;
+        st.kills.kills[2].r_idx = 2;
+        st.kills.kills[1].pos = loc { x: 4, y: 5 };
+        st.kills.kills[2].pos = loc { x: 6, y: 7 };
+        let mut unseen = Vec::new();
+        collect_believed_target(&mut unseen, 1, &st.kills.kills[1], Some(100), 3);
+        collect_believed_target(&mut unseen, 2, &st.kills.kills[2], Some(50), 5);
+        collect_believed_target(&mut unseen, 1, &st.kills.kills[1], Some(100), 3);
+        let score = expected_score(-999, Some(100)) + expected_score(2500, Some(50));
+        assert_eq!(score, 251);
+
+        // Stub out command I/O. Feed the same ledger the ball scorer builds
+        // through queuing and the next normal command input.
+        st.fight_attack.pending_unseen.stage(unseen);
+        st.fight_attack.pending_unseen.command_queued(true);
+        st.borg.time.now = 10;
+        st.kills.kills[1].pos = loc { x: 8, y: 9 };
+        let mut trace = Vec::new();
+        let mut log = |_: &mut BorgState, target: BelievedTarget| {
+            trace.push((target.index, target.race, target.pos.x, target.pos.y, target.weight, target.age));
+        };
+        crate::borg_unseen_belief::finish_attack(&mut st, &mut log);
+        crate::borg_unseen_belief::finish_attack(&mut st, log);
+        assert_eq!(trace, [(1, 1, 4, 5, 100, 3), (2, 2, 6, 7, 50, 5)]);
+        assert_eq!(st.fight_attack.unseen_shots[&1], (0, 1));
+        assert_eq!(st.fight_attack.unseen_shots[&2], (0, 1));
+        assert!(st.kills.kills[1].awake);
+        assert!(st.kills.kills[2].awake);
+    }
+
     /// Review of #657: the winner is never its own fallback.
     #[test]
     fn the_winner_is_not_its_own_fallback() {
@@ -5630,7 +6817,15 @@ mod fallback_tests {
 
 #[cfg(test)]
 mod throw_tests {
-    use super::{throw_hit_percent, thrown_damage};
+    use super::{low_risk_potion_throw, native_throw_range, throw_hit_percent, thrown_damage};
+
+    #[test]
+    fn spending_a_potion_requires_enough_current_hp_to_survive_a_miss() {
+        assert!(low_risk_potion_throw(72, 7));
+        assert!(!low_risk_potion_throw(72, 8));
+        assert!(!low_risk_potion_throw(7, 7));
+        assert!(!low_risk_potion_throw(0, 0));
+    }
 
     /// #568: the engine's throw damage (`player-attack.c:554-582`, `:1296`).
     #[test]
@@ -5642,8 +6837,36 @@ mod throw_tests {
         assert_eq!(thrown_damage(1, 4, 2, 5, true, false), 9, "to-dam before the multiplier");
     }
 
+    /// #870: oil (22 damage) against the adjacent crow (AC 14), using the
+    /// named Half-Troll Necromancer's throwing skill 10 and no hit bonus.
+    #[test]
+    fn adjacent_crow_oil_rating_has_its_own_divisor() {
+        use super::{rated_throw_damage, throw_point_blank_divisor};
+        let oil = thrown_damage(1, 4, 0, 20, true, true);
+        let chance = throw_hit_percent(10, 0, true, 1, 14);
+        assert_eq!(chance, 12);
+        assert_eq!(rated_throw_damage(oil, 1, false, 5, chance), 0);
+        assert_eq!(rated_throw_damage(oil, 1, false, 1, chance), 2);
+        for arrow in [1, 2, 3, 5, 1000] {
+            assert_eq!(throw_point_blank_divisor(0, arrow), arrow);
+            assert_eq!(throw_point_blank_divisor(1, arrow), 1);
+            assert_eq!(throw_point_blank_divisor(5, arrow), 5);
+            assert_eq!(rated_throw_damage(oil, 2, false, arrow, chance), 2, "not adjacent");
+            assert_eq!(rated_throw_damage(oil, 1, true, arrow, chance), 2, "unique");
+        }
+        assert_eq!(crate::params::value(crate::params::Param::attack_throw_point_blank_divisor), 0);
+    }
+
     /// #568: `hit_chance` (`player-attack.c:196-219`): 12% always hits, 5%
     /// always misses, the rest scales with (to-hit - 2/3 AC) / to-hit.
+    #[test]
+    fn native_throw_range_uses_single_item_weight_and_caps_at_ten() {
+        assert_eq!(native_throw_range(9, 12), 10);
+        assert_eq!(native_throw_range(9, 50), 5);
+        assert_eq!(native_throw_range(9, 55), 5);
+        assert_eq!(native_throw_range(9, 0), 10);
+    }
+
     #[test]
     fn throw_hit_chance_is_the_engines() {
         assert_eq!(throw_hit_percent(30, 0, true, 0, 0), 95, "no armour: all but the 5% miss");
@@ -5652,5 +6875,118 @@ mod throw_tests {
         assert_eq!(throw_hit_percent(20, 0, false, 0, 30), 39, "not THROWING: 3/2 of the skill");
         assert_eq!(throw_hit_percent(30, 0, true, 3, 30), 33, "the distance lowers it");
         assert_eq!(throw_hit_percent(20, 2, true, 0, 30), 31, "bonus x BTH_PLUS_ADJ");
+    }
+}
+
+#[cfg(test)]
+mod confused_attack_tests {
+    use super::*;
+
+    /// #867: `player_confuse_dir` (player-util.c:1353-1377): a direction key
+    /// is redrawn when `randint0(100) < 75`, then `ddd[randint0(8)]`; counted
+    /// over every pair of draws, the key survives 11/32 of the time.
+    #[test]
+    fn the_aim_chance_is_player_confuse_dirs() {
+        let wanted = 3;
+        let mut kept = 0;
+        for roll in 0..100 {
+            for draw in 0..8 {
+                let dir = if roll < 75 { draw } else { wanted };
+                kept += i32::from(dir == wanted);
+            }
+        }
+        let (num, den) = CONFUSED_AIM;
+        assert_eq!(kept * den, num * 800, "kept {kept} of 800");
+    }
+
+    #[test]
+    fn only_a_confused_borg_that_sees_aims_by_direction() {
+        assert!(by_direction(true, false, true, false));
+        assert!(!by_direction(false, false, true, false), "switch 0: C");
+        assert!(!by_direction(true, false, false, false), "not confused: the usual aim");
+        assert!(!by_direction(true, true, true, false), "blind: nothing aimed");
+        assert!(!by_direction(true, false, true, true), "hallucinating: nothing aimed");
+    }
+
+    /// The shipped 0 keeps C: confused, no item attack at all.
+    #[test]
+    fn shipped_off_keeps_every_item_attack_out_while_confused() {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        st.borg.trait_[BI_ISCONFUSED as usize] = 1;
+        assert!(!confused_by_direction(&st));
+        assert!(cant_use_item_attack(&st));
+        mark_confused_aim(&mut st);
+        assert!(!st.fight_attack.confused_aim);
+        st.borg.trait_[BI_ISCONFUSED as usize] = 0;
+        assert!(!cant_use_item_attack(&st));
+    }
+
+    /// A target is `5`, which confusion always redraws; a direction is its
+    /// digit, with no target to track afterwards.
+    #[test]
+    fn a_confused_aim_is_sent_as_a_direction_digit() {
+        assert_eq!(aim_answer(0, -2), (key(b'5'), -2));
+        assert_eq!(aim_answer(0, -1), (key(b'5'), -1));
+        for dir in [1, 2, 3, 4, 6, 7, 8, 9] {
+            assert_eq!(aim_answer(dir, -2), (i2d(dir), 0));
+            assert_ne!(aim_answer(dir, -2).0, key(b'5'));
+        }
+    }
+
+    /// Every aimed attack loses the same share, so the chooser still ranks
+    /// them on damage: a caster's weak blow loses to oil, a fighter's blow
+    /// beats it; a staff (not marked) keeps its full value.
+    #[test]
+    fn the_weight_keeps_the_ranking_on_damage() {
+        let mut st = BorgState::default();
+        let mut weigh = |raw: i32, dmg: i32, aimed: bool| {
+            st.fight_attack.confused_aim = aimed;
+            st.fight_attack.dmg_best = dmg;
+            st.fight_attack.kill_best = 1.0;
+            let v = confused_weight(&mut st, raw, true);
+            (v, st.fight_attack.dmg_best, st.fight_attack.kill_best)
+        };
+        assert_eq!(weigh(64, 64, true), (22, 22, 11.0 / 32.0));
+        assert_eq!(weigh(64, 64, false), (64, 64, 1.0), "not aimed: unchanged");
+        let (mage_blow, _, _) = weigh(3, 3, true);
+        let (oil, _, _) = weigh(22, 22, true);
+        let (warrior_blow, _, _) = weigh(40, 40, true);
+        assert!(oil > mage_blow);
+        assert!(warrior_blow > oil);
+        let (staff, _, _) = weigh(20, 20, false);
+        assert!(staff > oil, "a staff needs no aim");
+    }
+
+    /// Review of #868: `borg_attack` weights a blow's value, not the damage
+    /// the fight-or-flee tests read, which stays C's.
+    #[test]
+    fn a_blows_damage_stays_cs_for_fight_or_flee() {
+        let mut st = BorgState::default();
+        st.fight_attack.confused_aim = true;
+        st.fight_attack.dmg_best = 64;
+        st.fight_attack.kill_best = 1.0;
+        assert_eq!(confused_weight(&mut st, 64, false), 22, "the value is weighted");
+        assert_eq!((st.fight_attack.dmg_best, st.fight_attack.kill_best), (64, 1.0), "the damage is not");
+    }
+}
+
+#[cfg(test)]
+mod tests_890_adjacent {
+    use super::counts_as_adjacent;
+
+    /// Review of #890, F1/R4: a believed record is never adjacent; a seen
+    /// one keeps C's test.
+    #[test]
+    fn a_believed_record_is_never_the_adjacent_monster() {
+        // Seen: next to me, or fast and within attack_fast_monster_distance (2).
+        assert!(counts_as_adjacent(false, false, 1, 2));
+        assert!(counts_as_adjacent(false, true, 2, 2));
+        assert!(!counts_as_adjacent(false, false, 2, 2));
+        assert!(!counts_as_adjacent(false, true, 3, 2));
+        // Believed: never, at any distance or speed.
+        assert!(!counts_as_adjacent(true, true, 2, 2));
+        assert!(!counts_as_adjacent(true, false, 1, 2));
+        assert!(!counts_as_adjacent(true, true, 1, 2));
     }
 }

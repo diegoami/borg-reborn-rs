@@ -53,9 +53,18 @@ pub(crate) struct Recovery {
     failed: HashMap<(Grid, Step), usize>,
     door_attempts: usize,
     pending: Option<(Grid, Step)>,
+    /// borg-reborn-rs (#1359): with `lightless_fallback`, recovery gave up on
+    /// this level and the ordinary think (borg-rs's) plays instead of a stop.
+    gave_up: bool,
 }
 
 pub(crate) fn update(st: &mut BorgState) -> bool {
+    update_with(st, param(Param::lightless_fallback) != 0)
+}
+
+/// `update` with `lightless_fallback` given (params are fixed per process, so
+/// the unit tests name the switch they exercise).
+fn update_with(st: &mut BorgState, fallback: bool) -> bool {
     let depth = st.borg.tr(BI_CDEPTH);
     // borg_trait.rs sets the effective radius for necromancers to one.
     let needs_light = depth > 0 && st.borg.tr(BI_LIGHT) <= 0;
@@ -71,7 +80,29 @@ pub(crate) fn update(st: &mut BorgState) -> bool {
             ..Recovery::default()
         };
     }
-    needs_light
+    if !needs_light || st.think_dungeon.lightless.gave_up {
+        return false;
+    }
+    // borg-reborn-rs (review of #1360): settle the move recovery queued on its last turn
+    // now, on the first think after it, before the turn can go to the ordinary
+    // think. Otherwise a step that worked and was undone in combat reads, at the
+    // next recover(), as a move that never happened (failed at the start square).
+    let at = (st.borg.c.x, st.borg.c.y);
+    st.think_dungeon.lightless.observe(at);
+    // #1359: a monster in contact is the ordinary think's (caution, attack),
+    // as in borg-rs; recovery's routes treat monsters as walls.
+    !(fallback && monster_adjacent(st))
+}
+
+/// #1359: a living monster seen in the last two game turns next to the Borg.
+fn monster_adjacent(st: &BorgState) -> bool {
+    let c = st.borg.c;
+    let now = st.borg.time.now;
+    st.kills.kills[1..st.kills.nxt.max(1) as usize].iter().any(|kill| {
+        kill.r_idx != 0
+            && now.wrapping_sub(kill.when) <= 2
+            && engine::distance(kill.pos, c) <= 1
+    })
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -187,12 +218,24 @@ fn terrain(st: &mut BorgState, at: Grid, up_allowed: bool, seek_recall_light: bo
     tile
 }
 
-fn handoff(st: &mut BorgState, reason: &str) {
+/// Ends recovery. Returns whether the turn was spent: `false` when, with
+/// `lightless_fallback`, the level is given back to the ordinary think and no
+/// key is queued, so the caller must go on thinking (an empty queue would end
+/// the turn in `borg_oops("normal abort")`).
+fn handoff(st: &mut BorgState, reason: &str) -> bool {
+    // borg-reborn-rs (#1359): with `lightless_fallback`, give the level back
+    // to the ordinary think instead of stopping the Borg.
+    if param(Param::lightless_fallback) != 0 {
+        crate::borg_io::borg_note(st, &format!("# Lightless recovery gives up ({reason}); ordinary play"));
+        st.think_dungeon.lightless.gave_up = true;
+        return false;
+    }
     st.think_dungeon.lightless = Recovery::default();
     borg_oops(st, reason);
     // Return a key to the caller so its empty-queue abort does not replace
     // the reason. The inactive Borg removes its hook on the next read.
     borg_keypress(st, ESCAPE);
+    true
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -241,25 +284,26 @@ fn prepare_for_return(st: &mut BorgState) -> bool {
     borg_think_dungeon_light(st, true)
 }
 
-pub(crate) fn recover(st: &mut BorgState) {
+/// One recovery turn. Returns `false` when recovery gave the level back to
+/// the ordinary think (`lightless_fallback`) and queued nothing.
+pub(crate) fn recover(st: &mut BorgState) -> bool {
     st.borg.goal.type_0 = 0;
     let at = (st.borg.c.x, st.borg.c.y);
     st.think_dungeon.lightless.observe(at);
     if st.think_dungeon.lightless.actions_left == 0 {
-        handoff(st, "lightless recovery action limit reached");
-        return;
+        return handoff(st, "lightless recovery action limit reached");
     }
     if prepare_for_return(st) {
         st.think_dungeon.lightless.actions_left -= 1;
-        return;
+        return true;
     }
     if st.borg.tr(BI_ISCONFUSED) != 0 {
         if borg_recall(st) {
             st.think_dungeon.lightless.actions_left -= 1;
         } else {
-            handoff(st, "lightless recovery cannot navigate while confused");
+            return handoff(st, "lightless recovery cannot navigate while confused");
         }
-        return;
+        return true;
     }
 
     let up_allowed = !engine::player_opt(OPT_birth_force_descend);
@@ -299,13 +343,16 @@ pub(crate) fn recover(st: &mut BorgState) {
                 borg_keypress(st, direction);
             }
         }
-        Decision::Stop(reason) => handoff(st, reason),
+        Decision::Stop(reason) => return handoff(st, reason),
     }
+    true
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::borg_flow_kill::BorgKill;
+    use crate::headers::z_type_h::loc;
 
     fn recovery() -> Recovery {
         Recovery {
@@ -314,6 +361,80 @@ mod tests {
             door_attempts: 3,
             ..Recovery::default()
         }
+    }
+
+    fn state_without_light(recovery: Recovery) -> BorgState {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+        st.borg.trait_[BI_CDEPTH as usize] = 1;
+        st.borg.trait_[BI_LIGHT as usize] = 0;
+        st.think_dungeon.lightless = recovery;
+        st.kills.kills = vec![BorgKill::BLANK; 2];
+        st
+    }
+
+    /// Review of #1360: a step that worked, then undone while the ordinary
+    /// think fought, is not a failure of that step (one false failure can
+    /// close the only route up in a corridor). This takes the combat handoff:
+    /// with `lightless_fallback` and a monster next to the Borg, `update`
+    /// yields the turn, and the pending step is already settled by then.
+    #[test]
+    fn update_settles_the_pending_move_before_it_yields_to_combat() {
+        let (start, forward, beyond) = ((5, 5), (6, 5), (7, 5));
+        let step = Step { to: forward, tile: Tile::Floor };
+        let mut st = state_without_light(Recovery {
+            depth: 1,
+            pending: Some((start, step)),
+            ..recovery()
+        });
+        // The step worked: the next think starts on the forward grid, with a
+        // monster seen this turn on the grid beyond.
+        st.borg.c = loc { x: forward.0, y: forward.1 };
+        st.kills.nxt = 2;
+        st.kills.kills[1] = BorgKill {
+            r_idx: 1,
+            pos: loc { x: beyond.0, y: beyond.1 },
+            when: st.borg.time.now,
+            ..BorgKill::default()
+        };
+        assert!(!update_with(&mut st, true), "a monster in contact yields the turn to the ordinary think");
+        assert!(st.think_dungeon.lightless.pending.is_none(), "settled before yielding");
+
+        // Combat retreats to the start square; the monster is gone; recovery runs.
+        st.borg.c = loc { x: start.0, y: start.1 };
+        st.kills.kills[1].r_idx = 0;
+        assert!(update_with(&mut st, true), "no monster: recovery has the turn again");
+        let recovery = std::mem::take(&mut st.think_dungeon.lightless);
+        let route = recovery.route(start, |g| if g == forward { Tile::Floor } else if g == beyond { Tile::Up } else { Tile::Blocked });
+        assert_eq!(route, Some(Route::Return(step)), "the step that worked is still usable");
+    }
+
+    /// With the switch off a monster in contact does not yield, and the move
+    /// is still settled by `update` (the dungeon thinker can return before
+    /// `recover` on a turn: walk_away_step, paralyser_step_away,
+    /// fight_before_flight).
+    #[test]
+    fn update_settles_the_pending_move_with_the_switch_off() {
+        let (start, forward) = ((5, 5), (6, 5));
+        let step = Step { to: forward, tile: Tile::Floor };
+        let mut st = state_without_light(Recovery {
+            depth: 1,
+            pending: Some((start, step)),
+            ..recovery()
+        });
+        st.borg.c = loc { x: forward.0, y: forward.1 };
+        st.kills.nxt = 2;
+        st.kills.kills[1] = BorgKill {
+            r_idx: 1,
+            pos: loc { x: 7, y: 5 },
+            when: st.borg.time.now,
+            ..BorgKill::default()
+        };
+        assert!(update_with(&mut st, false), "with the switch off, recovery keeps the turn");
+        assert!(st.think_dungeon.lightless.pending.is_none());
+        st.borg.c = loc { x: start.0, y: start.1 };
+        update_with(&mut st, false);
+        assert!(st.think_dungeon.lightless.failed.is_empty());
     }
 
     #[test]
