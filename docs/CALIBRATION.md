@@ -9141,7 +9141,7 @@ cannot be selected. Zero disables this trim.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_quiver_trim_reserve` | 0 | usable quivered ammunition | 0–999 | `borg_town_live.rs:797` |
+| `town_quiver_trim_reserve` | 0 | usable quivered ammunition | 0–999 | `borg_town_live.rs:927` |
 
 ## Town-arrival unloading and weight-limited shopping (#1256)
 
@@ -9178,7 +9178,7 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:518` |
+| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:690` |
 
 ### Drops from clear floor (#1397)
 
@@ -9192,7 +9192,36 @@ replays pin it to 0, since it changes their recorded routes.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_drop_clear_floor` | 1 | flag | 0–1 | `borg_town_live.rs:1034` |
+| `town_drop_clear_floor` | 1 | flag | 0–1 | `borg_town_live.rs:1275` |
+
+### Spare lanterns (#1413)
+
+Refuelling from a lantern stack splits one copy off and empties it
+(`cmd-obj.c:1008`, `refill_lamp`), and no cleanup released that shell while a
+fuelled lantern was worn: `surplus_light` returns early unless the worn light
+is permanent, the gear plan ranks permanent lights alone, and the junk path
+keeps a 35-gold lantern at shallow depth and sees no power gain from its
+removal. Pickup had no fuel test either: `borg_new_take` values a floor
+lantern at its cost, so every one was chased.
+
+With `light_spare_lanterns` a plain empty lantern shell (known, clean, no
+artifact or ego, no brighter than the worn lantern) goes through the
+spare-light cleanup (`surplus_light`) while a clean lantern with fuel is worn.
+The shell goes whatever `junk_gear_alternatives`, `junk_exploration_first` and
+`town_gear_home_backups` are, under the usual safe-drop check. A floor lantern
+is not walked to while the worn lantern's fuel, what the carried lanterns and
+the Flasks of Oil add when poured in (each pour is capped at the lamp's 15,000
+turns less the 999 left when the Borg refuels, `cmd-obj.c:1008`) reach the
+light goal
+(`borg_light::fuel_goal`: the trip's turns or `town_light_reserve_turns`,
+scaled by `explore_bfs_light_percent`). Below the goal the walk stays. A
+lantern stepped on is still picked up (`pickup_always`). The floor object's
+runes are not read, so an ego or Everburning lantern is skipped like a plain
+one at that point. Not measured by the zoo.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `light_spare_lanterns` | 0 (shipped 1) | flag | 0–1 | `borg_light.rs:1012` |
 
 ### Recall-first trial
 
@@ -9426,7 +9455,7 @@ identified spares.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2356` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2369` |
 | `junk_gear_alternatives` | 1 | count | 0–3 | `borg_junk.rs:64` |
 | `town_gear_home_backups` | 1 | flag | 0–1 | `borg_town_live.rs:250` |
 

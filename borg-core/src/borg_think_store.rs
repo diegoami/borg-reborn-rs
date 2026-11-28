@@ -423,7 +423,13 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
      * served, so the strategy chooses the next shop itself. */
     if st.borg.shop_override == Some(st.think.shop_num) {
         st.borg.shop_override = None;
+        // Review of #1414: the human's request is served; the planner looks
+        // at this store afresh, whatever an earlier visit at this turn did.
+        crate::borg_town_live::forget_idle_visit(st, st.think.shop_num);
     }
+
+    // borg-reborn-rs (re-review of #1414): open or continue this store's visit record.
+    crate::borg_town_live::begin_visit(st);
 
     /* Clear the goal (the goal was probably going to a shop number) */
     st.borg.goal.type_0 = 0;
@@ -478,6 +484,8 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
     if borg_choose_shop(st) {
         if crate::borg_town_live::active(st) {
             if crate::borg_town_live::execute_store(st) { return true; }
+            // borg-reborn-rs (#1395): nothing done here; trace why.
+            crate::borg_town_live::note_idle_visit(st);
             leave(st);
             st.borg.in_shop = false;
             return true;
@@ -514,7 +522,11 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
     }
 
     /* No shop */
-    if crate::borg_town_live::active(st) { st.borg.in_shop = false; }
+    if crate::borg_town_live::active(st) {
+        // borg-reborn-rs (#1395): the planner chose nothing here; trace why.
+        crate::borg_town_live::note_idle_visit(st);
+        st.borg.in_shop = false;
+    }
     clear_shop_goal(st);
 
     /* Leave the store */
