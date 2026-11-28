@@ -233,7 +233,7 @@ jobs:
           git init -q vendor/borg-zoo-adapter
           git -C vendor/borg-zoo-adapter fetch -q --depth 1 https://github.com/diegoami/borg-zoo "$zoo_pin"
           git -C vendor/borg-zoo-adapter checkout -q --detach "$zoo_pin"
-      - run: BORG_ZOO_CONTRACT_REQUIRED=1 python3 engine/tests/test_core_profile_contract.py
+      - run: BORG_ZOO_CONTRACT_REQUIRED=1 python3 .github/scripts/run-engine-test.py engine/tests/test_core_profile_contract.py
       # Track P (#219): exercise the vendored core's real initialization,
       # not only the pure parser. Its named trace has a separate registry;
       # original-core dossiers below retain their trace.jsonl contract.
