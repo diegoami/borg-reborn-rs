@@ -843,4 +843,5 @@ Format: file, function, (seed, turn when observed), explanation.
   fired or thrown missile (#1425): a spell or device has no hit roll, and
   the Borg's view passes through unknown grids, so a no-damage cast at a monster sensed by ESP takes C's
   guess (Hobbit Druid `Borg261128174030`, 3,490 Stinking Clouds at a
-  gallant behind unseen granite).
+  gallant behind unseen granite). With ESP, a missile's miss also needs a path the
+  Borg knows to be open (#1430).

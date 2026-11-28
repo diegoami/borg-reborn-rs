@@ -7041,8 +7041,18 @@ miss at an adjacent monster wrote granite under the Borg (Paladin 1194051723:
   (159,31) 3,490 times. The engine's path from the save is (160,31),
   (161,30), then granite at (162,30), unknown to the player. A cast now takes
   (b)'s guess, the first unknown grid of the path ((162,30) here), and the
-  next ball path stops there. A missile at a monster sensed only by ESP
-  behind unknown ground can still be taken for a miss (follow-up issue).
+  next ball path stops there.
+- **#1430: with ESP, (a) also needs a path the Borg knows to be open.** A
+  missile stops silently before a wall too (`ranged_helper`,
+  src/player-attack.c:1101-1108), and ESP shows monsters behind walls the
+  Borg has never seen. So while `BI_ESP` is set, a silent missile miss is a
+  miss only when every grid of the path (`borg_inc_motion`, the goal's own
+  grid not asked) is known and not a wall or door; otherwise (b)'s guess.
+  Without ESP, (a) is unchanged: requiring a known path there changed smoke
+  mage 102 at turn 2501, where an ordinary flask miss at a rock lizard
+  across unknown dark floor got granite. Owner's choice (2026-11-28) over
+  reading the engine's directly-seen flag (T2.5). Test:
+  `with_esp_a_silent_miss_needs_a_known_open_path`.
   The recurrence at turn 3,511,372 (2,772 casts at a soldier at (55,46)
   from (54,27), in a corridor) has engine path (54,28)–(54,34) known floor,
   (54,35)–(54,36) unseen floor, then granite at (55,37); C's hallway rule
