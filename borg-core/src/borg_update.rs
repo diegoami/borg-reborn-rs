@@ -1991,7 +1991,7 @@ fn goal_message(st: &mut BorgState, i: i32, msg: &[u8]) {
         // `py_attack_real`; "You miss", player-attack.c:767), so its miss is
         // no wall.
         let k = locate(st, args(what), g, 0, i, 2);
-        if goal_reached(msg, k > 0) {
+        if goal_reached(msg, k > 0, param(Param::update_miss_wall_guess) != 0) {
             target_worked(st);
         }
     } else if msg.starts_with(b"AFRAID:") {
@@ -2035,13 +2035,7 @@ fn goal_message(st: &mut BorgState, i: i32, msg: &[u8]) {
         target_worked(st);
     } else if msg.starts_with(b"STATE__FEAR:") || msg.starts_with(b"STATE__BOLD:") {
         // Handle "sleep"
-        // borg-reborn-rs (review of #1431): "flees in terror!" from the
-        // goal's monster means the shot reached it (Scare Monster deals no
-        // damage). Recovering courage is a timer, not the shot.
-        let k = locate(st, args(what), g, 0, i, 2);
-        if goal_reached(msg, k > 0) {
-            target_worked(st);
-        }
+        locate(st, args(what), g, 0, i, 2);
     } else if msg.starts_with(b"STATE_SLEEP:") || msg.starts_with(b"STATE_CONFUSED:") {
         // C tests "STATE__FEAR:" a second time between these two (never
         // reached, C bug 46)
@@ -2052,12 +2046,15 @@ fn goal_message(st: &mut BorgState, i: i32, msg: &[u8]) {
 /// borg-reborn-rs (review of #1431): whether a goal-pass message that names
 /// the monster on the goal grid (`located`) shows that the last attack
 /// reached it, beyond the C set (`PAIN`, `KILL`, `DIED`, `BLINK`,
-/// `STATE_SLEEP`, `STATE_CONFUSED`, which call `target_worked` themselves): a
-/// melee blow (`HIT`, `MISS`: Leap into Battle swings at the target) and
-/// fear (`STATE__FEAR`: Scare Monster deals no damage). Recovering courage
-/// (`STATE__BOLD`) is a timer running out, not the attack.
-fn goal_reached(msg: &[u8], located: bool) -> bool {
-    located && (msg.starts_with(b"HIT:") || msg.starts_with(b"MISS:") || msg.starts_with(b"STATE__FEAR:"))
+/// `STATE_SLEEP`, `STATE_CONFUSED`, which call `target_worked` themselves):
+/// a melee blow (`HIT`, `MISS`), since Leap into Battle (`successful_target`
+/// -1) moves the player and swings at the target. Only under `guard`
+/// (`update_miss_wall_guess` = 1); at 0 a Leap miss takes C's wall guess, as
+/// in C. A fear message needs no rule: "flees in terror!" is one of the
+/// engine's standard monster messages the Borg reads as `PAIN`
+/// (borg_messages.rs, `MON_MSG_REPOSITORY`).
+fn goal_reached(msg: &[u8], located: bool, guard: bool) -> bool {
+    guard && located && (msg.starts_with(b"HIT:") || msg.starts_with(b"MISS:"))
 }
 
 /// One message of the "monsters near the old location" pass (use 3).
@@ -2973,19 +2970,21 @@ mod miss_wall_guess_tests {
         assert_eq!(guess, crate::borg_projection::WallGuess::Unknown(BLOCKER));
     }
 
-    /// Review of #1431: a fear message, or a melee hit or miss, from the
-    /// goal's monster shows the attack reached it (Scare Monster; Leap into
-    /// Battle, `successful_target` -1). Recovering courage, an unmatched
-    /// name, or an unrelated message does not.
+    /// Review of #1431: a melee hit or miss at the goal's monster shows the
+    /// attack reached it (Leap into Battle, `successful_target` -1), only
+    /// with `update_miss_wall_guess` = 1; at 0 C's wall guess is kept
+    /// (re-review). An unmatched name, a monster's own blow, fear, or
+    /// recovering courage add nothing here (fear arrives as `PAIN`).
     #[test]
-    fn fear_and_a_melee_swing_show_the_shot_reached() {
-        for msg in [&b"STATE__FEAR:the gallant"[..], b"MISS:the gallant", b"HIT:the gallant"] {
-            assert!(goal_reached(msg, true), "{}", String::from_utf8_lossy(msg));
-            assert!(!goal_reached(msg, false), "{}", String::from_utf8_lossy(msg));
+    fn a_melee_swing_shows_the_shot_reached_only_under_the_guard() {
+        for msg in [&b"MISS:the gallant"[..], b"HIT:the gallant"] {
+            assert!(goal_reached(msg, true, true), "{}", String::from_utf8_lossy(msg));
+            assert!(!goal_reached(msg, true, false), "{}", String::from_utf8_lossy(msg));
+            assert!(!goal_reached(msg, false, true), "{}", String::from_utf8_lossy(msg));
         }
-        assert!(!goal_reached(b"STATE__BOLD:the gallant", true));
-        assert!(!goal_reached(b"STATE_AWAKE:the gallant", true));
-        assert!(!goal_reached(b"HIT_BY:the gallant", true));
+        for msg in [&b"STATE__FEAR:the gallant"[..], b"STATE__BOLD:the gallant", b"STATE_AWAKE:the gallant", b"HIT_BY:the gallant"] {
+            assert!(!goal_reached(msg, true, true), "{}", String::from_utf8_lossy(msg));
+        }
     }
 
     /// Review of #1432: a target straight down the Borg's corridor. The
