@@ -1,0 +1,39 @@
+name: Engine C compiler cache
+description: Restore and save ccache entries for the C engine
+inputs:
+  variant:
+    description: Engine build configuration
+    required: true
+  save:
+    description: Save on a cache miss
+    default: 'true'
+runs:
+  using: composite
+  steps:
+    - id: config
+      shell: bash
+      run: |
+        echo "CCACHE_DIR=$RUNNER_TEMP/ccache" >> "$GITHUB_ENV"
+        echo "CCACHE_MAXSIZE=200M" >> "$GITHUB_ENV"
+        compiler=$(cc --version | sha256sum | cut -d' ' -f1)
+        echo "compiler=$compiler" >> "$GITHUB_OUTPUT"
+    - id: keys
+      shell: bash
+      env:
+        PREFIX: ccache-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.config.outputs.compiler }}-${{ inputs.variant }}-
+        SOURCES: ${{ hashFiles('engine/UPSTREAM', 'engine/CMakeLists.txt', 'engine/sources.cmake', 'engine/patches/**', 'engine/frontend/**', 'engine/recorder-hooks.patch', 'recorder-pin.json') }}
+      run: |
+        echo "primary=${PREFIX}${SOURCES}" >> "$GITHUB_OUTPUT"
+        echo "prefix=$PREFIX" >> "$GITHUB_OUTPUT"
+    - if: inputs.save == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.temp }}/ccache
+        key: ${{ steps.keys.outputs.primary }}
+        restore-keys: ${{ steps.keys.outputs.prefix }}
+    - if: inputs.save == 'false'
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ runner.temp }}/ccache
+        key: ${{ steps.keys.outputs.primary }}
+        restore-keys: ${{ steps.keys.outputs.prefix }}
