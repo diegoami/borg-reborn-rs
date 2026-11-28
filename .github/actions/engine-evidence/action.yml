@@ -44,7 +44,8 @@ runs:
         persist-credentials: false
         sparse-checkout: |
           validation/borg-reborn-rs/class-attack-preferences/deaths
-    - run: |
+    - shell: bash
+      run: |
         python3 - <<'PYREGISTRY'
         import os, pathlib
         known = pathlib.Path(os.environ['RUNNER_TEMP']) / 'known-deaths'
