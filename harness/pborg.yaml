@@ -262,6 +262,10 @@ borg_param_town_quiver_trim_reserve: 0
 # Recall-first trial when town_shop_overloaded is 0. A positive value allows
 # a safe lighter exchange with up to this much equipment power loss.
 borg_param_town_loadout_power_loss: 1
+# #1397: a town drop planned on a shop entrance, stairs or a pile first
+# steps to clear floor, so the drop is ignored where it lies and is not
+# picked up again. 0 drops wherever the Borg stands.
+borg_param_town_drop_clear_floor: 1
 
 # What goes home first (#859, owner: "prefer objects that they have an
 # abundance of, typically healing potions and phase doors, ideally we want
