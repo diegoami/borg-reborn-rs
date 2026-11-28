@@ -2,7 +2,9 @@
 # Run a seed suite in parallel.
 # Usage: harness/suite.sh SUITE [OUTDIR]
 #   SUITE = name in harness/suites/, or a path to a suite file
-#   Env: BORG_IMPL=rust (the default and the only one), JOBS (default nproc), ANGBAND_BIN
+#   Env: BORG_IMPL=rust (the default and the only one), JOBS (runs at once;
+#        default: as many as fit in MemAvailable at MEM_PER_RUN_MB each,
+#        default 4096, at most nproc and at least 1), ANGBAND_BIN
 #        (as run.sh), ALLOW_UNKNOWN_IMPL=1, ALLOW_STALE_BUILD=1 (below)
 # Suite file lines: NAME SEED RACE CLASS TURNS [FLAGS]
 #   '#' starts a comment (whole line or end of line); FLAGS as in run.sh.
@@ -44,7 +46,18 @@ BIN="${ANGBAND_BIN:-$ROOT/build/$IMPL/game/angband}"
 [ -x "$BIN" ] || { echo "missing $BIN (run harness/build.sh)" >&2; exit 2; }
 RBIN="$(realpath "$BIN")"   # for the build dir; runs use BIN as given
 OUT="$(realpath -m "${2:-$ROOT/harness/out/$IMPL/$SUITE}")"
-JOBS="${JOBS:-$(nproc)}"
+# A game can pass 3 GB, so nproc runs at once can exhaust memory: 20 games
+# took an 18 GB WSL down twice on 2026-11-15 (#310).
+if [ -z "${JOBS:-}" ]; then
+    MEM_PER_RUN_MB="${MEM_PER_RUN_MB:-4096}"
+    case "$MEM_PER_RUN_MB" in ''|*[!0-9]*|0) echo "MEM_PER_RUN_MB must be a positive integer, not '$MEM_PER_RUN_MB'" >&2; exit 2;; esac
+    AVAIL_MB=$(awk '/^MemAvailable:/ { print int($2 / 1024) }' /proc/meminfo 2>/dev/null || true)
+    JOBS=$(( ${AVAIL_MB:-0} / MEM_PER_RUN_MB ))
+    NCPU=$(nproc)
+    [ "$JOBS" -le "$NCPU" ] || JOBS=$NCPU
+    [ "$JOBS" -ge 1 ] || JOBS=1
+fi
+case "$JOBS" in ''|*[!0-9]*|0) echo "JOBS must be a positive integer, not '$JOBS'" >&2; exit 2;; esac
 WORK="$OUT.partial.$$"
 ID="$ROOT/harness/identity.sh"
 
