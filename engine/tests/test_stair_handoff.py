@@ -33,6 +33,10 @@ def state_at(states, turn):
 PINNED_TOWN_SETTINGS = [
     # #1250: keep the original use and timing of Magic Mapping.
     ("item_use_idle", 0),
+    # #1375, #1373, #1374: the refused-kind floor filter (Treasure Detection is
+    # not exempt with item_use_idle pinned off) and the intentional drinks
+    # postdate these recorded routes.
+    ("town_refused_kind_policy", 0), ("item_use_drink_experience", 0), ("item_use_star_enlightenment", 0),
     # #1273: preserve the original lighting and inventory-use decisions.
     ("light_scroll_idle_spend", 0),
     # #1253: keep the recorded inventory actions and the turns they took.
