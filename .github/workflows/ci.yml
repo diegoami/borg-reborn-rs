@@ -389,7 +389,7 @@ jobs:
 
           # Round robin spreads seeds from the same class across the runners.
           shard = rows[index::count]
-          (work / 'full-shard').write_text(''.join(row + '\n' for row in shard))
+          (work / f'full-shard-{index + 1}').write_text(''.join(row + '\n' for row in shard))
           subset = work / 'full-reference'
           subset.mkdir()
           for row in shard:
@@ -403,8 +403,8 @@ jobs:
           packages: cmake libx11-dev libssl-dev
       # Perception against the engine and the RNG isolation asserts use the test build.
       - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception,test-stair-handoff harness/build.sh
-      - run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh "$RUNNER_TEMP/full-shard" harness/out/full-test
-      - run: harness/diff --suite "$RUNNER_TEMP/full-shard" --expect-impl rust harness/out/full-test "$RUNNER_TEMP/full-reference"
+      - run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh "$RUNNER_TEMP/full-shard-${{ matrix.shard }}" harness/out/full-test
+      - run: harness/diff --suite "$RUNNER_TEMP/full-shard-${{ matrix.shard }}" --expect-impl rust harness/out/full-test "$RUNNER_TEMP/full-reference"
       - run: python3 tools/check-perception.py harness/out/full-test
       - run: python3 tools/check-no-time.py harness/out/full-test
 
