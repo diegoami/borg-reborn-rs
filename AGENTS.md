@@ -264,7 +264,9 @@ paths, and repeats the command at its end.
 
 | Path | What |
 | --- | --- |
-| `README.md` | For players: requirements, setup, building, watching the Borg, a headless run, which core plays, changing its settings |
+| `README.md` | The front door: a release package or a build from source (Angband in `engine/angband/`, patched at build time), starting the Borg, and a table of where to read next |
+| `docs/user/GUIDE.md` | Layer 1, for players (#817): install, watching, the Borg's commands (checked against `borg-core/src/borg_commands.rs` by `borg-reborn-rs/tests/repository.rs`), `pborg.yaml`, headless games, the recorder, deaths and the zoo; shipped in the release packages |
+| `docs/contributing/` | Layer 2, for contributors (#817): how we work, building and testing, changing play, investigating, measuring with the zoo, every related repository and its pin. RULES.md and this file stay the authority |
 | `docs/` | Current documents by audience, indexed in [docs/README.md](docs/README.md); `architecture/` (the C Borg, borg-core, the reborn plan, the layered design), `validation/` (per-PR receipts and dossier maps, with a map of their old `docs/` paths), `reviews/`, `archive/` (documents that no longer apply, each with when and why), `handover/` |
 | `pins.json` | The pinned commits of every related repository |
 | `docs/strategy/`, `docs/c-borg/` (with `fixes/`), `docs/design/`, `docs/research/borg-agent/` | **Our documents moved here from our other repositories** (owner, 2026-11-21): the Angband Strategy Manual; the C Borg's specification, plan and defect catalogue, and better-borg-c's verified fixes; the shipped core's design (town planner, trip policy, ...); borg-agent's knowledge. Ours to change; [docs/DOCUMENTATION-MAP.md](docs/DOCUMENTATION-MAP.md) separates our documents from other authors' (the game's manual and the original C Borg's, untouched in `engine/angband/`) |
