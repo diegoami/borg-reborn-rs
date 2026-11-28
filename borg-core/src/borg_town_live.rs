@@ -94,6 +94,26 @@ struct DropAttempt {
     stock: HomeStock,
     carried: u32,
     turn: i32,
+    /// The Home disposal this drop serves (review of #1401): restored when
+    /// the drop does not take, so the next turn retries the same variant
+    /// and quantity.
+    disposal: Option<HomeDisposal>,
+}
+
+/// Settle a queued drop against the copies carried now. A drop that did not
+/// take is rejected for its game turn and gives back its Home disposal.
+/// `true` when the drop was rejected.
+fn settle_drop(live: &mut LiveState, attempt: DropAttempt, carried_now: u32) -> bool {
+    if drop_took(attempt, carried_now) { return false; }
+    live.rejected_drops.push((attempt.stock, attempt.turn));
+    if live.disposal.is_none() { live.disposal = attempt.disposal; }
+    true
+}
+
+/// A Home disposal by drop waits while its drop is rejected at this game
+/// turn: `home_followup` keeps it for the next turn instead of clearing it.
+fn disposal_waits(live: &LiveState, d: &HomeDisposal, turn: i32) -> bool {
+    d.shop < 0 && drop_rejected_at(&live.rejected_drops, HomeStock::of(&d.item), turn)
 }
 
 /// The drop took when fewer copies are carried than when it was queued.
@@ -348,8 +368,8 @@ pub(crate) fn settle_sale(st: &mut BorgState) {
         }
     }
     if let Some(attempt) = st.think.town_live.pending_drop.take() {
-        if !drop_took(attempt, attempt.stock.carried(st)) {
-            st.think.town_live.rejected_drops.push((attempt.stock, attempt.turn));
+        let carried = attempt.stock.carried(st);
+        if settle_drop(&mut st.think.town_live, attempt, carried) {
             borg_note(st, "# Town plan: drop made no inventory change; not repeated this game turn");
         }
     }
@@ -463,7 +483,9 @@ pub fn choose_overflow(st: &mut BorgState) -> bool {
 fn home_followup(st: &mut BorgState) -> Option<TownAction> {
     if st.think.town_live.disposal.is_none() && st.think.town_live.stash.is_none() { return None; }
     let pack_end = crate::borg_item::inven_wield() as usize;
-    if let Some(d) = st.think.town_live.disposal {
+    let waits = st.think.town_live.disposal
+        .is_some_and(|d| disposal_waits(&st.think.town_live, &d, crate::engine::game_turn()));
+    if let Some(d) = st.think.town_live.disposal.filter(|_| !waits) {
         let to_dispose = (carried_kind(st, d.item.kind).saturating_sub(d.kind_before) as i32).min(d.qty);
         let stack = st.items.items[..pack_end].iter().enumerate().find(|(_, item)| {
             to_dispose > 0 && item.iqty > 0 && borg_town_home::same_variant(item, &d.item)
@@ -1068,7 +1090,7 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
                 crate::borg_junk::usable_quiver_count(st), crate::engine::pack_slots_free()));
         }
         crate::borg_junk::town_drop_quiver_stack(st, slot, qty);
-        note_pending_drop(st, stock);
+        note_pending_drop(st, stock, None);
         clear(st);
         return true;
     }
@@ -1093,8 +1115,8 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     // entrance, where no object can lie: step to clear floor, then drop.
     if let Some(stepped) = drop_floor_step(st) { clear(st); return stepped; }
     let letter = crate::engine::all_letters_nohjkl(slot as i32) as i8 as u32;
+    let disposal = if home_disposal { st.think.town_live.disposal.take() } else { None };
     if home_disposal {
-        st.think.town_live.disposal = None;
         borg_note(st, "# Home reserve: discarding lower-priority stock");
     } else if drop_qty < qty && departure_preparing(st) {
         borg_note(st, "# Town plan dropping surplus copies for departure");
@@ -1111,16 +1133,16 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
         borg_keypresses(st, drop_qty.to_string().as_bytes());
         borg_keypress(st, KC_ENTER);
     }
-    note_pending_drop(st, stock);
+    note_pending_drop(st, stock, disposal);
     clear(st);
     true
 }
 
 /// borg-reborn-rs (#1399): remember the drop just queued, to settle it on
 /// the next town decision.
-fn note_pending_drop(st: &mut BorgState, stock: HomeStock) {
+fn note_pending_drop(st: &mut BorgState, stock: HomeStock, disposal: Option<HomeDisposal>) {
     st.think.town_live.pending_drop = Some(DropAttempt {
-        stock, carried: stock.carried(st), turn: crate::engine::game_turn(),
+        stock, carried: stock.carried(st), turn: crate::engine::game_turn(), disposal,
     });
 }
 
@@ -1339,10 +1361,33 @@ mod tests {
     /// borg-reborn-rs (#1399): a drop whose stack is still carried is
     /// refused while the game turn stands still, and allowed once it moves;
     /// a drop that took is not refused.
+    /// Review of #1401: a refused Home split keeps its disposal (variant and
+    /// copies), waits out the game turn, and is retried on the next one; a
+    /// drop that took leaves the disposal cleared, as before #1399.
+    #[test]
+    fn refused_home_split_keeps_its_disposal_for_the_next_turn() {
+        let mut item = crate::borg_item::blank_item();
+        item.kind = 42;
+        item.iqty = 5;
+        let d = HomeDisposal { item, shop: -1, qty: 3, kind_before: 2 };
+        let attempt = DropAttempt { stock: HomeStock::of(&item), carried: 5, turn: 4325, disposal: Some(d) };
+
+        let mut live = LiveState::default();
+        assert!(settle_drop(&mut live, attempt, 5), "nothing left the pack");
+        let kept = live.disposal.expect("the refused split keeps its disposal");
+        assert_eq!((kept.qty, kept.kind_before, kept.shop), (3, 2, -1));
+        assert!(disposal_waits(&live, &kept, 4325), "not repeated this game turn");
+        assert!(!disposal_waits(&live, &kept, 4335), "retried once the turn moves");
+
+        let mut live = LiveState::default();
+        assert!(!settle_drop(&mut live, attempt, 2), "three copies left the pack");
+        assert!(live.disposal.is_none() && live.rejected_drops.is_empty());
+    }
+
     #[test]
     fn failed_drop_is_refused_for_its_game_turn_only() {
         let stock = HomeStock::Kind(42);
-        let attempt = DropAttempt { stock, carried: 3, turn: 4325 };
+        let attempt = DropAttempt { stock, carried: 3, turn: 4325, disposal: None };
         assert!(drop_took(attempt, 0));
         assert!(drop_took(attempt, 2), "a split drop that left some copies took");
         assert!(!drop_took(attempt, 3));
