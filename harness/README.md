@@ -149,6 +149,12 @@ and validates the bytes it applies. Summary/config use
 `borg-reborn-rs/synthetic-start@2`, `start_build=record` and
 `start_build_sha256`. Both birth and record starts use @2. The earlier @1 checkpoint is superseded: it did not prove the cave transition had completed before activation.
 
+Pure casters additionally support `character-build@2`, with complete native
+spell state and observed integral HP/SP (including HP=0 and exhausted mana),
+rather than @1's resource refill. See [the exact contract](../docs/CHARACTER-BUILDS.md)
+for fields, normalization, unsupported items and the pending Cemetery adapter.
+Initial resource, armor and spell-count receipts describe actual application.
+
 The P1 native adapter is intentionally restricted to Human Warriors, levels
 1..15, and mundane base-kind items with their observed quantities, combat
 bonuses, charges/fuel, equipped slots and kind awareness. It rejects artifacts,

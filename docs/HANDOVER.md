@@ -1406,6 +1406,24 @@ One PR, owner's request (supersedes #441):
   ILLUMINATE were 0 (Find Traps, Detect Monsters, Light Room); now every
   service keeps its demand. The assertion fails on 4ecb93d7.
 
+## 2026-11-16: owner-directed low-level caster continuation (#382)
+
+- Owner authorized merging Cemetery #26, now `b6bc0a0`, after independent
+  review/re-review. Corrected bank covers 14 frame-backed, 37 frame-less and
+  two hash-less-frame caster dossiers; equipment execution remains unsupported
+  there. Zoo pushid/scenario dispatch is explicitly tracked in borg-zoo #144.
+- Source branch `task/T382-caster-builds` starts at main `6ef6d9f3`. Add a
+  separate character-build@2 for the four pure casters, levels 1–15/all races,
+  preserving indexed spell flags/order/study count and integral observed HP/SP.
+  Native recalculation validates consistency. @1 Warrior bytes/semantics remain.
+- Reject charged devices/nonzero pvals, unsupported item modifiers, status,
+  shapechange and drain rather than inventing gear or spells. Contract and
+  normalization are in docs/CHARACTER-BUILDS.md. This is source capability,
+  not a claim of improved survival or current Cemetery caster-kit execution.
+- Cemetery coordination is on epic #5; portable @2 parser/catalog and exact
+  run-derived representative captures remain integration work under #382.
+  Owner selects/runs review; no new population experiment is dispatched.
+
 ## 2026-11-16: owner-authorized synthetic P1 landing (#378)
 
 - Owner explicitly requested merging #378 after the independent milestone
