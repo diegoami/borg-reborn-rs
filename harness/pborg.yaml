@@ -1261,6 +1261,11 @@ borg_param_light_first_cast_require_dark: 1
 # #1273: spend Light scrolls on quiet dark squares. Recorded replays pin 0.
 borg_param_light_scroll_idle_spend: 1
 
+# #1413: a plain empty lantern shell (left by a refuel from a lantern stack) is
+# released while a fuelled lantern is worn, and a floor lantern is not chased while the
+# carried fuel meets the light goal. 0 = the earlier play. Not measured by the zoo.
+borg_param_light_spare_lanterns: 1
+
 # Dark-entry detection (#796): opt in below the spell level gate while retaining response SP.
 borg_param_light_hallway_repeat_guard: 1
 borg_param_light_detect_dark_entry: 0
