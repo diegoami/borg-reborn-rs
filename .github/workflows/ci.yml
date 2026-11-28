@@ -371,6 +371,7 @@ jobs:
     outputs:
       engine: ${{ steps.scope.outputs.engine }}
       full: ${{ steps.scope.outputs.full }}
+      recorder: ${{ steps.scope.outputs.recorder }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -382,7 +383,7 @@ jobs:
           import re
           import subprocess
 
-          engine = full = True
+          engine = full = recorder = True
           if os.environ['GITHUB_EVENT_NAME'] == 'pull_request':
               # HEAD is the test merge commit and HEAD^1 is the base.
               # Check both paths of renames and keep filenames NUL-delimited.
@@ -401,13 +402,18 @@ jobs:
                   rb'harness/scary_monsters[a-z_]*\.txt|\.gitattributes|\.github/workflows/pr-base\.yml',
                   re.DOTALL,
               )
-              engine = any(not docs_only(path) for path in changed)
+              recorder = any(not docs_only(path) for path in changed)
+              # Engine tests read the engine API inventory and calibration examples.
+              engine = recorder or any(
+                  path == b'docs/ENGINE-READS.md' or path.startswith(b'docs/examples/')
+                  for path in changed
+              )
               full = any(path == b'scripts/make-world.py' or not full_skip.fullmatch(path)
                          for path in changed)
 
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-              output.write(f'engine={int(engine)}\nfull={int(full)}\n')
-          print(f'engine: {int(engine)}, full test suite: {int(full)}')
+              output.write(f'engine={int(engine)}\nfull={int(full)}\nrecorder={int(recorder)}\n')
+          print(f'engine: {int(engine)}, full test suite: {int(full)}, recorder: {int(recorder)}')
           PYSCOPE
 
   engine-full-shard:
@@ -502,34 +508,34 @@ jobs:
     steps:
       - env:
           SCOPE_RESULT: ${{ needs.engine-scope.result }}
-          ENGINE: ${{ needs.engine-scope.outputs.engine }}
+          RECORDER: ${{ needs.engine-scope.outputs.recorder }}
         run: |
           test "$SCOPE_RESULT" = success
-          test "$ENGINE" = 0 || test "$ENGINE" = 1
-      - if: needs.engine-scope.outputs.engine == '1'
+          test "$RECORDER" = 0 || test "$RECORDER" = 1
+      - if: needs.engine-scope.outputs.recorder == '1'
         uses: actions/checkout@v4
-      - if: needs.engine-scope.outputs.engine == '1'
+      - if: needs.engine-scope.outputs.recorder == '1'
         uses: ./.github/actions/cemetery-tools
-      - if: needs.engine-scope.outputs.engine == '1'
+      - if: needs.engine-scope.outputs.recorder == '1'
         uses: dtolnay/rust-toolchain@stable
-      - if: needs.engine-scope.outputs.engine == '1'
+      - if: needs.engine-scope.outputs.recorder == '1'
         uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
         with:
           cache-bin: false
           cache-workspace-crates: true
           workspaces: |
             . -> build/recorder/cargo
-      - if: needs.engine-scope.outputs.engine == '1'
+      - if: needs.engine-scope.outputs.recorder == '1'
         uses: ./.github/actions/apt-install
         with:
           packages: libx11-dev libssl-dev ccache
-      - if: needs.engine-scope.outputs.engine == '1'
+      - if: needs.engine-scope.outputs.recorder == '1'
         uses: ./.github/actions/ccache
         with:
           variant: recorder
-      - if: needs.engine-scope.outputs.engine == '1'
+      - if: needs.engine-scope.outputs.recorder == '1'
         run: cmake -S engine -B build/recorder -DCMAKE_C_COMPILER_LAUNCHER=ccache -DSUPPORT_BORG_RECORDING=ON -DCMAKE_BUILD_TYPE=Release
-      - if: needs.engine-scope.outputs.engine == '1'
+      - if: needs.engine-scope.outputs.recorder == '1'
         run: cmake --build build/recorder -j4
-      - if: needs.engine-scope.outputs.engine == '1'
+      - if: needs.engine-scope.outputs.recorder == '1'
         run: python3 harness/check-recorder.py --binary build/recorder/game/angband --output "$RUNNER_TEMP/recorder-check"
