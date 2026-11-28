@@ -383,6 +383,15 @@ borg_param_town_stat_trade_margin_percent: 100
 # dropped (this stack only) on a quiet turn. Shipped on with the policy
 # (RULES 28: a fix ships on).
 borg_param_town_stat_trade_floor: 1
+# #1375: one predicate for the kinds a character refuses (the never-used
+# kinds, the refused stat trades, an Unlight class's Light scroll and torch)
+# across the shop, the pack and Home, and the floor. Shipped on (RULES 28).
+borg_param_town_refused_kind_policy: 1
+# #1373, #1374: drink a known Potion of Experience, and a known Potion of
+# *Enlightenment* (which then also leaves the never-used kinds), on purpose.
+# Shipped on (RULES 28).
+borg_param_item_use_drink_experience: 1
+borg_param_item_use_star_enlightenment: 1
 
 # Staples lose value (#863, owner: "make staple objects start losing value";
 # "it must be a decaying curve"; "Food and Light start decaying from 4, phase

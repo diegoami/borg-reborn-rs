@@ -337,23 +337,8 @@ pub(crate) fn second_stat_potion_wanted_at(class: i32, stats: [i32; 5], stat: us
     stat_trade_worth(stats, stat, weights, i64::from(param(Param::town_stat_trade_margin_percent)))
 }
 
-/// borg-reborn-rs (#1371): a known gain-one/lose-one potion this character
-/// will not drink (`second_stat_potion_wanted`), under town_stat_trade_policy.
-pub(crate) fn refused_second_stat_potion(st: &BorgState, item: &borg_item) -> bool {
-    stat_trade_policy() && refuses_second_stat_potion(st, item)
-}
-
-/// borg-reborn-rs (#1371): `refused_second_stat_potion` whatever the switch:
-/// only a stack whose kind and flavour the character knows (an unknown one
-/// is refused once an identification discloses it).
-fn refuses_second_stat_potion(st: &BorgState, item: &borg_item) -> bool {
-    item.kind != 0 && item.aware && item.flavour_aware
-        && stat_trade_refused_at(&st.item_val, st.borg.tr(BI_CLASS),
-            engine::player_notice().stat_max.map(i32::from), u32::from(item.tval), i32::from(item.sval))
-}
-
-/// The gain-one/lose-one potion `sval` is a kind this character will not
-/// drink at these permanent stats.
+/// borg-reborn-rs (#1371): the gain-one/lose-one potion `sval` is a kind
+/// this character will not drink at these permanent stats.
 fn stat_trade_refused_at(
     iv: &crate::borg_item_val::ItemValState, class: i32, stats: [i32; 5], tval: u32, sval: i32,
 ) -> bool {
@@ -361,18 +346,67 @@ fn stat_trade_refused_at(
         && second_stat_kind_of(iv, sval).is_some_and(|stat| !second_stat_potion_wanted_at(class, stats, stat))
 }
 
-/// borg-reborn-rs (#1371, review of #1372): under `town_stat_trade_floor`, a
-/// floor object of a known gain-one/lose-one potion this character will not
-/// drink is not worth a walk, and a carried one is dropped on a quiet dungeon
-/// turn (`borg_junk::borg_discard_refused_stack`). Only these five kinds: the
-/// rest of the never-used list (#443) still has dungeon uses (Treasure
-/// Detection with `item_use_idle`, the junk potions thrown with
-/// `attack_throw_junk_potions`). A separate switch from
-/// `town_stat_trade_policy`, which prices the shop, the pack and Home.
+/// borg-reborn-rs (#1371): under town_stat_trade_policy, a gain-one/lose-one
+/// potion this character will not drink (`second_stat_potion_wanted`).
+fn stat_trade_refused(st: &BorgState, tval: u32, sval: i32) -> bool {
+    stat_trade_policy() && refused_stat_trade_kind(st, tval, sval)
+}
+
+/// borg-reborn-rs (#1375): one rule for kinds this character refuses to
+/// carry, switched on by `town_refused_kind_policy` (and, for the potions of
+/// #1371, `town_stat_trade_policy`): the shop's offers (`supplies_of_kind`),
+/// the pack and Home (`unwanted_home_item`, `borg_town_home::classify`) and
+/// the floor (`refused_take_kind`) ask it. A kind is refused when it is
+/// `WORTHLESS` (#443; Monster Confusion without `caution_cornered`), a
+/// gain-one/lose-one potion the character will not drink (#1371), or, for an
+/// Unlight class (the Necromancer, the only `PF_UNLIGHT` class in class.txt),
+/// a Wooden Torch or a Scroll of Light (#1273). It does not read the stack's
+/// knowledge: a caller asks it of a known kind.
+pub(crate) fn refused_kind(st: &BorgState, tval: u32, sval: i32) -> bool {
+    worthless(tval, sval)
+        || stat_trade_refused(st, tval, sval)
+        || (param(Param::town_refused_kind_policy) != 0
+            && unlight_refused(st.borg.tr(BI_CLASS), &st.item_val, tval, sval))
+}
+
+/// borg-reborn-rs (#1375): an Unlight class (class.txt: `PF_UNLIGHT`, the
+/// Necromancer only; `borg_light::CLASS_NECROMANCER`) does not use a Wooden
+/// Torch or a Scroll of Light, the kinds `borg_town_shadow` leaves out of its
+/// shop candidates and `borg_flow_take::unwanted_light_scroll` leaves on the
+/// floor.
+fn unlight_refused(class: i32, iv: &crate::borg_item_val::ItemValState, tval: u32, sval: i32) -> bool {
+    class == crate::borg_light::CLASS_NECROMANCER
+        && ((tval == TV_LIGHT && sval == iv.sv_light_torch)
+            || (tval == TV_SCROLL && sval == iv.sv_scroll_light))
+}
+
+/// borg-reborn-rs (#1372 review): a kind the shipped dungeon policies still
+/// use, so it is worth a walk although the town would not keep it: Treasure
+/// Detection with `item_use_idle` (#1250), and the junk potions thrown with
+/// `attack_throw_junk_potions` (#1253).
+fn used_in_the_dungeon(st: &BorgState, tval: u32, sval: i32) -> bool {
+    (param(Param::item_use_idle) != 0 && tval == TV_SCROLL && sval == st.item_val.sv_scroll_treasure_detection)
+        || (param(Param::attack_throw_junk_potions) != 0 && tval == TV_POTION
+            && crate::borg_junk::throwable_junk_potion_kind(sval))
+}
+
+/// borg-reborn-rs (#1371, #1375): a floor object of a known kind the Borg
+/// refuses to carry is not worth a walk: the town would only sell or drop it.
+/// The refused gain-one/lose-one potions count under `town_stat_trade_floor`;
+/// the rest of `refused_kind` counts under `town_refused_kind_policy`, except
+/// a kind a dungeon policy still uses (`used_in_the_dungeon`, review of
+/// #1372). Only this walk is skipped: a stack stepped on while going elsewhere
+/// is picked up by the engine's `pickup_always`; a refused potion is then
+/// dropped on a quiet dungeon turn (`borg_junk::borg_discard_refused_stack`)
+/// and anything else goes to the town's disposal.
 pub(crate) fn refused_take_kind(st: &BorgState, kidx: usize) -> bool {
-    if !stat_trade_floor() || kidx == 0 { return false; }
+    if kidx == 0 { return false; }
     let kind = engine::kind(kidx);
-    kind.aware && refused_stat_trade_kind(st, kind.tval as u32, i32::from(kind.sval))
+    if !kind.aware { return false; }
+    let (tval, sval) = (kind.tval as u32, i32::from(kind.sval));
+    (stat_trade_floor() && refused_stat_trade_kind(st, tval, sval))
+        || (param(Param::town_refused_kind_policy) != 0
+            && refused_kind(st, tval, sval) && !used_in_the_dungeon(st, tval, sval))
 }
 
 /// borg-reborn-rs (#1371): the one place the floor rules ask: a refused
@@ -401,7 +435,7 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// `PY_FOOD_HUNGRY`, and the core reads a Remove Hunger scroll then. A
 /// `NOURISH:INC_TO` food (Remove Hunger 50, Honey-cake and Draught 60,
 /// Waybread 75: object.txt) is worth what it adds from there.
-const HUNGRY_PERCENT: i64 = 15;
+pub(crate) const HUNGRY_PERCENT: i64 = 15;
 
 const _: () = assert!(CSW_RESERVE + 1 == NAMES.len());
 pub const NAMES: [&str; 86] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
@@ -939,13 +973,58 @@ const WORTHLESS: &[(u32, &str)] = &[
     (TV_ROD, "Polymorph"), (TV_ROD, "Disable Traps"),
 ];
 
+/// borg-reborn-rs (#1374): the kind is a Potion of *Enlightenment* (not the
+/// plain Enlightenment, `item_val.sv_potion_enlightenment`): `object.txt`
+/// restores and gains Intelligence and Wisdom besides mapping the level.
+pub(crate) fn star_enlightenment_sval() -> i32 {
+    use std::sync::OnceLock;
+    static SVAL: OnceLock<i32> = OnceLock::new();
+    *SVAL.get_or_init(|| engine::lookup_sval(TV_POTION as i32, "*Enlightenment*"))
+}
+
+fn is_star_enlightenment(tval: u32, sval: i32) -> bool {
+    tval == TV_POTION && sval >= 0 && sval == star_enlightenment_sval()
+}
+
+/// borg-reborn-rs (#1374): the Potion of *Enlightenment* would change
+/// Intelligence or Wisdom for good: one is below 18/100 (`player_stat_inc`)
+/// or drained below its maximum (`RESTORE_STAT`). Otherwise its mapping and
+/// detection are all it is worth, and the town's planner does not buy or keep
+/// it for that (`worthless`); a dungeon level is where it is drunk.
+pub(crate) fn star_enlightenment_gains() -> bool {
+    let p = engine::player_notice();
+    star_enlightenment_gains_at(p.stat_max.map(i32::from), p.stat_cur.map(i32::from))
+}
+
+/// `star_enlightenment_gains` at the given maximum and current stats
+/// (strength .. constitution).
+pub(crate) fn star_enlightenment_gains_at(max: [i32; 5], cur: [i32; 5]) -> bool {
+    [1, 2].iter().any(|&s| max[s] < 18 + 100 || cur[s] < max[s])
+}
+
+/// borg-reborn-rs (#1373): `PY_MAX_EXP` (player.h): the experience the engine
+/// stops granting at.
+const PY_MAX_EXP: i32 = 99_999_999;
+
+/// borg-reborn-rs (#1373): a Potion of Experience still adds experience
+/// (`effect_handler_GAIN_EXP`: nothing at `PY_MAX_EXP`, whatever the level).
+pub(crate) fn experience_potion_useful() -> bool {
+    engine::player_notice().exp < PY_MAX_EXP
+}
+
 fn worthless(tval: u32, sval: i32) -> bool {
     use std::sync::OnceLock;
     static KINDS: OnceLock<Vec<(u32, i32)>> = OnceLock::new();
-    KINDS.get_or_init(|| WORTHLESS.iter()
+    (KINDS.get_or_init(|| WORTHLESS.iter()
         .map(|&(t, name)| (t, engine::lookup_sval(t as i32, name)))
         .filter(|&(_, s)| s >= 0).collect())
         .contains(&(tval, sval))
+        // borg-reborn-rs (#1374): *Enlightenment* is drunk on purpose
+        // (`borg_use_things`) while a stat can gain, so it has the value of
+        // its stat gains; when both are capped and undrained it stays
+        // worthless, so the planner does not pay for its mapping in town.
+        && !(param(Param::item_use_star_enlightenment) != 0 && is_star_enlightenment(tval, sval)
+            && star_enlightenment_gains()))
         // borg-reborn-rs (#504): the cornered mode reads Monster Confusion;
         // without it the core never does.
         || (param(Param::caution_cornered) == 0
@@ -957,13 +1036,14 @@ fn worthless(tval: u32, sval: i32) -> bool {
 /// #1049: apply the purchase model's deliberate exclusions to known
 /// items in the pack and Home as well. A temporary lack of demand for a
 /// useful effect does not make it an unwanted kind.
-/// borg-reborn-rs (#1371): also a gain-one/lose-one potion the character
-/// refuses (`refused_second_stat_potion`), so a copy bought before, found or
-/// identified later is sold or dropped, and cleared from Home.
+/// borg-reborn-rs (#1371, #1375): the kinds `refused_kind` names, so a copy
+/// bought before, found or identified later (a refused gain-one/lose-one
+/// potion, an Unlight class's Light scroll) is sold or dropped, and cleared
+/// from Home.
 pub(crate) fn unwanted_home_item(st: &BorgState, item: &borg_item) -> bool {
     param(Param::town_home_reject_unwanted) != 0
         && item.kind != 0 && item.aware && item.flavour_aware
-        && (worthless(u32::from(item.tval), i32::from(item.sval)) || refused_second_stat_potion(st, item))
+        && refused_kind(st, u32::from(item.tval), i32::from(item.sval))
 }
 
 /// borg-reborn-rs (#761, owner): what a ware supplies, with the flavour-unseen
@@ -1095,20 +1175,16 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     if !matches!(tval, TV_POTION | TV_SCROLL | TV_FOOD | TV_MUSHROOM | TV_WAND | TV_ROD | TV_STAFF) { return Vec::new(); }
     // borg-reborn-rs (#443): the core has no code to use these on purpose,
     // so they are worth nothing to the planner until it does.
-    if worthless(tval, i32::from(item.sval)) {
+    // borg-reborn-rs (#1371, #1375): and what the character refuses
+    // (`refused_kind`) for every origin: the planner neither buys it nor
+    // keeps it. Under town_stat_trade_policy that covers the
+    // gain-one/lose-one potions, learned flavour or not.
+    if refused_kind(st, tval, i32::from(item.sval)) {
         return Vec::new();
     }
-    // borg-reborn-rs (#1371): under town_stat_trade_policy one rule decides
-    // buying, keeping and drinking the gain-one/lose-one potions, for every
-    // origin (`second_stat_potion_wanted`): what it refuses is worth nothing,
-    // so the planner neither buys it nor keeps it.
-    if tval == TV_POTION && stat_trade_policy() {
-        if second_stat_kind(st, i32::from(item.sval)).is_some_and(|stat| !second_stat_potion_wanted(st, stat)) {
-            return Vec::new();
-        }
     // borg-reborn-rs (#1103): a stat potion that gains one stat and loses another
     // is drunk only by the classes `borg_junk` lets (`drinks_second_stat_potion`).
-    } else if tval == TV_POTION && origin.0 <= BORG_BLACK_MARKET as i64 && param(Param::town_second_stat_potions_by_class) > 0 {
+    if tval == TV_POTION && !stat_trade_policy() && origin.0 <= BORG_BLACK_MARKET as i64 && param(Param::town_second_stat_potions_by_class) > 0 {
         let iv = &st.item_val;
         let sval = i32::from(item.sval);
         let class = st.borg.tr(BI_CLASS);
@@ -1123,9 +1199,9 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     // as food let the planner sell the rations the core then missed
     // ("restock food < 3"); the core seldom read it (6 of 253 bought).
     // borg-reborn-rs (#451): now borg_trait counts the scroll beside the
-    // rations under this plan (with_remove_hunger) and the core reads it
-    // before any food (borg_satisfy_hunger_before_food), so the scroll
-    // supplies nutrition, as much as it adds to a hungry stomach. No other
+    // rations under this plan (with_remove_hunger). The core considers
+    // readable scrolls alongside neutral food, so the scroll supplies
+    // nutrition, as much as it adds to a hungry stomach. No other
     // non-food kind does: a potion's nourishment (Cure Light Wounds and the
     // like, 1) is not a meal.
     let hunger_scroll = tval == TV_SCROLL && i32::from(item.sval) == st.item_val.sv_scroll_satisfy_hunger;
@@ -1722,7 +1798,10 @@ fn observe_supplies(st: &BorgState, stock: &Stock, kit: Option<&[KitItem]>, jour
     curve(INVISIBLE, invisible_weight, invisible_demand);
     curve(MANA, if t(BI_MAXSP) > 0 { risk(BORG_TOWN_W_MAGIC) } else { 0 }, t(BI_MAXSP).max(1) * exposure);
     curve(IDENTIFY, if t(BI_ALL_NEED_ID) > 0 { cfg(BORG_TOWN_W_KNOWLEDGE) * UNIT } else { 0 }, -UNIT);
-    curve(GAIN_EXPERIENCE, cfg(BORG_TOWN_W_RESTORE) * UNIT, -UNIT);
+    // borg-reborn-rs (#1373): with the intentional drink, an Experience potion
+    // is worth nothing once the engine grants none (`PY_MAX_EXP`).
+    let exp_useful = param(Param::item_use_drink_experience) == 0 || experience_potion_useful();
+    curve(GAIN_EXPERIENCE, if exp_useful { cfg(BORG_TOWN_W_RESTORE) * UNIT } else { 0 }, -UNIT);
     curve(ACQUIRE, cfg(BORG_TOWN_W_POWER) * exposure, journey.advancement * UNIT);
     // borg-reborn-rs (#487, owner): a digger only clears rubble (the engine
     // swaps it in; a weapon digs rubble too, slower). Below
@@ -3407,7 +3486,7 @@ mod recall_value_tests {
         let mut iv = crate::borg_item_val::ItemValState::default();
         (iv.sv_potion_inc_str2, iv.sv_potion_inc_int2, iv.sv_potion_inc_wis2, iv.sv_potion_inc_dex2, iv.sv_potion_inc_con2)
             = (40, 41, 42, 43, 44);
-        iv.sv_potion_cure_light = 8;
+        (iv.sv_potion_cure_light, iv.sv_light_torch, iv.sv_scroll_light) = (8, 2, 17);
         iv
     }
 
@@ -3468,6 +3547,34 @@ mod recall_value_tests {
         assert!(!refused(&iv, CLASS_RANGER, stats, TV_POTION, 43), "Nimbleness is drunk");
         assert!(!refused(&iv, CLASS_RANGER, stats, TV_POTION, 8), "Cure Light Wounds is not a trade");
         assert!(!refused(&iv, CLASS_RANGER, stats, TV_SCROLL, 42), "a scroll of the same sval is not a potion");
+    }
+
+    /// #1375: an Unlight class refuses a Wooden Torch and a Scroll of Light.
+    #[test]
+    fn an_unlight_class_refuses_the_torch_and_the_light_scroll() {
+        use super::unlight_refused as refused;
+        use crate::headers::list_tvals_h::{TV_LIGHT, TV_POTION, TV_SCROLL};
+        let iv = kinds();
+        let (necromancer, mage) = (crate::borg_light::CLASS_NECROMANCER, 1);
+        assert!(refused(necromancer, &iv, TV_SCROLL, 17), "Light scroll");
+        assert!(refused(necromancer, &iv, TV_LIGHT, 2), "Wooden Torch");
+        assert!(!refused(necromancer, &iv, TV_LIGHT, 3), "any other light");
+        assert!(!refused(necromancer, &iv, TV_SCROLL, 5), "any other scroll");
+        assert!(!refused(necromancer, &iv, TV_POTION, 17), "a potion of the same sval");
+        assert!(!refused(mage, &iv, TV_SCROLL, 17) && !refused(mage, &iv, TV_LIGHT, 2), "a class that sees by light");
+    }
+
+    /// #1374 (review): *Enlightenment* is worth a drink in town only while
+    /// Intelligence or Wisdom can change for good.
+    #[test]
+    fn star_enlightenment_is_for_town_only_while_a_stat_can_gain_or_is_drained() {
+        use super::star_enlightenment_gains_at as gains;
+        let capped = [10, 18 + 100, 18 + 100, 10, 10];
+        assert!(!gains(capped, capped), "both capped and undrained: only the mapping is left");
+        assert!(gains([10, 17, 18 + 100, 10, 10], [10, 17, 18 + 100, 10, 10]), "Intelligence below 18/100");
+        assert!(gains(capped, [10, 18 + 100, 18 + 90, 10, 10]), "Wisdom drained below a capped maximum");
+        assert!(!gains([10, 18 + 100, 18 + 100, 3, 3], [3, 18 + 100, 18 + 100, 3, 3]),
+            "other stats do not matter");
     }
 
     #[test]
