@@ -12,9 +12,12 @@ This checks the tools ([the play guide](../user/GUIDE.md#from-source) lists
 them) and clones every related repository into `vendor/` at its pin in
 `pins.json`. Among them is borg-cemetery, at `death-tools-pin.txt`, whose
 tools every headless run needs. The script is safe to rerun:
-- a checkout at another revision is reported, not moved;
-- `--checkout` moves the clean ones;
-- `--strict` fails on any mismatch.
+- a checkout at another revision is reported, not moved, except for the
+  death tools' borg-cemetery and the zoo adapter: a clean checkout of
+  either is moved to its pin;
+- `--checkout` moves every clean checkout;
+- `--strict` fails on any mismatch, and then moves nothing without
+  `--checkout`.
 
 ## CI's checks
 
@@ -94,8 +97,12 @@ flock /tmp/angband-validation.lock harness/suite.sh smoke harness/out/smoke
 harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/reference/smoke-borg-rs
 ```
 
-The smoke suite is three short games. `harness/diff` compares their keys,
-messages and states with the recorded reference.
+The smoke suite (`harness/suites/smoke`) is four games:
+- three seeded games of 20,000 turns: a Warrior, a Mage and a Priest;
+- one built scenario: a Mage on DL2 with two kobolds nearby (#1056).
+
+`harness/diff` compares their keys, messages and states with the recorded
+reference.
 
 **Which reference to compare with** depends on the core:
 - the default core is borg-rs's, whose reference is

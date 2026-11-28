@@ -19,10 +19,18 @@ pick the package for your system:
 | Linux x86_64 | `borg-reborn-rs-VERSION-linux-x86_64.tar.gz` | `tar -xzf` it, `cd` into the folder, `./angband` |
 | Windows 10/11 | `borg-reborn-rs-VERSION-windows-x86_64.zip` | *Extract all*, then double-click `angband.exe` |
 
-Also download `SHA256SUMS.txt` and check the package before you unpack it:
+Also download `SHA256SUMS.txt` and check the package before you unpack it.
+On Linux:
 
 ```bash
 sha256sum -c --ignore-missing SHA256SUMS.txt
+```
+
+On Windows, in PowerShell, compare the hash it prints with the package's
+line in `SHA256SUMS.txt`:
+
+```powershell
+Get-FileHash .\borg-reborn-rs-VERSION-windows-x86_64.zip -Algorithm SHA256
 ```
 
 Nothing is installed. Saves go to `lib/save/` inside the folder. The

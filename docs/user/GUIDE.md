@@ -144,7 +144,11 @@ PBorg's commands (`borg-core/src/borg_commands.rs`):
 | `l` | write a snapshot log file |
 | `v` | the version |
 
-The keys `1`–`9`, `+`, `-` and `>` choose the shop the Borg visits.
+Other keys at the prompt choose the shop the Borg visits next, overriding
+its own choice:
+- `1`–`9`: a shop by number (`1` is the General Store);
+- `+` and `-`: the next or previous shop;
+- `>`: clear the override, so PBorg chooses the shop again.
 
 CBorg is Angband's own Borg, and its commands are upstream's: **?** at the
 `CBorg command` prompt lists them.
@@ -207,11 +211,16 @@ python3 harness/pborg-config.py OLD_PBORG_SETTINGS > pborg.yaml
 
 ### Which core PBorg plays
 
-PBorg plays the **borg-rs core** (`borg_reborn_core: "borg-rs"`): a Rust
-translation of the original C Borg, with this project's settings. The
-project's own first-principles core, **reborn**, is frozen. It plays only
-when `BORG_CORE=reborn` is set in the environment, and it reads none of the
-settings above.
+PBorg plays the **borg-rs core**: a Rust translation of the original C
+Borg, with this project's settings. The project's own first-principles
+core, **reborn**, is frozen, and you select it in one of two ways:
+- `BORG_CORE=reborn` in the environment;
+- `borg_reborn_core: reborn` in `pborg.yaml`, where the shipped value is
+  `"borg-rs"`.
+
+`BORG_CORE` wins over the file. The reborn core reads none of the settings
+above, so if your `borg_param_*` changes seem to have no effect, check
+`borg_reborn_core` and `BORG_CORE`.
 
 ## 5. A game without a window
 

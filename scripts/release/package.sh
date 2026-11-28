@@ -106,7 +106,11 @@ text += open(borg).read()
 nl = '\r\n' if platform == 'windows' else '\n'
 open(out, 'w', newline='').write(text.replace('\n', nl))
 PYREADME
-[ ! -f "$ROOT/docs/user/GUIDE.md" ] || cp "$ROOT/docs/user/GUIDE.md" "$STAGE/docs/GUIDE.md"
+# The play guide (#817): its links to the repository become GitHub links at
+# the commit the package is built from, since the package ships few of
+# those files (review of #1386).
+[ ! -f "$ROOT/docs/user/GUIDE.md" ] || python3 "$ROOT/scripts/release/stage-guide.py" \
+    "$ROOT/docs/user/GUIDE.md" "$STAGE/docs/GUIDE.md" "$(git -C "$ROOT" rev-parse HEAD)"
 if [ "$DOCS" != - ] && [ -d "$DOCS/html" ]; then
     cp -R "$DOCS/html" "$STAGE/docs/angband-manual"
 else

@@ -3,6 +3,7 @@ import importlib.util
 import py_compile
 import re
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -80,6 +81,43 @@ class ReleaseWorkflowTest(unittest.TestCase):
         text = (ROOT / 'scripts/release/package.sh').read_text()
         self.assertIn('"$ROOT/engine/angband/README.md" "$ROOT/scripts/release/README-borg.md" "$STAGE/README.md"', text)
         self.assertNotIn('cp "$ROOT/README.md"', text)
+
+    def test_the_packaged_guide_links_only_outside_the_package(self):
+        # Review of #1386: the guide ships as docs/GUIDE.md, where its links
+        # relative to the repository break; staged, each is a GitHub link at
+        # the package's commit, and each names a file that exists.
+        text = (ROOT / 'scripts/release/package.sh').read_text()
+        self.assertIn('scripts/release/stage-guide.py', text)
+        self.assertNotIn('cp "$ROOT/docs/user/GUIDE.md"', text)
+        commit = 'a' * 40
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / 'GUIDE.md'
+            result = subprocess.run(
+                ['python3', str(ROOT / 'scripts/release/stage-guide.py'),
+                 str(ROOT / 'docs/user/GUIDE.md'), str(out), commit],
+                capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            staged = out.read_text()
+        prose = re.sub(r'```.*?```', '', staged, flags=re.S)
+        prose = re.sub(r'`[^`\n]*`', '', prose)
+        targets = re.findall(r'\]\(([^)\s]+)\)', prose)
+        self.assertGreater(len(targets), 10)
+        prefix = 'https://github.com/diegoami/borg-reborn-rs/'
+        for target in targets:
+            if target.startswith('#'):
+                continue
+            self.assertIn('://', target, f'relative link left in the staged guide: {target}')
+            if target.startswith(prefix):
+                self.assertIn(f'/{commit}/', target)
+        # A link to a file that does not exist is refused.
+        # A link to a file that does not exist is refused; one in inline code
+        # is not a link.
+        spec = importlib.util.spec_from_file_location('stage_guide', ROOT / 'scripts/release/stage-guide.py')
+        stage = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(stage)
+        _, missing = stage.rewrite('[x](../no-such-file.md) `[y](../also-not.md)`',
+                                   ROOT / 'docs/user/GUIDE.md', commit)
+        self.assertEqual(missing, ['../no-such-file.md'])
 
     def test_scripts_parse(self):
         for script in sorted((ROOT / 'scripts/release').glob('*.sh')):
