@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the three retained R4.5 parity arms in harness/suite.sh layout."""
+"""Verify retained R4.5 parity arms using shadow-stats@9 evidence."""
 import argparse
 import hashlib
 from pathlib import Path
@@ -16,6 +16,7 @@ SUITES = {
 }
 ARMS = ('off', 'check', 'switch')
 SHADOW_FILES = ('shadow.jsonl', 'shadow-stats.jsonl')
+R5_GUIDANCE = 'For current R5 evidence, use harness/check-shadow.py --r5.'
 
 
 def fields(path):
@@ -106,7 +107,7 @@ def validate(suite, roots, candidate):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, epilog=R5_GUIDANCE)
     parser.add_argument('--suite', choices=SUITES, default='full',
                         help='use smoke only for a local rehearsal')
     parser.add_argument('--candidate', required=True, help='exact candidate source commit')
@@ -119,7 +120,7 @@ def main():
     try:
         validate(args.suite, (args.native, args.check, args.switch), args.candidate)
     except (OSError, ValueError, subprocess.CalledProcessError) as exc:
-        parser.exit(1, f'R4.5 suite gate failed: {exc}\n')
+        parser.exit(1, f'R4.5 suite gate failed for shadow-stats@9 evidence: {exc}\n{R5_GUIDANCE}\n')
 
 
 if __name__ == '__main__':
