@@ -22,24 +22,41 @@ struct Selection {
     store_exit: Option<StoreExit>,
 }
 
+/// borg-reborn-rs (#1395): a town planner action as the trace records it:
+/// the store it targets, the action code and its four arguments (the
+/// `TownAction` of borg_town_shadow.rs).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub(crate) struct PlannedAction {
+    pub(crate) shop: i32,
+    pub(crate) code: i64,
+    pub(crate) at: [i64; 4],
+}
+
 /// borg-reborn-rs (#1395): a store left without a transaction, and why. Only
 /// the live town planner records it, when it leaves a store with no command
-/// queued; `planned_shop` and `planned_action` are the goal it still holds
-/// (-1 and `None` once cleared).
+/// queued. `requested` is the store action chosen outside before the Borg
+/// entered, `inside` the one chosen inside before execution (review of
+/// #1414); `planned_shop` and `planned_action` are the goal still held at
+/// exit (-1 and `None` once cleared).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 struct StoreExit {
     shop: i32,
     reason: String,
+    requested: Option<PlannedAction>,
+    inside: Option<PlannedAction>,
     planned_shop: i32,
     planned_action: Option<i64>,
 }
 
 /// Record why the store of this think is left without a transaction.
-pub(crate) fn record_store_exit(shop: i16, reason: &str, planned_shop: i16, planned_action: Option<i64>) {
+pub(crate) fn record_store_exit(
+    shop: i16, reason: &str, requested: Option<PlannedAction>, inside: Option<PlannedAction>,
+    planned_shop: i16, planned_action: Option<i64>,
+) {
     FRAMES.with(|frames| {
         if let Some(frame) = frames.borrow_mut().last_mut() {
             frame.store_exit = Some(StoreExit {
-                shop: i32::from(shop), reason: reason.into(),
+                shop: i32::from(shop), reason: reason.into(), requested, inside,
                 planned_shop: i32::from(planned_shop), planned_action,
             });
         }
@@ -495,7 +512,12 @@ mod tests {
             prepared: vec![],
             trip_id: None,
             previous_prepared_outcome: None,
-            store_exit: None,
+            store_exit: Some(StoreExit {
+                shop: 4, reason: "the planned ware is gone".into(),
+                requested: Some(PlannedAction { shop: 4, code: 1, at: [4, 2, 1, 0] }),
+                inside: Some(PlannedAction { shop: 4, code: 1, at: [4, 2, 1, 0] }),
+                planned_shop: -1, planned_action: None,
+            }),
         };
         let text = serde_json::to_string(&line).unwrap();
         assert!(!text.contains('\n'));

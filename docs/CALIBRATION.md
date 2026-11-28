@@ -9145,7 +9145,7 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:614` |
+| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:647` |
 
 ### Drops from clear floor (#1397)
 
@@ -9159,7 +9159,7 @@ replays pin it to 0, since it changes their recorded routes.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_drop_clear_floor` | 1 | flag | 0–1 | `borg_town_live.rs:1161` |
+| `town_drop_clear_floor` | 1 | flag | 0–1 | `borg_town_live.rs:1209` |
 
 ### Recall-first trial
 

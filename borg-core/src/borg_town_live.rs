@@ -258,6 +258,11 @@ pub struct LiveState {
     exit_reason: Option<&'static str>,
     idle_visits: Vec<IdleVisit>,
     idle_held: Option<(i16, i32)>,
+    /// The store action the planner chose outside before the Borg entered,
+    /// and the one it chose inside before executing it (review of #1414):
+    /// the handoff a `store_exit` trace record reconstructs.
+    entry_request: Option<crate::core_trace::PlannedAction>,
+    inside_choice: Option<crate::core_trace::PlannedAction>,
     /// The game turn of the planner's current decision and the Borg clock
     /// (`time.now`, one per think) it was read at: set by `choose`, so the
     /// hold reads no engine state from `buy_rejected`/`sale_rejected` and
@@ -480,6 +485,15 @@ struct IdleVisit {
     shop: i16,
     turn: i32,
     context: Carried,
+    stock: Vec<(u32, u8, i32)>,
+}
+
+/// The store's wares as the Borg last read them: kind, copies and price per
+/// slot (empty slots as empty). Review of #1414: a change releases the hold.
+fn stock_of(st: &BorgState, shop: i16) -> Vec<(u32, u8, i32)> {
+    usize::try_from(shop).ok().and_then(|s| st.store.shops.get(s)).map_or_else(Vec::new, |store| {
+        store.ware.iter().map(|w| if w.iqty == 0 { (0, 0, 0) } else { (w.kind, w.iqty, w.cost) }).collect()
+    })
 }
 
 /// What the Borg carries, for #1395's hold: gold and, slot by slot, the
@@ -514,15 +528,30 @@ pub(crate) fn note_idle_visit(st: &mut BorgState) {
     if !active(st) { return; }
     let shop = st.think.shop_num;
     let reason = st.think.town_live.exit_reason.take().unwrap_or("the planner chose no transaction here");
-    crate::core_trace::record_store_exit(shop, reason, st.borg.goal.shop, st.think.town_action.map(|a| a.code));
-    let visit = IdleVisit { shop, turn: crate::engine::game_turn(), context: Carried::of(st) };
+    let requested = st.think.town_live.entry_request.take();
+    let inside = st.think.town_live.inside_choice.take();
+    crate::core_trace::record_store_exit(shop, reason, requested, inside, st.borg.goal.shop, st.think.town_action.map(|a| a.code));
+    let visit = IdleVisit { shop, turn: crate::engine::game_turn(), context: Carried::of(st), stock: stock_of(st, shop) };
     st.think.town_live.idle_visits.retain(|v| v.shop != shop);
     st.think.town_live.idle_visits.push(visit);
 }
 
-/// The store was left with nothing done at this game turn, carrying the same.
-fn idle_here(visits: &[IdleVisit], shop: i16, turn: i32, context: &Carried) -> bool {
-    visits.iter().any(|v| v.shop == shop && v.turn == turn && v.context == *context)
+/// The store was left with nothing done at this game turn, carrying the
+/// same, its stock as the Borg read it unchanged.
+fn idle_here(visits: &[IdleVisit], shop: i16, turn: i32, context: &Carried, stock: &[(u32, u8, i32)]) -> bool {
+    visits.iter().any(|v| v.shop == shop && v.turn == turn && v.context == *context && v.stock == stock)
+}
+
+/// Forget the idle visit of a store (a human's shop request was served).
+pub(crate) fn forget_idle_visit(st: &mut BorgState, shop: i16) {
+    st.think.town_live.idle_visits.retain(|v| v.shop != shop);
+}
+
+/// The planner's store action as the trace records it.
+fn planned(st: &BorgState) -> Option<crate::core_trace::PlannedAction> {
+    st.think.town_action.map(|a| crate::core_trace::PlannedAction {
+        shop: i32::from(st.borg.goal.shop), code: a.code, at: a.at,
+    })
 }
 
 /// borg-reborn-rs (#1395): the store's last visit did nothing at this game
@@ -531,9 +560,11 @@ fn idle_here(visits: &[IdleVisit], shop: i16, turn: i32, context: &Carried) -> b
 /// action. Once the turn moves or the carried state changes it is planned
 /// again.
 pub(crate) fn store_held(st: &BorgState, shop: i16) -> bool {
+    // Review of #1414: a store the human asked for is never held.
+    if st.borg.shop_override == Some(shop) { return false; }
     let live = &st.think.town_live;
     live.now_turn.is_some_and(|(turn, think)| think == st.borg.time.now
-        && idle_here(&live.idle_visits, shop, turn, &Carried::of(st)))
+        && idle_here(&live.idle_visits, shop, turn, &Carried::of(st), &stock_of(st, shop)))
 }
 
 /// borg-reborn-rs (#1395): outside, a destination still held (a kept
@@ -553,7 +584,9 @@ fn hold_idle_store(st: &mut BorgState) -> bool {
 
 pub fn choose_overflow(st: &mut BorgState) -> bool {
     if !choose_overflow_plan(st) { return false; }
-    !hold_idle_store(st) || choose_overflow_plan(st) && !hold_idle_store(st)
+    let chosen = !hold_idle_store(st) || choose_overflow_plan(st) && !hold_idle_store(st);
+    note_request(st, chosen);
+    chosen
 }
 
 fn choose_overflow_plan(st: &mut BorgState) -> bool {
@@ -824,7 +857,20 @@ pub fn choose(st: &mut BorgState) -> bool {
     if !choose_plan(st) { return false; }
     // borg-reborn-rs (#1395): a held destination is replanned at once,
     // without the held store's offers, so another store's action is chosen.
-    !hold_idle_store(st) || choose_plan(st) && !hold_idle_store(st)
+    let chosen = !hold_idle_store(st) || choose_plan(st) && !hold_idle_store(st);
+    note_request(st, chosen);
+    chosen
+}
+
+/// Outside, the store action the Borg walks to (or re-enters for) is the
+/// request a later `store_exit` record names; inside, what was chosen
+/// there before executing it (review of #1414).
+fn note_request(st: &mut BorgState, chosen: bool) {
+    if st.borg.in_shop {
+        st.think.town_live.inside_choice = if chosen { planned(st) } else { None };
+    } else if chosen && st.borg.goal.shop >= 0 {
+        st.think.town_live.entry_request = planned(st);
+    }
 }
 
 fn choose_plan(st: &mut BorgState) -> bool {
@@ -1138,6 +1184,8 @@ pub fn execute_store(st: &mut BorgState) -> bool {
     if executed {
         st.think.town_live.pending_home = moved;
         st.think.town_action = None;
+        st.think.town_live.entry_request = None;
+        st.think.town_live.inside_choice = None;
     }
     else {
         st.think.town_live.pending_buy = None;
@@ -1492,21 +1540,60 @@ mod tests {
         let mut st = BorgState::default();
         st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
         st.items.items = vec![crate::borg_item::blank_item(); 3];
+        st.store.shops = (0..8).map(|_| crate::borg_store::BorgShop { ware: vec![crate::borg_item::blank_item(); 2] }).collect();
+        st.store.shops[4].ware[0].kind = 7;
+        st.store.shops[4].ware[0].iqty = 3;
+        st.store.shops[4].ware[0].cost = 20;
         let context = Carried::of(&st);
-        let visits = [IdleVisit { shop: 4, turn: 267_008, context: context.clone() }];
-        assert!(idle_here(&visits, 4, 267_008, &context));
-        assert!(!idle_here(&visits, 4, 267_018, &context), "the game turn moved");
-        assert!(!idle_here(&visits, 5, 267_008, &context), "another store");
+        let stock = stock_of(&st, 4);
+        let visits = [IdleVisit { shop: 4, turn: 267_008, context: context.clone(), stock: stock.clone() }];
+        assert!(idle_here(&visits, 4, 267_008, &context, &stock));
+        assert!(!idle_here(&visits, 4, 267_018, &context, &stock), "the game turn moved");
+        assert!(!idle_here(&visits, 5, 267_008, &context, &stock), "another store");
         st.items.items[0].iqty = 1;
-        assert!(!idle_here(&visits, 4, 267_008, &Carried::of(&st)), "the pack changed");
+        assert!(!idle_here(&visits, 4, 267_008, &Carried::of(&st), &stock), "the pack changed");
         st.items.items[0].desc[0] = b'x' as core::ffi::c_char;
         st.items.items[0].iqty = 0;
-        assert!(idle_here(&visits, 4, 267_008, &Carried::of(&st)), "a store's description is not a change");
+        assert!(idle_here(&visits, 4, 267_008, &Carried::of(&st), &stock), "a store's description is not a change");
         st.items.items[1].kind = 93;
-        assert!(idle_here(&visits, 4, 267_008, &Carried::of(&st)), "an empty slot's stale kind is not a change");
+        assert!(idle_here(&visits, 4, 267_008, &Carried::of(&st), &stock), "an empty slot's stale kind is not a change");
         st.items.items[0].iqty = 0;
         st.borg.trait_[crate::borg_headers::borg_trait_h::BI_GOLD as usize] = 10;
-        assert!(!idle_here(&visits, 4, 267_008, &Carried::of(&st)), "the purse changed");
+        assert!(!idle_here(&visits, 4, 267_008, &Carried::of(&st), &stock), "the purse changed");
+        st.borg.trait_[crate::borg_headers::borg_trait_h::BI_GOLD as usize] = 0;
+        assert!(idle_here(&visits, 4, 267_008, &Carried::of(&st), &stock_of(&st, 4)));
+        // Review of #1414: a stock or price change releases the hold.
+        st.store.shops[4].ware[0].cost = 15;
+        assert!(!idle_here(&visits, 4, 267_008, &Carried::of(&st), &stock_of(&st, 4)), "a price changed");
+        st.store.shops[4].ware[0].cost = 20;
+        st.store.shops[4].ware[1].kind = 9;
+        st.store.shops[4].ware[1].iqty = 1;
+        assert!(!idle_here(&visits, 4, 267_008, &Carried::of(&st), &stock_of(&st, 4)), "new stock");
+    }
+
+    /// Review of #1414: a store the human asked for is never held, and a
+    /// held store's offers count as rejected for buys and sales alike.
+    #[test]
+    fn held_store_rejects_offers_but_not_a_human_request() {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+        st.items.items = vec![crate::borg_item::blank_item(); 3];
+        st.store.shops = (0..8).map(|_| crate::borg_store::BorgShop { ware: vec![crate::borg_item::blank_item(); 2] }).collect();
+        st.store.shops[4].ware[0].kind = 7;
+        st.store.shops[4].ware[0].iqty = 3;
+        st.borg.time.now = 26_701;
+        st.think.town_live.idle_visits = vec![IdleVisit { shop: 4, turn: 267_008,
+            context: Carried::of(&st), stock: stock_of(&st, 4) }];
+        st.think.town_live.now_turn = Some((267_008, 26_701));
+        assert!(store_held(&st, 4));
+        assert!(buy_rejected(&st, 4, 0));
+        assert!(sale_rejected(&st, 4, &crate::borg_item::blank_item()));
+        assert!(!store_held(&st, 5) && !buy_rejected(&st, 5, 0));
+        st.borg.shop_override = Some(4);
+        assert!(!store_held(&st, 4), "the human asked for this store");
+        st.borg.shop_override = None;
+        st.borg.time.now += 1;
+        assert!(!store_held(&st, 4), "a turn left from an earlier think is ignored");
     }
 
     /// borg-reborn-rs (#1399): a drop whose stack is still carried is

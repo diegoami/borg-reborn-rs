@@ -423,6 +423,9 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
      * served, so the strategy chooses the next shop itself. */
     if st.borg.shop_override == Some(st.think.shop_num) {
         st.borg.shop_override = None;
+        // Review of #1414: the human's request is served; the planner looks
+        // at this store afresh, whatever an earlier visit at this turn did.
+        crate::borg_town_live::forget_idle_visit(st, st.think.shop_num);
     }
 
     /* Clear the goal (the goal was probably going to a shop number) */

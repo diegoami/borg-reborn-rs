@@ -37,8 +37,14 @@ class StoreLoopTest(unittest.TestCase):
         exits = [row["store_exit"] for row in trace if row.get("store_exit")]
         refused = [row["turn"] for row in trace
                    if row.get("store_exit", {}).get("shop") == 0 and row["store_exit"]["reason"] == REFUSED]
-        # The trace names why the store was left with nothing done.
+        # The trace names why the store was left with nothing done, the store
+        # action chosen outside before entering and the one chosen inside.
         self.assertTrue(refused, exits[:5])
+        first = next(e for e in exits if e["shop"] == 0 and e["reason"] == REFUSED)
+        for side in ("requested", "inside"):
+            self.assertIsNotNone(first[side], first)
+            self.assertEqual(first[side]["shop"], 0, first)
+            self.assertEqual(len(first[side]["at"]), 4, first)
         # Without the hold the Borg entered the store 177 times at turn 141.
         turn, visits = Counter(refused).most_common(1)[0]
         self.assertEqual(visits, 1, f"store 1 entered {visits} times at game turn {turn}")
