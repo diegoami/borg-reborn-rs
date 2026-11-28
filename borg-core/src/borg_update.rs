@@ -46,7 +46,7 @@ use crate::engine;
 use crate::headers::__stddef_wchar_t_h::wchar_t;
 use crate::borg_headers::borg_h::BORG_AUTOSAVE;
 use crate::borg_headers::borg_trait_h::{
-    BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_CURSP, BI_HLIFE, BI_IACID, BI_ICOLD, BI_IELEC, BI_IFIRE,
+    BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_CURSP, BI_ESP, BI_HLIFE, BI_IACID, BI_ICOLD, BI_IELEC, BI_IFIRE,
     BI_IPOIS, BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISHEAVYSTUN, BI_ISIMAGE,
     BI_ISPOISONED, BI_ISSTUN, BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXSP, BI_RBLIND, BI_RCONF,
     BI_RDARK, BI_RDIS, BI_RKAOS, BI_RLITE, BI_RNTHR, BI_RNXUS, BI_RPOIS, BI_RSHRD, BI_RSND,
@@ -1946,14 +1946,53 @@ fn missed_visible_target(st: &BorgState, missile: bool) -> Option<BorgTime> {
         let kill = &st.kills.kills[usize::from(ag.kill)];
         (kill.r_idx, borg_timer(st, kill.when))
     });
-    silent_miss(missile, in_view_target_age(g, st.borg.c, &ag, kill))
+    // borg-reborn-rs (#1430): with ESP, only along a path the Borg knows
+    // to be open.
+    let c = st.borg.c;
+    let esp = st.borg.tr(BI_ESP) != 0;
+    let open = |n: loc| {
+        let ag = st.cave.grid(n.x, n.y);
+        u32::from(ag.feat) != FEAT_NONE && borg_cave_floor_grid(ag)
+    };
+    let path_ok = !esp || known_open_path(c, g, i32::from(engine::z_info().max_range), open);
+    silent_miss(missile && path_ok, in_view_target_age(g, c, &ag, kill))
 }
 
 /// borg-reborn-rs (#1425): a shot with no message is a miss only for a
 /// fired or thrown `missile` (`successful_target` -2), the one ranged
 /// attack that can miss its target silently.
+///
+/// borg-reborn-rs (#1430): and, while the Borg has ESP, only when the path
+/// to the goal is known to be open (`known_open_path`). ESP shows a monster
+/// behind walls the Borg has never seen, and `BORG_VIEW` passes through
+/// unknown grids, so without this a missile stopped by an unseen wall
+/// (`ranged_helper`, player-attack.c:1101-1108, also prints nothing) was
+/// taken for a miss after every throw, as the casts of #1425 were. Without
+/// ESP a monster on screen is seen by sight, infravision or detection, and
+/// a miss there is an ordinary miss even across unknown dark floor (smoke
+/// mage 102, turn 2501: a flask at a rock lizard). The callers pass
+/// `missile` already narrowed by this test.
 fn silent_miss(missile: bool, in_view_age: Option<BorgTime>) -> Option<BorgTime> {
     in_view_age.filter(|_| missile)
+}
+
+/// borg-reborn-rs (#1430): whether the Borg knows the path from its grid
+/// `c` to the goal `t` (`borg_inc_motion`, the walk every Borg aim test
+/// uses) to be open: every grid after `c` and before `t` is `open` (known,
+/// and not a wall or door). The goal's own grid is not asked, since a monster
+/// stands there. False when the walk does not reach `t` within `range` steps.
+fn known_open_path(c: loc, t: loc, range: i32, open: impl Fn(loc) -> bool) -> bool {
+    let (mut y, mut x) = (c.y, c.x);
+    for _ in 0..=range {
+        if x == t.x && y == t.y {
+            return true;
+        }
+        if (x != c.x || y != c.y) && !open(loc { x, y }) {
+            return false;
+        }
+        crate::borg_projection::borg_inc_motion(&mut y, &mut x, c.y, c.x, t.y, t.x);
+    }
+    false
 }
 
 /// `missed_visible_target` on the targeted grid `ag` at `goal`, the Borg at
@@ -2917,6 +2956,23 @@ mod miss_wall_guess_tests {
         assert_eq!(silent_miss(false, age), None);
         assert_eq!(silent_miss(true, age), Some(1));
         assert_eq!(silent_miss(true, None), None);
+    }
+
+    /// #1430: with ESP, a missile's silent miss needs a path the Borg knows
+    /// to be open. The gallant's path crosses the unknown (162,30), so a
+    /// throw there takes the guess; a fully known path, or an adjacent
+    /// target (the #929 Fang misses), stays a miss.
+    #[test]
+    fn with_esp_a_silent_miss_needs_a_known_open_path() {
+        assert!(!known_open_path(DRUID, GALLANT, 20, druid_known));
+        assert!(known_open_path(DRUID, GALLANT, 20, |_| true));
+        // A known wall on the way, or a goal out of range, is not open.
+        assert!(!known_open_path(DRUID, GALLANT, 20, |g| g != loc { x: 161, y: 30 }));
+        assert!(!known_open_path(DRUID, GALLANT, 10, |_| true));
+        // The goal's own grid is never asked (a monster stands there).
+        assert!(known_open_path(DRUID, GALLANT, 20, |g| g != GALLANT));
+        let (borg, fang) = (loc { x: 87, y: 50 }, loc { x: 88, y: 51 });
+        assert!(known_open_path(borg, fang, 20, |_| false));
     }
 
     /// #1425: with the miss refused, the no-damage cast takes C's guess,
