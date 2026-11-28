@@ -26,11 +26,14 @@ SUMMON_MONSTER = (25, 15)
 SUMMONING = (22, 1)
 HASTE_MONSTER = (23, 30)
 DARKNESS_WAND = (23, 19)
+CONTEMPLATION = (26, 19)
+NIMBLENESS = (26, 20)
+SECOND_SIGHT = (29, 1)
 
 
 @unittest.skipUnless(GAME.is_file(), "test-junk-consumables build required")
 class JunkConsumablesTest(unittest.TestCase):
-    def launch(self, items, *, distance=None, monster="giant_white_mouse", keys=45):
+    def launch(self, items, *, distance=None, monster="giant_white_mouse", keys=45, params=None):
         with tempfile.TemporaryDirectory(prefix="junk-consumables-") as directory:
             out = Path(directory)
             paths = {name: out / name for name in ("user", "save", "archive", "panic", "scores")}
@@ -61,6 +64,7 @@ class JunkConsumablesTest(unittest.TestCase):
                 BORG_PARAM_TOWN_SHOP_OVERLOADED="2",
                 BORGH_TEST_JUNK_CONSUMABLES="town" if distance is None else "throw",
             )
+            env.update({f"BORG_PARAM_{name.upper()}": str(value) for name, value in (params or {}).items()})
             messages = out / "messages.log"
             args = [
                 str(GAME), "-mborgh", "-n", *(f"-d{key}={value}" for key, value in paths.items()),
@@ -137,6 +141,50 @@ class JunkConsumablesTest(unittest.TestCase):
                 self.assertIn(f"You drop {amount} {item}", messages)
                 self.assertNotIn(f"You have {amount} {item}", messages)
         self.assertNotIn("You drop a Wand of Darkness", messages)
+
+    def test_town_drinks_the_stat_trade_it_accepts_and_sells_the_one_it_refuses(self):
+        # #1371. The fixture is a Human Warrior (Strength 17, Intelligence
+        # and Wisdom 10, Dexterity and Constitution 16). Its class drinks
+        # Nimbleness: one Dexterity table step against one step of a random
+        # other stat. It never drinks Contemplation (borg_junk's table).
+        # Second Sight is a kind the core never uses (#443, #1049).
+        kit = [(NIMBLENESS, 1, True, 0), (CONTEMPLATION, 1, True, 0),
+               (SECOND_SIGHT, 2, True, 0), (CURE_LIGHT_WOUNDS, 2, True, 0)]
+        messages, frames = self.launch(kit, keys=120, params={"town_stat_trade_policy": 1})
+        self.assertEqual(frames[1]["check"], "borg_use_things")
+        self.assertIn("# Quaffing Potion of Nimbleness.", messages)
+        self.assertIn("You feel very dextrous!", messages)
+        self.assertIn("# Selling Potion of Contemplation", messages)
+        self.assertIn("You had a Potion of Contemplation", messages)
+        self.assertNotIn("Quaffing Potion of Contemplation", messages)
+        self.assertIn("You had 2 Mushrooms of Second Sight", messages)
+        self.assertNotIn("Quaffing Potion of Cure Light Wounds", messages)
+        self.assertTrue(all(frame["healing_potions"] >= 2 for frame in frames), "the healing reserve stays")
+
+        # The earlier play, the control: both potions stay in the pack.
+        messages, _ = self.launch(kit, keys=120, params={"town_stat_trade_policy": 0})
+        self.assertNotIn("Quaffing Potion of Nimbleness", messages)
+        self.assertNotIn("Selling Potion of Contemplation", messages)
+        self.assertIn("You had 2 Mushrooms of Second Sight", messages)
+
+    def test_dungeon_drops_a_refused_stat_potion_the_engine_picked_up(self):
+        # Review of #1372 (P3). pickup_always picks up whatever the Borg steps
+        # on, so the floor filter alone leaves a refused stack in the pack. A
+        # Warrior never drinks Contemplation; a quiet dungeon turn drops that
+        # stack ("This item only": it is then not picked up again) and keeps
+        # Nimbleness, which it drinks, and its healing reserve.
+        kit = [(CONTEMPLATION, 1, True, 0), (CURE_LIGHT_WOUNDS, 2, True, 0)]
+        params = {"town_stat_trade_policy": 1, "town_stat_trade_floor": 1}
+        messages, frames = self.launch(kit, distance=11, keys=30, params=params)
+        self.assertIn("# Dropping refused stat potion", messages)
+        self.assertIn("You drop a Potion of Contemplation", messages)
+        self.assertNotIn("Quaffing Potion of Contemplation", messages)
+        self.assertNotIn("Quaffing Potion of Cure Light Wounds", messages)
+
+        # Floor switch off, the control: the stack stays in the pack.
+        messages, _ = self.launch(kit, distance=11, keys=30,
+                                  params={"town_stat_trade_policy": 1, "town_stat_trade_floor": 0})
+        self.assertNotIn("Dropping refused stat potion", messages)
 
 
 if __name__ == "__main__":

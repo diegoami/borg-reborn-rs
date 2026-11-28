@@ -1000,6 +1000,33 @@ pub(crate) fn is_restore_life(item: &crate::borg_headers::borg_item_h::borg_item
     item.iqty > 0 && item.aware && u32::from(item.tval) == TV_POTION && i32::from(item.sval) == sval
 }
 
+/// borg-reborn-rs (#1371): under town_stat_trade_policy, quaff the first
+/// carried gain-one/lose-one potion whose trade the character accepts,
+/// when the danger here is at most a tenth of the current HP (the quiet turn
+/// of `borg_discard_town_consumable`). The potion takes a turn and its loss
+/// is permanent, so it waits for a turn with nothing to fight.
+fn drink_wanted_second_stat_potion(st: &mut BorgState) -> bool {
+    use crate::borg_town_capability::{second_stat_kind, second_stat_potion_wanted, stat_trade_policy};
+    if !stat_trade_policy() || st.borg.tr(BI_ISBLIND) != 0 || st.borg.tr(BI_ISCONFUSED) != 0 {
+        return false;
+    }
+    let pack = usize::from(engine::z_info().pack_size);
+    let Some(sval) = st.items.items.iter().take(pack).find_map(|item| {
+        let sval = i32::from(item.sval);
+        (item.iqty > 0 && item.aware && u32::from(item.tval) == TV_POTION)
+            .then(|| second_stat_kind(st, sval)).flatten()
+            .filter(|&stat| second_stat_potion_wanted(st, stat))
+            .map(|_| sval)
+    }) else {
+        return false;
+    };
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    if crate::borg_danger::borg_danger(st, y, x, 1, true, false) > st.borg.tr(BI_CURHP) / 10 {
+        return false;
+    }
+    borg_quaff_potion(st, sval)
+}
+
 /// Use things in a useful, but non-essential, manner.
 pub fn borg_use_things(st: &mut BorgState) -> bool {
     /* Quaff experience restoration potion */
@@ -1022,6 +1049,13 @@ pub fn borg_use_things(st: &mut BorgState) -> bool {
         || borg_quaff_potion(st, st.item_val.sv_potion_inc_dex)
         || borg_quaff_potion(st, st.item_val.sv_potion_inc_con)
     {
+        return true;
+    }
+
+    // borg-reborn-rs (#1371): drink a gain-one/lose-one potion the town's rule
+    // accepts (`second_stat_potion_wanted`), on a quiet turn, instead of
+    // carrying it until a pack cleanup happens to pick it.
+    if drink_wanted_second_stat_potion(st) {
         return true;
     }
 

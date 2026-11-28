@@ -344,6 +344,16 @@ fn borg_consume(st: &mut BorgState, i: i32) -> bool {
                 return borg_quaff_potion(st, sval);
             }
 
+            // borg-reborn-rs (#1371): under town_stat_trade_policy the town's
+            // rule decides (`second_stat_potion_wanted`): a refused potion is
+            // not drunk to destroy it, it is sold or dropped.
+            if crate::borg_town_capability::stat_trade_policy() {
+                if let Some(stat) = crate::borg_town_capability::second_stat_kind(st, sval) {
+                    return crate::borg_town_capability::second_stat_potion_wanted(st, stat)
+                        && borg_quaff_potion(st, sval);
+                }
+            }
+
             /* Gain one/lose one potions */
             let (str2, int2, wis2, dex2, con2) = (
                 v.sv_potion_inc_str2,
@@ -680,6 +690,37 @@ pub(crate) fn borg_discard_town_consumable(st: &mut BorgState) -> bool {
         return false;
     }
     note_desc(st, "# Dropping harmful town consumable ", slot as i32, ".");
+    borg_keypress(st, key(b'k'));
+    slot_keys(st, slot as i32);
+    borg_keypress(st, key(b'a')); // textui_cmd_ignore_menu: "This item only".
+    true
+}
+
+/// borg-reborn-rs (#1371, review of #1372): in the dungeon, drop a known
+/// gain-one/lose-one potion the character refuses (`town_stat_trade_floor`).
+/// The engine's `pickup_always` picks up whatever the Borg steps on, so the
+/// floor filter of `borg_flow_take` alone leaves the stack reaching the pack
+/// on another route. Ignore this stack only ('k', "This item only"): the engine
+/// drops it and filters it out of auto-pickup, while a stack of the same kind
+/// can still be picked up if the character's stats change what it wants. In
+/// town the planner sells or drops it (`unwanted_home_item`).
+pub(crate) fn borg_discard_refused_stack(st: &mut BorgState) -> bool {
+    if !crate::borg_town_capability::stat_trade_floor() || st.borg.tr(BI_CDEPTH) == 0 || off_floor(st) {
+        return false;
+    }
+    let Some(slot) = (0..pack_size() as usize).find(|&slot| {
+        let item = &st.items.items[slot];
+        item.iqty > 0 && item.aware && item.flavour_aware && item.kind != 0
+            && crate::borg_town_capability::refused_stat_trade_kind(st, u32::from(item.tval), i32::from(item.sval))
+            && !crate::borg_item::item_note(st, item).windows(2).any(|mark| matches!(mark, b"!d" | b"!*"))
+            && engine::inven_object(&st.access, slot).is_some_and(|item| !item.marked_ignored())
+    }) else {
+        return false;
+    };
+    if danger_here(st) > st.borg.tr(BI_CURHP) / 10 {
+        return false;
+    }
+    note_desc(st, "# Dropping refused stat potion ", slot as i32, ".");
     borg_keypress(st, key(b'k'));
     slot_keys(st, slot as i32);
     borg_keypress(st, key(b'a')); // textui_cmd_ignore_menu: "This item only".

@@ -130,7 +130,7 @@ pub(crate) fn home_at_limit(st: &BorgState, item: &crate::borg_headers::borg_ite
 
 /// borg-reborn-rs (#1241): known Home excess can clear in one transaction.
 pub(crate) fn batch_home_disposal(st: &BorgState, item: &borg_item) -> bool {
-    home_at_limit(st, item) || crate::borg_town_capability::unwanted_home_item(item)
+    home_at_limit(st, item) || crate::borg_town_capability::unwanted_home_item(st, item)
         || unsuitable_home_overflow(st, item)
 }
 
@@ -168,7 +168,7 @@ fn overflow_action(st: &BorgState) -> Option<TownAction> {
     for shop in std::iter::once(BORG_HOME).chain(0..BORG_HOME) {
         for &(slot, item, excess) in &excess {
             if shop == BORG_HOME && (home_at_limit(st, item)
-                || crate::borg_town_capability::unwanted_home_item(item) || unsuitable_home_overflow(st, item)) { continue; }
+                || crate::borg_town_capability::unwanted_home_item(st, item) || unsuitable_home_overflow(st, item)) { continue; }
             if sale_rejected(st, shop as i16, item) { continue; }
             if shop != BORG_HOME && !crate::borg_store_sell::borg_store_buys(item, shop as i32) { continue; }
             let excess = if shop == BORG_HOME { excess }

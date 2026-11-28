@@ -612,7 +612,10 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, deferred: &mut
         }
 
         /* skip worthless items */
-        if take.value <= 0 || unwanted_light_scroll(st, &take) {
+        if take.value <= 0 || unwanted_light_scroll(st, &take)
+            // borg-reborn-rs (#1371): a known kind the town would only sell or drop.
+            || crate::borg_town_capability::refused_take_kind(st, take.kidx as usize)
+        {
             continue;
         }
 
@@ -800,7 +803,10 @@ fn scum_select(
         let y = i32::from(take.y);
 
         /* skip worthless items */
-        if take.value <= 0 || unwanted_light_scroll(st, &take) {
+        if take.value <= 0 || unwanted_light_scroll(st, &take)
+            // borg-reborn-rs (#1371): a known kind the town would only sell or drop.
+            || crate::borg_town_capability::refused_take_kind(st, take.kidx as usize)
+        {
             continue;
         }
 
