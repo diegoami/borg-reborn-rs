@@ -1,6 +1,6 @@
 # Lunal-state carry: verified product scenario, ready for adoption
 
-Consumer [117](https://github.com/diegoami/better-borg-c/issues/117), canonical
+Consumer [117](https://github.com/diegoami/patched-borg-c/issues/117), canonical
 source [314](https://github.com/diegoami/neo-angband-tracker/issues/314)
 (lunal-314, priority medium). Fix applied as
 `2e0593f6effcd211b565be3c589d8716de85c1ec` (import of source PR355

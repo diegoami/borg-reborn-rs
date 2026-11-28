@@ -1,6 +1,6 @@
 # Wearskip-85 carry: verified product scenario
 
-Consumer [294](https://github.com/diegoami/better-borg-c/issues/294),
+Consumer [294](https://github.com/diegoami/patched-borg-c/issues/294),
 canonical source
 [85](https://github.com/diegoami/neo-angband-tracker/issues/85)
 (CBUG-0069, wearskip-85; source fix `5d73e0c21`, evidence fixture

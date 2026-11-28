@@ -1,6 +1,6 @@
 # LOS-dispel carry: verified product scenario, ready for adoption
 
-Consumer [84](https://github.com/diegoami/better-borg-c/issues/84), canonical
+Consumer [84](https://github.com/diegoami/patched-borg-c/issues/84), canonical
 source [326](https://github.com/diegoami/neo-angband-tracker/issues/326)
 (losdispel-326, source priority high). Fix applied as
 `0489305bca448763152c6ec3814f6015fe8a8322` (import of source PR327

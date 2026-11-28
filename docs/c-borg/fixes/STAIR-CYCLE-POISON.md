@@ -1,6 +1,6 @@
 # Munchkin leaves munchkin mode while poisoned or hallucinating: verified decision-level scenario
 
-Consumer [280](https://github.com/diegoami/better-borg-c/issues/280) (investigation record: [204](https://github.com/diegoami/better-borg-c/issues/204),
+Consumer [280](https://github.com/diegoami/patched-borg-c/issues/280) (investigation record: [204](https://github.com/diegoami/patched-borg-c/issues/204),
 `ZOO-STALL-1045.md`), canonical source [403](https://github.com/diegoami/neo-angband-tracker/issues/403) (staircycle-403;
 source PR 409, evidence PR 410). Fix applied as `bd9a36def55cde1c478136b31bf3c7c3a717d520` (`cherry-pick -x` of source `d92e06c3f964e4bba19642288ded1b331a327109`, patch
 `patches/0067-munchkin-leaves-while-poisoned-or-hallucinating.patch`).

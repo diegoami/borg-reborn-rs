@@ -1,6 +1,6 @@
 # Out-of-light-gate carry: verified product scenario, ready for adoption
 
-Consumer [144](https://github.com/diegoami/better-borg-c/issues/144), canonical
+Consumer [144](https://github.com/diegoami/patched-borg-c/issues/144), canonical
 source [229](https://github.com/diegoami/neo-angband-tracker/issues/229)
 (outoflight-229). Fix applied as
 `21fbfba5c4d3a2cc77707fea885590479cec18c3` (import of source PR384

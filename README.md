@@ -187,7 +187,7 @@ once per game process).
 | Repository | Role here |
 | --- | --- |
 | [angband/angband](https://github.com/angband/angband) | The game and the original C Borg (`src/borg/`), at the pin above. Read only. |
-| [better-borg-c](https://github.com/diegoami/better-borg-c) | The C Borg with verified bug fixes: the C ancestor the architecture documents cite. |
+| [better-borg-c](https://github.com/diegoami/patched-borg-c) | The C Borg with verified bug fixes: the C ancestor the architecture documents cite. |
 | [borg-rs](https://github.com/diegoami/borg-rs) | The faithful Rust port; its decision core is vendored in `borg-core/` at a pin ([docs/architecture/borg-core.md](docs/architecture/borg-core.md)). |
 | [borg-zoo](https://github.com/diegoami/borg-zoo) | Measures Borg versions on frozen seed suites. Our yardstick. |
 | [borg-cemetery](https://github.com/diegoami/borg-cemetery) | The death registry: recorded runs, investigations, scenarios. |

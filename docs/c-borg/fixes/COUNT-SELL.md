@@ -1,6 +1,6 @@
 # Count-sell unidentified-item carry: verified product scenario
 
-Consumer [261](https://github.com/diegoami/better-borg-c/issues/261),
+Consumer [261](https://github.com/diegoami/patched-borg-c/issues/261),
 canonical source [134](https://github.com/diegoami/neo-angband-tracker/issues/134)
 (countsell-134 / CBUG-0118). Fix applied as
 `93cbfbda08f91693a7c9bbb1ef9eb8df14860333` (`cherry-pick -x` of source

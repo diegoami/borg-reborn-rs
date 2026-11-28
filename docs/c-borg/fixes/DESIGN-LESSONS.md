@@ -6,8 +6,8 @@ Future redesigns (including the later borg-reborn-rs work described in
 UPSTREAM.md) may take them into account; this lane dispatches no Rust work.
 
 ## Lesson 1: retreat guard and flee planner must share one danger notion
-(2026-11-09, from [#324](https://github.com/diegoami/better-borg-c/issues/324),
-evidence `issue-0324-diagnostic/`, verdicts in [#386](https://github.com/diegoami/better-borg-c/issues/386))
+(2026-11-09, from [#324](https://github.com/diegoami/patched-borg-c/issues/324),
+evidence `issue-0324-diagnostic/`, verdicts in [#386](https://github.com/diegoami/patched-borg-c/issues/386))
 
 D0012: caution retreats above `HP/3` danger while the scary flee flow (CL<=5)
 tolerates danger up to `3xHP`, so it routes back through the square caution

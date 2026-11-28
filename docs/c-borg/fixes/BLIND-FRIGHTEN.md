@@ -1,6 +1,6 @@
 # Blind Frighten carry: verified product scenario, ready for adoption
 
-Consumer [90](https://github.com/diegoami/better-borg-c/issues/90), canonical
+Consumer [90](https://github.com/diegoami/patched-borg-c/issues/90), canonical
 source [261](https://github.com/diegoami/neo-angband-tracker/issues/261)
 (blind-261). Fix applied as `713d9ad4603d7bc46eaf32de3469fa7344e6f892`
 (import of source PR331 `a49b7a6c15f6353cd427af28903355fe258af4d5`, patch

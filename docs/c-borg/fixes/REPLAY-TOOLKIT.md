@@ -4,7 +4,7 @@ This is the entry point for collecting games, inspecting deaths or living runs,
 playing an alternative, and turning observations into investigations. Commands
 run from the repository root. Replace uppercase placeholders with actual paths
 or values. This guide describes the tools at
-[`a4084032485a7c7f29153d0b37ce63dede3e4d5a`](https://github.com/diegoami/better-borg-c/tree/a4084032485a7c7f29153d0b37ce63dede3e4d5a).
+[`a4084032485a7c7f29153d0b37ce63dede3e4d5a`](https://github.com/diegoami/patched-borg-c/tree/a4084032485a7c7f29153d0b37ce63dede3e4d5a).
 The implementation files and each command's `--help` define exact options.
 
 For implementation/reproduction in another repository, use the accompanying

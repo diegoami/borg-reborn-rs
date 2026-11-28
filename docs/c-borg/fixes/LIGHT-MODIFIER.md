@@ -1,6 +1,6 @@
 # Light-modifier carry: verified product scenario, ready for adoption
 
-Consumer [105](https://github.com/diegoami/better-borg-c/issues/105), canonical
+Consumer [105](https://github.com/diegoami/patched-borg-c/issues/105), canonical
 source [238](https://github.com/diegoami/neo-angband-tracker/issues/238)
 (light-238, priority medium). Fix applied as
 `497d92665d6d688c89faf1b58b0103442d651fb9` (import of source PR349

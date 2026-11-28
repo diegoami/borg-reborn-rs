@@ -28,7 +28,7 @@ elapsed world-turn interval is19999.
 
 Raw machine-readable metrics for **every** accepted run, excluded diagnostic
 attempts, source/build identities and save/trace/result hashes are published in
-[measurement issue3's immutable receipt](https://github.com/diegoami/better-borg-c/issues/3#issuecomment-6682135753).
+[measurement issue3's immutable receipt](https://github.com/diegoami/patched-borg-c/issues/3#issuecomment-6682135753).
 Full generated evidence remains outside Git in the persistent primary-checkout
 archive described by the final checkpoint. No source fixture or recovery depends
 on workstation `/tmp`. Reproduction commands are in README.md and cohort-v1.json.

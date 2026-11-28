@@ -1,6 +1,6 @@
 # Operator-block leak carry: verified product scenario, ready for adoption
 
-Consumer [121](https://github.com/diegoami/better-borg-c/issues/121), canonical
+Consumer [121](https://github.com/diegoami/patched-borg-c/issues/121), canonical
 source [324](https://github.com/diegoami/neo-angband-tracker/issues/324)
 (opblock-324, priority low). Fix applied as
 `ced816c3c53ae1ad2346e0ab3064a32fb489ad1f` (import of source PR339

@@ -1,6 +1,6 @@
 # Trollswap-201 carry: verified product scenario
 
-Consumer [289](https://github.com/diegoami/better-borg-c/issues/289),
+Consumer [289](https://github.com/diegoami/patched-borg-c/issues/289),
 canonical source
 [201](https://github.com/diegoami/neo-angband-tracker/issues/201)
 (trollswap-201; source PR454 `4fe83bc8`, evidence PR453). Fix applied as

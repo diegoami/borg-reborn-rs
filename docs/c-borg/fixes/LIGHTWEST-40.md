@@ -1,6 +1,6 @@
 # Lightwest-40 carry: verified product scenario
 
-Consumer [309](https://github.com/diegoami/better-borg-c/issues/309),
+Consumer [309](https://github.com/diegoami/patched-borg-c/issues/309),
 canonical source
 [40](https://github.com/diegoami/neo-angband-tracker/issues/40)
 (lightwest-40; source fix `6dd5874b`, evidence fixture `483a7a12c`).

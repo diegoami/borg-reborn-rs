@@ -1,6 +1,6 @@
 # Munchkin stair carry: verified product scenario, ready for adoption
 
-Consumer [63](https://github.com/diegoami/better-borg-c/issues/63), canonical
+Consumer [63](https://github.com/diegoami/patched-borg-c/issues/63), canonical
 source [244](https://github.com/diegoami/neo-angband-tracker/issues/244)
 (munchkin-244). Fix applied as `2cf521b8bc8457eb0e585cb008077c484f7f0d3c`
 (import of source PR301 `5b31e13d1023a64bf4f8613352e738757b5f56ec`, patch

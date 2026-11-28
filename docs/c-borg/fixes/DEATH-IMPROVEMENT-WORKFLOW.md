@@ -1,6 +1,6 @@
 # Death evidence to verified Borg improvements
 
-Owner direction, 2026-11-07; workflow [155](https://github.com/diegoami/better-borg-c/issues/155).
+Owner direction, 2026-11-07; workflow [155](https://github.com/diegoami/patched-borg-c/issues/155).
 Two processes share evidence but have separate decisions. Owner decision
 2026-11-09: implementing approved improvements in this repo is allowed, as
 labelled local improvement units with evidence, gates and before/after
@@ -10,7 +10,7 @@ candidate, change, budget and acceptance plan before work starts.
 
 For the canonical architecture specification, revision3 tuning plan/reviews,
 source-check limits and quick gains368–371/toolkit376, read the
-[reference inventory in PLAN.md](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/PLAN.md#borg-design-tuning-proposal-and-evidence-references).
+[reference inventory in PLAN.md](https://github.com/diegoami/patched-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/PLAN.md#borg-design-tuning-proposal-and-evidence-references).
 These references inform scoped candidates and do not start their implementation.
 
 ## Process 1: analyse a death and evaluate candidates
@@ -116,27 +116,27 @@ revision gets a new prospective contract; it does not overwrite the earlier resu
 
 ## First candidates and distinct questions
 
-- [154](https://github.com/diegoami/better-borg-c/issues/154) links
+- [154](https://github.com/diegoami/patched-borg-c/issues/154) links
   [source370](https://github.com/diegoami/neo-angband-tracker/issues/370): early
   Phase Door/cure restock gate. Compare one-scroll, two-scroll and cure changes
   separately or explicitly treat them as a combined policy. Measure early death,
   town trips, time/reach rate to depth5 and the declared longer-horizon endpoint.
-- [41](https://github.com/diegoami/better-borg-c/issues/41): survival-stock reserve
+- [41](https://github.com/diegoami/patched-borg-c/issues/41): survival-stock reserve
   priority over spare gear. It is related to, but different from, the depth gate.
-- [34](https://github.com/diegoami/better-borg-c/issues/34): first Phase Door,
+- [34](https://github.com/diegoami/patched-borg-c/issues/34): first Phase Door,
   crowd landing, walking retreat and later healing eligibility. D0004 had four
   known Phase Door and twelve cures at20293. A departure reserve alone is not
   proved to prevent this death; stock availability and action selection differ.
 
-[153](https://github.com/diegoami/better-borg-c/issues/153) records a future
+[153](https://github.com/diegoami/patched-borg-c/issues/153) records a future
 viewer danger/decision pane. It is file-only and deferred; this process does not
 implement it or alter Borg behavior.
 
 ## Owner brainstorming candidates (2026-11-07)
 
-[158](https://github.com/diegoami/better-borg-c/issues/158): assess theft danger
+[158](https://github.com/diegoami/patched-borg-c/issues/158): assess theft danger
 weighting and whether economic penalties trigger harmful early escape decisions.
-[159](https://github.com/diegoami/better-borg-c/issues/159): assess attempted
+[159](https://github.com/diegoami/patched-borg-c/issues/159): assess attempted
 room/door/upstairs retreat before repeated phases AND after scroll exhaustion.
 Both are focused children of34, linked to the same encounter evaluation rather
 than new independent death claims. Sleep timing, safe fight and retreat outcomes

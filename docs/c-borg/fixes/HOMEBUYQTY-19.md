@@ -1,6 +1,6 @@
 # Homebuyqty-19 carry: verified product scenario
 
-Consumer [365](https://github.com/diegoami/better-borg-c/issues/365),
+Consumer [365](https://github.com/diegoami/patched-borg-c/issues/365),
 canonical source
 [19](https://github.com/diegoami/neo-angband-tracker/issues/19)
 (homebuyqty-19; source fix `e075f0ac7`, evidence fixture `40495b33a`).

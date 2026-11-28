@@ -1,6 +1,6 @@
 # Stale same-square target carry: verified product scenario, ready for adoption
 
-Consumer [99](https://github.com/diegoami/better-borg-c/issues/99), canonical
+Consumer [99](https://github.com/diegoami/patched-borg-c/issues/99), canonical
 source [322](https://github.com/diegoami/neo-angband-tracker/issues/322)
 (staletarget-322, priority high). Fix applied as
 `0d843a414c8deaa8ce7aa3178dea39418dc22d62` (import of source PR343

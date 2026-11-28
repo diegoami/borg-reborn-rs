@@ -1,6 +1,6 @@
 # Lightbeam-88 carry: verified product scenario
 
-Consumer [316](https://github.com/diegoami/better-borg-c/issues/316),
+Consumer [316](https://github.com/diegoami/patched-borg-c/issues/316),
 canonical source
 [88](https://github.com/diegoami/neo-angband-tracker/issues/88)
 (CBUG-0072, lightbeam-88; source fix `828318ab5`, evidence fixture

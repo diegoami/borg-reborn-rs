@@ -5,9 +5,9 @@ with a before-build snapshot at each step (so every verifier compares exactly on
 
 | patch | consumer | source | applied | source commit |
 | --- | --- | --- | --- | --- |
-| 0057 | [257](https://github.com/diegoami/better-borg-c/issues/257) | [141](https://github.com/diegoami/neo-angband-tracker/issues/141) cfghang (CBUG-0125) | `052129ae5b7e072513b80ac2626d82792e6a8463` | `45dfc9b1f4930b28841d0c38b73cc4cd3171aab0` |
-| 0058 | [258](https://github.com/diegoami/better-borg-c/issues/258) | [142](https://github.com/diegoami/neo-angband-tracker/issues/142) cfgminus (CBUG-0126) | `0ceeaadbb62a0fd2d4d09e38816023de21a4e630` | `6bc43e71a4b36189ba7246abe53f114d6259469c` |
-| 0059 | [259](https://github.com/diegoami/better-borg-c/issues/259) | [144](https://github.com/diegoami/neo-angband-tracker/issues/144) cfgmissing (CBUG-0128) | `e8a50ea9f5976afd075bcbb4d54dcf9d564b5df3` | `8cbee69447cda2526b4810fd6ea74677921ff1d1` |
+| 0057 | [257](https://github.com/diegoami/patched-borg-c/issues/257) | [141](https://github.com/diegoami/neo-angband-tracker/issues/141) cfghang (CBUG-0125) | `052129ae5b7e072513b80ac2626d82792e6a8463` | `45dfc9b1f4930b28841d0c38b73cc4cd3171aab0` |
+| 0058 | [258](https://github.com/diegoami/patched-borg-c/issues/258) | [142](https://github.com/diegoami/neo-angband-tracker/issues/142) cfgminus (CBUG-0126) | `0ceeaadbb62a0fd2d4d09e38816023de21a4e630` | `6bc43e71a4b36189ba7246abe53f114d6259469c` |
+| 0059 | [259](https://github.com/diegoami/patched-borg-c/issues/259) | [144](https://github.com/diegoami/neo-angband-tracker/issues/144) cfgmissing (CBUG-0128) | `e8a50ea9f5976afd075bcbb4d54dcf9d564b5df3` | `8cbee69447cda2526b4810fd6ea74677921ff1d1` |
 
 Each is a `cherry-pick -x` of the reviewed C-only source commit, applied cleanly in sequence.
 

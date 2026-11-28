@@ -16,7 +16,7 @@ where an independent verdict goes.
 | After the head | `1f0b04882`, a session-state/docs commit; `src/` is identical to the head |
 | Size | 20 first-parent merges, 501 files changed, +90086/-125 (the bulk is committed kit evidence) |
 | Runtime surface | `src/`: 16 files, +155/-124 across the 19 carry units |
-| Compare view | https://github.com/diegoami/better-borg-c/compare/4.2.6-impact-v12...9ccb2aaee |
+| Compare view | https://github.com/diegoami/patched-borg-c/compare/4.2.6-impact-v12...9ccb2aaee |
 
 The window also contains the milestone-12 package/review record (PR 480, docs only) and two
 session-state commits. None of those touch `src/` beyond `session.json`.

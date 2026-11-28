@@ -23,11 +23,11 @@ first; reuse them where correct instead of duplicating them.
 
 ## Reference source and documentation
 
-Source repository: https://github.com/diegoami/better-borg-c
+Source repository: https://github.com/diegoami/patched-borg-c
 
 Freeze the implementation reference at:
 `a4084032485a7c7f29153d0b37ce63dede3e4d5a`
-https://github.com/diegoami/better-borg-c/tree/a4084032485a7c7f29153d0b37ce63dede3e4d5a
+https://github.com/diegoami/patched-borg-c/tree/a4084032485a7c7f29153d0b37ce63dede3e4d5a
 
 The accompanying documentation PR adds the following guide without changing that
 reference implementation. Read the guide and then use the pinned files for exact

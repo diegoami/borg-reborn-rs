@@ -1,6 +1,6 @@
 # Impact milestone 6: 13 carries and one overlap since impact v5 (patches 0051-0063)
 
-Review package for [milestone 6](https://github.com/diegoami/better-borg-c/milestone/6): the 13
+Review package for [milestone 6](https://github.com/diegoami/patched-borg-c/milestone/6): the 13
 verified C bug carries after the milestone5 runtime snapshot `5384f12ed` (50 carries), patches
 0051-0063 (consumer issues 242, 245, 247, 250, 252, 254, 257, 258, 259, 261, 263, 266, 267), plus
 the source250 adoption that needed no new patch (consumer 200). Runtime snapshot after the last
@@ -84,10 +84,10 @@ Per-patch (seeds 11/29/47, cap 20000, wall 120, stall 30, observer builds of bef
   configuration) and 0062/0063 (not measured; a shopping divergence is possible and not excluded).
 * **0053 (excessive-danger flee) changed an outcome:** seed 29 diverges and later dies to a cutpurse at
   game turn 15149 (was alive at the cap). Divergence starts at the corrected branch fleeing a floating eye.
-  Investigation: [#249](https://github.com/diegoami/better-borg-c/issues/249).
+  Investigation: [#249](https://github.com/diegoami/patched-borg-c/issues/249).
 * 0055 (nearest desperate staircase): seeds 29 and 47 traces diverge, outcomes unchanged.
 * **0056 (back-away per grid) changed two outcomes:** seed 29 is saved (alive at the cap), seed 47 is lost
-  (dies to a cave spider at turn 11780). Investigation: [#255](https://github.com/diegoami/better-borg-c/issues/255).
+  (dies to a cave spider at turn 11780). Investigation: [#255](https://github.com/diegoami/patched-borg-c/issues/255).
 
 **Cumulative v5 to tip** (`b3c825c97c8aef18b252a7fb7d9b7dceef83d586` against `5384f12ed`, observer builds, same parameters; archive
 `artifacts/m6-measurement.tar.gz`, sha256 `f5bd1833c7371b06ca147d0fb778412918557dc3ea7dfd88848ab7e8d6e66374`, 55151447 bytes, 95 members, build/source trees and saves
@@ -113,9 +113,9 @@ interaction between 0055 and 0056 is not excluded by a single frozen seed (miles
 * **prepreason-234** is not carried: the source states its native fixture is still pending.
 * **staircycle-403** awaits the consumer 204 correction boundary; **tapunlife-249** stays masked by patch 0022
   (diagnosis in `TAP-UNLIFE.md`, consumer 140); **dontreact-14** is unchanged from the milestone 5 note.
-* Related but separate: issues [249](https://github.com/diegoami/better-borg-c/issues/249) and
-  [255](https://github.com/diegoami/better-borg-c/issues/255) (cohort deaths, diagnosis only);
-  [235](https://github.com/diegoami/better-borg-c/issues/235) (D0009 starvation) is unrelated to these carries.
+* Related but separate: issues [249](https://github.com/diegoami/patched-borg-c/issues/249) and
+  [255](https://github.com/diegoami/patched-borg-c/issues/255) (cohort deaths, diagnosis only);
+  [235](https://github.com/diegoami/patched-borg-c/issues/235) (D0009 starvation) is unrelated to these carries.
 
 ## Full-disclosure index: retained errors and corrections
 
@@ -125,8 +125,8 @@ the fixed state as its "before" tree (0062), the assertion rejected it and the t
 `RESIST-POISON.md`); (3) a generator wrote `MODES = ('main')` (a string, not a tuple) and the verifier
 failed on it before any claim was made; (4) the stepwise cfg run failed its provenance step for 0058 because
 the plain source diff does not apply on top of 0057, and the three-way-merge proof replaced it; (5) a stray
-test call created a malformed duplicate issue ([#265](https://github.com/diegoami/better-borg-c/issues/265),
-closed as not planned) and the body of [#269](https://github.com/diegoami/better-borg-c/issues/269) first
+test call created a malformed duplicate issue ([#265](https://github.com/diegoami/patched-borg-c/issues/265),
+closed as not planned) and the body of [#269](https://github.com/diegoami/patched-borg-c/issues/269) first
 quoted a wrong source hash, corrected with a comment; (6) one PR command was rejected by the shell for a
 heredoc and rerun from files, with nothing partially applied. Two clarifications from the review (M6-04):
 the applied diff of 0058 differs from its source diff by the 0057 hunk it stacks onto, and the merge-file proof

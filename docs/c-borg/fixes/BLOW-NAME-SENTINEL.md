@@ -1,6 +1,6 @@
 # Blow-name-sentinel carry: verified product scenario, ready for adoption
 
-Consumer [176](https://github.com/diegoami/better-borg-c/issues/176), canonical
+Consumer [176](https://github.com/diegoami/patched-borg-c/issues/176), canonical
 source [247](https://github.com/diegoami/neo-angband-tracker/issues/247)
 (blowname-247). Fix applied as
 `64046743679e0925ae6698b458a7bbf9dfa6cb19` (import of source PR397

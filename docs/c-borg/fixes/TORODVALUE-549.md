@@ -1,6 +1,6 @@
 # Torodvalue-549 carry: verified product scenario
 
-Consumer [361](https://github.com/diegoami/better-borg-c/issues/361),
+Consumer [361](https://github.com/diegoami/patched-borg-c/issues/361),
 canonical source
 [549](https://github.com/diegoami/neo-angband-tracker/issues/549)
 (torodvalue-549; source fix `d4071b06e`, evidence fixture `f3323c2f0`).

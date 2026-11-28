@@ -1,6 +1,6 @@
 # Vampire Strike carry: verified product scenario, ready for adoption
 
-Consumer [66](https://github.com/diegoami/better-borg-c/issues/66), canonical
+Consumer [66](https://github.com/diegoami/patched-borg-c/issues/66), canonical
 source [257](https://github.com/diegoami/neo-angband-tracker/issues/257)
 (vampire-257). Fix applied as `81b15066286c8f3818a309ac00d86bdf0b628367`
 (import of source PR293 `0119d5daee9b8a07a8096331eea78dbbb6c26050`, patch

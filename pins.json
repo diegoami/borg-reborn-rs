@@ -19,7 +19,7 @@
       "watch_tags": "m*"
     },
     "better-borg-c": {
-      "repository": "diegoami/better-borg-c",
+      "repository": "diegoami/patched-borg-c",
       "commit": "46037038cb0ce3a248ea22c06f02454818dbe4b4",
       "baseline": {
         "tag": "4.2.6-impact-v7",

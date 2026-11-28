@@ -1,6 +1,6 @@
 # Enlightenment-use carry: verified product scenario, ready for adoption
 
-Consumer [157](https://github.com/diegoami/better-borg-c/issues/157), canonical
+Consumer [157](https://github.com/diegoami/patched-borg-c/issues/157), canonical
 source [81](https://github.com/diegoami/neo-angband-tracker/issues/81)
 (CBUG-0065, priority low). Fix applied as
 `2c3d8172c38bd83090f6869f775893b31216bf13` (import of source PR275

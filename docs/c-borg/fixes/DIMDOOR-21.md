@@ -1,6 +1,6 @@
 # Dimdoor-21 carry: verified product scenario
 
-Consumer [335](https://github.com/diegoami/better-borg-c/issues/335),
+Consumer [335](https://github.com/diegoami/patched-borg-c/issues/335),
 canonical source
 [21](https://github.com/diegoami/neo-angband-tracker/issues/21)
 (dimdoor-21; source fix `4b7a9f414`, evidence fixture `3edecf91b`).

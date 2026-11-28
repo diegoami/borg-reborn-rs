@@ -1,6 +1,6 @@
 # Tporod-17 carry: verified product scenario
 
-Consumer [371](https://github.com/diegoami/better-borg-c/issues/371),
+Consumer [371](https://github.com/diegoami/patched-borg-c/issues/371),
 canonical source
 [17](https://github.com/diegoami/neo-angband-tracker/issues/17)
 (tporod-17; source fix `d752bad27`, evidence fixture `92ca00fdc`).

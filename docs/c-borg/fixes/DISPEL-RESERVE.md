@@ -1,6 +1,6 @@
 # Dispel reserve carry: verified product scenario, ready for adoption
 
-Consumer [81](https://github.com/diegoami/better-borg-c/issues/81), canonical
+Consumer [81](https://github.com/diegoami/patched-borg-c/issues/81), canonical
 source [259](https://github.com/diegoami/neo-angband-tracker/issues/259)
 (dispel-259). Fix applied as `c9f24544fe6fa309ad9ea926952e45db679f060d`
 (import of source PR320 `e5da34177368960c9707df6c7b8d55e6c4ab081a`, patch

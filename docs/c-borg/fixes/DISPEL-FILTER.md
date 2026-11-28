@@ -1,6 +1,6 @@
 # Dispel Life filter carry: verified product scenario, ready for adoption
 
-Consumer [57](https://github.com/diegoami/better-borg-c/issues/57), canonical
+Consumer [57](https://github.com/diegoami/patched-borg-c/issues/57), canonical
 source [248](https://github.com/diegoami/neo-angband-tracker/issues/248)
 (dispel-248). Fix applied as `23d8ed579317db9e9d2037d21d529af3c29fd433`
 (import of source PR291 `6912b85cb7b902616ad786dfc20afe3b4cf28b10`, patch

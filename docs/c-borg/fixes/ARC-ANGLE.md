@@ -1,6 +1,6 @@
 # Arc angle carry: verified product scenario, ready for adoption
 
-Consumer [60](https://github.com/diegoami/better-borg-c/issues/60), canonical
+Consumer [60](https://github.com/diegoami/patched-borg-c/issues/60), canonical
 source [253](https://github.com/diegoami/neo-angband-tracker/issues/253)
 (arc-253). Fix applied as `92003d66c2ad5e1f5ab95fe1851d77824b8369e8` (import
 of source PR297 `7f33e9fbf83059a0a1ed5e530f463124ce1e4be0`, patch

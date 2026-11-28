@@ -1,6 +1,6 @@
 # Activ lookup carry: verified product scenario, ready for adoption
 
-Consumer [75](https://github.com/diegoami/better-borg-c/issues/75), canonical
+Consumer [75](https://github.com/diegoami/patched-borg-c/issues/75), canonical
 source [260](https://github.com/diegoami/neo-angband-tracker/issues/260)
 (activ-260). Fix applied as `7323c8df1506f5572c4cfbbc7348cd4f3fbe88da`
 (import of source PR308 `891d0cb9cc9057a2004dfeba7b21b19913f5a2b6`, patch

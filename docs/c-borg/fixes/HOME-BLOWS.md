@@ -1,6 +1,6 @@
 # Home-blows carry: verified product scenario, ready for adoption
 
-Consumer [113](https://github.com/diegoami/better-borg-c/issues/113), canonical
+Consumer [113](https://github.com/diegoami/patched-borg-c/issues/113), canonical
 source [313](https://github.com/diegoami/neo-angband-tracker/issues/313)
 (homeblows-313, priority medium). Fix applied as
 `668ac32c4be91b773410e652d3913cbb12dfe199` (import of source PR353

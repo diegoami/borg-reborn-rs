@@ -1,7 +1,7 @@
 # Native C impact v2 — accumulated review package
 
-[Milestone2](https://github.com/diegoami/better-borg-c/milestone/2) and
-[review issue38](https://github.com/diegoami/better-borg-c/issues/38) pin the
+[Milestone2](https://github.com/diegoami/patched-borg-c/milestone/2) and
+[review issue38](https://github.com/diegoami/patched-borg-c/issues/38) pin the
 seven-carry product at **2675d198e4c3fcb1c69ee63ef25a2b6ac27ab96f**. The original
 pristine baseline remains **e473720ed88a0f0c7ca66815cef3000eb4a38bc3**. External
 review has not occurred. The owner directs agent review/normal merge/measurement
@@ -11,19 +11,19 @@ Original [v1](MILESTONE-1.md) and its snapshot remain immutable.
 ## Independent corrections and controls
 
 Exact source/applied commits, original credit and patch removal units are in
-[series.json](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/patches/series.json), with a separate consumer issue per fix.
+[series.json](https://github.com/diegoami/patched-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/patches/series.json), with a separate consumer issue per fix.
 Canonical reusable C defects/proposals remain in neo-angband-tracker. All seven
 are locally carried/open and patch-active; none is called upstream resolved.
 
 | Source / consumer / merge PR | Demonstrated native effect | Proof and limits |
 | --- | --- | --- |
-| [82](https://github.com/diegoami/neo-angband-tracker/issues/82) / [4](https://github.com/diegoami/better-borg-c/issues/4) / [6](https://github.com/diegoami/better-borg-c/pull/6) | Safer available emergency swap; two-threat loss113→59HP | [9 cases,4 unchanged controls](SAFER-SWAP.md); constructed depth50 combat |
-| [14](https://github.com/diegoami/neo-angband-tracker/issues/14) / [7](https://github.com/diegoami/better-borg-c/issues/7) / [10](https://github.com/diegoami/better-borg-c/pull/10) | Post-knockout kill reaction0→1 | [4 cases,3 controls](KNOCKOUT.md); restored information, no proved bad action/death |
-| [110](https://github.com/diegoami/neo-angband-tracker/issues/110) / [15](https://github.com/diegoami/better-borg-c/issues/15) / [16](https://github.com/diegoami/better-borg-c/pull/16) | Remove extra20mana/100energy regeneration cast | [9 cases,7 controls](PREPARATION.md); extra duration tradeoff retained |
-| [26](https://github.com/diegoami/neo-angband-tracker/issues/26) / [17](https://github.com/diegoami/better-borg-c/issues/17) / [18](https://github.com/diegoami/better-borg-c/pull/18) | Read cold protection for cold damage | [6 cases,4 controls](COLD-PROTECTION.md); acid-only21→0HP for2mana, reverse0→20HP for saved2mana |
-| [78](https://github.com/diegoami/neo-angband-tracker/issues/78) / [20](https://github.com/diegoami/better-borg-c/issues/20) / [21](https://github.com/diegoami/better-borg-c/pull/21) | Ready left fire ring kills70HP ogre | [7 cases,5 controls](BOTH-RINGS.md); both single-loop alternatives fail, no full fight |
-| [77](https://github.com/diegoami/neo-angband-tracker/issues/77) / [31](https://github.com/diegoami/better-borg-c/issues/31) / [32](https://github.com/diegoami/better-borg-c/pull/32) | Long-gap/first-use CCW heals60HP/clears confusion | [9 cases,5 controls](POTION-TIMING.md); recent-drink conservation leaves injury untreated; incomplete reversal fails sentinel |
-| [102](https://github.com/diegoami/neo-angband-tracker/issues/102) / [36](https://github.com/diegoami/better-borg-c/issues/36) / [37](https://github.com/diegoami/better-borg-c/pull/37) | Recognize visible Itangast; retain one True Seeing potion | [5 cases,4 controls](ITANGAST.md); actual unseen names retained, protected setup, no damage/death |
+| [82](https://github.com/diegoami/neo-angband-tracker/issues/82) / [4](https://github.com/diegoami/patched-borg-c/issues/4) / [6](https://github.com/diegoami/patched-borg-c/pull/6) | Safer available emergency swap; two-threat loss113→59HP | [9 cases,4 unchanged controls](SAFER-SWAP.md); constructed depth50 combat |
+| [14](https://github.com/diegoami/neo-angband-tracker/issues/14) / [7](https://github.com/diegoami/patched-borg-c/issues/7) / [10](https://github.com/diegoami/patched-borg-c/pull/10) | Post-knockout kill reaction0→1 | [4 cases,3 controls](KNOCKOUT.md); restored information, no proved bad action/death |
+| [110](https://github.com/diegoami/neo-angband-tracker/issues/110) / [15](https://github.com/diegoami/patched-borg-c/issues/15) / [16](https://github.com/diegoami/patched-borg-c/pull/16) | Remove extra20mana/100energy regeneration cast | [9 cases,7 controls](PREPARATION.md); extra duration tradeoff retained |
+| [26](https://github.com/diegoami/neo-angband-tracker/issues/26) / [17](https://github.com/diegoami/patched-borg-c/issues/17) / [18](https://github.com/diegoami/patched-borg-c/pull/18) | Read cold protection for cold damage | [6 cases,4 controls](COLD-PROTECTION.md); acid-only21→0HP for2mana, reverse0→20HP for saved2mana |
+| [78](https://github.com/diegoami/neo-angband-tracker/issues/78) / [20](https://github.com/diegoami/patched-borg-c/issues/20) / [21](https://github.com/diegoami/patched-borg-c/pull/21) | Ready left fire ring kills70HP ogre | [7 cases,5 controls](BOTH-RINGS.md); both single-loop alternatives fail, no full fight |
+| [77](https://github.com/diegoami/neo-angband-tracker/issues/77) / [31](https://github.com/diegoami/patched-borg-c/issues/31) / [32](https://github.com/diegoami/patched-borg-c/pull/32) | Long-gap/first-use CCW heals60HP/clears confusion | [9 cases,5 controls](POTION-TIMING.md); recent-drink conservation leaves injury untreated; incomplete reversal fails sentinel |
+| [102](https://github.com/diegoami/neo-angband-tracker/issues/102) / [36](https://github.com/diegoami/patched-borg-c/issues/36) / [37](https://github.com/diegoami/patched-borg-c/pull/37) | Recognize visible Itangast; retain one True Seeing potion | [5 cases,4 controls](ITANGAST.md); actual unseen names retained, protected setup, no damage/death |
 
 All49 corrected native scenarios passed on the seven-carry core; all44 earlier
 complete case logs match their preceding corrected results. Normal native gate
@@ -40,7 +40,7 @@ timing changes private Borg RNG consumption and later behavior: all three still
 survive the cap, but seed47 reaches level2 versus4 at unchanged maxdepth2.
 That unfavorable result remains visible. Actual seven-carry merge was rebuilt;
 its starts/full traces match six-carry45eac63bd exactly, with levels3/3/2 and
-maxdepth1/3/2. [Every latest run/control summary](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/itangast-v1.json). No shallow
+maxdepth1/3/2. [Every latest run/control summary](https://github.com/diegoami/patched-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/itangast-v1.json). No shallow
 cohort survival benefit, runtime speedup or general no-regression claim.
 
 [Deep v2](DEEP-IMPACT-V2.md), prospectively declared on33, measures the actual

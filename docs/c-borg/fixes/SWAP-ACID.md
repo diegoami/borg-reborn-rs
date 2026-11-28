@@ -1,6 +1,6 @@
 # Swap weapon acid resistance carry: verified product scenario
 
-Consumer [270](https://github.com/diegoami/better-borg-c/issues/270), canonical source
+Consumer [270](https://github.com/diegoami/patched-borg-c/issues/270), canonical source
 [199](https://github.com/diegoami/neo-angband-tracker/issues/199) (swapacid-199). Fix applied as `91f075bdcc329ec754e10e24da3cce36c5279784`
 (`cherry-pick -x` of source `eddbf5b82293ea70a76fae960bc9f8debf1579c6`, patch `patches/0066-swap-weapon-acid-element.patch`).
 

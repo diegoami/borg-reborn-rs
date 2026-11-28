@@ -1,6 +1,6 @@
 # Stair-return-report carry: verified product scenario, ready for adoption
 
-Consumer [167](https://github.com/diegoami/better-borg-c/issues/167), canonical
+Consumer [167](https://github.com/diegoami/patched-borg-c/issues/167), canonical
 source [230](https://github.com/diegoami/neo-angband-tracker/issues/230)
 (stairreturn-230). Fix applied as
 `fb16560054b44899c50b8aec5ce1a2b0e35c0533` (import of source PR393

@@ -1,6 +1,6 @@
 # Watchdog reads split UTF-8 tails
 
-Consumer tooling [issue220](https://github.com/diegoami/better-borg-c/issues/220).
+Consumer tooling [issue220](https://github.com/diegoami/patched-borg-c/issues/220).
 Reported by read-only borg-zoo milestones-wide
 [run42425634696](https://github.com/diegoami/borg-zoo/actions/runs/42425634696),
 results branch `results/milestones-wide/42425634696-1/cells.jsonl`.

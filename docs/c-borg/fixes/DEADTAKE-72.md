@@ -1,6 +1,6 @@
 # Deadtake-72 carry: verified product scenario
 
-Consumer [338](https://github.com/diegoami/better-borg-c/issues/338),
+Consumer [338](https://github.com/diegoami/patched-borg-c/issues/338),
 canonical source
 [72](https://github.com/diegoami/neo-angband-tracker/issues/72)
 (deadtake-72; source fix `9492d74ce`, evidence fixture `6332987b90`).

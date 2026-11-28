@@ -1,6 +1,6 @@
 # Panelrows-348 carry: verified product scenario (memory safety)
 
-Consumer [373](https://github.com/diegoami/better-borg-c/issues/373),
+Consumer [373](https://github.com/diegoami/patched-borg-c/issues/373),
 canonical source
 [348](https://github.com/diegoami/neo-angband-tracker/issues/348)
 (panelrows-348; source fix `82702575b`, evidence fixture `a9303c7ca`).

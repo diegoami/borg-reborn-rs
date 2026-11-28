@@ -1,6 +1,6 @@
 # Impact milestone 7: thirteen patch units since impact v6 (patches 0064-0077)
 
-Review package for [milestone 7](https://github.com/diegoami/better-borg-c/milestone/7): the
+Review package for [milestone 7](https://github.com/diegoami/patched-borg-c/milestone/7): the
 verified C carries after the milestone6 runtime snapshot `b3c825c97c8aef18b252a7fb7d9b7dceef83d586`
 (63 carries): patches 0064-0067 (reverse-flow pair, swap acid element, munchkin stair-cycle),
 owner-decided corrections 0068/0069 (source287 buffer size on 0118, source213 `square_isglow` on
@@ -140,7 +140,7 @@ claim is made in either direction. The cohort lineage restarts at the v7 tip.
 ## Exclusions and pending items (checked, not counted)
 
 * **spasticscore-147 deferred** (was prepared as 0072; consumer
-  [#288](https://github.com/diegoami/better-borg-c/issues/288), source
+  [#288](https://github.com/diegoami/patched-borg-c/issues/288), source
   [147](https://github.com/diegoami/neo-angband-tracker/issues/147)): the kit's fixture
   choreography was designed for the pristine base where the #146 reverse flow is broken; this
   product carries 0064 in the same function, so the unchanged fixture records zero searches with

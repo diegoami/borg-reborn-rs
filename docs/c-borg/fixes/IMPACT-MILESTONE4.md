@@ -1,6 +1,6 @@
 # Native C bug-fix v4 — accumulated review package
 
-[Milestone4](https://github.com/diegoami/better-borg-c/milestone/4) and the
+[Milestone4](https://github.com/diegoami/patched-borg-c/milestone/4) and the
 review issue collect the bug-fix carries after the reviewed
 [impact v3](IMPACT-MILESTONE3.md) package. The prior runtime snapshot is
 **702f091f6ac06cae1014df2f85ac218be0189813** (34 carries, patches
@@ -19,7 +19,7 @@ carried/open+patch-active corrections. Process, documentation and tooling
 merges in the same interval are listed as context and are not counted.
 
 Exact source head, imported commit, evidence pin, credit and removal unit
-for every correction are in [series.json](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/patches/series.json).
+for every correction are in [series.json](https://github.com/diegoami/patched-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/patches/series.json).
 Canonical defect ownership remains in neo-angband-tracker; no source issue
 is marked resolved by a consumer merge.
 
@@ -27,14 +27,14 @@ is marked resolved by a consumer merge.
 
 | Patch | Source / consumer / merge | Demonstrated correction | Report |
 | --- | --- | --- | --- |
-| 0035 | [240](https://github.com/diegoami/neo-angband-tracker/issues/240) / [133](https://github.com/diegoami/better-borg-c/issues/133) / [PR135](https://github.com/diegoami/better-borg-c/pull/135) `638513e91` | Brand-ammo need counted once per stack (20 → 10) | [BRAND-NEED](BRAND-NEED.md) |
-| 0036 | [232](https://github.com/diegoami/neo-angband-tracker/issues/232) / [137](https://github.com/diegoami/better-borg-c/issues/137) / [PR138](https://github.com/diegoami/better-borg-c/pull/138) `4fc3c481f` | Known up-staircase no longer re-tracked on every visit | [STAIRTRACK](STAIRTRACK.md) |
-| 0037 | [252](https://github.com/diegoami/neo-angband-tracker/issues/252) / [141](https://github.com/diegoami/better-borg-c/issues/141) / [PR142](https://github.com/diegoami/better-borg-c/pull/142) `d619eec5f` | Ball/arc blast scans include the south/east radius edges | [ACID-ARC-BOUNDS](ACID-ARC-BOUNDS.md) |
-| 0038 | [229](https://github.com/diegoami/neo-angband-tracker/issues/229) / [144](https://github.com/diegoami/better-borg-c/issues/144) / [PR145](https://github.com/diegoami/better-borg-c/pull/145) `04ab89381` | Dying light starts the out-of-light maneuvers | [OUT-OF-LIGHT-GATE](OUT-OF-LIGHT-GATE.md) |
-| 0039 | [212](https://github.com/diegoami/neo-angband-tracker/issues/212) / [148](https://github.com/diegoami/better-borg-c/issues/148) / [PR149](https://github.com/diegoami/better-borg-c/pull/149) `f0288cca5` | Map-pass wall-change detection actually fires | [MAP-WALL-CAPTURE](MAP-WALL-CAPTURE.md) |
-| 0040 | [81](https://github.com/diegoami/neo-angband-tracker/issues/81) / [157](https://github.com/diegoami/better-borg-c/issues/157) / [PR160](https://github.com/diegoami/better-borg-c/pull/160) `503e7a07b` | Recognized Enlightenment potions are drunk in the dungeon | [ENLIGHTENMENT-USE](ENLIGHTENMENT-USE.md) |
-| 0041 | [230](https://github.com/diegoami/neo-angband-tracker/issues/230) / [167](https://github.com/diegoami/better-borg-c/issues/167) / [PR171](https://github.com/diegoami/better-borg-c/pull/171) `bc8cf805f` | Out-of-light stair command reports acting | [STAIR-RETURN-REPORT](STAIR-RETURN-REPORT.md) |
-| 0042 | [247](https://github.com/diegoami/neo-angband-tracker/issues/247) / [176](https://github.com/diegoami/better-borg-c/issues/176) / [PR179](https://github.com/diegoami/better-borg-c/pull/179) `70993393a` | Blow-name lookup stops before its NULL sentinel (crash class) | [BLOW-NAME-SENTINEL](BLOW-NAME-SENTINEL.md) |
+| 0035 | [240](https://github.com/diegoami/neo-angband-tracker/issues/240) / [133](https://github.com/diegoami/patched-borg-c/issues/133) / [PR135](https://github.com/diegoami/patched-borg-c/pull/135) `638513e91` | Brand-ammo need counted once per stack (20 → 10) | [BRAND-NEED](BRAND-NEED.md) |
+| 0036 | [232](https://github.com/diegoami/neo-angband-tracker/issues/232) / [137](https://github.com/diegoami/patched-borg-c/issues/137) / [PR138](https://github.com/diegoami/patched-borg-c/pull/138) `4fc3c481f` | Known up-staircase no longer re-tracked on every visit | [STAIRTRACK](STAIRTRACK.md) |
+| 0037 | [252](https://github.com/diegoami/neo-angband-tracker/issues/252) / [141](https://github.com/diegoami/patched-borg-c/issues/141) / [PR142](https://github.com/diegoami/patched-borg-c/pull/142) `d619eec5f` | Ball/arc blast scans include the south/east radius edges | [ACID-ARC-BOUNDS](ACID-ARC-BOUNDS.md) |
+| 0038 | [229](https://github.com/diegoami/neo-angband-tracker/issues/229) / [144](https://github.com/diegoami/patched-borg-c/issues/144) / [PR145](https://github.com/diegoami/patched-borg-c/pull/145) `04ab89381` | Dying light starts the out-of-light maneuvers | [OUT-OF-LIGHT-GATE](OUT-OF-LIGHT-GATE.md) |
+| 0039 | [212](https://github.com/diegoami/neo-angband-tracker/issues/212) / [148](https://github.com/diegoami/patched-borg-c/issues/148) / [PR149](https://github.com/diegoami/patched-borg-c/pull/149) `f0288cca5` | Map-pass wall-change detection actually fires | [MAP-WALL-CAPTURE](MAP-WALL-CAPTURE.md) |
+| 0040 | [81](https://github.com/diegoami/neo-angband-tracker/issues/81) / [157](https://github.com/diegoami/patched-borg-c/issues/157) / [PR160](https://github.com/diegoami/patched-borg-c/pull/160) `503e7a07b` | Recognized Enlightenment potions are drunk in the dungeon | [ENLIGHTENMENT-USE](ENLIGHTENMENT-USE.md) |
+| 0041 | [230](https://github.com/diegoami/neo-angband-tracker/issues/230) / [167](https://github.com/diegoami/patched-borg-c/issues/167) / [PR171](https://github.com/diegoami/patched-borg-c/pull/171) `bc8cf805f` | Out-of-light stair command reports acting | [STAIR-RETURN-REPORT](STAIR-RETURN-REPORT.md) |
+| 0042 | [247](https://github.com/diegoami/neo-angband-tracker/issues/247) / [176](https://github.com/diegoami/patched-borg-c/issues/176) / [PR179](https://github.com/diegoami/patched-borg-c/pull/179) `70993393a` | Blow-name lookup stops before its NULL sentinel (crash class) | [BLOW-NAME-SENTINEL](BLOW-NAME-SENTINEL.md) |
 
 ## Verification contract used by every carry
 
@@ -124,7 +124,7 @@ rediscover:
   | I | 0021 | injured |
   | J | 0022 alone | healthy — 0022 alone is the masker |
 
-  The consumer issue [140](https://github.com/diegoami/better-borg-c/issues/140)
+  The consumer issue [140](https://github.com/diegoami/patched-borg-c/issues/140)
   retains the red attempt, the diagnosis (now landed as
   `docs/measurement/TAP-UNLIFE.md`) and the unmerged branch; the source
   demonstration stays valid at its recorded commits.
@@ -152,16 +152,16 @@ These are context for reviewers, not counted in the eight; they were
 delivered by the concurrent recording/death sessions on the owner's
 separate requests and changed nothing under the build inputs:
 
-- [PR147](https://github.com/diegoami/better-borg-c/pull/147): the
+- [PR147](https://github.com/diegoami/patched-borg-c/pull/147): the
   recording/replay feature (`replay-borg.py`, recording streams, D0004/
   D0005 dossiers); verified behavior-neutral on the frozen cohort
   (plain-vs-recorded controls identical) and outside `src/`.
-- [PR156](https://github.com/diegoami/better-borg-c/pull/156),
-  [PR161](https://github.com/diegoami/better-borg-c/pull/161),
-  [PR163](https://github.com/diegoami/better-borg-c/pull/163),
-  [PR164](https://github.com/diegoami/better-borg-c/pull/164),
-  [PR165](https://github.com/diegoami/better-borg-c/pull/165) and
-  [PR175](https://github.com/diegoami/better-borg-c/pull/175):
+- [PR156](https://github.com/diegoami/patched-borg-c/pull/156),
+  [PR161](https://github.com/diegoami/patched-borg-c/pull/161),
+  [PR163](https://github.com/diegoami/patched-borg-c/pull/163),
+  [PR164](https://github.com/diegoami/patched-borg-c/pull/164),
+  [PR165](https://github.com/diegoami/patched-borg-c/pull/165) and
+  [PR175](https://github.com/diegoami/patched-borg-c/pull/175):
   death-phase feedback separation, brainstorming record, death
   documentation and replay-spell UI; documentation/observer work outside
   the build inputs.

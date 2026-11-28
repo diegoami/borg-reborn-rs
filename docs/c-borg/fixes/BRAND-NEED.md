@@ -1,6 +1,6 @@
 # Brand-need carry: verified product scenario, ready for adoption
 
-Consumer [133](https://github.com/diegoami/better-borg-c/issues/133), canonical
+Consumer [133](https://github.com/diegoami/patched-borg-c/issues/133), canonical
 source [240](https://github.com/diegoami/neo-angband-tracker/issues/240)
 (brand-240, priority low). Fix applied as
 `224c0d81f4aa37b4a54c868b1a248e092d280bf6` (import of source PR333

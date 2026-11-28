@@ -14,7 +14,7 @@ where an independent verdict goes.
 | Base | tag `4.2.6-impact-v11` on runtime snapshot `39268ca8a` |
 | Head | `4e1b912cb` (PR 478, `origin/main` when this package was written) |
 | Size | 6 first-parent merges, 64 files changed, +9790/-164 |
-| Compare view | https://github.com/diegoami/better-borg-c/compare/4.2.6-impact-v11...4e1b912cb |
+| Compare view | https://github.com/diegoami/patched-borg-c/compare/4.2.6-impact-v11...4e1b912cb |
 | Runtime surface | 32 files, +674/-128: one carry (`borg-flow-kill.c`, -18) and the official import |
 
 The window also contains the milestone-11 package, its review corrections and the tag record

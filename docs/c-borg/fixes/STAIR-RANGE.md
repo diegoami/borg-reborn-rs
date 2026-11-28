@@ -1,6 +1,6 @@
 # Munchkin stair-range gate carry: verified product scenario
 
-Consumer [242](https://github.com/diegoami/better-borg-c/issues/242),
+Consumer [242](https://github.com/diegoami/patched-borg-c/issues/242),
 canonical source [245](https://github.com/diegoami/neo-angband-tracker/issues/245)
 (stairrange-245). Fix applied as `30bc61d37a72933a30f0c5425ce3993208a2e24f`
 (`cherry-pick -x` of source `c16b3e9d14470dd19ef884f37f9eca2f7cc7d37f`, source PR 413,

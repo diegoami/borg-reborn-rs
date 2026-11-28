@@ -1,6 +1,6 @@
 # Teleport Other skip-list carry: verified product scenario, ready for adoption
 
-Consumer [54](https://github.com/diegoami/better-borg-c/issues/54), canonical
+Consumer [54](https://github.com/diegoami/patched-borg-c/issues/54), canonical
 source [67](https://github.com/diegoami/neo-angband-tracker/issues/67)
 (CBUG-0051). Fix applied as `706fb49b0731ebaf54408c0699b4cd1da1a15929`
 (import of source PR285 `25f8a43828204dd1226d5bf5c3b36547b4a07a40`, patch

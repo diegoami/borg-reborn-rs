@@ -1,6 +1,6 @@
 # Drained-Borg dive guard carry: verified product scenario
 
-Consumer [263](https://github.com/diegoami/better-borg-c/issues/263),
+Consumer [263](https://github.com/diegoami/patched-borg-c/issues/263),
 canonical source [235](https://github.com/diegoami/neo-angband-tracker/issues/235)
 (drainedive-235). Fix applied as `eb89278d7c312d236703e39b90d865b44397ec10`
 (`cherry-pick -x` of source `6d909bf5216c1e6c5ed199595d9ed3e5baf4b0d8`, patch

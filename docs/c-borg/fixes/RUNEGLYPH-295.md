@@ -1,6 +1,6 @@
 # Runeglyph-295 carry: verified product scenario
 
-Consumer [375](https://github.com/diegoami/better-borg-c/issues/375),
+Consumer [375](https://github.com/diegoami/patched-borg-c/issues/375),
 canonical source
 [295](https://github.com/diegoami/neo-angband-tracker/issues/295)
 (runeglyph-295; source fix `50e64a37a`, evidence fixture `3ce928e86`).

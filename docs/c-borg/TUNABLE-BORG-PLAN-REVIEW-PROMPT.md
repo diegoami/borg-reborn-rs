@@ -17,7 +17,7 @@ be tuned and compared by experiment (survival and progress), built on what the
 original C Borg knows rather than from scratch, but not bound to its decisions.
 Two repositories share that goal:
 
-- diegoami/better-borg-c: a native C Angband/Borg product at upstream
+- diegoami/patched-borg-c: a native C Angband/Borg product at upstream
   e473720ed88a0f0c7ca66815cef3000eb4a38bc3, carrying verified bug fixes from
   neo-angband-tracker, with a native measurement runner and death dossiers.
 - diegoami/borg-rs: a faithful Rust port of the C Borg, verified by
@@ -45,7 +45,7 @@ the full review below on what changed.
 - better-borg-c: README.md, PLAN.md, RULES.md, AGENTS.md, patches/series.json,
   docs/measurement/README.md, BASELINE-V1.md, DEEP-IMPACT-V2.md,
   IMPACT-MILESTONE2.md, docs/deaths/
-  (gh api repos/diegoami/better-borg-c/contents/<path>, or a read-only clone
+  (gh api repos/diegoami/patched-borg-c/contents/<path>, or a read-only clone
   in your own scratch directory)
 - borg-rs: README.md, CLAUDE.md, docs/REVIEW.md, docs/STATUS.md,
   docs/harness.md, harness/suites/*, borg-rs/src/state.rs (the local checkout

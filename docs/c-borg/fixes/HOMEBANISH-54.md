@@ -1,6 +1,6 @@
 # Homebanish-54 carry: verified product scenario
 
-Consumer [298](https://github.com/diegoami/better-borg-c/issues/298),
+Consumer [298](https://github.com/diegoami/patched-borg-c/issues/298),
 canonical source
 [54](https://github.com/diegoami/neo-angband-tracker/issues/54)
 (CBUG-0038, homebanish-54; source fix `e49ab948`, evidence fixture

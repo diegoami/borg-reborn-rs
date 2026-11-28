@@ -138,7 +138,7 @@ Angband developers', untouched in `engine/angband/docs/`.
 | --- | --- | --- |
 | `docs/strategy/` | diegoami/neo-angband-tracker `docs/c-manual/` | `dbde80762dd45857c7840f1af9df1bd39930d4ab` |
 | `docs/c-borg/` (the whole `docs/c-borg/`, `c-bugs/`, `C-BUGS.md`, `borg-rs-c-bugs.md`) | neo-angband-tracker `docs/c-borg/`, `docs/c-bugs/`, `docs/C-BUGS.md`, `docs/audit/c-reports/borg-rs-c-bugs.md` | same |
-| `docs/c-borg/fixes/` | diegoami/better-borg-c `docs/measurement/*.md`, `docs/VERIFICATION.md` | `cc4c3e43aa0a863ad2fc4adab8f930277d181900` |
+| `docs/c-borg/fixes/` | diegoami/patched-borg-c `docs/measurement/*.md`, `docs/VERIFICATION.md` | `cc4c3e43aa0a863ad2fc4adab8f930277d181900` |
 | `docs/design/` | diegoami/borg-rs `docs/` (town, trip, family, shop, joint-policy, c-bugs) | `8c5d000a58e9ddca1f1954ab9552e505856b313f` |
 | `docs/research/borg-agent/` | diegoami/borg-agent `knowledge/`, `docs/POST-MORTEM.md`, `docs/KNOWLEDGE.md` | `57a480ceffdd9d3ceaff80c24d40fd2a5b5d2b86` |
 

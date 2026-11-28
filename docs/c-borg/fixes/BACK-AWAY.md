@@ -1,6 +1,6 @@
 # Back-away per-grid judgement carry: verified product scenario, mixed cohort result
 
-Consumer [254](https://github.com/diegoami/better-borg-c/issues/254),
+Consumer [254](https://github.com/diegoami/patched-borg-c/issues/254),
 canonical source [155](https://github.com/diegoami/neo-angband-tracker/issues/155)
 (backaway-155 / CBUG-0139). Fix applied as
 `86d01e947126e81b2debae4a3d7fe14517e29d9f` (`cherry-pick -x` of source

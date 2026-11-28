@@ -1,6 +1,6 @@
 # Banisharte-37 carry: verified product scenario
 
-Consumer [305](https://github.com/diegoami/better-borg-c/issues/305),
+Consumer [305](https://github.com/diegoami/patched-borg-c/issues/305),
 canonical source
 [37](https://github.com/diegoami/neo-angband-tracker/issues/37)
 (banisharte-37; source fix `caa6c6ac`, evidence fixture `97bcf2a98`).

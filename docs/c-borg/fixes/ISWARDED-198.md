@@ -1,6 +1,6 @@
 # Iswarded-198 carry: verified product scenario
 
-Consumer [286](https://github.com/diegoami/better-borg-c/issues/286),
+Consumer [286](https://github.com/diegoami/patched-borg-c/issues/286),
 canonical source
 [198](https://github.com/diegoami/neo-angband-tracker/issues/198)
 (iswarded-198; source PR452 `62242ac2`, evidence PR451). Fix applied as

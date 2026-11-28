@@ -1,6 +1,6 @@
 # Source250 reader correction: already in the product through patch 0012
 
-Consumer [200](https://github.com/diegoami/better-borg-c/issues/200),
+Consumer [200](https://github.com/diegoami/patched-borg-c/issues/200),
 canonical source [250](https://github.com/diegoami/neo-angband-tracker/issues/250)
 (tpreader-250), source commit `e890819a6b5ac6e7f7135dcc2b234fcc520b9752`,
 evidence head `9ca89f4461e518f28c85962a51aaa6308e0b0158`.
@@ -11,7 +11,7 @@ evidence head `9ca89f4461e518f28c85962a51aaa6308e0b0158`.
 `ii <= borg_tp_other_n`, one slot past the saved entries. The source250
 correction changes that one token to `<`. The product already has exactly
 that change: the source67 carry (consumer
-[54](https://github.com/diegoami/better-borg-c/issues/54), patch
+[54](https://github.com/diegoami/patched-borg-c/issues/54), patch
 `patches/0012-tp-other-skip.patch`, applied as
 `706fb49b0731ebaf54408c0699b4cd1da1a15929`, merged `cfaff7be7`) fixed the
 same line for the same stale-slot read. A cherry-pick of the source250

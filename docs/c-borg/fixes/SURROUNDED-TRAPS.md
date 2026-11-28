@@ -1,6 +1,6 @@
 # Surrounded-trap carry: verified product scenario, ready for adoption
 
-Consumer [109](https://github.com/diegoami/better-borg-c/issues/109), canonical
+Consumer [109](https://github.com/diegoami/patched-borg-c/issues/109), canonical
 source [312](https://github.com/diegoami/neo-angband-tracker/issues/312)
 (surrounded-312, priority medium). Fix applied as
 `dbdb5f7fa49963653abebfbce05537c502254c6f` (import of source PR351

@@ -58,7 +58,7 @@ seeds or thresholds were weakened. The gate's runtime C source is identical to
 the final branch, so no redundant full local gate was added for ledger/docs.
 
 The frozen three-seed ordinary-play comparison is in BASELINE-V1.md and
-[raw receipt](https://github.com/diegoami/better-borg-c/issues/3#issuecomment-6682135753).
+[raw receipt](https://github.com/diegoami/patched-borg-c/issues/3#issuecomment-6682135753).
 All three fixed starts/save hashes and entire traces match baseline; all reach
 the20000-turn cap. Maximum depth3 cannot exercise the depth50 swap prerequisite.
 No survival or wall-time improvement is demonstrated by this small batch. A

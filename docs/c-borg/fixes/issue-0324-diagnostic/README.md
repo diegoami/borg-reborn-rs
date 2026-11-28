@@ -1,10 +1,10 @@
 # Issue #324 diagnostic evidence: grey-mold retreat/re-approach loop (D0012)
 
 Curated evidence for the investigation in
-[issue #324](https://github.com/diegoami/better-borg-c/issues/324), reviewed in
-[#386](https://github.com/diegoami/better-borg-c/issues/386) (two verdicts:
+[issue #324](https://github.com/diegoami/patched-borg-c/issues/324), reviewed in
+[#386](https://github.com/diegoami/patched-borg-c/issues/386) (two verdicts:
 "approve with corrections", findings R-01..R-07 and P2-01..P2-06) with its
-re-review package [#387](https://github.com/diegoami/better-borg-c/issues/387).
+re-review package [#387](https://github.com/diegoami/patched-borg-c/issues/387).
 
 ## Subject
 
