@@ -815,14 +815,16 @@ borg_param_caution_recall_heal_loss: 150
 # - borg_trip_return_gold: gold plus the pack's sale value reaches this per
 #   character level (0 = never).
 # borg_trip_depth_margin is a diagnostic only. Since #479 the borg-zoo#170
-# speed30 bundle; borg_trip_unknown_stacks = 2 since fba1c6e0 (owner).
+# speed30 bundle; borg_trip_unknown_stacks = 2 since fba1c6e0 (owner);
+# borg_trip_pack_slack = -1 (the pack never asks to go back) since #1385
+# (owner; it was 1).
 # Impact (games of 6 that play differently with the value changed to):
 # trip_policy 0: 3; trip_pack_slack 2: 0; trip_unknown_stacks 4: 3;
 # trip_return_gold 1: 6; trip_depth_margin 1: 0.
 
 borg_trip_policy: 1
 borg_trip_depth_margin: 0
-borg_trip_pack_slack: 1
+borg_trip_pack_slack: -1
 borg_trip_unknown_stacks: 2
 borg_trip_return_gold: 0
 
