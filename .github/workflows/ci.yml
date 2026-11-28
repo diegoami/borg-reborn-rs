@@ -60,72 +60,155 @@ jobs:
           commit=$(sed -n 's/^commit=//p' engine/UPSTREAM)
           git init -q vendor/angband
           git -C vendor/angband fetch -q --depth 1 --filter=tree:0 https://github.com/angband/angband "$commit"
-      - run: ENGINE_UPSTREAM_REQUIRED=1 python3 -m unittest discover -s engine/tests
+      - run: ENGINE_UPSTREAM_REQUIRED=1 bash .github/scripts/test-engine.sh
 
   engine:
-    # Builds the Rust Borg on our own integration (engine/, docs/SPEC.md §3,
-    # TE.4) and runs it. Deaths in CI go to a temporary registry, never to
-    # docs/deaths.
+    # Preserve the required check and report failures from either core.
+    needs: [engine-reborn, engine-borg-rs]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          REBORN_RESULT: ${{ needs.engine-reborn.result }}
+          BORG_RS_RESULT: ${{ needs.engine-borg-rs.result }}
+        run: test "$REBORN_RESULT:$BORG_RS_RESULT" = success:success
+
+  engine-reborn:
     runs-on: ubuntu-latest
     steps:
       - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: ./.github/actions/cemetery-tools
-      - uses: dtolnay/rust-toolchain@stable
-      # Canonical gameplay evidence is separate from the death-tool pin and
-      # from the temporary registry produced by this CI run.
-      - id: incident-evidence
-        run: |
-          python3 - <<'PYEVIDENCE'
-          import json, os, pathlib
-          f = json.loads(pathlib.Path('harness/fixtures/planmage-wild-cat.json').read_text())
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-              output.write('commit=' + f['commit'] + '\n')
-          PYEVIDENCE
-      - uses: actions/checkout@v4
+      - uses: ./.github/actions/engine-evidence
         with:
-          repository: diegoami/borg-cemetery
-          ref: ${{ steps.incident-evidence.outputs.commit }}
-          path: vendor/cemetery-evidence
-          persist-credentials: false
-          sparse-checkout: |
+          incident-fixtures: |
             scenarios/planmage-wild-cat-fixtures
             scenarios/planmage-town-phase-407718
-            validation/borg-reborn-rs/native-controls
-      # #403: new parameter provenance changes the encounter identity even
-      # when neutral play is identical. Reconcile against retained, immutable
-      # Cemetery evidence, never against the registry produced by this run.
-      - id: attack-evidence
-        run: |
-          python3 - <<'PYATTACK'
-          import json, os, pathlib
-          f = json.loads(pathlib.Path('harness/fixtures/attack-preferences.json').read_text())
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-              output.write('commit=' + f['commit'] + '\n')
-          PYATTACK
-      - uses: actions/checkout@v4
-        with:
-          repository: diegoami/borg-cemetery
-          ref: ${{ steps.attack-evidence.outputs.commit }}
-          path: vendor/attack-preference-evidence
-          persist-credentials: false
-          sparse-checkout: |
-            validation/borg-reborn-rs/class-attack-preferences/deaths
-      - run: |
-          python3 - <<'PYREGISTRY'
-          import os, pathlib
-          known = pathlib.Path(os.environ['RUNNER_TEMP']) / 'known-deaths'
-          known.mkdir()
-          for root in [pathlib.Path('docs/deaths'), pathlib.Path('vendor/cemetery-evidence/validation/borg-reborn-rs/native-controls/deaths'), pathlib.Path('vendor/attack-preference-evidence/validation/borg-reborn-rs/class-attack-preferences/deaths')]:
-              for case in sorted(root.glob('D*')):
-                  if case.is_dir() and (case / 'record.json').is_file():
-                      (known / case.name).symlink_to(case.resolve(), target_is_directory=True)
-          PYREGISTRY
+      - uses: dtolnay/rust-toolchain@stable
       - uses: ./.github/actions/apt-install
         with:
           packages: cmake libx11-dev libssl-dev
       - run: BORG_IMPL=rust harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
+      # Native preference tests use their own death registry. The original
+      # core's observation/replay check below must continue to select one of
+      # that core's deaths, rather than a differently configured native run.
+      - run: echo "BORG_ATTACK_PREFERENCE_DEATHS_DIR=$RUNNER_TEMP/attack-preference-deaths" >> "$GITHUB_ENV"
+      # The build, the source list and the frontend's contract on the binary (TE.4).
+      # #350: immutable, source-qualified saves from the recorded wild-cat incident.
+      - run: |
+          python3 - <<'PYFIXTURE'
+          import json, os, pathlib, shutil
+          f = json.loads(pathlib.Path('harness/fixtures/planmage-wild-cat.json').read_text())
+          target = pathlib.Path(os.environ['RUNNER_TEMP']) / f['archive']
+          shutil.copyfile(pathlib.Path('vendor/cemetery-evidence') / f['archive_path'], target)
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('BORG_SURVIVAL_FIXTURE_ZIP=' + str(target) + '\nBORG_SURVIVAL_FIXTURES_REQUIRED=1\n')
+          PYFIXTURE
+      - run: |
+          python3 - <<'PYPHASE'
+          import json, os, pathlib, shutil
+          f = json.loads(pathlib.Path('harness/fixtures/planmage-town-phase.json').read_text())
+          target = pathlib.Path(os.environ['RUNNER_TEMP']) / 'phase-stock.zip'
+          shutil.copyfile(pathlib.Path('vendor/cemetery-evidence') / f['archive_path'], target)
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('BORG_PHASE_STOCK_FIXTURE_ZIP=' + str(target) + '\nBORG_PHASE_STOCK_FIXTURE_REQUIRED=1\n')
+          PYPHASE
+      - run: bash .github/scripts/test-engine.sh test_core_profile_contract.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-attack-preference-death-registry
+          path: ${{ runner.temp }}/attack-preference-deaths
+          if-no-files-found: ignore
+      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/attack-preference-deaths" --registry vendor/attack-preference-evidence/validation/borg-reborn-rs/class-attack-preferences/deaths
+      # The reborn Borg plays (T1.5): smoke twice, same keys both times.
+      - run: BORG_CORE=reborn BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-1
+      - run: BORG_CORE=reborn BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-2
+      - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/out/smoke-rust-2
+      # ... and the same keys, messages and states as the reference (TE.5).
+      - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/reference/smoke-rust
+      - run: for r in harness/out/smoke-rust-1/*/; do test -s "$r/trace.jsonl" && python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$r/params.json" && grep -q '^profile_sha256=' "$r/config.txt" || { echo "no trace or params in $r"; exit 1; }; done
+      # A save loaded through run.sh's extra options resumes like save=NAME (re-review S1, S2).
+      - run: BORG_CORE=reborn BORG_IMPL=rust harness/check-extra-load.sh
+      # Recorded observations round-trip through their log lines (T2.1);
+      # replayed without the game they rebuild the live world model (T2.2);
+      # the knowledge read from the game matches its data files, and the
+      # blows computed from it equal the engine's on every think (T2.3).
+      - run: BORG_CORE=reborn BORG_OBSERVATION_LOG=$RUNNER_TEMP/observations.jsonl BORG_WORLD_LOG=$RUNNER_TEMP/worlds.txt BORG_KNOWLEDGE_LOG=$RUNNER_TEMP/knowledge.json BORG_IMPL=rust harness/run.sh harness/out/observations 101 0 0 3000
+      - run: BORG_OBSERVATION_LOG_CHECK=$RUNNER_TEMP/observations.jsonl BORG_WORLD_LOG_CHECK=$RUNNER_TEMP/worlds.txt BORG_KNOWLEDGE_LOG_CHECK=$RUNNER_TEMP/knowledge.json cargo test -q -p borg-reborn-rs recorded -- --nocapture
+      # RNG isolation (M1 review): perception while hallucinating must not move
+      # the game's RNG, nor change what is observed; each think asserts it
+      # (feature test-hallucinate). Perception against the engine (T2.5): each
+      # think writes its comparison to truth.jsonl (feature test-perception).
+      - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception,test-stair-handoff,test-combat-heal,test-town-loadout,test-cursed-spares,test-town-review,test-junk-consumables harness/build.sh
+      - run: bash .github/scripts/test-engine.sh --fixtures
+      # A test build's deaths are not natural deaths of an arm: own registry.
+      - run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-hallucinate
+      # The full suite on the test build is the engine-full job's (#1400).
+      - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-hallucinate harness/reference/smoke-rust
+      - run: python3 tools/check-perception.py harness/out/smoke-hallucinate
+      # No-time loops are visible too: level generation may not exceed its
+      # declared cap at one game turn (M3 review, PR #135 finding 1).
+      - run: python3 tools/check-no-time.py harness/out/smoke-rust-1
+      # The run contract on the Rust arm (T1.4, T1.8).
+      - run: BORG_CORE=reborn BORG_IMPL=rust harness/suite.sh smoke-exact harness/out/smoke-exact-rust
+      - run: harness/check-boundary.py harness/out/smoke-exact-rust harness/out/smoke-rust-1
+      - run: harness/diff --suite smoke-exact --expect-impl rust harness/out/smoke-exact-rust harness/reference/smoke-exact-rust
+      # A death for the rerun check below (TE.6). Smoke has none, so CI
+      # plays full-suite deaths on their own, in turn, until one dies: a
+      # play change that saves one (#183 saved seed 1014's mage) leaves the
+      # next. The list is the full reference's deaths, earliest first
+      # (druid-0 seed 1020 at game turn 3,329; necro-0 1040 at 5,078;
+      # mage-2 1012 at 4,841); each dossier is in docs/deaths.
+      - run: |
+          for c in "1020 2 2" "1040 4 4" "1012 3 1"; do
+            rm -rf harness/out/rerun-source
+            BORG_CORE=reborn BORG_IMPL=rust harness/run.sh harness/out/rerun-source $c 100000 menu
+            ls "$RUNNER_TEMP"/deaths/D-* >/dev/null 2>&1 && break
+          done
+      # Deaths (RULES 12, M1 review): keep CI's registry, and fail if a run
+      # died a death that docs/deaths/ does not record.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-death-registry
+          path: ${{ runner.temp }}/deaths
+          if-no-files-found: ignore
+      # Every natural death in the run outputs has a dossier (E review, finding 3).
+      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --registry "$RUNNER_TEMP/known-deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/observations harness/out/check-extra-load harness/out/smoke-exact-rust harness/out/rerun-source
+      # ... and the dossiers carry their core's trace and parameters (T2.4):
+      # the reborn core's trace-tail.jsonl and params.json, or the borg-rs
+      # core's trace-core-tail.jsonl and params-core.json (#606). A borg-rs
+      # death needs a Cemetery package like any other (reconcile-deaths above).
+      # nullglob: runs with no natural death leave no dossier, and an
+      # unmatched pattern must not be checked as if it were one (#125: the
+      # smoke mage now survives). reconcile-deaths above still fails a death
+      # without a dossier.
+      - run: shopt -s nullglob; for d in "$RUNNER_TEMP"/deaths/D-*/; do { test -s "$d/trace-tail.jsonl" && test -s "$d/params.json"; } || { test -s "$d/trace-core-tail.jsonl" && test -s "$d/params-core.json"; } || { echo "no trace or params in $d"; exit 1; }; done
+      # A death reruns from its dossier with the Borg's logs, same keys (TE.6).
+      - run: python3 tools/rerun-death.py "$(ls -d "$RUNNER_TEMP"/deaths/D-* | head -1)" "$RUNNER_TEMP/rerun"
+
+  engine-borg-rs:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/cemetery-tools
+      - uses: ./.github/actions/engine-evidence
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/apt-install
+        with:
+          packages: cmake libx11-dev libssl-dev
+      - run: BORG_IMPL=rust harness/build.sh
+      - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
+      # P3: exercise the actual profile serializer and run_cell at our zoo pin.
+      - run: |
+          zoo_pin=$(cat harness/zoo-adapter-pin.txt)
+          git init -q vendor/borg-zoo-adapter
+          git -C vendor/borg-zoo-adapter fetch -q --depth 1 https://github.com/diegoami/borg-zoo "$zoo_pin"
+          git -C vendor/borg-zoo-adapter checkout -q --detach "$zoo_pin"
+      - run: BORG_ZOO_CONTRACT_REQUIRED=1 python3 .github/scripts/run-engine-test.py engine/tests/test_core_profile_contract.py
       # Track P (#219): exercise the vendored core's real initialization,
       # not only the pure parser. Its named trace has a separate registry;
       # original-core dossiers below retain their trace.jsonl contract.
@@ -171,53 +254,6 @@ jobs:
           name: ci-core-death-registry
           path: ${{ runner.temp }}/core-deaths
           if-no-files-found: ignore
-      # P3: exercise the actual profile serializer and run_cell at our zoo pin.
-      - run: |
-          zoo_pin=$(cat harness/zoo-adapter-pin.txt)
-          git init -q vendor/borg-zoo-adapter
-          git -C vendor/borg-zoo-adapter fetch -q --depth 1 https://github.com/diegoami/borg-zoo "$zoo_pin"
-          git -C vendor/borg-zoo-adapter checkout -q --detach "$zoo_pin"
-          echo "BORG_ZOO_CONTRACT_REQUIRED=1" >> "$GITHUB_ENV"
-      # Native preference tests use their own death registry. The original
-      # core's observation/replay check below must continue to select one of
-      # that core's deaths, rather than a differently configured native run.
-      - run: echo "BORG_ATTACK_PREFERENCE_DEATHS_DIR=$RUNNER_TEMP/attack-preference-deaths" >> "$GITHUB_ENV"
-      # The build, the source list and the frontend's contract on the binary (TE.4).
-      # #350: immutable, source-qualified saves from the recorded wild-cat incident.
-      - run: |
-          python3 - <<'PYFIXTURE'
-          import json, os, pathlib, shutil
-          f = json.loads(pathlib.Path('harness/fixtures/planmage-wild-cat.json').read_text())
-          target = pathlib.Path(os.environ['RUNNER_TEMP']) / f['archive']
-          shutil.copyfile(pathlib.Path('vendor/cemetery-evidence') / f['archive_path'], target)
-          with open(os.environ['GITHUB_ENV'], 'a') as env:
-              env.write('BORG_SURVIVAL_FIXTURE_ZIP=' + str(target) + '\nBORG_SURVIVAL_FIXTURES_REQUIRED=1\n')
-          PYFIXTURE
-      - run: |
-          python3 - <<'PYPHASE'
-          import json, os, pathlib, shutil
-          f = json.loads(pathlib.Path('harness/fixtures/planmage-town-phase.json').read_text())
-          target = pathlib.Path(os.environ['RUNNER_TEMP']) / 'phase-stock.zip'
-          shutil.copyfile(pathlib.Path('vendor/cemetery-evidence') / f['archive_path'], target)
-          with open(os.environ['GITHUB_ENV'], 'a') as env:
-              env.write('BORG_PHASE_STOCK_FIXTURE_ZIP=' + str(target) + '\nBORG_PHASE_STOCK_FIXTURE_REQUIRED=1\n')
-          PYPHASE
-      - run: python3 -m unittest discover -s engine/tests
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: ci-attack-preference-death-registry
-          path: ${{ runner.temp }}/attack-preference-deaths
-          if-no-files-found: ignore
-      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/attack-preference-deaths" --registry vendor/attack-preference-evidence/validation/borg-reborn-rs/class-attack-preferences/deaths
-      # The reborn Borg plays (T1.5): smoke twice, same keys both times.
-      # #606: these reborn-core steps say BORG_CORE=reborn; the harness
-      # default is the borg-rs core (its smoke check follows them).
-      - run: BORG_CORE=reborn BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-1
-      - run: BORG_CORE=reborn BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-2
-      - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/out/smoke-rust-2
-      # ... and the same keys, messages and states as the reference (TE.5).
-      - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/reference/smoke-rust
       # The decision trace and the parameter table are in the run outputs (T2.4).
       # #606: the harness default, the borg-rs core (it reads harness/pborg.yaml),
       # plays smoke twice with the same keys, and the same keys, messages and
@@ -239,9 +275,6 @@ jobs:
         with:
           name: ranger-phase-failure
           path: ${{ runner.temp }}/ranger-phase
-      - run: for r in harness/out/smoke-rust-1/*/; do test -s "$r/trace.jsonl" && python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$r/params.json" && grep -q '^profile_sha256=' "$r/config.txt" || { echo "no trace or params in $r"; exit 1; }; done
-      # A save loaded through run.sh's extra options resumes like save=NAME (re-review S1, S2).
-      - run: BORG_CORE=reborn BORG_IMPL=rust harness/check-extra-load.sh
       - name: Resume saved Mages with pending message prompts
         run: |
           for case in \
@@ -264,83 +297,16 @@ jobs:
           assert run['stop_reason'] == 'turns' and run['game_turns'] >= turn + 100 and run['keys'] > 0, run
           PYLOAD
           done
-      # Recorded observations round-trip through their log lines (T2.1);
-      # replayed without the game they rebuild the live world model (T2.2);
-      # the knowledge read from the game matches its data files, and the
-      # blows computed from it equal the engine's on every think (T2.3).
-      - run: BORG_CORE=reborn BORG_OBSERVATION_LOG=$RUNNER_TEMP/observations.jsonl BORG_WORLD_LOG=$RUNNER_TEMP/worlds.txt BORG_KNOWLEDGE_LOG=$RUNNER_TEMP/knowledge.json BORG_IMPL=rust harness/run.sh harness/out/observations 101 0 0 3000
-      - run: BORG_OBSERVATION_LOG_CHECK=$RUNNER_TEMP/observations.jsonl BORG_WORLD_LOG_CHECK=$RUNNER_TEMP/worlds.txt BORG_KNOWLEDGE_LOG_CHECK=$RUNNER_TEMP/knowledge.json cargo test -q -p borg-reborn-rs recorded -- --nocapture
-      # RNG isolation (M1 review): perception while hallucinating must not move
-      # the game's RNG, nor change what is observed; each think asserts it
-      # (feature test-hallucinate). Perception against the engine (T2.5): each
-      # think writes its comparison to truth.jsonl (feature test-perception).
-      - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception,test-stair-handoff,test-combat-heal,test-town-loadout,test-cursed-spares,test-town-review,test-junk-consumables harness/build.sh
-      - run: python3 engine/tests/test_combat_heal.py
-      - run: python3 engine/tests/test_town_loadout.py
-      - run: python3 engine/tests/test_exploration_pack.py
-      - run: python3 engine/tests/test_town_recall_loadout.py
-      - run: python3 engine/tests/test_cursed_spares.py
-      - run: python3 engine/tests/test_junk_consumables.py
-      - run: python3 engine/tests/test_inferior_spares.py TownSpareSaleTest
-      - run: python3 engine/tests/test_store_loop.py
-      - run: python3 engine/tests/test_stair_handoff.py EmergencyStairHandoffTest
-      - run: python3 engine/tests/test_stair_handoff.py TownRecallReadinessTest
-      - run: python3 engine/tests/test_stair_handoff.py HealingRestockTest
-      - run: python3 engine/tests/test_stair_handoff.py LeaveLevelUpstairsTest
-      - run: python3 engine/tests/test_stair_handoff.py DarkVeinLoopTest
-      - run: python3 engine/tests/test_stair_handoff.py RecoveryManaLoopTest
-      - run: python3 engine/tests/test_stair_handoff.py StaleStairMoreTest
-      - run: python3 engine/tests/test_stair_handoff.py MoreRefusedGatesTest
-      - run: python3 engine/tests/test_stair_handoff.py NoteStandingFlagsTest
-      - run: python3 engine/tests/test_stair_handoff.py BreederDoorLoopTest
-      - run: python3 engine/tests/test_stair_handoff.py DiggerSwapLoopTest
-      - run: python3 engine/tests/test_stair_handoff.py StaleKoboldDoorTest
-      - run: python3 engine/tests/test_stair_handoff.py StairScumLootRoutesTest
-      # A test build's deaths are not natural deaths of an arm: own registry.
-      - run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-hallucinate
-      # The full suite on the test build is the engine-full job's (#1400).
-      - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-hallucinate harness/reference/smoke-rust
-      - run: python3 tools/check-perception.py harness/out/smoke-hallucinate
-      # No-time loops are visible too: level generation may not exceed its
-      # declared cap at one game turn (M3 review, PR #135 finding 1).
-      - run: python3 tools/check-no-time.py harness/out/smoke-rust-1
-      # The run contract on the Rust arm (T1.4, T1.8).
-      - run: BORG_CORE=reborn BORG_IMPL=rust harness/suite.sh smoke-exact harness/out/smoke-exact-rust
-      - run: harness/check-boundary.py harness/out/smoke-exact-rust harness/out/smoke-rust-1
-      - run: harness/diff --suite smoke-exact --expect-impl rust harness/out/smoke-exact-rust harness/reference/smoke-exact-rust
-      # A death for the rerun check below (TE.6). Smoke has none, so CI
-      # plays full-suite deaths on their own, in turn, until one dies: a
-      # play change that saves one (#183 saved seed 1014's mage) leaves the
-      # next. The list is the full reference's deaths, earliest first
-      # (druid-0 seed 1020 at game turn 3,329; necro-0 1040 at 5,078;
-      # mage-2 1012 at 4,841); each dossier is in docs/deaths.
-      - run: |
-          for c in "1020 2 2" "1040 4 4" "1012 3 1"; do
-            rm -rf harness/out/rerun-source
-            BORG_CORE=reborn BORG_IMPL=rust harness/run.sh harness/out/rerun-source $c 100000 menu
-            ls "$RUNNER_TEMP"/deaths/D-* >/dev/null 2>&1 && break
-          done
       # Deaths (RULES 12, M1 review): keep CI's registry, and fail if a run
       # died a death that docs/deaths/ does not record.
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ci-death-registry
+          name: ci-borg-rs-death-registry
           path: ${{ runner.temp }}/deaths
           if-no-files-found: ignore
-      # Every natural death in the run outputs has a dossier (E review, finding 3).
-      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --registry "$RUNNER_TEMP/known-deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/smoke-borg-rs-1 harness/out/smoke-borg-rs-2 harness/out/observations harness/out/check-extra-load harness/out/load-more-mage-overweight-cursed-kit-9221204 harness/out/load-more-mage-rubble-10815143 harness/out/smoke-exact-rust harness/out/rerun-source
-      # ... and the dossiers carry their core's trace and parameters (T2.4):
-      # the reborn core's trace-tail.jsonl and params.json, or the borg-rs
-      # core's trace-core-tail.jsonl and params-core.json (#606). A borg-rs
-      # death needs a Cemetery package like any other (reconcile-deaths above).
-      # nullglob: runs with no natural death leave no dossier, and an
-      # unmatched pattern must not be checked as if it were one (#125: the
-      # smoke mage now survives). reconcile-deaths above still fails a death
-      # without a dossier.
+      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --registry "$RUNNER_TEMP/known-deaths" --runs harness/out/smoke-borg-rs-1 harness/out/smoke-borg-rs-2 harness/out/smoke-borg-rs-defaults harness/out/load-more-mage-overweight-cursed-kit-9221204 harness/out/load-more-mage-rubble-10815143
       - run: shopt -s nullglob; for d in "$RUNNER_TEMP"/deaths/D-*/; do { test -s "$d/trace-tail.jsonl" && test -s "$d/params.json"; } || { test -s "$d/trace-core-tail.jsonl" && test -s "$d/params-core.json"; } || { echo "no trace or params in $d"; exit 1; }; done
-      # A death reruns from its dossier with the Borg's logs, same keys (TE.6).
-      - run: python3 tools/rerun-death.py "$(ls -d "$RUNNER_TEMP"/deaths/D-* | head -1)" "$RUNNER_TEMP/rerun"
 
   engine-scope:
     runs-on: ubuntu-latest
