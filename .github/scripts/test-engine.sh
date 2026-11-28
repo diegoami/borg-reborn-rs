@@ -8,7 +8,7 @@ if [[ ${1:-} == --fixtures ]]; then
     test -x build/rust-test/game/angband
     xargs -r -d '\n' -n 1 -P "$jobs" bash -c '
         read -r -a args <<< "$1"
-        python3 "engine/tests/${args[0]}" "${args[@]:1}"
+        python3 .github/scripts/run-engine-test.py "engine/tests/${args[0]}" "${args[@]:1}"
     ' _ <<'FIXTURES'
 test_combat_heal.py
 test_town_loadout.py
@@ -53,7 +53,7 @@ if (( ${#modules[@]} == 0 )); then
     echo 'No engine test modules found' >&2
     exit 1
 fi
-printf '%s\0' "${modules[@]}" | xargs -0 -r -n 1 -P "$jobs" python3
+printf '%s\0' "${modules[@]}" | xargs -0 -r -n 1 -P "$jobs" python3 .github/scripts/run-engine-test.py
 
 # This module changes the recorder patch mtime to exercise CMake reconfiguration.
-python3 engine/tests/test_build.py
+python3 .github/scripts/run-engine-test.py engine/tests/test_build.py
